@@ -2,6 +2,7 @@ package com.uniondesk.iam.web;
 
 import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.auth.core.UserContextHolder;
+import com.uniondesk.common.web.ErrorCodes;
 import com.uniondesk.iam.admin.AdminMenuService;
 import com.uniondesk.iam.admin.AdminMenuService.AdminMenuNode;
 import com.uniondesk.iam.admin.AdminMenuService.CreateAdminMenuCommand;
@@ -130,6 +131,7 @@ public class IamController {
                 request.routePath(),
                 request.componentKey(),
                 request.permissionCode(),
+                request.scope(),
                 request.parentId(),
                 request.orderNo(),
                 request.icon(),
@@ -147,6 +149,7 @@ public class IamController {
                 request.routePath(),
                 request.componentKey(),
                 request.permissionCode(),
+                request.scope(),
                 request.parentId(),
                 request.orderNo(),
                 request.icon(),
@@ -163,9 +166,9 @@ public class IamController {
     }
 
     @GetMapping("/admin-permission-codes")
-    public List<IamDtos.AdminPermissionCodeView> listAdminPermissionCodes() {
+    public List<IamDtos.AdminPermissionCodeView> listAdminPermissionCodes(@RequestParam(required = false) String scope) {
         requireSuperAdminContext();
-        return adminMenuService.listPermissionCodes().stream()
+        return adminMenuService.listPermissionCodes(scope).stream()
                 .map(definition -> new IamDtos.AdminPermissionCodeView(
                         definition.code(),
                         definition.name(),
@@ -330,7 +333,9 @@ public class IamController {
                                 menu.orderNo(),
                                 menu.icon(),
                                 menu.component(),
-                                menu.hidden()))
+                                menu.scope(),
+                                menu.hidden(),
+                                menu.permissionCode()))
                         .toList(),
                 snapshot.actions().stream()
                         .map(action -> new IamDtos.ActionView(
@@ -344,19 +349,19 @@ public class IamController {
 
     private UserContext requireCurrentContext() {
         return UserContextHolder.current()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "unauthorized"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, ErrorCodes.UNAUTHORIZED.message()));
     }
 
     private void requirePermission(UserContext context, String permissionCode, List<Long> businessDomainIds) {
         if (!iamService.hasPermissionForDomains(context, permissionCode, businessDomainIds)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "forbidden");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN.message());
         }
     }
 
     private UserContext requireSuperAdminContext() {
         UserContext context = requireCurrentContext();
         if (!"super_admin".equalsIgnoreCase(context.role())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "forbidden");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN.message());
         }
         return context;
     }
@@ -400,6 +405,7 @@ public class IamController {
                 node.id(),
                 node.code(),
                 node.nodeType(),
+                node.scope(),
                 node.name(),
                 node.routePath(),
                 node.componentKey(),

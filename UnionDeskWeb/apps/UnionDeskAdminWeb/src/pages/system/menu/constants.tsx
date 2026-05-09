@@ -1,48 +1,57 @@
+import { createElement } from "react";
+
 import type { MenuItemType } from "#src/api/system/menu";
 import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 
-import { getBooleanOptions, getYesNoOptions } from "#src/constants/options";
-
+import { WarningOutlined } from "@ant-design/icons";
 import { Tag } from "antd";
+import { menuIcons } from "#src/icons/menu-icons";
+
+function getNodeTypeLabel(t: TFunction<"translation", undefined>, nodeType?: string) {
+	switch (nodeType) {
+		case "catalog":
+			return t("system.menu.catalog");
+		case "menu":
+			return t("system.menu.menu");
+		case "button":
+			return t("system.menu.button");
+		default:
+			return nodeType || "-";
+	}
+}
 
 export function getMenuTypeOptions(t: TFunction<"translation", undefined>) {
 	return [
 		{
+			label: t("system.menu.catalog"),
+			value: "catalog",
+		},
+		{
 			label: t("system.menu.menu"),
-			value: 0,
-		},
-		{
-			label: t("system.menu.iframe"),
-			value: 1,
-		},
-		{
-			label: t("system.menu.externalLink"),
-			value: 2,
+			value: "menu",
 		},
 		{
 			label: t("system.menu.button"),
-			value: 3,
+			value: "button",
 		},
 	];
 }
 
 export function getConstantColumns(t: TFunction<"translation", undefined>): ProColumns<MenuItemType>[] {
-	return [
+	const columns: ProColumns<MenuItemType>[] = [
 		{
 			dataIndex: "index",
 			title: t("common.index"),
-			valueType: "indexBorder",
+			valueType: "index",
 			width: 80,
 		},
 		{
 			title: t("system.menu.name"),
 			dataIndex: "name",
 			ellipsis: true,
-			width: 200,
-			render: (_, record) => {
-				return t(record.name);
-			},
+			width: 180,
+			render: (_, record) => record.name,
 			formItemProps: {
 				rules: [
 					{
@@ -53,30 +62,90 @@ export function getConstantColumns(t: TFunction<"translation", undefined>): ProC
 			},
 		},
 		{
+			title: t("system.menu.menuType"),
+			dataIndex: "nodeType",
+			width: 110,
+			render: (_, record) => {
+				const label = getNodeTypeLabel(t, record.nodeType);
+				return label === "-" ? label : <Tag color="blue">{label}</Tag>;
+			},
+		},
+		{
 			title: t("system.menu.routePath"),
-			dataIndex: "path",
-			width: 120,
-			filters: true,
-			onFilter: true,
+			dataIndex: "routePath",
+			width: 180,
+			ellipsis: true,
+		},
+		{
+			title: t("system.menu.componentUrl"),
+			dataIndex: "componentKey",
+			width: 180,
+			ellipsis: true,
+			search: false,
+			render: (_, record) => record.componentKey?.replace(/^\.\//, "") ?? "-",
+		},
+		{
+			title: t("system.menu.permissionCode"),
+			dataIndex: "permissionCode",
+			width: 180,
 			ellipsis: true,
 		},
 		{
 			title: t("system.menu.menuOrder"),
-			dataIndex: "order",
+			dataIndex: "orderNo",
 			valueType: "digit",
-			width: 80,
+			width: 90,
 		},
 		{
 			title: t("system.menu.menuIcon"),
 			dataIndex: "icon",
 			width: 130,
+			search: false,
+			render: (_, record) => {
+				const iconName = record.icon?.trim();
+				if (!iconName) {
+					return "-";
+				}
+				const IconComponent = menuIcons[iconName];
+				if (!IconComponent) {
+					return (
+						<span title={`Unknown icon: ${iconName}`}>
+							<WarningOutlined style={{ color: "var(--colorWarning, #d97706)" }} />
+						</span>
+					);
+				}
+				return <span title={iconName}>{createElement(IconComponent)}</span>;
+			},
+		},
+		{
+			title: t("system.menu.scope"),
+			dataIndex: "scope",
+			width: 110,
+			render: (_, record) => {
+				if (record.scope === "platform") {
+					return <Tag color="blue">{t("system.menu.platformScope")}</Tag>;
+				}
+				if (record.scope === "business") {
+					return <Tag color="green">{t("system.menu.businessScope")}</Tag>;
+				}
+				return "-";
+			},
+		},
+		{
+			title: t("system.menu.hideInMenu"),
+			dataIndex: "hidden",
+			width: 110,
+			render: (_, record) => {
+				const hiddenLabel = record.hidden ? t("common.yes") : t("common.no");
+				return <Tag color={record.hidden ? "orange" : "green"}>{hiddenLabel}</Tag>;
+			},
 		},
 		{
 			disable: true,
 			title: t("common.status"),
 			dataIndex: "status",
 			valueType: "select",
-			width: 80,
+			width: 90,
 			render: (text, record) => {
 				return <Tag color={record.status === 1 ? "success" : "default"}>{text}</Tag>;
 			},
@@ -89,75 +158,7 @@ export function getConstantColumns(t: TFunction<"translation", undefined>): ProC
 				},
 			},
 		},
-		{
-			title: t("system.menu.menuType"),
-			dataIndex: "menuType",
-			width: 100,
-			valueEnum: getMenuTypeOptions(t).reduce((acc, curr) => {
-				acc[curr.value] = curr.label;
-				return acc;
-			}, {} as Record<number, string>),
-		},
-		{
-			title: t("system.menu.componentUrl"),
-			dataIndex: "component",
-			width: 120,
-			search: false,
-		},
-		{
-			title: t("system.menu.keepAlive"),
-			dataIndex: "keepAlive",
-			valueType: "select",
-			width: 80,
-			render: (_, record) => {
-				return t(record.keepAlive ? "common.yes" : "common.no");
-			},
-			valueEnum: getYesNoOptions(t).reduce((acc, curr) => {
-				acc.set(curr.value, curr.label);
-				return acc;
-			}, new Map()),
-		},
-		{
-			title: t("system.menu.hideInMenu"),
-			dataIndex: "hideInMenu",
-			valueType: "select",
-			width: 120,
-			render: (_, record) => {
-				return t(record.hideInMenu ? "common.yes" : "common.no");
-			},
-			valueEnum: getYesNoOptions(t).reduce((acc, curr) => {
-				acc.set(curr.value, curr.label);
-				return acc;
-			}, new Map()),
-		},
-		{
-			title: t("system.menu.currentActiveMenu"),
-			dataIndex: "currentActiveMenu",
-			width: 120,
-		},
-		{
-			title: t("system.menu.iframeLink"),
-			dataIndex: "iframeLink",
-			width: 120,
-		},
-		{
-			title: t("system.menu.externalLink"),
-			dataIndex: "externalLink",
-			width: 120,
-		},
-		{
-			title: t("common.createTime"),
-			dataIndex: "createTime",
-			valueType: "date",
-			width: 150,
-			search: false,
-		},
-		{
-			title: t("common.updateTime"),
-			dataIndex: "updateTime",
-			valueType: "dateTime",
-			width: 170,
-			search: false,
-		},
 	];
+
+	return columns;
 }

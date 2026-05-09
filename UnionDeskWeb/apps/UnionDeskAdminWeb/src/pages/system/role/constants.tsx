@@ -9,7 +9,7 @@ export function getConstantColumns(t: TFunction<"translation", undefined>): ProC
 		{
 			dataIndex: "index",
 			title: t("common.index"),
-			valueType: "indexBorder",
+			valueType: "index",
 			width: 80,
 		},
 		{

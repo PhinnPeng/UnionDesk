@@ -2,6 +2,7 @@ package com.uniondesk.iam.web;
 
 import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.auth.core.UserContextHolder;
+import com.uniondesk.common.web.ErrorCodes;
 import com.uniondesk.iam.core.IamService;
 import com.uniondesk.iam.core.RequirePermission;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,11 +34,11 @@ public class RequirePermissionInterceptor implements HandlerInterceptor {
             return true;
         }
         UserContext context = UserContextHolder.current()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "unauthorized"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, ErrorCodes.UNAUTHORIZED.message()));
         if (iamService.hasAnyPermission(context, Arrays.asList(annotation.value()))) {
             return true;
         }
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "forbidden");
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN.message());
     }
 
     private RequirePermission findRequirePermission(HandlerMethod handlerMethod) {

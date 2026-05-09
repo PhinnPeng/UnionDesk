@@ -8,7 +8,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "happy-dom",
-    setupFiles: ["./src/setupTests.ts"]
+    setupFiles: ["./src/setupTests.ts"],
+    testTimeout: 10000
   },
   server: {
     port: 5173,

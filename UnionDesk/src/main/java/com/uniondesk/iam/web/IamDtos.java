@@ -92,7 +92,9 @@ public final class IamDtos {
             Integer orderNo,
             String icon,
             String component,
-            boolean hidden) {
+            String scope,
+            boolean hidden,
+            String permissionCode) {
     }
 
     public record ActionView(
@@ -106,6 +108,7 @@ public final class IamDtos {
             long id,
             String code,
             String nodeType,
+            String scope,
             String name,
             String routePath,
             String componentKey,
@@ -125,6 +128,7 @@ public final class IamDtos {
             String routePath,
             String componentKey,
             String permissionCode,
+            String scope,
             Long parentId,
             Integer orderNo,
             String icon,
@@ -138,6 +142,7 @@ public final class IamDtos {
             String routePath,
             String componentKey,
             String permissionCode,
+            String scope,
             Long parentId,
             Integer orderNo,
             String icon,

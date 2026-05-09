@@ -37,13 +37,13 @@ describe("PlatformEntryButton", () => {
 		});
 	});
 
-	it("renders platform entry when the permission snapshot grants platform access", () => {
+	it("navigates to platform home without page refresh", () => {
 		mocks.platformAccess = true;
 		mocks.pathname = "/system/menu";
 
 		render(<PlatformEntryButton />);
 
-		const button = screen.getByRole("link", { name: "平台管理" });
+		const button = screen.getByRole("button");
 		expect(button).toBeInTheDocument();
 
 		fireEvent.click(button);
@@ -51,13 +51,13 @@ describe("PlatformEntryButton", () => {
 		expect(mocks.assign).not.toHaveBeenCalled();
 	});
 
-	it("shows return label on the platform page", () => {
+	it("returns to business home from platform page", () => {
 		mocks.platformAccess = true;
 		mocks.pathname = "/platform/home";
 
 		render(<PlatformEntryButton />);
 
-		const button = screen.getByRole("link", { name: "返回业务端" });
+		const button = screen.getByRole("button");
 		expect(button).toBeInTheDocument();
 
 		fireEvent.click(button);
@@ -71,6 +71,6 @@ describe("PlatformEntryButton", () => {
 
 		render(<PlatformEntryButton />);
 
-		expect(screen.queryByRole("button", { name: "平台管理" })).not.toBeInTheDocument();
+		expect(screen.queryByRole("button")).not.toBeInTheDocument();
 	});
 });

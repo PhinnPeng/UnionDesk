@@ -63,9 +63,11 @@ class SlaServiceTests {
         ArgumentCaptor<Object[]> updateArgs = ArgumentCaptor.forClass(Object[].class);
         org.mockito.Mockito.verify(jdbcTemplate)
                 .update(argThat(sql -> sql != null && sql.contains("UPDATE ticket")), updateArgs.capture());
-        assertThat(updateArgs.getValue()[0]).isEqualTo(LocalDateTime.parse("2026-05-03T07:30:00"));
-        assertThat(updateArgs.getValue()[1]).isEqualTo(LocalDateTime.parse("2026-05-03T08:30:00"));
-        assertThat(updateArgs.getValue()[2]).isEqualTo(101L);
+        assertThat(updateArgs.getValue()[0]).isEqualTo(30);
+        assertThat(updateArgs.getValue()[1]).isEqualTo(30);
+        assertThat(updateArgs.getValue()[2]).isEqualTo(90);
+        assertThat(updateArgs.getValue()[3]).isEqualTo(90);
+        assertThat(updateArgs.getValue()[4]).isEqualTo(101L);
     }
 
     @Test

@@ -1,13 +1,12 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
-import type { UserInfoType } from "#src/api/user/types";
 
-import { fetchAsyncRoutes } from "#src/api/user";
+import { fetchUserInfoAndRoutes } from "#src/api/user";
 import { useCurrentRoute } from "#src/hooks/use-current-route";
 import { hideLoading } from "#src/plugins/hide-loading";
 import { setupLoading } from "#src/plugins/loading";
 import { exception403Path, exception404Path, exception500Path, loginPath } from "#src/router/extra-info";
+import { appScopes, getAppHomePath } from "#src/router/extra-info/app-scope";
 import { accessRoutes, whiteRouteNames } from "#src/router/routes";
-import { isSendRoutingRequest } from "#src/router/routes/config";
 import { goLogin } from "#src/utils/request/go-login";
 import { generateRoutesFromBackend } from "#src/router/utils/generate-routes-from-backend";
 import { generateRoutesByFrontend } from "#src/router/utils/generate-routes-from-frontend";
@@ -48,36 +47,44 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	const { pathname, search } = useLocation();
 	const isLogin = useAuthStore(state => Boolean(state.token));
 	const isAuthorized = useUserStore(state => Boolean(state.id));
-	const getUserInfo = useUserStore(state => state.getUserInfo);
 	const userRoles = useUserStore(state => state.roles);
+	const userActions = useUserStore(state => state.actions);
+	const userMenus = useUserStore(state => state.menus ?? []);
 	const { setAccessStore, isAccessChecked, routeList } = useAccessStore();
 	const { enableBackendAccess, enableFrontendAceess } = usePreferencesStore(state => state);
 
 	const isPathInNoLoginWhiteList = noLoginWhiteList.includes(pathname);
 
 	useEffect(() => {
-		async function fetchUserInfoAndRoutes() {
+		async function loadAccessData() {
 			setupLoading();
-
-			const [userInfoResult, routeResult] = await Promise.allSettled([
-				isAuthorized ? Promise.resolve<UserInfoType | null>(null) : getUserInfo(),
-				isAuthorized && enableBackendAccess && isSendRoutingRequest
-					? fetchAsyncRoutes()
-					: Promise.resolve<AppRouteRecordRaw[] | null>(null),
-			] as const);
 
 			const routes: AppRouteRecordRaw[] = [];
 			const latestRoles: string[] = isAuthorized ? [...userRoles] : [];
+			let backendMenus: AppRouteRecordRaw[] = [];
+			let userInfoError: unknown = null;
 
-			if (!isAuthorized && userInfoResult.status === "fulfilled" && userInfoResult.value) {
-				latestRoles.push(...userInfoResult.value.roles ?? []);
-				if (enableBackendAccess && userInfoResult.value.menus?.length) {
-					routes.push(...await generateRoutesFromBackend(userInfoResult.value.menus));
+			try {
+				if (!isAuthorized) {
+					const snapshot = await fetchUserInfoAndRoutes();
+					latestRoles.splice(0, latestRoles.length, ...snapshot.userInfo.roles);
+					backendMenus = snapshot.routes.length ? snapshot.routes : (snapshot.userInfo.menus ?? []);
+				}
+				else if (userMenus.length > 0) {
+					backendMenus = userMenus;
+				}
+				else {
+					const snapshot = await fetchUserInfoAndRoutes();
+					latestRoles.splice(0, latestRoles.length, ...snapshot.userInfo.roles);
+					backendMenus = snapshot.routes.length ? snapshot.routes : (snapshot.userInfo.menus ?? []);
 				}
 			}
+			catch (error) {
+				userInfoError = error;
+			}
 
-			if (enableBackendAccess && isAuthorized && isSendRoutingRequest && routeResult.status === "fulfilled" && routeResult.value) {
-				routes.push(...await generateRoutesFromBackend(routeResult.value));
+			if (enableBackendAccess && backendMenus.length) {
+				routes.push(...await generateRoutesFromBackend(backendMenus));
 			}
 
 			if (enableFrontendAceess) {
@@ -87,10 +94,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
 			const uniqueRoutes = removeDuplicateRoutes(routes);
 			setAccessStore(uniqueRoutes);
 
-			const hasError = userInfoResult.status === "rejected" || routeResult.status === "rejected";
-			if (hasError) {
-				const unAuthorized = [userInfoResult, routeResult].some(result => result.status === "rejected" && isUnauthorizedReason(result.reason));
-				if (unAuthorized) {
+			if (userInfoError) {
+				if (isUnauthorizedReason(userInfoError)) {
 					goLogin();
 					return;
 				}
@@ -104,7 +109,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 		}
 
 		if (!whiteRouteNames.includes(pathname) && isLogin && !isAccessChecked) {
-			void fetchUserInfoAndRoutes();
+			void loadAccessData();
 		}
 	}, [
 		pathname,
@@ -114,10 +119,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
 		isAccessChecked,
 		enableBackendAccess,
 		enableFrontendAceess,
-		getUserInfo,
 		userRoles,
 		navigate,
 		setAccessStore,
+		userMenus,
 	]);
 
 	if (isPathInNoLoginWhiteList) {
@@ -151,7 +156,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	hideLoading();
 
 	if (pathname === "/") {
-		return <Navigate to={import.meta.env.VITE_BASE_HOME_PATH} replace />;
+		const hasBusinessMenus = userMenus.some(menu => menu.handle?.scope !== appScopes.platform);
+		const homePath = hasBusinessMenus ? getAppHomePath(appScopes.business) : getAppHomePath(appScopes.platform);
+		return <Navigate to={homePath} replace />;
 	}
 
 	const routeRoles = currentRoute?.handle?.roles;
@@ -169,6 +176,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
 	const hasRoutePermission = userRoles.some(role => routeRoles?.includes(role));
 	if (routeRoles && routeRoles.length && !hasRoutePermission) {
+		return <Navigate to={exception403Path} replace />;
+	}
+
+	const routeAuth = currentRoute?.handle?.auth;
+	if (routeAuth && !userActions.includes(routeAuth)) {
 		return <Navigate to={exception403Path} replace />;
 	}
 

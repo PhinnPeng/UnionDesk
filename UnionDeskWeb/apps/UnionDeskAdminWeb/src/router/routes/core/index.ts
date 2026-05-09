@@ -6,10 +6,9 @@ import authRoutes from "./auth";
 import exceptionRoutes from "./exception";
 import fallbackRoute from "./fallback";
 import personalCenterRoutes from "./personal-center";
-import platformRoutes from "./platform";
 
 /** 核心路由 */
 export const coreRoutes: any = [
-	...addRouteIdByPath([...authRoutes, ...exceptionRoutes, ...personalCenterRoutes, ...platformRoutes]),
+	...addRouteIdByPath([...authRoutes, ...exceptionRoutes, ...personalCenterRoutes]),
 	...fallbackRoute,
 ] satisfies RouteObject[];

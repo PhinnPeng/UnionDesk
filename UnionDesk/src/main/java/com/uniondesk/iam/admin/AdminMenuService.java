@@ -20,6 +20,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -40,8 +41,14 @@ public class AdminMenuService {
         this.clock = clock;
     }
 
-    public List<PermissionDefinition> listPermissionCodes() {
-        return AdminPermissionCatalog.list();
+    public List<PermissionDefinition> listPermissionCodes(@Nullable String scope) {
+        if (!StringUtils.hasText(scope)) {
+            return AdminPermissionCatalog.list();
+        }
+        String normalizedScope = scope.trim();
+        return AdminPermissionCatalog.list().stream()
+                .filter(permission -> normalizedScope.equals(permission.permissionScope()))
+                .toList();
     }
 
     public boolean handlesApiRequest(String method, String requestPath) {
@@ -63,6 +70,7 @@ public class AdminMenuService {
                             id,
                             code,
                             node_type,
+                            scope,
                             name,
                             route_path,
                             component_key,
@@ -98,6 +106,7 @@ public class AdminMenuService {
                             m.id,
                             m.code,
                             m.node_type,
+                            m.scope,
                             m.name,
                             m.route_path,
                             m.component_key,
@@ -143,12 +152,12 @@ public class AdminMenuService {
     @Transactional
     public AdminMenuNode createMenu(CreateAdminMenuCommand command) {
         ValidatedNode validated = validateNode(command.nodeType(), command.name(), command.routePath(), command.componentKey(),
-                command.permissionCode(), command.parentId(), command.orderNo(), command.icon(), command.hidden(), command.status(), null);
+                command.permissionCode(), command.scope(), command.parentId(), command.orderNo(), command.icon(), command.hidden(), command.status(), null);
         long nodeId = insertNode(validated);
         String generatedCode = generateNodeCode(nodeId);
         jdbcTemplate.update("UPDATE iam_admin_menu SET code = ? WHERE id = ?", generatedCode, nodeId);
         if (NODE_TYPE_MENU.equals(validated.nodeType())) {
-            insertRequiredButton(nodeId, validated.permissionCode());
+            insertRequiredButton(nodeId, validated.permissionCode(), validated.scope());
         }
         return findNodeById(nodeId).orElseThrow(() -> new IllegalStateException("menu create failed"));
     }
@@ -169,6 +178,7 @@ public class AdminMenuService {
                 command.routePath() == null ? existing.routePath() : command.routePath(),
                 command.componentKey() == null ? existing.componentKey() : command.componentKey(),
                 command.permissionCode() == null ? existingMenuPermissionCode : command.permissionCode(),
+                command.scope() == null ? existing.scope() : command.scope(),
                 command.parentId() == null ? existing.parentId() : command.parentId(),
                 command.orderNo() == null ? existing.orderNo() : command.orderNo(),
                 command.icon() == null ? existing.icon() : command.icon(),
@@ -178,6 +188,7 @@ public class AdminMenuService {
         jdbcTemplate.update("""
                         UPDATE iam_admin_menu
                         SET
+                            scope = ?,
                             name = ?,
                             route_path = ?,
                             component_key = ?,
@@ -189,6 +200,7 @@ public class AdminMenuService {
                             status = ?
                         WHERE id = ?
                         """,
+                validated.scope(),
                 validated.name(),
                 validated.routePath(),
                 validated.componentKey(),
@@ -200,7 +212,7 @@ public class AdminMenuService {
                 validated.status(),
                 menuId);
         if (NODE_TYPE_MENU.equals(existing.nodeType())) {
-            updateRequiredButton(menuId, validated.permissionCode());
+            updateRequiredButton(menuId, validated.permissionCode(), validated.scope());
         }
         return findNodeById(menuId).orElseThrow(() -> new IllegalArgumentException("menu not found"));
     }
@@ -328,6 +340,7 @@ public class AdminMenuService {
                             INSERT INTO iam_admin_menu (
                                 code,
                                 node_type,
+                                scope,
                                 name,
                                 route_path,
                                 component_key,
@@ -339,25 +352,26 @@ public class AdminMenuService {
                                 status,
                                 required
                             )
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                             """,
                     Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, generateTempCode());
             statement.setString(2, validated.nodeType());
-            statement.setString(3, validated.name());
-            statement.setString(4, validated.routePath());
-            statement.setString(5, validated.componentKey());
-            statement.setString(6, validated.permissionCode());
+            statement.setString(3, validated.scope());
+            statement.setString(4, validated.name());
+            statement.setString(5, validated.routePath());
+            statement.setString(6, validated.componentKey());
+            statement.setString(7, validated.permissionCode());
             if (validated.parentId() == null) {
-                statement.setObject(7, null);
+                statement.setObject(8, null);
             } else {
-                statement.setLong(7, validated.parentId());
+                statement.setLong(8, validated.parentId());
             }
-            statement.setInt(8, validated.orderNo());
-            statement.setString(9, validated.icon());
-            statement.setInt(10, validated.hidden() ? 1 : 0);
-            statement.setInt(11, validated.status());
-            statement.setInt(12, 0);
+            statement.setInt(9, validated.orderNo());
+            statement.setString(10, validated.icon());
+            statement.setInt(11, validated.hidden() ? 1 : 0);
+            statement.setInt(12, validated.status());
+            statement.setInt(13, 0);
             return statement;
         }, keyHolder);
         Number generatedId = keyHolder.getKey();
@@ -367,41 +381,44 @@ public class AdminMenuService {
         return generatedId.longValue();
     }
 
-    private void insertRequiredButton(long parentMenuId, String permissionCode) {
+    private void insertRequiredButton(long parentMenuId, String permissionCode, String scope) {
         PermissionDefinition definition = requirePermissionDefinition(permissionCode);
-        long buttonId = insertButton(parentMenuId, definition, true);
+        long buttonId = insertButton(parentMenuId, definition, true, scope);
         jdbcTemplate.update("UPDATE iam_admin_menu SET code = ? WHERE id = ?", generateNodeCode(buttonId), buttonId);
     }
 
-    private void updateRequiredButton(long menuId, String permissionCode) {
+    private void updateRequiredButton(long menuId, String permissionCode, String scope) {
         PermissionDefinition definition = requirePermissionDefinition(permissionCode);
         Optional<AdminMenuNode> requiredButton = findRequiredButton(menuId);
         if (requiredButton.isEmpty()) {
-            insertRequiredButton(menuId, permissionCode);
+            insertRequiredButton(menuId, permissionCode, scope);
             return;
         }
         ensurePermissionCodeAvailable(permissionCode, requiredButton.get().id());
         jdbcTemplate.update("""
                         UPDATE iam_admin_menu
                         SET
+                            scope = ?,
                             name = ?,
                             permission_code = ?,
                             status = 1,
                             hidden = 0
                         WHERE id = ?
                         """,
+                scope,
                 definition.name(),
                 definition.code(),
                 requiredButton.get().id());
     }
 
-    private long insertButton(long parentMenuId, PermissionDefinition definition, boolean required) {
+    private long insertButton(long parentMenuId, PermissionDefinition definition, boolean required, String scope) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement statement = connection.prepareStatement("""
                             INSERT INTO iam_admin_menu (
                                 code,
                                 node_type,
+                                scope,
                                 name,
                                 route_path,
                                 component_key,
@@ -413,14 +430,15 @@ public class AdminMenuService {
                                 status,
                                 required
                             )
-                            VALUES (?, 'button', ?, NULL, NULL, ?, ?, 0, NULL, 0, 1, ?)
+                            VALUES (?, 'button', ?, ?, NULL, NULL, ?, ?, 0, NULL, 0, 1, ?)
                             """,
                     Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, generateTempCode());
-            statement.setString(2, definition.name());
-            statement.setString(3, definition.code());
-            statement.setLong(4, parentMenuId);
-            statement.setInt(5, required ? 1 : 0);
+            statement.setString(2, scope);
+            statement.setString(3, definition.name());
+            statement.setString(4, definition.code());
+            statement.setLong(5, parentMenuId);
+            statement.setInt(6, required ? 1 : 0);
             return statement;
         }, keyHolder);
         Number generatedId = keyHolder.getKey();
@@ -436,6 +454,7 @@ public class AdminMenuService {
             String routePath,
             String componentKey,
             String permissionCode,
+            String scope,
             Long parentId,
             Integer orderNo,
             String icon,
@@ -450,6 +469,7 @@ public class AdminMenuService {
         String normalizedRoutePath = StringUtils.hasText(routePath) ? normalizeRoute(routePath) : null;
         String normalizedComponentKey = StringUtils.hasText(componentKey) ? componentKey.trim() : null;
         String normalizedPermissionCode = StringUtils.hasText(permissionCode) ? permissionCode.trim() : null;
+        String normalizedScope = StringUtils.hasText(scope) ? normalizeScope(scope) : null;
         Long normalizedParentId = parentId;
         if (normalizedParentId != null) {
             AdminMenuNode parent = findNodeById(normalizedParentId).orElseThrow(() -> new IllegalArgumentException("parent menu not found"));
@@ -467,6 +487,12 @@ public class AdminMenuService {
             if (NODE_TYPE_CATALOG.equals(normalizedNodeType) && !NODE_TYPE_CATALOG.equals(parent.nodeType())) {
                 throw new IllegalArgumentException("catalog parent must be catalog");
             }
+            if (normalizedScope == null) {
+                normalizedScope = parent.scope();
+            }
+        }
+        if (normalizedScope == null) {
+            normalizedScope = "business";
         }
         if (NODE_TYPE_CATALOG.equals(normalizedNodeType)) {
             if (normalizedRoutePath != null || normalizedComponentKey != null || normalizedPermissionCode != null) {
@@ -494,6 +520,7 @@ public class AdminMenuService {
             normalizedComponentKey = null;
         }
         return new ValidatedNode(
+                normalizedScope,
                 normalizedNodeType,
                 normalizedName,
                 normalizedRoutePath,
@@ -537,6 +564,14 @@ public class AdminMenuService {
         if (AdminPermissionCatalog.findByCode(permissionCode).isEmpty()) {
             throw new IllegalArgumentException("permissionCode not found");
         }
+    }
+
+    private String normalizeScope(String scope) {
+        String normalizedScope = normalizeRequired(scope, "scope").toLowerCase(Locale.ROOT);
+        if (!List.of("platform", "business").contains(normalizedScope)) {
+            throw new IllegalArgumentException("unsupported scope");
+        }
+        return normalizedScope;
     }
 
     private PermissionDefinition requirePermissionDefinition(String permissionCode) {
@@ -661,6 +696,7 @@ public class AdminMenuService {
                                 id,
                                 code,
                                 node_type,
+                                scope,
                                 name,
                                 route_path,
                                 component_key,
@@ -690,6 +726,7 @@ public class AdminMenuService {
                                 id,
                                 code,
                                 node_type,
+                                scope,
                                 name,
                                 route_path,
                                 component_key,
@@ -748,6 +785,7 @@ public class AdminMenuService {
                 nodeId,
                 rs.getString("code"),
                 nodeType,
+                rs.getString("scope"),
                 rs.getString("name"),
                 rs.getString("route_path"),
                 rs.getString("component_key"),
@@ -797,6 +835,7 @@ public class AdminMenuService {
             long id,
             String code,
             String nodeType,
+            String scope,
             String name,
             String routePath,
             String componentKey,
@@ -816,6 +855,7 @@ public class AdminMenuService {
             String routePath,
             String componentKey,
             String permissionCode,
+            String scope,
             Long parentId,
             Integer orderNo,
             String icon,
@@ -829,6 +869,7 @@ public class AdminMenuService {
             String routePath,
             String componentKey,
             String permissionCode,
+            String scope,
             Long parentId,
             Integer orderNo,
             String icon,
@@ -859,6 +900,7 @@ public class AdminMenuService {
     }
 
     private record ValidatedNode(
+            String scope,
             String nodeType,
             String name,
             String routePath,
@@ -887,6 +929,7 @@ public class AdminMenuService {
                     node.id(),
                     node.code(),
                     node.nodeType(),
+                    node.scope(),
                     node.name(),
                     node.routePath(),
                     node.componentKey(),

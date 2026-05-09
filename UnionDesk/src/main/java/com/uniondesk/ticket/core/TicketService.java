@@ -14,6 +14,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -150,6 +151,7 @@ public class TicketService {
         } else if ("processing".equalsIgnoreCase(command.status())) {
             slaService.recordFirstResponse(businessDomainId, ticketId);
         }
+        refreshTicketSla(businessDomainId, ticketId);
         return new TicketActionResult(ticketId);
     }
 
@@ -190,6 +192,7 @@ public class TicketService {
                 Map.of("ticket_id", ticketId, "assignee_staff_account_id", context.userId()), "success");
         slaService.recordFirstResponse(businessDomainId, ticketId);
         notificationCenterService.notifyTicketStatusChanged(businessDomainId, ticketId, current.customerId(), context.userId(), "processing");
+        refreshTicketSla(businessDomainId, ticketId);
         return new TicketActionResult(ticketId);
     }
 
@@ -229,6 +232,7 @@ public class TicketService {
         recordAudit(businessDomainId, context, "ticket:" + current.ticketNo(), "ticket.assign",
                 Map.of("ticket_id", ticketId, "assignee_staff_account_id", command.assigneeStaffAccountId()), "success");
         notificationCenterService.notifyTicketStatusChanged(businessDomainId, ticketId, current.customerId(), context.userId(), "processing");
+        refreshTicketSla(businessDomainId, ticketId);
         return new TicketActionResult(ticketId);
     }
 
@@ -306,6 +310,7 @@ public class TicketService {
         } else if (current.assignedTo() != null) {
             notificationCenterService.notifyTicketReply(businessDomainId, ticketId, current.assignedTo(), context.userId(), "customer");
         }
+        refreshTicketSla(businessDomainId, ticketId);
         return new TicketActionResult(replyId);
     }
 
@@ -473,6 +478,10 @@ public class TicketService {
     @Transactional(readOnly = true)
     public SlaService.SlaBreachDecision evaluateTicketSla(long businessDomainId, long ticketId) {
         return slaService.evaluateTicket(businessDomainId, ticketId);
+    }
+
+    private void refreshTicketSla(long businessDomainId, long ticketId) {
+        slaService.evaluateTicket(businessDomainId, ticketId);
     }
 
     private List<TicketRow> listTicketsInternal(long businessDomainId, Long customerUserId, String status, int limit) {
@@ -909,14 +918,27 @@ public class TicketService {
     }
 
     private long ensureIdentitySubject(long userId) {
-        Long subjectId = jdbcTemplate.queryForObject("""
-                        SELECT id
-                        FROM identity_subject
-                        WHERE id = ?
-                        LIMIT 1
-                        """, Long.class, userId);
+        Long subjectId = resolveAccountSubjectId("customer_account", userId);
         if (subjectId != null) {
             return subjectId;
+        }
+        subjectId = resolveAccountSubjectId("staff_account", userId);
+        if (subjectId != null) {
+            return subjectId;
+        }
+        Long identitySubjectId;
+        try {
+            identitySubjectId = jdbcTemplate.queryForObject("""
+                            SELECT id
+                            FROM identity_subject
+                            WHERE id = ?
+                            LIMIT 1
+                            """, Long.class, userId);
+        } catch (EmptyResultDataAccessException ignored) {
+            identitySubjectId = null;
+        }
+        if (identitySubjectId != null) {
+            return identitySubjectId;
         }
         UserIdentityRow user = null;
         try {
@@ -938,13 +960,43 @@ public class TicketService {
         String phone = user != null && StringUtils.hasText(user.mobile())
                 ? user.mobile()
                 : "user-" + userId;
-        jdbcTemplate.update("""
-                        INSERT INTO identity_subject (id, subject_type, phone, status)
-                        VALUES (?, 'person', ?, 'active')
-                        """,
-                userId,
-                phone);
-        return userId;
+        try {
+            jdbcTemplate.update("""
+                            INSERT INTO identity_subject (id, subject_type, phone, status)
+                            VALUES (?, 'person', ?, 'active')
+                            """,
+                    userId,
+                    phone);
+            return userId;
+        } catch (DuplicateKeyException ignored) {
+            Long existingSubjectId = jdbcTemplate.queryForObject("""
+                            SELECT id
+                            FROM identity_subject
+                            WHERE phone = ?
+                            LIMIT 1
+                            """,
+                    Long.class,
+                    phone);
+            if (existingSubjectId != null) {
+                return existingSubjectId;
+            }
+            throw ignored;
+        }
+    }
+
+    private Long resolveAccountSubjectId(String tableName, long accountId) {
+        try {
+            return jdbcTemplate.queryForObject("""
+                            SELECT subject_id
+                            FROM %s
+                            WHERE id = ?
+                            LIMIT 1
+                            """.formatted(tableName),
+                    Long.class,
+                    accountId);
+        } catch (EmptyResultDataAccessException ignored) {
+            return null;
+        }
     }
 
     private String serializeJson(Object value) {

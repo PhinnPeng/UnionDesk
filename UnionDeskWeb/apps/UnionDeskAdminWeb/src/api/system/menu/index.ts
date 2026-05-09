@@ -1,24 +1,59 @@
+import { requestBackendJson } from "#src/api/backend";
+
+import type { CreateMenuPayload, UpdateMenuPayload } from "@uniondesk/shared";
+
 import type { MenuItemType } from "./types";
-import { request } from "#src/utils/request";
 
 export * from "./types";
 
-/* 获取菜单列表 */
-export function fetchMenuList(data: any) {
-	return request.get<ApiListResponse<MenuItemType>>("menu-list", { searchParams: data, ignoreLoading: true }).json();
+export function fetchMenuTree(params?: { scope?: "platform" | "business" }): Promise<MenuItemType[]> {
+	const query = new URLSearchParams();
+	if (params?.scope) {
+		query.set("scope", params.scope);
+	}
+	const path = query.size > 0 ? `v1/iam/menus/tree?${query.toString()}` : "v1/iam/menus/tree";
+	return requestBackendJson<MenuItemType[]>(path);
 }
 
-/* 新增菜单 */
-export function fetchAddMenuItem(data: MenuItemType) {
-	return request.post<ApiResponse<string>>("menu-item", { json: data, ignoreLoading: true }).json();
+export function fetchCreateMenu(data: CreateMenuPayload): Promise<unknown> {
+	return requestBackendJson("v1/iam/menus", {
+		method: "POST",
+		json: data,
+	});
 }
 
-/* 修改菜单 */
-export function fetchUpdateMenuItem(data: MenuItemType) {
-	return request.put<ApiResponse<string>>("menu-item", { json: data, ignoreLoading: true }).json();
+export function fetchUpdateMenu(id: number, data: UpdateMenuPayload): Promise<unknown> {
+	return requestBackendJson(`v1/iam/menus/${id}`, {
+		method: "PUT",
+		json: data,
+	});
 }
 
-/* 删除菜单 */
+export function fetchDeleteMenu(id: number): Promise<unknown> {
+	return requestBackendJson(`v1/iam/menus/${id}`, {
+		method: "DELETE",
+	});
+}
+
+export function fetchMenuList(params?: { scope?: "platform" | "business" }) {
+	return fetchMenuTree(params);
+}
+
+export function fetchAddMenuItem(data: CreateMenuPayload) {
+	return fetchCreateMenu(data);
+}
+
+export function fetchUpdateMenuItem(idOrData: number | (UpdateMenuPayload & { id?: number }), data?: UpdateMenuPayload) {
+	if (typeof idOrData === "number") {
+		return fetchUpdateMenu(idOrData, data ?? {});
+	}
+	if (typeof idOrData.id !== "number") {
+		throw new Error("menu id is required");
+	}
+	const { id, ...payload } = idOrData;
+	return fetchUpdateMenu(id, payload);
+}
+
 export function fetchDeleteMenuItem(id: number) {
-	return request.delete<ApiResponse<string>>("menu-item", { json: id, ignoreLoading: true }).json();
+	return fetchDeleteMenu(id);
 }

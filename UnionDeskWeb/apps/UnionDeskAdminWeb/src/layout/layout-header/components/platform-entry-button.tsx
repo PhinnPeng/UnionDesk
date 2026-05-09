@@ -29,7 +29,6 @@ export function PlatformEntryButton({ className, ...restProps }: ButtonProps) {
 		<BasicButton
 			{...restProps}
 			type="text"
-			href={targetPath}
 			aria-label={label}
 			title={label}
 			className={cn(className, "rounded-full px-3")}

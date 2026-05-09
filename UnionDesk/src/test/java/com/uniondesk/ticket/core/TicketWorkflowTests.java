@@ -79,6 +79,7 @@ class TicketWorkflowTests {
 
         assertThat(result.id()).isEqualTo(101L);
         verify(slaService).recordFirstResponse(1L, 101L);
+        verify(slaService).evaluateTicket(1L, 101L);
         verify(notificationCenterService).notifyTicketStatusChanged(1L, 101L, 1L, 2L, "processing");
         ArgumentCaptor<Object[]> historyInsert = ArgumentCaptor.forClass(Object[].class);
         verify(jdbcTemplate).update(argThat(sql -> sql != null && sql.contains("INSERT INTO ticket_history")), historyInsert.capture());
@@ -105,6 +106,7 @@ class TicketWorkflowTests {
 
         assertThat(result.id()).isEqualTo(101L);
         verify(slaService).recordResolution(1L, 101L);
+        verify(slaService).evaluateTicket(1L, 101L);
         verify(notificationCenterService).notifyTicketStatusChanged(1L, 101L, 1L, 2L, "closed");
     }
 

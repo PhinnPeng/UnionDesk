@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => {
 		goLogin: vi.fn(),
 		navigate: vi.fn(),
 		navigateElement: vi.fn(),
-		getUserInfo,
+		fetchUserInfoAndRoutes: vi.fn(),
 		setAccessStore: vi.fn(),
 		hideLoading: vi.fn(),
 		setupLoading: vi.fn(),
@@ -22,7 +22,8 @@ const mocks = vi.hoisted(() => {
 		userState: {
 			id: 0,
 			roles: [],
-			getUserInfo,
+			actions: [] as string[],
+			menus: [] as any[],
 		},
 		accessState: {
 			setAccessStore: vi.fn(),
@@ -37,6 +38,7 @@ const mocks = vi.hoisted(() => {
 			pathname: "/",
 			search: "",
 		},
+		currentRoute: undefined as any,
 	};
 });
 
@@ -52,8 +54,12 @@ vi.mock("#src/plugins/loading", () => ({
 	setupLoading: mocks.setupLoading,
 }));
 
+vi.mock("#src/api/user", () => ({
+	fetchUserInfoAndRoutes: mocks.fetchUserInfoAndRoutes,
+}));
+
 vi.mock("#src/hooks/use-current-route", () => ({
-	useCurrentRoute: () => undefined,
+	useCurrentRoute: () => mocks.currentRoute,
 }));
 
 vi.mock("#src/router/extra-info", () => ({
@@ -117,7 +123,7 @@ import { AuthGuard } from "./auth-guard";
 describe("AuthGuard", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.getUserInfo.mockRejectedValue({
+		mocks.fetchUserInfoAndRoutes.mockRejectedValue({
 			response: {
 				status: 401,
 			},
@@ -125,9 +131,12 @@ describe("AuthGuard", () => {
 		mocks.authState.token = "stale-token";
 		mocks.userState.id = 0;
 		mocks.userState.roles = [];
+		mocks.userState.actions = [];
+		mocks.userState.menus = [];
 		mocks.accessState.isAccessChecked = false;
 		mocks.locationState.pathname = "/";
 		mocks.locationState.search = "";
+		mocks.currentRoute = undefined;
 	});
 
 	it("redirects to login when the current token is unauthorized", async () => {
@@ -148,7 +157,7 @@ describe("AuthGuard", () => {
 		"/system/menu",
 		"/platform/menu",
 	])("waits for access restoration on %s refresh instead of replacing the current route with login", (pathname) => {
-		mocks.getUserInfo.mockReturnValue(new Promise(() => undefined));
+		mocks.fetchUserInfoAndRoutes.mockReturnValue(new Promise(() => undefined));
 		mocks.locationState.pathname = pathname;
 
 		render(
@@ -159,6 +168,92 @@ describe("AuthGuard", () => {
 
 		expect(mocks.navigateElement).not.toHaveBeenCalledWith(expect.objectContaining({
 			to: "/login",
+		}));
+	});
+
+	it("redirects to 403 when the current route declares auth but the user lacks the action", () => {
+		mocks.authState.token = "valid-token";
+		mocks.userState.id = 1;
+		mocks.userState.actions = ["platform.menu.create"];
+		mocks.userState.menus = [
+			{
+				path: "/platform/menu",
+				handle: {
+					scope: "platform",
+				},
+			},
+		] as any;
+		mocks.accessState.isAccessChecked = true;
+		mocks.locationState.pathname = "/platform/menu";
+		mocks.currentRoute = {
+			handle: {
+				auth: "platform.menu.read",
+			},
+		} as any;
+
+		render(
+			<AuthGuard>
+				<div>content</div>
+			</AuthGuard>,
+		);
+
+		expect(mocks.navigateElement).toHaveBeenCalledWith(expect.objectContaining({
+			to: "/exception/403",
+		}));
+	});
+
+	it("renders children when the current route auth is granted", () => {
+		mocks.authState.token = "valid-token";
+		mocks.userState.id = 1;
+		mocks.userState.actions = ["platform.menu.read"];
+		mocks.userState.menus = [
+			{
+				path: "/platform/menu",
+				handle: {
+					scope: "platform",
+				},
+			},
+		] as any;
+		mocks.accessState.isAccessChecked = true;
+		mocks.locationState.pathname = "/platform/menu";
+		mocks.currentRoute = {
+			handle: {
+				auth: "platform.menu.read",
+			},
+		} as any;
+
+		const { getByText } = render(
+			<AuthGuard>
+				<div>content</div>
+			</AuthGuard>,
+		);
+
+		expect(getByText("content")).toBeTruthy();
+	});
+
+	it("redirects the root path to the platform home when only platform menus are available", () => {
+		mocks.authState.token = "valid-token";
+		mocks.userState.id = 1;
+		mocks.userState.menus = [
+			{
+				path: "/platform/menu",
+				handle: {
+					scope: "platform",
+				},
+			},
+		] as any;
+		mocks.accessState.isAccessChecked = true;
+		mocks.locationState.pathname = "/";
+		mocks.currentRoute = undefined;
+
+		render(
+			<AuthGuard>
+				<div>content</div>
+			</AuthGuard>,
+		);
+
+		expect(mocks.navigateElement).toHaveBeenCalledWith(expect.objectContaining({
+			to: "/platform/home",
 		}));
 	});
 });

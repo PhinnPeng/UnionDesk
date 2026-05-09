@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -289,35 +290,83 @@ public class NotificationCenterService {
     }
 
     private long ensureIdentitySubject(long userId) {
-        Long subjectId = jdbcTemplate.queryForObject("""
-                        SELECT id
-                        FROM identity_subject
-                        WHERE id = ?
-                        LIMIT 1
-                        """,
-                Long.class,
-                userId);
+        Long subjectId = resolveAccountSubjectId("customer_account", userId);
         if (subjectId != null) {
             return subjectId;
         }
-        String phone = jdbcTemplate.queryForObject("""
-                        SELECT COALESCE(NULLIF(mobile, ''), CONCAT('user-', id))
-                        FROM user_account
-                        WHERE id = ?
-                        LIMIT 1
-                        """,
-                String.class,
-                userId);
+        subjectId = resolveAccountSubjectId("staff_account", userId);
+        if (subjectId != null) {
+            return subjectId;
+        }
+        Long identitySubjectId;
+        try {
+            identitySubjectId = jdbcTemplate.queryForObject("""
+                            SELECT id
+                            FROM identity_subject
+                            WHERE id = ?
+                            LIMIT 1
+                            """,
+                    Long.class,
+                    userId);
+        } catch (EmptyResultDataAccessException ignored) {
+            identitySubjectId = null;
+        }
+        if (identitySubjectId != null) {
+            return identitySubjectId;
+        }
+        String phone = null;
+        try {
+            phone = jdbcTemplate.queryForObject("""
+                            SELECT COALESCE(NULLIF(mobile, ''), CONCAT('user-', id))
+                            FROM user_account
+                            WHERE id = ?
+                            LIMIT 1
+                            """,
+                    String.class,
+                    userId);
+        } catch (EmptyResultDataAccessException ignored) {
+            // fall back to a deterministic placeholder phone number
+        }
         if (!StringUtils.hasText(phone)) {
             phone = "user-" + userId;
         }
-        jdbcTemplate.update("""
-                        INSERT INTO identity_subject (id, subject_type, phone, status)
-                        VALUES (?, 'person', ?, 'active')
-                        """,
-                userId,
-                phone);
-        return userId;
+        try {
+            jdbcTemplate.update("""
+                            INSERT INTO identity_subject (id, subject_type, phone, status)
+                            VALUES (?, 'person', ?, 'active')
+                            """,
+                    userId,
+                    phone);
+            return userId;
+        } catch (DuplicateKeyException ignored) {
+            Long existingSubjectId = jdbcTemplate.queryForObject("""
+                            SELECT id
+                            FROM identity_subject
+                            WHERE phone = ?
+                            LIMIT 1
+                            """,
+                    Long.class,
+                    phone);
+            if (existingSubjectId != null) {
+                return existingSubjectId;
+            }
+            throw ignored;
+        }
+    }
+
+    private Long resolveAccountSubjectId(String tableName, long accountId) {
+        try {
+            return jdbcTemplate.queryForObject("""
+                            SELECT subject_id
+                            FROM %s
+                            WHERE id = ?
+                            LIMIT 1
+                            """.formatted(tableName),
+                    Long.class,
+                    accountId);
+        } catch (EmptyResultDataAccessException ignored) {
+            return null;
+        }
     }
 
     private void recordAudit(

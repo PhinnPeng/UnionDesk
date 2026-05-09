@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.uniondesk.common.demo.DemoDtos.BusinessDomainView;
 import com.uniondesk.common.demo.DemoDtos.LoginUserView;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,13 +14,57 @@ public final class AuthDtos {
     }
 
     public record LoginRequest(
-            @JsonAlias({"identifier", "loginName"})
+            @JsonAlias({"identifier", "loginName", "login_name"})
             @NotBlank String username,
             @NotBlank String password,
-            String captchaToken) {
+            @JsonAlias({"captcha_token"})
+            String captchaToken,
+            @JsonAlias({"portal_type"})
+            String portalType) {
         public LoginRequest(String username, String password) {
-            this(username, password, null);
+            this(username, password, null, null);
         }
+    }
+
+    public record RegisterRequest(
+            @JsonAlias({"login_name"}) @NotBlank String loginName,
+            @NotBlank String password,
+            @JsonAlias({"display_name"}) String displayName,
+            @NotBlank String phone,
+            String email,
+            @JsonAlias({"domain_id"}) Long domainId,
+            @JsonAlias({"invitation_code"}) String invitationCode,
+            @JsonAlias({"captcha_token"}) String captchaToken) {
+    }
+
+    public record RegisterResponse(
+            String accessToken,
+            String refreshToken,
+            long accountId) {
+    }
+
+    public record PasswordResetRequest(
+            @JsonAlias({"login_name"}) @NotBlank String loginName,
+            @JsonAlias({"portal_type"}) @NotBlank String portalType,
+            @JsonAlias({"captcha_token"}) String captchaToken) {
+    }
+
+    public record PasswordResetResponse(
+            String channel,
+            String hint) {
+    }
+
+    public record PasswordResetConfirmRequest(
+            @NotBlank String token,
+            @JsonAlias({"new_password"}) @NotBlank String newPassword) {
+    }
+
+    public record ChangePasswordRequest(
+            @JsonAlias({"old_password"}) @NotBlank String oldPassword,
+            @JsonAlias({"new_password"}) @NotBlank String newPassword) {
+    }
+
+    public record EmptyResponse() {
     }
 
     public record CaptchaChallengeResponse(
@@ -45,6 +90,8 @@ public final class AuthDtos {
             String clientCode,
             String tokenType,
             long expiresInSeconds,
+            String portalType,
+            String subjectId,
             LoginUserView user,
             List<BusinessDomainView> accessibleDomains,
             long defaultBusinessDomainId) {
@@ -130,13 +177,16 @@ public final class AuthDtos {
     }
 
     public record StepUpRequest(
-            @NotBlank String password) {
+            @NotBlank String password,
+            String operationCode) {
     }
 
     public record StepUpResponse(
             String stepUpToken,
             String mode,
-            long expiresInSeconds) {
+            long expiresInSeconds,
+            String reusePolicy,
+            String operationCode) {
     }
 
     public record CurrentUserResponse(
@@ -147,6 +197,22 @@ public final class AuthDtos {
             String role,
             String clientCode,
             Long businessDomainId,
-            List<String> roles) {
+            List<String> roles,
+            String subjectId,
+            String accountId,
+            String accountType,
+            String loginName,
+            String displayName,
+            String avatarUrl,
+            String phone,
+            List<String> platformRoles,
+            CurrentDomainView currentDomain) {
+    }
+
+    public record CurrentDomainView(
+            String id,
+            String name,
+            List<String> roles,
+            List<String> permissions) {
     }
 }

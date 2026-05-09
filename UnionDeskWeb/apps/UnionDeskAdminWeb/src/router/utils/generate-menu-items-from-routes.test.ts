@@ -13,11 +13,17 @@ describe("generateMenuItemsFromRoutes", () => {
 	const routeList = [
 		createRoute({
 			path: "/system",
-			handle: { title: "系统管理" },
+			handle: {
+				title: "系统管理",
+				scope: appScopes.business,
+			},
 			children: [
 				createRoute({
 					path: "/system/user",
-					handle: { title: "用户管理" },
+					handle: {
+						title: "用户管理",
+						scope: appScopes.business,
+					},
 				}),
 			],
 		}),
@@ -26,15 +32,22 @@ describe("generateMenuItemsFromRoutes", () => {
 			handle: {
 				title: "平台管理",
 				hideInMenu: true,
+				scope: appScopes.platform,
 			},
 			children: [
 				createRoute({
 					path: "/platform/home",
-					handle: { title: "平台首页" },
+					handle: {
+						title: "平台首页",
+						scope: appScopes.platform,
+					},
 				}),
 				createRoute({
 					path: "/platform/user",
-					handle: { title: "平台用户" },
+					handle: {
+						title: "平台用户",
+						scope: appScopes.platform,
+					},
 				}),
 			],
 		}),
@@ -69,6 +82,66 @@ describe("generateMenuItemsFromRoutes", () => {
 				key: "/platform/user",
 				label: "平台用户",
 			},
+		]);
+	});
+
+	it("prefers explicit scope over the route path prefix", () => {
+		const platformMenus = generateMenuItemsFromRoutes([
+			createRoute({
+				path: "/system/legacy-platform",
+				handle: {
+					title: "平台入口",
+					scope: appScopes.platform,
+				},
+			}),
+		], appScopes.platform);
+
+		expect(platformMenus).toEqual([
+			{
+				key: "/system/legacy-platform",
+				label: "平台入口",
+			},
+		]);
+	});
+
+	it("groups platform role and menu under permission management", () => {
+		const platformMenus = generateMenuItemsFromRoutes([
+			createRoute({
+				path: "/platform",
+				handle: {
+					title: "平台管理",
+					hideInMenu: true,
+					scope: appScopes.platform,
+				},
+				children: [
+					createRoute({
+						path: "/platform/role",
+						handle: {
+							title: "common.menu.role",
+							scope: appScopes.platform,
+						},
+					}),
+					createRoute({
+						path: "/platform/menu",
+						handle: {
+							title: "common.menu.menu",
+							scope: appScopes.platform,
+						},
+					}),
+				],
+			}),
+		], appScopes.platform);
+
+		expect(platformMenus).toHaveLength(2);
+		expect(platformMenus).toEqual([
+			expect.objectContaining({
+				key: "/platform/role",
+				label: "common.menu.role",
+			}),
+			expect.objectContaining({
+				key: "/platform/menu",
+				label: "common.menu.menu",
+			}),
 		]);
 	});
 });

@@ -28,7 +28,7 @@
 | TC-012 | 后端主责 | `domain_admin` 保护规则 | `.\mvnw.cmd -q test` | 后端：未联调；前端：未联调；数据库：未联调 | 最后一名域管理员保护未完成 |
 | TC-053 | 后端主责，前端协同 | `/api/v1/admin/staff/{staff_id}/platform-roles`，`platform_role` | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：未联调 | 最后一名平台管理员保护未完成 |
 | TC-013 | 后端主责，前端/DB 协同 | `POST /domains/{id}/tickets`，`ticket`，`ticket_type`，`ticket_history` | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskCustomerWeb test:run` | 后端：未联调；前端：未联调；数据库：未联调 | 客户提单、编号生成、落历史未完成 |
-| TC-014 | 后端主责，前端协同 | `claim`，`assign`，`reply`，`status`，`ticket_reply` | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：未联调 | 领取、指派、回复、关闭闭环未完成 |
+| TC-014 | 后端主责，前端协同 | `claim`，`assign`，`reply`，`status`，`ticket_reply` | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：未联调 | shared 层 ticket aliases 已对齐，前端 ticket 详情页仍待切换到新 API |
 | TC-015 | 后端主责，前端协同 | `withdraw`，`ticket.status` | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskCustomerWeb test:run` | 后端：未联调；前端：未联调；数据库：未联调 | 客户撤回与状态限制未完成 |
 | TC-016 | 后端主责 | `version`，乐观锁校验 | `.\mvnw.cmd -q test` | 后端：未联调；前端：未联调；数据库：未联调 | 并发冲突提示与版本控制未完成 |
 | TC-017 | 后端主责 | 工单状态机 | `.\mvnw.cmd -q test` | 后端：未联调；前端：未联调；数据库：未联调 | 非法状态流转拒绝未完成 |
@@ -53,8 +53,8 @@
 | TC-054 | 后端主责，前端协同 | `/api/v1/attachments/upload`，`/download`，`file_attachment` | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskCustomerWeb test:run` | 后端：未联调；前端：未联调；数据库：未联调 | 本地附件降级链路未完成 |
 | TC-036 | 后端主责，前端协同 | 统一错误码表，`request_id` | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：不适用 | 统一错误码和排障串未完成 |
 | TC-037 | QA/文档主责 | Swagger/OpenAPI、错误码表、部署手册 | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test && pnpm --dir UnionDeskWeb/apps/UnionDeskCustomerWeb test:run` | 待验证 | 交付文档未齐套 |
-| TC-038 | 后端主责，前端协同 | `ticket_relation`，合并接口 | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：未联调 | 工单合并与主单提示未完成 |
-| TC-039 | 后端主责，前端协同 | `quick_reply_template`，关闭工单回复 | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：未联调 | 快速回复结束语未完成 |
+| TC-038 | 后端主责，前端协同 | `ticket_relation`，合并接口 | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：未联调 | shared 层 mergeTicket alias 已补，工单合并页仍待接线 |
+| TC-039 | 后端主责，前端协同 | `quick_reply_template`，关闭工单回复 | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：未联调 | shared 层 reply/close aliases 已补，快速回复结束语前端仍待接线 |
 | TC-040 | 后端主责，前端/DB 协同 | `ticket_template`，`dynamic_field_config` | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test && pnpm --dir UnionDeskWeb/apps/UnionDeskCustomerWeb test:run` | 后端：未联调；前端：未联调；数据库：未联调 | 工单模板分层未完成 |
 | TC-041 | 后端主责，DB 协同 | `ticket_priority_level`，SLA 违约动作 | `.\mvnw.cmd -q test` | 后端：未联调；前端：未联调；数据库：未联调 | 域级优先级与违约动作未完成 |
 | TC-042 | 后端主责，前端协同 | `ticket:view:self`，数据范围权限后缀 | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：未联调 | 数据范围权限未完成 |
@@ -62,8 +62,8 @@
 | TC-044 | 后端主责，DB 协同 | `system_config`，`domain_config`，密码策略 | `.\mvnw.cmd -q test` | 后端：未联调；前端：未联调；数据库：未联调 | 密码复杂度策略未完成 |
 | TC-045 | 后端主责，前端/DB 协同 | `system_config`，`domain_config` | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：未联调 | 系统配置与域配置未完成 |
 | TC-046 | 后端主责，前端协同 | `quick_reply_template` | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：未联调 | 快捷回复模板管理未完成 |
-| TC-047 | 后端主责，DB 协同 | `ticket_history` | `.\mvnw.cmd -q test` | 后端：未联调；前端：未联调；数据库：未联调 | 工单操作历史未完成 |
-| TC-048 | 后端主责，前端协同 | 工单时间线接口，`ticket_reply` | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskCustomerWeb test:run && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：未联调 | 回复时间线展示未完成 |
+| TC-047 | 后端主责，DB 协同 | `ticket_history` | `.\mvnw.cmd -q test` | 后端：未联调；前端：未联调；数据库：未联调 | shared 层 fetchTicketHistory alias 已补，工单操作历史仍待端到端验证 |
+| TC-048 | 后端主责，前端协同 | 工单时间线接口，`ticket_reply` | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskCustomerWeb test:run && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：未联调 | shared 层 ticket detail / reply aliases 已补，回复时间线展示仍待前端切换 |
 | TC-049 | 后端主责，前端协同 | `audit_log`，域筛选查询 | `.\mvnw.cmd -q test && pnpm --dir UnionDeskWeb/apps/UnionDeskAdminWeb test` | 后端：未联调；前端：未联调；数据库：未联调 | 审计日志域筛选未完成 |
 | TC-050 | 后端/运维主责 | 环境隔离配置 | `docker compose up -d && .\mvnw.cmd -q test` | 后端：待验证；前端：待验证；数据库：待验证 | 多环境隔离未完成 |
 | TC-051 | 后端主责 | Redis 使用点审查 | `.\mvnw.cmd -q test` | 后端：待验证；前端：不适用；数据库：待验证 | Redis 用途限定未完成 |

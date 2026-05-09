@@ -2,6 +2,7 @@ package com.uniondesk.auth.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uniondesk.common.web.ApiResponse;
+import com.uniondesk.common.web.ErrorCodes;
 import com.uniondesk.iam.core.IamService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -29,6 +30,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/v1/health",
             "/api/v1/readiness",
             "/api/v1/auth/login",
+            "/api/v1/auth/register",
+            "/api/v1/auth/password/reset-request",
+            "/api/v1/auth/password/reset",
             "/api/v1/auth/login-config",
             "/api/v1/auth/refresh",
             "/actuator/health",
@@ -62,7 +66,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             String clientCodeHeader = request.getHeader(AuthClientHeaders.CLIENT_CODE_HEADER);
             if (!StringUtils.hasText(clientCodeHeader)) {
-                writeUnauthorized(response, "missing client code");
+                writeUnauthorized(response, ErrorCodes.AUTH_CLIENT_CODE_MISSING);
                 return;
             }
             Optional<String> token = resolveToken(request);
@@ -98,7 +102,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             if (SecurityContextHolder.getContext().getAuthentication() == null
                     && token.isPresent()) {
-                writeUnauthorized(response, "unauthorized");
+                writeUnauthorized(response, ErrorCodes.UNAUTHORIZED);
                 return;
             }
             filterChain.doFilter(request, response);
@@ -124,14 +128,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private void writeUnauthorized(HttpServletResponse response, String message) throws IOException {
+        writeUnauthorized(response, ErrorCodes.UNAUTHORIZED, message);
+    }
+
+    private void writeUnauthorized(HttpServletResponse response, ErrorCodes errorCode) throws IOException {
+        writeUnauthorized(response, errorCode, errorCode.message());
+    }
+
+    private void writeUnauthorized(HttpServletResponse response, ErrorCodes errorCode, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        objectMapper.writeValue(response.getWriter(), ApiResponse.error("UNAUTHORIZED", message));
+        objectMapper.writeValue(response.getWriter(), ApiResponse.error(String.valueOf(errorCode.code()), message));
     }
 
     private void writeForbidden(HttpServletResponse response) throws IOException {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        objectMapper.writeValue(response.getWriter(), ApiResponse.error("FORBIDDEN", "forbidden"));
+        objectMapper.writeValue(response.getWriter(), ApiResponse.error(
+                String.valueOf(ErrorCodes.FORBIDDEN.code()),
+                ErrorCodes.FORBIDDEN.message()));
     }
 }

@@ -27,6 +27,7 @@
 		"system": "System Management",
 		"user": "User Management",
 		"role": "Role Management",
+		"permission": "Permission Management",
 		"menu": "Menu Management",
 		"dept": "Department Management",
 		"personalCenter": "Personal Center",

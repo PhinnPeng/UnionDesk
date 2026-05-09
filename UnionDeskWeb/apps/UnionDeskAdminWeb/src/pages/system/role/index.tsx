@@ -35,11 +35,9 @@ export default function Role() {
 	const deleteRoleItemMutation = useMutation({
 		mutationFn: fetchDeleteRoleItem,
 	});
-	/* Detail Data */
 	const [isOpen, setIsOpen] = useState(false);
 	const [title, setTitle] = useState("");
 	const [detailData, setDetailData] = useState<Partial<RoleItemType> & { menus?: string[] }>({});
-
 	const actionRef = useRef<ActionType>(null);
 
 	const handleDeleteRow = async (id: number, action?: ProCoreActionType<object>) => {
@@ -56,53 +54,43 @@ export default function Role() {
 			key: "option",
 			width: 120,
 			fixed: "right",
-			render: (text, record, _, action) => {
-				return [
-					<BasicButton
-						key="editable"
-						type="link"
-						size="small"
-						disabled={!hasAccessByCodes(accessControlCodes.update)}
-						onClick={async () => {
-							/* 请求角色菜单权限 */
-							const responseData = await fetchMenuByRoleId({ id: record.id });
-							setIsOpen(true);
-							setTitle(t("system.role.editRole"));
-							setDetailData({ ...record, menus: responseData.result });
-						}}
-					>
-						{t("common.edit")}
-					</BasicButton>,
-					<Popconfirm
-						key="delete"
-						title={t("common.confirmDelete")}
-						onConfirm={() => handleDeleteRow(record.id, action)}
-						okText={t("common.confirm")}
-						cancelText={t("common.cancel")}
-					>
-						<BasicButton type="link" size="small" disabled={!hasAccessByCodes(accessControlCodes.delete)}>{t("common.delete")}</BasicButton>
-					</Popconfirm>,
-				];
-			},
+			render: (_, record, __, action) => [
+				<BasicButton
+					key="editable"
+					type="link"
+					size="small"
+					disabled={!hasAccessByCodes(accessControlCodes.update)}
+					onClick={async () => {
+						const responseData = await fetchMenuByRoleId({ id: record.id });
+						setIsOpen(true);
+						setTitle(t("system.role.editRole"));
+						setDetailData({ ...record, menus: responseData.result });
+					}}
+				>
+					{t("common.edit")}
+				</BasicButton>,
+				<Popconfirm
+					key="delete"
+					title={t("common.confirmDelete")}
+					onConfirm={() => handleDeleteRow(record.id, action)}
+					okText={t("common.confirm")}
+					cancelText={t("common.cancel")}
+				>
+					<BasicButton type="link" size="small" disabled={!hasAccessByCodes(accessControlCodes.delete)}>
+						{t("common.delete")}
+					</BasicButton>
+				</Popconfirm>,
+			],
 		},
 	];
 
-	const onCloseChange = () => {
-		setIsOpen(false);
-		setDetailData({});
-	};
-
-	const refreshTable = () => {
-		actionRef.current?.reload();
-	};
 	return (
-		<BasicContent className="h-full">
+		<BasicContent className="h-full bg-colorBgLayout">
 			<BasicTable<RoleItemType>
 				adaptive
 				columns={columns}
 				actionRef={actionRef}
 				request={async (params) => {
-					// console.log(sort, filter);
 					const responseData = await fetchRoleList(params);
 					return {
 						...responseData,
@@ -110,7 +98,7 @@ export default function Role() {
 						total: responseData.result.total,
 					};
 				}}
-				headerTitle={`${t("common.menu.role")} （${t("common.demoOnly")}）`}
+				headerTitle="角色管理"
 				toolBarRender={() => [
 					<Button
 						key="add-role"
@@ -129,11 +117,17 @@ export default function Role() {
 			<Detail
 				title={title}
 				open={isOpen}
-				onCloseChange={onCloseChange}
+				onCloseChange={() => {
+					setIsOpen(false);
+					setDetailData({});
+				}}
 				detailData={detailData}
-				refreshTable={refreshTable}
+				refreshTable={() => {
+					actionRef.current?.reload();
+				}}
 				treeData={handleTree(menuItems || [])}
 			/>
 		</BasicContent>
 	);
-};
+}
+

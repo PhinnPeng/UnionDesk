@@ -42,3 +42,7 @@
 - 关键组件具备最小覆盖测试。
 - 已记录剩余风险与验证结果。
 
+## 验证记录
+
+- 2026-05-04: `pnpm --dir UnionDeskWeb/apps/UnionDeskCustomerWeb test --run` 通过，54/54。
+- 2026-05-04: `pnpm --dir UnionDeskWeb/apps/UnionDeskCustomerWeb typecheck` 通过。

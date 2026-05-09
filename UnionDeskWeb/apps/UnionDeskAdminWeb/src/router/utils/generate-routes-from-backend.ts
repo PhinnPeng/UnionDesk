@@ -23,7 +23,24 @@ const pageModules = import.meta.glob([
  */
 export function getComponentPathByRoute(route: AppRouteRecordRaw & { component?: string }) {
 	if (route.component) {
-		return `/src/pages${route.component}`;
+		const componentPath = route.component.trim();
+		if (componentPath.startsWith("/src/pages/")) {
+			return componentPath;
+		}
+		if (componentPath.startsWith("./")) {
+			return `/src/pages/${componentPath.slice(2).replace(/^\/+/, "")}/index.tsx`;
+		}
+		if (componentPath.endsWith(".tsx")) {
+			return componentPath.startsWith("/src/pages/")
+				? componentPath
+				: componentPath.startsWith("/")
+					? `/src/pages${componentPath}`
+					: `/src/pages/${componentPath}`;
+		}
+		if (componentPath.startsWith("/")) {
+			return `/src/pages${componentPath}/index.tsx`;
+		}
+		return `/src/pages/${componentPath}/index.tsx`;
 	}
 	else {
 		return `/src/pages${route.path}/index.tsx`;

@@ -18,7 +18,13 @@ import { Link } from "react-router";
  */
 export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[], scope: AppScope = appScopes.business): MenuItemType[] {
 	return routeList.reduce<MenuItemType[]>((acc, item) => {
-		const itemScope = isPlatformRoutePath(item.path) ? appScopes.platform : appScopes.business;
+		const itemScope = item.handle?.scope === "platform"
+			? appScopes.platform
+			: item.handle?.scope === "business"
+				? appScopes.business
+				: isPlatformRoutePath(item.path)
+					? appScopes.platform
+					: appScopes.business;
 		if (itemScope !== scope) {
 			return acc;
 		}
@@ -33,7 +39,7 @@ export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[], scop
 
 		const label = item.handle?.title;
 		const externalLink = item?.handle?.externalLink;
-		const iconName = item?.handle?.icon;
+		const iconName = isString(item?.handle?.icon) ? item.handle.icon.trim() : undefined;
 
 		const menuItem: MenuItemType = {
 			key: item.path!,

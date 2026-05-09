@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.iam.admin.AdminMenuService;
 import java.sql.ResultSet;
 import java.time.Clock;
@@ -77,5 +78,236 @@ class IamServiceTests {
                 org.mockito.ArgumentMatchers.<RowMapper<String>>any(),
                 eq(42L),
                 eq(42L));
+    }
+
+    @Test
+    void loadPermissionSnapshotKeepsPlatformMenusForGlobalRoles() throws Exception {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        AdminMenuService adminMenuService = mock(AdminMenuService.class);
+        IamService service = new IamService(
+                jdbcTemplate,
+                Clock.systemUTC(),
+                mock(PasswordEncoder.class),
+                adminMenuService,
+                new PermissionScopePolicy());
+
+        when(jdbcTemplate.query(
+                org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("SELECT DISTINCT r.code AS role_code")),
+                org.mockito.ArgumentMatchers.<RowMapper<String>>any(),
+                eq(42L),
+                eq(42L)))
+                .thenReturn(new ArrayList<>(List.of("super_admin", "domain_admin")));
+        when(jdbcTemplate.query(
+                org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("FROM role") && sql.contains("WHERE code IN")),
+                org.mockito.ArgumentMatchers.<RowMapper<Object>>any(),
+                org.mockito.ArgumentMatchers.<Object[]>any()))
+                .thenAnswer(invocation -> {
+                    RowMapper<?> mapper = invocation.getArgument(1);
+                    ResultSet rs = mock(ResultSet.class);
+                    when(rs.getInt("id")).thenReturn(1);
+                    when(rs.getString("code")).thenReturn("super_admin");
+                    when(rs.getString("scope")).thenReturn("global");
+                    return List.of(mapper.mapRow(rs, 0));
+                });
+        when(jdbcTemplate.query(
+                org.mockito.ArgumentMatchers.<String>argThat(sql -> sql.contains("SELECT id, code, name FROM business_domain")),
+                org.mockito.ArgumentMatchers.<RowMapper<IamService.DomainSummary>>any()))
+                .thenReturn(List.of(new IamService.DomainSummary(7L, "domain-7", "业务域7")));
+        when(adminMenuService.loadPermissionSnapshot(org.mockito.ArgumentMatchers.anyList()))
+                .thenReturn(new AdminMenuService.PermissionSnapshotData(
+                        List.of(
+                                new AdminMenuService.AdminMenuNode(
+                                        1L,
+                                        "ADM0000000001",
+                                        "menu",
+                                        "platform",
+                                        "平台菜单",
+                                        "/platform/menu",
+                                        "./system/menu",
+                                        "platform.menu.read",
+                                        null,
+                                        1,
+                                        "MenuOutlined",
+                                        false,
+                                        1,
+                                        false,
+                                        List.of()),
+                                new AdminMenuService.AdminMenuNode(
+                                        2L,
+                                        "ADM0000000002",
+                                        "menu",
+                                        "business",
+                                        "业务菜单",
+                                        "/system/menu",
+                                        "./system/menu",
+                                        "domain.menu.read",
+                                        null,
+                                        2,
+                                        "MenuOutlined",
+                                        false,
+                                        1,
+                                        false,
+                                        List.of())),
+                        List.of()));
+
+        IamService.PermissionSnapshot snapshot = service.loadPermissionSnapshot(
+                new UserContext(42L, "super_admin", 1L, "sid-1", "ud-admin-web"));
+
+        assertThat(snapshot.menus()).singleElement().satisfies(menu -> {
+            assertThat(menu.scope()).isEqualTo("platform");
+            assertThat(menu.pathPattern()).isEqualTo("/platform/menu");
+        });
+    }
+
+    @Test
+    void loadPermissionSnapshotKeepsBusinessMenusForDomainRoles() throws Exception {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        AdminMenuService adminMenuService = mock(AdminMenuService.class);
+        IamService service = new IamService(
+                jdbcTemplate,
+                Clock.systemUTC(),
+                mock(PasswordEncoder.class),
+                adminMenuService,
+                new PermissionScopePolicy());
+
+        when(jdbcTemplate.query(
+                org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("SELECT DISTINCT r.code AS role_code")),
+                org.mockito.ArgumentMatchers.<RowMapper<String>>any(),
+                eq(42L),
+                eq(42L)))
+                .thenReturn(new ArrayList<>(List.of("domain_admin")));
+        when(jdbcTemplate.query(
+                org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("FROM role") && sql.contains("WHERE code IN")),
+                org.mockito.ArgumentMatchers.<RowMapper<Object>>any(),
+                org.mockito.ArgumentMatchers.<Object[]>any()))
+                .thenAnswer(invocation -> {
+                    RowMapper<?> mapper = invocation.getArgument(1);
+                    ResultSet rs = mock(ResultSet.class);
+                    when(rs.getInt("id")).thenReturn(2);
+                    when(rs.getString("code")).thenReturn("domain_admin");
+                    when(rs.getString("scope")).thenReturn("domain");
+                    return List.of(mapper.mapRow(rs, 0));
+                });
+        when(jdbcTemplate.query(
+                org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("FROM user_domain_role udr")),
+                org.mockito.ArgumentMatchers.<RowMapper<IamService.DomainSummary>>any(),
+                org.mockito.ArgumentMatchers.<Object[]>any()))
+                .thenReturn(List.of(new IamService.DomainSummary(8L, "domain-8", "业务域8")));
+        when(adminMenuService.loadPermissionSnapshot(org.mockito.ArgumentMatchers.anyList()))
+                .thenReturn(new AdminMenuService.PermissionSnapshotData(
+                        List.of(
+                                new AdminMenuService.AdminMenuNode(
+                                        1L,
+                                        "ADM0000000001",
+                                        "menu",
+                                        "platform",
+                                        "平台菜单",
+                                        "/platform/menu",
+                                        "./system/menu",
+                                        "platform.menu.read",
+                                        null,
+                                        1,
+                                        "MenuOutlined",
+                                        false,
+                                        1,
+                                        false,
+                                        List.of()),
+                                new AdminMenuService.AdminMenuNode(
+                                        2L,
+                                        "ADM0000000002",
+                                        "menu",
+                                        "business",
+                                        "业务菜单",
+                                        "/system/menu",
+                                        "./system/menu",
+                                        "domain.menu.read",
+                                        null,
+                                        2,
+                                        "MenuOutlined",
+                                        false,
+                                        1,
+                                        false,
+                                        List.of())),
+                        List.of()));
+
+        IamService.PermissionSnapshot snapshot = service.loadPermissionSnapshot(
+                new UserContext(42L, "domain_admin", 1L, "sid-1", "ud-admin-web"));
+
+        assertThat(snapshot.menus()).singleElement().satisfies(menu -> {
+            assertThat(menu.scope()).isEqualTo("business");
+            assertThat(menu.pathPattern()).isEqualTo("/system/menu");
+        });
+    }
+
+    @Test
+    void loadPermissionSnapshotFallsBackToBusinessWhenRoleDefinitionIsMissing() throws Exception {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        AdminMenuService adminMenuService = mock(AdminMenuService.class);
+        IamService service = new IamService(
+                jdbcTemplate,
+                Clock.systemUTC(),
+                mock(PasswordEncoder.class),
+                adminMenuService,
+                new PermissionScopePolicy());
+
+        when(jdbcTemplate.query(
+                org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("SELECT DISTINCT r.code AS role_code")),
+                org.mockito.ArgumentMatchers.<RowMapper<String>>any(),
+                eq(42L),
+                eq(42L)))
+                .thenReturn(new ArrayList<>(List.of("ghost_role")));
+        when(jdbcTemplate.query(
+                org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("FROM role") && sql.contains("WHERE code IN")),
+                org.mockito.ArgumentMatchers.<RowMapper<Object>>any(),
+                org.mockito.ArgumentMatchers.<Object[]>any()))
+                .thenReturn(List.of());
+        when(jdbcTemplate.query(
+                org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("SELECT id, code, name FROM business_domain")),
+                org.mockito.ArgumentMatchers.<RowMapper<IamService.DomainSummary>>any()))
+                .thenReturn(List.of());
+        when(adminMenuService.loadPermissionSnapshot(org.mockito.ArgumentMatchers.anyList()))
+                .thenReturn(new AdminMenuService.PermissionSnapshotData(
+                        List.of(
+                                new AdminMenuService.AdminMenuNode(
+                                        1L,
+                                        "ADM0000000001",
+                                        "menu",
+                                        "platform",
+                                        "平台菜单",
+                                        "/platform/menu",
+                                        "./system/menu",
+                                        "platform.menu.read",
+                                        null,
+                                        1,
+                                        "MenuOutlined",
+                                        false,
+                                        1,
+                                        false,
+                                        List.of()),
+                                new AdminMenuService.AdminMenuNode(
+                                        2L,
+                                        "ADM0000000002",
+                                        "menu",
+                                        "business",
+                                        "业务菜单",
+                                        "/system/menu",
+                                        "./system/menu",
+                                        "domain.menu.read",
+                                        null,
+                                        2,
+                                        "MenuOutlined",
+                                        false,
+                                        1,
+                                        false,
+                                        List.of())),
+                        List.of()));
+
+        IamService.PermissionSnapshot snapshot = service.loadPermissionSnapshot(
+                new UserContext(42L, "ghost_role", 1L, "sid-1", "ud-admin-web"));
+
+        assertThat(snapshot.menus()).singleElement().satisfies(menu -> {
+            assertThat(menu.scope()).isEqualTo("business");
+            assertThat(menu.pathPattern()).isEqualTo("/system/menu");
+        });
     }
 }

@@ -4,15 +4,17 @@ DROP TRIGGER IF EXISTS trg_user_domain_role_account_type_insert;
 DROP TRIGGER IF EXISTS trg_user_domain_role_account_type_update;
 DROP TRIGGER IF EXISTS trg_user_account_account_type_update;
 
-UPDATE iam_resource
-SET resource_type = 'action'
-WHERE resource_type = 'api';
-
+-- 先删除约束，再更新数据
 ALTER TABLE iam_resource
     DROP CHECK chk_iam_resource_type;
 
 ALTER TABLE iam_resource
     DROP CHECK chk_iam_resource_api_fields;
+
+-- 现在可以安全地更新数据
+UPDATE iam_resource
+SET resource_type = 'action'
+WHERE resource_type = 'api';
 
 ALTER TABLE iam_resource
     ADD CONSTRAINT chk_iam_resource_type CHECK (resource_type IN ('menu', 'action'));

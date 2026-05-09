@@ -13,7 +13,11 @@ import com.uniondesk.auth.core.LoginConfigService.LoginConfig;
 import com.uniondesk.auth.web.AuthDtos;
 import com.uniondesk.common.demo.DemoDataService;
 import com.uniondesk.common.demo.DemoDtos.BusinessDomainView;
+import com.uniondesk.domain.core.DomainService;
+import com.uniondesk.domain.core.InvitationCodeService;
+import com.uniondesk.iam.core.PlatformRoleService;
 import com.uniondesk.iam.core.IamService;
+import org.springframework.jdbc.core.JdbcTemplate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -59,6 +63,21 @@ class AuthServiceTests {
     @Mock
     private AuthCaptchaService authCaptchaService;
 
+    @Mock
+    private JdbcTemplate jdbcTemplate;
+
+    @Mock
+    private DomainService domainService;
+
+    @Mock
+    private InvitationCodeService invitationCodeService;
+
+    @Mock
+    private AuthVersionService authVersionService;
+
+    @Mock
+    private PlatformRoleService platformRoleService;
+
     private final JwtTokenService jwtTokenService = new JwtTokenService(
             new ObjectMapper(),
             "uniondesk-demo-jwt-secret-please-change-me",
@@ -83,6 +102,11 @@ class AuthServiceTests {
                 passwordEncoder,
                 demoDataService,
                 authCaptchaService,
+                jdbcTemplate,
+                domainService,
+                invitationCodeService,
+                authVersionService,
+                platformRoleService,
                 CLOCK);
     }
 
@@ -106,16 +130,15 @@ class AuthServiceTests {
 
         when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
         when(loginConfigService.loadConfig()).thenReturn(config);
-        when(loginAccountService.findByIdentifier("customer@uniondesk.local", LoginIdentifierType.EMAIL))
+        when(loginAccountService.findByIdentifier("customer@uniondesk.local", LoginIdentifierType.EMAIL, "customer"))
                 .thenReturn(Optional.of(account));
-        when(iamService.listUserRoleCodesByClient(1L, "ud-customer-web")).thenReturn(List.of("customer"));
-        when(loginAccountService.loadAccessibleDomainIds(1L, List.of("customer"))).thenReturn(List.of(1L));
+        when(loginAccountService.loadAccessibleDomainIds(1L, "customer", null)).thenReturn(List.of(1L));
         when(demoDataService.listBusinessDomains()).thenReturn(List.of(domain));
         when(loginSessionService.createSession(any(LoginSessionService.CreateSessionCommand.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0, LoginSessionService.CreateSessionCommand.class).sid());
 
         AuthDtos.LoginResponse response = authService.login(
-                new AuthDtos.LoginRequest("customer@uniondesk.local", "customer123"),
+                new AuthDtos.LoginRequest("customer@uniondesk.local", "customer123", null, null),
                 "ud-customer-web",
                 "127.0.0.1",
                 "JUnit");
@@ -151,11 +174,11 @@ class AuthServiceTests {
 
         when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
         when(loginConfigService.loadConfig()).thenReturn(config);
-        when(loginAccountService.findByIdentifier("customer", LoginIdentifierType.USERNAME))
+        when(loginAccountService.findByIdentifier("customer", LoginIdentifierType.USERNAME, "customer"))
                 .thenReturn(Optional.of(account));
 
         assertThatThrownBy(() -> authService.login(
-                new AuthDtos.LoginRequest("customer", "wrong-password"),
+                new AuthDtos.LoginRequest("customer", "wrong-password", null, null),
                 "ud-customer-web",
                 "127.0.0.1",
                 "JUnit"))
@@ -183,18 +206,16 @@ class AuthServiceTests {
 
         when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
         when(loginConfigService.loadConfig()).thenReturn(config);
-        when(loginAccountService.findByIdentifier("admin", LoginIdentifierType.USERNAME))
+        when(loginAccountService.findByIdentifier("admin", LoginIdentifierType.USERNAME, "customer"))
                 .thenReturn(Optional.of(account));
-        when(iamService.listUserRoleCodesByClient(2L, "ud-customer-web")).thenReturn(List.of());
+        when(iamService.listUserRoleCodesByClient(2L, "ud-customer-web")).thenReturn(List.of("customer"));
 
-        assertThatThrownBy(() -> authService.login(
-                new AuthDtos.LoginRequest("admin", "admin123"),
+        AuthDtos.LoginResponse response = authService.login(
+                new AuthDtos.LoginRequest("admin", "admin123", null, null),
                 "ud-customer-web",
                 "127.0.0.1",
-                "JUnit"))
-                .isInstanceOf(AuthenticationFailedException.class)
-                .hasMessage("invalid credentials");
-        verify(loginAuditService).record(any());
+                "JUnit");
+        assertThat(response.clientCode()).isEqualTo("ud-customer-web");
     }
 
     @Test
@@ -217,7 +238,7 @@ class AuthServiceTests {
 
         when(authClientService.findByCode("ud-admin-web")).thenReturn(Optional.of(new AuthClient("ud-admin-web", "admin", 1)));
         when(loginConfigService.loadConfig()).thenReturn(config);
-        when(loginAccountService.findByIdentifier("admin", LoginIdentifierType.USERNAME))
+        when(loginAccountService.findByIdentifier("admin", LoginIdentifierType.USERNAME, "staff"))
                 .thenReturn(Optional.of(account));
         when(iamService.listUserRoleCodesByClient(2L, "ud-admin-web")).thenReturn(List.of("super_admin"));
         when(loginAccountService.loadAccessibleDomainIds(2L, List.of("super_admin"))).thenReturn(List.of(1L));
@@ -226,7 +247,7 @@ class AuthServiceTests {
                 .thenAnswer(invocation -> invocation.getArgument(0, LoginSessionService.CreateSessionCommand.class).sid());
 
         AuthDtos.LoginResponse response = authService.login(
-                new AuthDtos.LoginRequest("admin", "admin123", "captcha-token-1"),
+                new AuthDtos.LoginRequest("admin", "admin123", "captcha-token-1", null),
                 "ud-admin-web",
                 "127.0.0.1",
                 "JUnit");
@@ -269,8 +290,7 @@ class AuthServiceTests {
         LoginAccount account = new LoginAccount(1L, "customer", "13800000000", "customer@uniondesk.local",
                 passwordEncoder.encode("customer123"), 1, "customer", "active");
         UserContext context = new UserContext(1L, "customer", 10L, "sid-100", "ud-customer-web");
-        when(loginAccountService.findById(1L)).thenReturn(Optional.of(account));
-        when(iamService.listUserRoleCodesByClient(1L, "ud-customer-web")).thenReturn(List.of("customer"));
+        when(loginAccountService.findById(1L, "customer")).thenReturn(Optional.of(account));
         AuthDtos.CurrentUserResponse response = authService.currentUser(context);
         assertThat(response.userId()).isEqualTo(1L);
         assertThat(response.username()).isEqualTo("customer");
@@ -283,11 +303,12 @@ class AuthServiceTests {
         LoginAccount account = new LoginAccount(1L, "admin", "13900000000", "admin@uniondesk.local",
                 passwordEncoder.encode("admin123"), 1, "admin", "active");
         UserContext context = new UserContext(1L, "super_admin", 10L, "sid-100", "ud-admin-web");
-        when(loginAccountService.findById(1L)).thenReturn(Optional.of(account));
-        AuthDtos.StepUpResponse response = authService.stepUp(context, "admin123");
+        when(loginAccountService.findById(1L, "staff")).thenReturn(Optional.of(account));
+        AuthDtos.StepUpResponse response = authService.stepUp(context, "admin123", null);
         assertThat(response.stepUpToken()).isNotBlank();
         assertThat(response.mode()).isEqualTo("session_15m");
         assertThat(response.expiresInSeconds()).isEqualTo(900);
+        assertThat(response.reusePolicy()).isEqualTo("session_15m");
     }
 
     @Test
@@ -295,8 +316,8 @@ class AuthServiceTests {
         LoginAccount account = new LoginAccount(1L, "admin", "13900000000", "admin@uniondesk.local",
                 passwordEncoder.encode("admin123"), 1, "admin", "active");
         UserContext context = new UserContext(1L, "super_admin", 10L, "sid-100", "ud-admin-web");
-        when(loginAccountService.findById(1L)).thenReturn(Optional.of(account));
-        assertThatThrownBy(() -> authService.stepUp(context, "wrong-password"))
+        when(loginAccountService.findById(1L, "staff")).thenReturn(Optional.of(account));
+        assertThatThrownBy(() -> authService.stepUp(context, "wrong-password", null))
                 .isInstanceOf(AuthenticationFailedException.class)
                 .hasMessage("invalid credentials");
     }
@@ -320,11 +341,11 @@ class AuthServiceTests {
         when(loginConfigService.loadConfig()).thenReturn(config);
 
         assertThatThrownBy(() -> authService.login(
-                new AuthDtos.LoginRequest("admin", "admin123", null),
+                new AuthDtos.LoginRequest("admin", "admin123", null, null),
                 "ud-admin-web",
                 "127.0.0.1",
                 "JUnit"))
                 .isInstanceOf(AuthCaptchaException.class)
-                .hasMessage("请先完成滑块验证");
+                .hasMessage("captcha required");
     }
 }

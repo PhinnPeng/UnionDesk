@@ -210,7 +210,9 @@ export type PermissionSnapshotMenu = {
   orderNo?: number;
   icon?: string | null;
   component?: string | null;
+  scope?: "platform" | "business" | string;
   hidden?: boolean;
+  permissionCode?: string | null;
 };
 
 export type PermissionSnapshotAction = {
@@ -234,6 +236,7 @@ export type MenuTreeNode = {
   id: number;
   code: string;
   nodeType: "catalog" | "menu" | "button" | string;
+  scope?: "platform" | "business" | string;
   name: string;
   routePath?: string | null;
   componentKey?: string | null;
@@ -261,6 +264,7 @@ export type CreateMenuPayload = {
   routePath?: string | null;
   componentKey?: string | null;
   permissionCode?: string | null;
+  scope?: "platform" | "business" | string;
   parentId?: number | null;
   orderNo?: number;
   icon?: string | null;

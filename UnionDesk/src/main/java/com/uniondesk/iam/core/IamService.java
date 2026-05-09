@@ -59,6 +59,9 @@ public class IamService {
         if (context == null || !StringUtils.hasText(method) || !StringUtils.hasText(requestPath)) {
             return false;
         }
+        if (requestPath.startsWith("/api/v1/auth/")) {
+            return true;
+        }
         List<String> matchedPermissionCodes = findPermissionCodesByRequest(method, requestPath);
         if (!matchedPermissionCodes.isEmpty()) {
             return hasAnyPermission(context, matchedPermissionCodes);
@@ -251,13 +254,16 @@ public class IamService {
         List<IamResource> actions;
         if ("ud-admin-web".equalsIgnoreCase(context.clientCode())) {
             AdminMenuService.PermissionSnapshotData snapshotData = adminMenuService.loadPermissionSnapshot(roles);
+            String activeMenuScope = resolveAdminMenuScope(context.role());
             menus = snapshotData.menus().stream()
+                    .filter(menu -> activeMenuScope.equals(menu.scope()))
                     .map(menu -> new IamResource(
                             menu.id(),
                             "menu",
                             menu.code(),
                             menu.name(),
                             context.clientCode(),
+                            menu.scope(),
                             null,
                             menu.routePath(),
                             menu.parentId(),
@@ -265,7 +271,8 @@ public class IamService {
                             menu.icon(),
                             menu.componentKey(),
                             menu.hidden(),
-                            menu.status()))
+                            menu.status(),
+                            menu.permissionCode()))
                     .toList();
             actions = snapshotData.actions().stream()
                     .map(action -> new IamResource(
@@ -274,6 +281,7 @@ public class IamService {
                             action.permissionCode(),
                             action.name(),
                             context.clientCode(),
+                            null,
                             action.httpMethod(),
                             action.pathPattern(),
                             action.parentId(),
@@ -281,7 +289,8 @@ public class IamService {
                             null,
                             null,
                             false,
-                            1))
+                            1,
+                            null))
                     .toList();
         } else {
             menus = loadResourcesForRoles(roles, context.clientCode(), List.of("menu"));
@@ -295,6 +304,23 @@ public class IamService {
                 menus,
                 actions,
                 Instant.now(clock).toString());
+    }
+
+    private String resolveAdminMenuScope(String roleCode) {
+        if (!StringUtils.hasText(roleCode)) {
+            return "business";
+        }
+        try {
+            Map<String, RoleDefinition> roles = loadRoleDefinitions(List.of(roleCode));
+            RoleDefinition role = roles.get(roleCode);
+            if (role == null) {
+                return "business";
+            }
+            return "global".equals(role.scope()) ? "platform" : "business";
+        }
+        catch (IllegalArgumentException ex) {
+            return "business";
+        }
     }
 
     public List<IamResource> listResources(String resourceType, String clientScope) {
@@ -1108,7 +1134,7 @@ public class IamService {
                 userId);
     }
 
-    private Optional<UserAccount> loadUser(long userId) {
+    public Optional<UserAccount> loadUser(long userId) {
         try {
             UserAccount user = jdbcTemplate.queryForObject("""
                             SELECT
@@ -1518,6 +1544,7 @@ public class IamService {
                 rs.getString("resource_code"),
                 rs.getString("resource_name"),
                 rs.getString("client_scope"),
+                null,
                 rs.getString("http_method"),
                 rs.getString("path_pattern"),
                 rs.getObject("parent_id", Long.class),
@@ -1525,7 +1552,8 @@ public class IamService {
                 rs.getString("icon"),
                 rs.getString("component"),
                 rs.getInt("hidden") == 1,
-                rs.getInt("status"));
+                rs.getInt("status"),
+                null);
     }
 
     private String normalize(String value, String fieldName) {
@@ -1601,6 +1629,7 @@ public class IamService {
             String resourceCode,
             String resourceName,
             String clientScope,
+            String scope,
             String httpMethod,
             String pathPattern,
             Long parentId,
@@ -1608,7 +1637,8 @@ public class IamService {
             String icon,
             String component,
             boolean hidden,
-            int status) {
+            int status,
+            String permissionCode) {
     }
 
     public record MenuTreeNode(

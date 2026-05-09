@@ -1,14 +1,12 @@
 package com.uniondesk.iam.web;
 
-import com.uniondesk.auth.core.UserContext;
-import com.uniondesk.auth.core.UserContextHolder;
 import com.uniondesk.iam.core.OrganizationService;
+import com.uniondesk.iam.core.PermissionCodes;
+import com.uniondesk.iam.core.RequirePermission;
 import java.util.List;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1/iam/organizations")
@@ -21,8 +19,8 @@ public class OrganizationController {
     }
 
     @GetMapping
+    @RequirePermission(PermissionCodes.PLATFORM_USER_READ)
     public List<OrganizationDtos.OrganizationUnitView> listOrganizations() {
-        requireSuperAdminContext();
         return organizationService.listOrganizations().stream()
                 .map(unit -> new OrganizationDtos.OrganizationUnitView(
                         unit.id(),
@@ -36,14 +34,5 @@ public class OrganizationController {
                         unit.status(),
                         unit.remark()))
                 .toList();
-    }
-
-    private UserContext requireSuperAdminContext() {
-        UserContext context = UserContextHolder.current()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "unauthorized"));
-        if (!"super_admin".equalsIgnoreCase(context.role())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "forbidden");
-        }
-        return context;
     }
 }

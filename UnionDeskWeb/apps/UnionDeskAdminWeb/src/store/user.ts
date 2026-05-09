@@ -12,6 +12,7 @@ const initialState: UserInfoType = {
 	phoneNumber: "",
 	description: "",
 	roles: [],
+	actions: [],
 	platformAccess: false,
 	menus: [],
 };

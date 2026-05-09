@@ -45,7 +45,7 @@ public class AttachmentService {
         validateAttachment(command, policy);
         long uploaderSubjectId = context == null ? ensureAnonymousSubject() : ensureIdentitySubject(context.userId());
         String storageType = "local";
-        String storageKey = buildStorageKey(command.fileName());
+        String storageKey = StringUtils.hasText(command.storageKey()) ? command.storageKey() : buildStorageKey(command.fileName());
         Path storedPath = resolveStorageRoot().resolve(storageKey);
         try {
             Files.createDirectories(storedPath.getParent());
@@ -55,24 +55,53 @@ public class AttachmentService {
         }
 
         String checksum = checksum(command.content());
-        jdbcTemplate.update("""
-                        INSERT INTO file_attachment (
-                            business_domain_id, uploader_subject_id, portal_type, file_name, mime_type,
-                            file_size, storage_type, storage_key, checksum, created_at
-                        )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """,
-                command.businessDomainId(),
-                uploaderSubjectId,
-                command.portalType(),
-                command.fileName(),
-                command.contentType(),
-                command.content().length,
-                storageType,
-                storageKey,
-                checksum,
-                LocalDateTime.now(clock));
-        long attachmentId = loadLatestAttachmentId(storageKey);
+        long attachmentId;
+        if (command.attachmentId() != null) {
+            jdbcTemplate.update("""
+                            UPDATE file_attachment
+                            SET business_domain_id = ?,
+                                uploader_subject_id = ?,
+                                portal_type = ?,
+                                file_name = ?,
+                                mime_type = ?,
+                                file_size = ?,
+                                storage_type = ?,
+                                storage_key = ?,
+                                checksum = ?,
+                                status = 'confirmed'
+                            WHERE id = ?
+                            """,
+                    command.businessDomainId(),
+                    uploaderSubjectId,
+                    command.portalType(),
+                    command.fileName(),
+                    command.contentType(),
+                    command.content().length,
+                    storageType,
+                    storageKey,
+                    checksum,
+                    command.attachmentId());
+            attachmentId = command.attachmentId();
+        } else {
+            jdbcTemplate.update("""
+                            INSERT INTO file_attachment (
+                                business_domain_id, uploader_subject_id, portal_type, file_name, mime_type,
+                                file_size, storage_type, storage_key, checksum, status, created_at
+                            )
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?)
+                            """,
+                    command.businessDomainId(),
+                    uploaderSubjectId,
+                    command.portalType(),
+                    command.fileName(),
+                    command.contentType(),
+                    command.content().length,
+                    storageType,
+                    storageKey,
+                    checksum,
+                    LocalDateTime.now(clock));
+            attachmentId = loadLatestAttachmentId(storageKey);
+        }
         if (command.targetType() != null && command.targetId() != null) {
             jdbcTemplate.update("""
                             INSERT INTO attachment_ref (attachment_id, target_type, target_id, relation_type)
@@ -84,6 +113,40 @@ public class AttachmentService {
                     command.relationType() == null ? "primary" : command.relationType());
         }
         return new AttachmentUploadResult(attachmentId, storageType, storageKey, storedPath.toString(), checksum);
+    }
+
+    @Transactional
+    public AttachmentPresignResult presignAttachment(PresignAttachmentCommand command) {
+        String storageKey = buildStorageKey(command.fileName());
+        jdbcTemplate.update("""
+                        INSERT INTO file_attachment (
+                            business_domain_id, uploader_subject_id, portal_type, file_name, mime_type,
+                            file_size, storage_type, storage_key, checksum, status, created_at
+                        )
+                        VALUES (?, NULL, ?, ?, ?, ?, 'local', ?, NULL, 'pending', ?)
+                        """,
+                command.businessDomainId(),
+                command.portalType(),
+                command.fileName(),
+                command.mimeType(),
+                command.fileSize(),
+                storageKey,
+                LocalDateTime.now(clock));
+        long attachmentId = loadLatestAttachmentId(storageKey);
+        return new AttachmentPresignResult(attachmentId, "/api/v1/attachments/upload", 300);
+    }
+
+    @Transactional
+    public void confirmAttachment(long attachmentId) {
+        int updated = jdbcTemplate.update("""
+                        UPDATE file_attachment
+                        SET status = 'confirmed'
+                        WHERE id = ?
+                        """,
+                attachmentId);
+        if (updated == 0) {
+            throw new IllegalArgumentException("attachment not found");
+        }
     }
 
     @Transactional
@@ -314,7 +377,20 @@ public class AttachmentService {
             byte[] content,
             String targetType,
             Long targetId,
-            String relationType) {
+            String relationType,
+            String storageKey,
+            Long attachmentId) {
+        public UploadAttachmentCommand(
+                Long businessDomainId,
+                String portalType,
+                String fileName,
+                String contentType,
+                byte[] content,
+                String targetType,
+                Long targetId,
+                String relationType) {
+            this(businessDomainId, portalType, fileName, contentType, content, targetType, targetId, relationType, null, null);
+        }
     }
 
     public record AttachmentUploadResult(
@@ -323,6 +399,21 @@ public class AttachmentService {
             String storageKey,
             String localPath,
             String checksum) {
+    }
+
+    public record AttachmentPresignResult(
+            long attachmentId,
+            String uploadUrl,
+            int expiresInSeconds) {
+    }
+
+    public record PresignAttachmentCommand(
+            Long businessDomainId,
+            String portalType,
+            String fileName,
+            String mimeType,
+            long fileSize,
+            String targetType) {
     }
 
     public record AttachmentFileView(

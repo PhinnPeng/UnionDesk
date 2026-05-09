@@ -25,6 +25,11 @@ export interface RouteMeta {
 	icon?: ReactNode
 
 	/**
+	 * 菜单域，用于区分平台端和业务端菜单
+	 */
+	scope?: "platform" | "business" | string
+
+	/**
 	 * 菜单排序，用于控制侧边栏菜单的显示顺序
 	 */
 	order?: number
@@ -33,6 +38,11 @@ export interface RouteMeta {
 	 * 用于配置页面的权限，只有拥有对应权限的用户才能访问页面，不配置则不需要权限。
 	 */
 	roles?: string[]
+
+	/**
+	 * 路由级权限码，用户动作权限中不包含时禁止访问页面
+	 */
+	auth?: string
 
 	/**
 	 * 页面内按钮级别的权限，用于控制页面内按钮的显示和隐藏

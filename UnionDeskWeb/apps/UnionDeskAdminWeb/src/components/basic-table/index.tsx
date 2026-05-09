@@ -160,6 +160,16 @@ export function BasicTable<
 		};
 	};
 
+	/**
+	 * @description 处理列配置，为未设置 align 的列默认添加居中
+	 */
+	const processedColumns = useMemo(() => {
+		return props.columns?.map(col => ({
+			...col,
+			align: col.align ?? "center",
+		}));
+	}, [props.columns]);
+
 	return (
 		<div className="h-full" ref={tableWrapperRef}>
 			<ProTable
@@ -167,6 +177,7 @@ export function BasicTable<
 				rowKey="id"
 				dateFormatter="string"
 				{...props}
+				columns={processedColumns}
 				options={{
 					fullScreen: true,
 					...props.options,

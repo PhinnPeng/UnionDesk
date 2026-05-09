@@ -92,7 +92,94 @@ class AuthControllerTests {
                         .content("{\"username\":\"customer\",\"password\":\"wrong\"}"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+                .andExpect(jsonPath("$.code").value("10001"))
+                .andExpect(jsonPath("$.message").value("用户名或密码错误"));
+    }
+
+    @Test
+    void registerReturnsTokensOnSuccess() throws Exception {
+        AuthService authService = mock(AuthService.class);
+        when(authService.register(
+                any(AuthDtos.RegisterRequest.class),
+                org.mockito.ArgumentMatchers.eq("ud-customer-web"),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(new AuthDtos.RegisterResponse("access-token-1", "refresh-token-1", 101L));
+        MockMvc mockMvc = mockMvc(authService);
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType("application/json")
+                        .header("X-UD-Client-Code", "ud-customer-web")
+                        .header("User-Agent", "JUnit")
+                        .content("""
+                                {
+                                  "loginName": "new-user",
+                                  "password": "password123",
+                                  "phone": "13800000001",
+                                  "email": "new-user@uniondesk.local"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("access-token-1"))
+                .andExpect(jsonPath("$.refreshToken").value("refresh-token-1"))
+                .andExpect(jsonPath("$.accountId").value(101));
+    }
+
+    @Test
+    void registerWithMissingFieldsReturnsBadRequest() throws Exception {
+        MockMvc mockMvc = mockMvc(mock(AuthService.class));
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType("application/json")
+                        .header("X-UD-Client-Code", "ud-customer-web")
+                        .header("User-Agent", "JUnit")
+                        .content("""
+                                {
+                                  "loginName": "new-user"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void requestPasswordResetReturnsChannel() throws Exception {
+        AuthService authService = mock(AuthService.class);
+        when(authService.requestPasswordReset(
+                any(AuthDtos.PasswordResetRequest.class),
+                org.mockito.ArgumentMatchers.eq("ud-customer-web"),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(new AuthDtos.PasswordResetResponse("email", "c***@uniondesk.local"));
+        MockMvc mockMvc = mockMvc(authService);
+
+        mockMvc.perform(post("/api/v1/auth/password/reset-request")
+                        .contentType("application/json")
+                        .header("X-UD-Client-Code", "ud-customer-web")
+                        .header("User-Agent", "JUnit")
+                        .content("""
+                                {
+                                  "loginName": "admin",
+                                  "portalType": "ud-customer-web"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.channel").value("email"))
+                .andExpect(jsonPath("$.hint").value("c***@uniondesk.local"));
+    }
+
+    @Test
+    void changePasswordWithoutAuthReturnsUnauthorized() throws Exception {
+        MockMvc mockMvc = mockMvc(mock(AuthService.class));
+
+        mockMvc.perform(put("/api/v1/auth/password")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "oldPassword": "old-password",
+                                  "newPassword": "new-password"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -117,7 +204,9 @@ class AuthControllerTests {
         MockMvc mockMvc = mockMvc(mock(AuthService.class));
 
         mockMvc.perform(get("/api/v1/auth/session"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("40101"))
+                .andExpect(jsonPath("$.message").value("未登录或登录已过期"));
     }
 
     @Test
@@ -158,15 +247,31 @@ class AuthControllerTests {
     }
 
     @Test
-    void updateLoginConfigRejectsNonAdminContext() throws Exception {
+    void updateLoginConfigReturnsUpdatedFlags() throws Exception {
         AuthService authService = mock(AuthService.class);
         MockMvc mockMvc = mockMvc(authService);
         UserContextHolder.set(new UserContext(1L, "customer", 10L, "sid-123", "ud-customer-web"));
+        when(authService.updateConfig(any()))
+                .thenReturn(new LoginConfig(
+                        true,
+                        true,
+                        true,
+                        true,
+                        true,
+                        true,
+                        "captcha-hint",
+                        "wechat-hint",
+                        7200,
+                        5,
+                        LocalDateTime.parse("2026-04-21T08:00:00")));
 
         mockMvc.perform(put("/api/v1/auth/login-config")
                         .contentType("application/json")
                         .content("{\"captchaEnabled\":true}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.captchaEnabled").value(true))
+                .andExpect(jsonPath("$.wechatLoginEnabled").value(true));
+        verify(authService).updateConfig(any());
     }
 
     @Test
@@ -253,7 +358,9 @@ class AuthControllerTests {
         mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType("application/json")
                         .content("{\"refreshToken\":\"bad-token\"}"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("10001"))
+                .andExpect(jsonPath("$.message").value("用户名或密码错误"));
     }
 
     @Test
@@ -264,7 +371,9 @@ class AuthControllerTests {
         when(authService.currentUser(any(UserContext.class)))
                 .thenReturn(new AuthDtos.CurrentUserResponse(
                         1L, "customer", "13800000000", "customer@uniondesk.local",
-                        "customer", "ud-customer-web", 10L, java.util.List.of("customer")));
+                        "customer", "ud-customer-web", 10L, java.util.List.of("customer"),
+                        "1", "1", "customer", "customer", "customer", null, "13800000000",
+                        java.util.List.of(), null));
 
         mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isOk())
@@ -279,7 +388,9 @@ class AuthControllerTests {
         MockMvc mockMvc = mockMvc(mock(AuthService.class));
 
         mockMvc.perform(get("/api/v1/auth/me"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("40101"))
+                .andExpect(jsonPath("$.message").value("未登录或登录已过期"));
     }
 
     @Test
@@ -287,8 +398,8 @@ class AuthControllerTests {
         AuthService authService = mock(AuthService.class);
         MockMvc mockMvc = mockMvc(authService);
         UserContextHolder.set(new UserContext(1L, "super_admin", 10L, "sid-1", "ud-admin-web"));
-        when(authService.stepUp(any(UserContext.class), org.mockito.ArgumentMatchers.eq("admin123")))
-                .thenReturn(new AuthDtos.StepUpResponse("step-up-token-1", "session_15m", 900));
+        when(authService.stepUp(any(UserContext.class), org.mockito.ArgumentMatchers.eq("admin123"), any()))
+                .thenReturn(new AuthDtos.StepUpResponse("step-up-token-1", "session_15m", 900, "session_15m", null));
 
         mockMvc.perform(post("/api/v1/auth/step-up")
                         .contentType("application/json")

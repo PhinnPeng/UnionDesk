@@ -18,6 +18,7 @@ const routes: AppRouteRecordRaw[] = [
 			title: "common.menu.system",
 			order: system,
 			roles: ["admin"],
+			scope: "business",
 		},
 		children: [
 			{
@@ -27,6 +28,7 @@ const routes: AppRouteRecordRaw[] = [
 					icon: "UserOutlined",
 					title: "common.menu.user",
 					roles: ["admin"],
+					scope: "business",
 					permissions: [
 						"permission:button:add",
 						"permission:button:update",
@@ -41,6 +43,7 @@ const routes: AppRouteRecordRaw[] = [
 					icon: "TeamOutlined",
 					title: "common.menu.role",
 					roles: ["admin"],
+					scope: "business",
 					permissions: [
 						"permission:button:add",
 						"permission:button:update",
@@ -55,6 +58,8 @@ const routes: AppRouteRecordRaw[] = [
 					icon: "MenuOutlined",
 					title: "common.menu.menu",
 					roles: ["admin"],
+					scope: "business",
+					auth: "domain.menu.read",
 					permissions: [
 						"permission:button:add",
 						"permission:button:update",
@@ -70,6 +75,7 @@ const routes: AppRouteRecordRaw[] = [
 					icon: "ApartmentOutlined",
 					title: "common.menu.dept",
 					roles: ["admin"],
+					scope: "business",
 					permissions: [
 						"permission:button:add",
 						"permission:button:update",

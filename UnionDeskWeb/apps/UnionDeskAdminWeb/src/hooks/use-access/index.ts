@@ -1,7 +1,8 @@
+import { useMatches } from "react-router";
+
 import { useUserStore } from "#src/store/user";
 import { isString } from "#src/utils/is";
 
-import { useMatches } from "react-router";
 import { accessControlCodes, AccessControlRoles } from "./constants";
 
 export * from "./constants";
@@ -18,13 +19,15 @@ export function useAccess() {
 	/**
 	 * @zh 根据权限代码判断当前路由是否具有指定权限
 	 * @en Determine whether the current route has a specified permission based on permission codes
-	 * @param permission 全部小写的权限名称或权限名称数组，比如 `["add", "delete"]`。
+	 * @param permission 全部小写的权限名称或权限名称数组，例如 `["add", "delete"]`。
 	 * @returns boolean 是否具有指定权限
 	 */
 	const hasAccessByCodes = (permission?: string | Array<string>) => {
+		if (currentRoute?.handle?.backstage === true) {
+			return true;
+		}
 		if (!permission)
 			return false;
-		/** 从当前路由的 `handle` 字段里获取按钮级别的所有自定义 `code` 值 */
 		const metaAuth = currentRoute?.handle?.permissions;
 		if (!metaAuth) {
 			return false;
@@ -32,7 +35,6 @@ export function useAccess() {
 		permission = isString(permission) ? [permission] : permission;
 		permission = permission.map(item => item.toLowerCase());
 		if (import.meta.env.DEV) {
-			// 校验权限代码是否合法，不合法的权限代码会打印警告信息
 			for (const code of permission) {
 				if (!Object.values(accessControlCodes).includes(code)) {
 					console.warn(`[hasAccessByCodes]: '${code}' is not a valid permission code`);
@@ -46,7 +48,7 @@ export function useAccess() {
 	/**
 	 * @zh 根据角色判断当前用户是否具有指定权限，当前系统设计为输入角色 id 来判断的
 	 * @en Determine whether the current user has a specified permission based on roles
-	 * @param roles 全部小写的权限名称或权限名称数组，比如 `["admin", "super", "user"]`。
+	 * @param roles 全部小写的权限名称或权限名称数组，例如 `["admin", "super", "user"]`。
 	 * @returns boolean 是否具有指定权限
 	 */
 	const hasAccessByRoles = (roles?: string | Array<string>) => {
@@ -56,7 +58,6 @@ export function useAccess() {
 		roles = isString(roles) ? [roles] : roles;
 		roles = roles.map(item => item.toLowerCase());
 		if (import.meta.env.DEV) {
-			// 校验角色是否合法，不合法的角色会打印警告信息
 			for (const roleItem of roles) {
 				if (!Object.values(AccessControlRoles).includes(roleItem)) {
 					console.warn(`[hasAccessByRoles]: '${roleItem}' is not a valid role`);
