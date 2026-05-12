@@ -1,7 +1,9 @@
 package com.uniondesk.iam.web;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -37,30 +39,43 @@ class IamControllerTest {
                         "ud-admin-web",
                         List.of("super_admin"),
                         List.of(new IamService.DomainSummary(10L, "domain-10", "业务域")),
-                        List.of(new IamService.IamResource(
+                        List.of(new AdminMenuService.AdminMenuNode(
                                 2L,
+                                "ADM0000000002",
                                 "menu",
-                                "platform_role",
-                                "平台角色",
-                                "ud-admin-web",
                                 "platform",
-                                null,
+                                "平台角色",
                                 "/platform/role",
+                                "./system/role",
+                                "platform.menu.read",
                                 null,
                                 2,
                                 "TeamOutlined",
-                                "./system/role",
                                 false,
                                 1,
-                                "platform.menu.read")),
+                                false,
+                                List.of())),
                         List.of(),
                         Clock.systemUTC().instant().toString()));
 
         mockMvc.perform(get("/api/v1/iam/me/permission-snapshot"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.menus[0].scope").value("platform"))
-                .andExpect(jsonPath("$.menus[0].component").value("./system/role"))
-                .andExpect(jsonPath("$.menus[0].permissionCode").value("platform.menu.read"));
+                .andExpect(jsonPath("$.menus").doesNotExist())
+                .andExpect(jsonPath("$.menuTree[0].scope").value("platform"))
+                .andExpect(jsonPath("$.menuTree[0].component").value("./system/role"))
+                .andExpect(jsonPath("$.menuTree[0].permissionCode").value("platform.menu.read"));
+    }
+
+    @Test
+    void deleteMenuEvictsAuthorizationCacheAfterDeletingRelations() throws Exception {
+        MockMvc mockMvc = mockMvc();
+        UserContextHolder.set(new UserContext(1L, "super_admin", null, "sid-1", "ud-admin-web"));
+
+        mockMvc.perform(delete("/api/v1/iam/menus/11"))
+                .andExpect(status().isNoContent());
+
+        verify(adminMenuService).deleteMenu(11L);
+        verify(iamService).evictAuthorizationCache();
     }
 
     private MockMvc mockMvc() {

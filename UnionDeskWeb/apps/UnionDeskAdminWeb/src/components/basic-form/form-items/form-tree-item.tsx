@@ -2,7 +2,7 @@ import type { TreeProps } from "antd";
 
 import type { BasicDataNode } from "antd/lib/tree";
 import { Checkbox, Input, Tree } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export interface TreeDataNodeWithId extends BasicDataNode {
@@ -40,6 +40,7 @@ export function FormTreeItem({ treeData, value, onChange }: FormTreeItemProps) {
 	const [searchValue, setSearchValue] = useState("");
 	const [checkedOptions, setCheckedOptions] = useState<string[]>([]);
 	const [autoExpandParent, setAutoExpandParent] = useState(true);
+	const previousCheckedOptionsRef = useRef<string[]>([]);
 	const { t } = useTranslation();
 
 	// const onSelect: TreeProps["onSelect"] = (selectedKeys) => {
@@ -91,19 +92,27 @@ export function FormTreeItem({ treeData, value, onChange }: FormTreeItemProps) {
 	};
 
 	useEffect(() => {
-		if (checkedOptions.includes("expandAll")) {
+		const previousCheckedOptions = previousCheckedOptionsRef.current;
+		const expandAll = checkedOptions.includes("expandAll");
+		const previousExpandAll = previousCheckedOptions.includes("expandAll");
+		if (expandAll) {
 			setExpandedKeys(flattenTreeData.map(item => item.id));
 		}
-		else {
+		else if (previousExpandAll) {
 			setExpandedKeys([]);
 		}
-		if (checkedOptions.includes("checkAll")) {
+
+		const checkAll = checkedOptions.includes("checkAll");
+		const previousCheckAll = previousCheckedOptions.includes("checkAll");
+		if (checkAll) {
 			onChange?.(flattenTreeData.map(item => item.id));
 		}
-		else {
+		else if (previousCheckAll) {
 			onChange?.([]);
 		}
-	}, [checkedOptions, flattenTreeData]);
+
+		previousCheckedOptionsRef.current = checkedOptions;
+	}, [checkedOptions, flattenTreeData, onChange]);
 	return (
 		<>
 			<Search

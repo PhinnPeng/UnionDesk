@@ -4,6 +4,8 @@ import { fetchLoginConfig } from "#src/api/auth";
 import { BasicButton } from "#src/components/basic-button";
 import { PASSWORD_RULES, USERNAME_RULES } from "#src/constants/rules";
 import { useAuthStore } from "#src/store/auth";
+import { useUserStore } from "#src/store/user";
+import { platformHomePath } from "#src/router/extra-info";
 
 import { Button, Form, Input, message, Space } from "antd";
 import { use, useEffect, useState } from "react";
@@ -82,7 +84,10 @@ export function PasswordLogin() {
 			messageLoadingApi?.destroy();
 			window.$message?.success(t("authority.loginSuccess"));
 			const redirect = searchParams.get("redirect");
-			navigate(redirect ?? import.meta.env.VITE_BASE_HOME_PATH);
+			// 根据用户权限决定跳转路径：有平台权限跳转到平台首页，否则跳转到业务域首页
+			const userInfo = useUserStore.getState();
+			const homePath = userInfo.platformAccess ? platformHomePath : import.meta.env.VITE_BASE_HOME_PATH;
+			navigate(redirect ?? homePath);
 		}
 		catch (error) {
 			messageLoadingApi?.destroy();

@@ -15,7 +15,7 @@ import { findDeepestFirstItem, findRootMenuByPath, translateMenus } from "./util
 
 export function useMenu() {
 	const appScope = useAppScope();
-	const wholeMenus = useAccessStore(state => appScope === appScopes.platform ? state.platformMenus : state.wholeMenus);
+	const wholeMenus = useAccessStore(state => appScope === appScopes.platform ? state.platformMenus : state.userMenus);
 	const { isMixedNav, isTwoColumnNav } = useLayout();
 	const navigate = useNavigate();
 	const { t } = useTranslation();

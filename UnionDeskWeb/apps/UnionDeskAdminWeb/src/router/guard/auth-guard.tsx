@@ -65,18 +65,15 @@ export function AuthGuard({ children }: AuthGuardProps) {
 			let userInfoError: unknown = null;
 
 			try {
-				if (!isAuthorized) {
+				const shouldFetchSnapshot = !isAuthorized || userMenus.length === 0;
+				if (shouldFetchSnapshot) {
 					const snapshot = await fetchUserInfoAndRoutes();
 					latestRoles.splice(0, latestRoles.length, ...snapshot.userInfo.roles);
 					backendMenus = snapshot.routes.length ? snapshot.routes : (snapshot.userInfo.menus ?? []);
-				}
-				else if (userMenus.length > 0) {
-					backendMenus = userMenus;
+					useUserStore.getState().setUserInfo(snapshot.userInfo);
 				}
 				else {
-					const snapshot = await fetchUserInfoAndRoutes();
-					latestRoles.splice(0, latestRoles.length, ...snapshot.userInfo.roles);
-					backendMenus = snapshot.routes.length ? snapshot.routes : (snapshot.userInfo.menus ?? []);
+					backendMenus = userMenus;
 				}
 			}
 			catch (error) {
@@ -92,7 +89,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 			}
 
 			const uniqueRoutes = removeDuplicateRoutes(routes);
-			setAccessStore(uniqueRoutes);
+			setAccessStore(backendMenus, uniqueRoutes);
 
 			if (userInfoError) {
 				if (isUnauthorizedReason(userInfoError)) {

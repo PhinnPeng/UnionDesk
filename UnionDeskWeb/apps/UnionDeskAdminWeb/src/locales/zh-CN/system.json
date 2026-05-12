@@ -4,7 +4,13 @@
 		"id": "角色标识",
 		"addRole": "新增角色",
 		"editRole": "编辑角色",
-		"assignMenu": "分配菜单"
+		"assignMenu": "分配菜单",
+		"assignButton": "按钮权限",
+		"scope": "角色范围",
+		"scopeGlobal": "全局",
+		"scopeDomain": "域级",
+		"systemRole": "系统角色",
+		"assignPermission": "分配权限"
 	},
 	"user": {
 		"name": "用户名称",
@@ -16,6 +22,7 @@
 		"name": "菜单名称",
 		"routePath": "路由路径",
 		"addMenu": "新增菜单",
+		"addButton": "新增按钮",
 		"editMenu": "编辑菜单",
 		"menuType": "菜单类型",
 		"menuTypeDesc": "菜单类型说明：目录、菜单、按钮",
@@ -57,7 +64,12 @@
 		"permissionCodeTooltip": "绑定的后端 API 权限标识，用于按钮级权限控制",
 		"statusTooltip": "停用后该菜单及其子菜单将不可访问",
 		"hideInMenuTooltip": "设为\"是\"后菜单仍可通过路径访问，但不在侧边栏显示",
-		"unregisteredComponentHint": "未注册组件提示"
+		"unregisteredComponentHint": "未注册组件提示",
+		"implementationType": "实现方式",
+		"implementationTypeTooltip": "选择菜单的实现方式：组件页面、外链或内嵌页面",
+		"componentPage": "组件页面",
+		"externalLinkUrlTooltip": "外链的完整URL地址，如 https://example.com",
+		"iframeLinkTooltip": "内嵌页面的URL地址，如 https://example.com/embed"
 	},
 	"dept": {
 		"name": "部门名称",

@@ -13,7 +13,7 @@ export interface LayoutSidebarProps {
 }
 
 export default function LayoutSidebar({ children, computedSidebarWidth }: LayoutSidebarProps) {
-	const { sidebarCollapsed, sidebarTheme, isDark } = usePreferences();
+	const { sidebarCollapsed, sidebarTheme, isDark, sideCollapsedWidth } = usePreferences();
 	const {
 		token: { Menu },
 	} = antdTheme.useToken();
@@ -26,6 +26,12 @@ export default function LayoutSidebar({ children, computedSidebarWidth }: Layout
 				algorithm: isFixedDarkTheme
 					? antdTheme.darkAlgorithm
 					: antdTheme.defaultAlgorithm,
+				components: {
+					Menu: {
+						collapsedWidth: sideCollapsedWidth,
+						itemHeight: 40,
+					},
+				},
 			}}
 		>
 			<aside

@@ -4,6 +4,7 @@ import type { PermissionSnapshot } from "#src/api/auth";
 import { fetchPermissionSnapshot } from "#src/api/auth";
 import { requestBackendJson } from "#src/api/backend";
 import { useAuthStore } from "#src/store/auth";
+import { AUTH_REFRESH_PATH } from "#src/utils/request/constants";
 
 import { buildBackendRoutesFromSnapshot, buildUserInfoFromPermissionSnapshot } from "./utils";
 import type { UserInfoType } from "./types";
@@ -27,9 +28,10 @@ async function loadPermissionSnapshotData() {
 	const cacheKey = getPermissionSnapshotCacheKey();
 	const now = Date.now();
 	if (cachedPermissionSnapshot && cachedPermissionSnapshotKey === cacheKey && now - cachedPermissionSnapshotAt < PERMISSION_SNAPSHOT_CACHE_TTL) {
+		const cachedMenus = cachedPermissionSnapshot.menuTree;
 		return {
 			userInfo: buildUserInfoFromPermissionSnapshot(cachedPermissionSnapshot),
-			routes: buildBackendRoutesFromSnapshot(cachedPermissionSnapshot.menus),
+			routes: buildBackendRoutesFromSnapshot(cachedMenus),
 		};
 	}
 
@@ -45,9 +47,10 @@ async function loadPermissionSnapshotData() {
 	}
 
 	const snapshot = await pendingPermissionSnapshotPromise;
+	const snapshotMenus = snapshot.menuTree;
 	return {
 		userInfo: buildUserInfoFromPermissionSnapshot(snapshot),
-		routes: buildBackendRoutesFromSnapshot(snapshot.menus),
+		routes: buildBackendRoutesFromSnapshot(snapshotMenus),
 	};
 }
 
@@ -71,7 +74,7 @@ export interface RefreshTokenResult {
 }
 
 export async function fetchRefreshToken(data: { readonly refreshToken: string }) {
-	return requestBackendJson<RefreshTokenResult>("v1/auth/refresh-token", {
+	return requestBackendJson<RefreshTokenResult>(`v1${AUTH_REFRESH_PATH}`, {
 		method: "POST",
 		json: data,
 	});

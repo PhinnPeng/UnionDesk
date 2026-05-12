@@ -117,14 +117,14 @@ export default function LayoutMenu({
 
 	const menuOpenProps = useMemo(() => {
 		// 如果开启了手风琴模式，则需要自动展开菜单
-		if (autoExpandCurrentMenu) {
+		if (autoExpandCurrentMenu && !sidebarCollapsed) {
 			return {
 				openKeys,
 				onOpenChange: handleOpenChange,
 			};
 		}
 		return {};
-	}, [autoExpandCurrentMenu, openKeys, handleOpenChange]);
+	}, [autoExpandCurrentMenu, sidebarCollapsed, openKeys, handleOpenChange]);
 
 	/**
 	 * 侧边菜单展开时，自动展开激活的菜单
@@ -162,12 +162,14 @@ export default function LayoutMenu({
 			 */
 			className={cn(
 				"!border-none min-w-0 flex-auto",
+				classes.iconSpacing,
 				{
 					/**
 					 * @zh 当侧边菜单折叠时，添加背景色
 					 * @en When the side menu is collapsed, add background color
 					 */
 					[classes.menuBackgroundColor]: sidebarCollapsed,
+					[classes.collapsedMenu]: sidebarCollapsed && mode === "inline",
 				},
 			)}
 			inlineIndent={16}

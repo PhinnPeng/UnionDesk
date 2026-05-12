@@ -7,13 +7,15 @@ import { ROOT_ROUTE_ID } from "#src/router/constants";
 import { baseRoutes } from "#src/router/routes";
 import { ascending } from "#src/router/utils/ascending";
 import { flattenRoutes } from "#src/router/utils/flatten-routes";
-import { generateMenuItemsFromRoutes } from "#src/router/utils/generate-menu-items-from-routes";
+import { generateUserMenus } from "#src/router/utils/generate-user-menus";
 
 import { create } from "zustand";
 
 interface AccessState {
-	// 路由菜单
-	wholeMenus: MenuItemType[]
+	// 用户后端返回的路由
+	userRoutes: AppRouteRecordRaw[]
+	// 用户菜单
+	userMenus: MenuItemType[]
 	// 平台菜单
 	platformMenus: MenuItemType[]
 	// 有权限的 React Router 路由
@@ -25,7 +27,8 @@ interface AccessState {
 }
 
 const initialState: AccessState = {
-	wholeMenus: [],
+	userRoutes: [],
+	userMenus: [],
 	platformMenus: [],
 	routeList: [],
 	flatRouteList: {},
@@ -33,22 +36,23 @@ const initialState: AccessState = {
 };
 
 interface AccessAction {
-	setAccessStore: (routes: AppRouteRecordRaw[]) => AccessState
+	setAccessStore: (userRoutes: AppRouteRecordRaw[], allRoutes: AppRouteRecordRaw[]) => AccessState
 	reset: () => void
 };
 
 export const useAccessStore = create<AccessState & AccessAction>(set => ({
 	...initialState,
 
-	setAccessStore: (routes) => {
-		const newRoutes = ascending([...baseRoutes, ...routes]);
+	setAccessStore: (userRoutes, allRoutes) => {
+		const newRoutes = ascending([...baseRoutes, ...allRoutes]);
 		/* 添加新的路由到根路由 */
-		router.patchRoutes(ROOT_ROUTE_ID, routes);
+		router.patchRoutes(ROOT_ROUTE_ID, allRoutes);
 		const flatRouteList = flattenRoutes(newRoutes);
-		const wholeMenus = generateMenuItemsFromRoutes(newRoutes, appScopes.business);
-		const platformMenus = generateMenuItemsFromRoutes(newRoutes, appScopes.platform);
+		const userMenus = generateUserMenus(userRoutes, appScopes.business);
+		const platformMenus = generateUserMenus(userRoutes, appScopes.platform);
 		const newState = {
-			wholeMenus,
+			userRoutes,
+			userMenus,
 			platformMenus,
 			routeList: newRoutes,
 			flatRouteList,

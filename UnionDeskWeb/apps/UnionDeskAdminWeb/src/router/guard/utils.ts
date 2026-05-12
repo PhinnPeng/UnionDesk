@@ -1,15 +1,29 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
 
 export function removeDuplicateRoutes(routes: AppRouteRecordRaw[]) {
-	const pathSet = new Set<string>();
-	return routes.filter((route) => {
-		if (pathSet.has(route.path!)) {
+	const routesByPath = new Map<string, AppRouteRecordRaw>();
+	const result: AppRouteRecordRaw[] = [];
+
+	for (const route of routes) {
+		const routePath = route.path!;
+		const existingRoute = routesByPath.get(routePath);
+		if (existingRoute) {
 			if (import.meta.env.DEV) {
 				console.warn(`[auth-guard]: Duplicate route path: ${route.path}`);
 			}
-			return false;
+
+			if (route.children?.length) {
+				existingRoute.children = removeDuplicateRoutes([
+					...(existingRoute.children ?? []),
+					...route.children,
+				]);
+			}
+			continue;
 		}
-		pathSet.add(route.path!);
-		return true;
-	});
+
+		routesByPath.set(routePath, route);
+		result.push(route);
+	}
+
+	return result;
 }

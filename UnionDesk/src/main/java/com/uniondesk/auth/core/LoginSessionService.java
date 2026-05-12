@@ -18,10 +18,12 @@ public class LoginSessionService {
 
     private final JdbcTemplate jdbcTemplate;
     private final Clock clock;
+    private final LoginConfigService loginConfigService;
 
-    public LoginSessionService(JdbcTemplate jdbcTemplate, Clock clock) {
+    public LoginSessionService(JdbcTemplate jdbcTemplate, Clock clock, LoginConfigService loginConfigService) {
         this.jdbcTemplate = jdbcTemplate;
         this.clock = clock;
+        this.loginConfigService = loginConfigService;
     }
 
     public String createSession(CreateSessionCommand command) {
@@ -332,19 +334,22 @@ public class LoginSessionService {
                                   AND session_type = ?
                                   AND session_status = 'active'
                                 """,
-                        now,
-                        sid,
-                        sessionType);
+                                now,
+                                sid,
+                                sessionType);
                 return false;
             }
+            LocalDateTime newExpiresAt = now.plusSeconds(loginConfigService.loadConfig().sessionTtlSeconds());
             jdbcTemplate.update("""
                             UPDATE auth_login_session
-                            SET last_seen_at = ?
+                            SET last_seen_at = ?,
+                                expires_at = ?
                             WHERE sid = ?
                               AND session_type = ?
                               AND session_status = 'active'
                             """,
                     now,
+                    newExpiresAt,
                     sid,
                     sessionType);
             return true;

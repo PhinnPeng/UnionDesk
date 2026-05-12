@@ -1,64 +1,117 @@
-import type { RoleItemType } from "#src/api/system/role";
+import type { RoleItemType, RolePayload } from "#src/api/system/role";
 import type { TreeDataNodeWithId } from "#src/components/basic-form";
-import { fetchAddRoleItem, fetchUpdateRoleItem } from "#src/api/system/role";
+import { fetchAddRole, fetchUpdateRole, fetchUpdateRolePermissions } from "#src/api/system/role";
 import { FormTreeItem } from "#src/components/basic-form";
 
 import {
 	DrawerForm,
 	ProFormRadio,
 	ProFormText,
-	ProFormTextArea,
 } from "@ant-design/pro-components";
-import { useMutation } from "@tanstack/react-query";
-import { Form } from "antd";
-import { useEffect } from "react";
+import { App, Button, Form } from "antd";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+interface RoleFormValues {
+	name: string
+	code: string
+	scope: string
+	menus: string[]
+}
+
+interface TreeNodeWithType extends TreeDataNodeWithId {
+	nodeType?: string
+}
+
 interface DetailProps {
-	treeData: TreeDataNodeWithId[]
+	treeData: TreeNodeWithType[]
 	title: React.ReactNode
 	open: boolean
-	detailData: Partial<RoleItemType>
+	detailData: Partial<RoleItemType> & { menuIds?: number[]; buttonIds?: number[] }
 	onCloseChange: () => void
-	refreshTable?: () => void
+	refreshTable?: () => void | Promise<void>
+}
+
+function flattenTree(nodes: TreeNodeWithType[]): TreeNodeWithType[] {
+	const result: TreeNodeWithType[] = [];
+	for (const node of nodes) {
+		result.push(node);
+		if (node.children?.length) {
+			result.push(...flattenTree(node.children as TreeNodeWithType[]));
+		}
+	}
+	return result;
 }
 
 export function Detail({ title, open, onCloseChange, detailData, treeData, refreshTable }: DetailProps) {
 	const { t } = useTranslation();
-	const [form] = Form.useForm<RoleItemType>();
+	const { message } = App.useApp();
+	const [form] = Form.useForm<RoleFormValues>();
+	const [submitting, setSubmitting] = useState(false);
+	const isEdit = !!detailData.id;
 
-	const addRoleItemMutation = useMutation({
-		mutationFn: fetchAddRoleItem,
-	});
-	const updateRoleItemMutation = useMutation({
-		mutationFn: fetchUpdateRoleItem,
-	});
-
-	const onFinish = async (values: RoleItemType) => {
-		// console.info(values);
-		/* 有 id 则为修改，否则为新增 */
-		if (detailData.id) {
-			await updateRoleItemMutation.mutateAsync(values);
-			window.$message?.success(t("common.updateSuccess"));
+	const saveRole = async (values: RoleFormValues) => {
+		const payload: RolePayload = {
+			name: values.name,
+			code: values.code,
+			scope: values.scope,
+		};
+		const flatNodes = flattenTree(treeData);
+		const nodeTypeMap = new Map(flatNodes.map(n => [n.id, n.nodeType]));
+		const selected = values.menus || [];
+		const menuIds = selected.filter(id => nodeTypeMap.get(id) !== "button").map(Number);
+		const buttonIds = selected.filter(id => nodeTypeMap.get(id) === "button").map(Number);
+		if (isEdit) {
+			await fetchUpdateRole(detailData.id!, payload);
+			await fetchUpdateRolePermissions(detailData.id!, { menuIds, buttonIds });
+			message.success(t("common.updateSuccess"));
 		}
 		else {
-			await addRoleItemMutation.mutateAsync(values);
-			window.$message?.success(t("common.addSuccess"));
+			const newRole = await fetchAddRole(payload);
+			if (menuIds.length > 0 || buttonIds.length > 0) {
+				await fetchUpdateRolePermissions(newRole.id, { menuIds, buttonIds });
+			}
+			message.success(t("common.addSuccess"));
 		}
-		/* 刷新表格 */
-		refreshTable?.();
-		// 不返回不会关闭弹框
+		onCloseChange();
+		await refreshTable?.();
 		return true;
+	};
+
+	const handleSubmit = async () => {
+		if (submitting) {
+			return;
+		}
+		const values = await form.validateFields(["name", "code", "scope"]);
+		setSubmitting(true);
+		try {
+			await saveRole({
+				...values,
+				menus: form.getFieldValue("menus") ?? [],
+			});
+		}
+		finally {
+			setSubmitting(false);
+		}
 	};
 
 	useEffect(() => {
 		if (open) {
-			form.setFieldsValue(detailData);
+			const allSelected = [
+				...(detailData.menuIds?.map(String) ?? []),
+				...(detailData.buttonIds?.map(String) ?? []),
+			];
+			form.setFieldsValue({
+				name: detailData.name ?? "",
+				code: detailData.code ?? "",
+				scope: detailData.scope ?? "domain",
+				menus: allSelected,
+			});
 		}
-	}, [open]);
+	}, [open, detailData, form]);
 
 	return (
-		<DrawerForm<RoleItemType>
+		<DrawerForm<RoleFormValues>
 			title={title}
 			open={open}
 			onOpenChange={(visible) => {
@@ -67,9 +120,7 @@ export function Detail({ title, open, onCloseChange, detailData, treeData, refre
 				}
 			}}
 			resize={{
-				onResize() {
-					// console.log('resize!');
-				},
+				onResize() {},
 				maxWidth: window.innerWidth * 0.8,
 				minWidth: 500,
 			}}
@@ -81,20 +132,25 @@ export function Detail({ title, open, onCloseChange, detailData, treeData, refre
 			drawerProps={{
 				destroyOnHidden: true,
 			}}
-			onFinish={onFinish}
+			onFinish={saveRole}
+			submitter={{
+				render: () => [
+					<Button key="cancel" onClick={onCloseChange}>
+						{t("common.cancel")}
+					</Button>,
+					<Button key="submit" type="primary" loading={submitting} onClick={handleSubmit}>
+						{t("common.confirm")}
+					</Button>,
+				],
+			}}
 			initialValues={{
-				status: 1,
+				scope: "domain",
 				menus: [],
 			}}
 		>
-
 			<ProFormText
 				allowClear
-				rules={[
-					{
-						required: true,
-					},
-				]}
+				rules={[{ required: true }]}
 				width="md"
 				name="name"
 				label={t("system.role.name")}
@@ -103,42 +159,27 @@ export function Detail({ title, open, onCloseChange, detailData, treeData, refre
 
 			<ProFormText
 				allowClear
-				rules={[
-					{
-						required: true,
-					},
-				]}
+				rules={[{ required: true }]}
 				width="md"
 				name="code"
 				label={t("system.role.id")}
+				disabled={isEdit}
 			/>
 
 			<ProFormRadio.Group
-				name="status"
-				label={t("common.status")}
+				name="scope"
+				label={t("system.role.scope")}
 				radioType="button"
+				rules={[{ required: true }]}
 				options={[
-					{
-						label: t("common.enabled"),
-						value: 1,
-					},
-					{
-						label: t("common.deactivated"),
-						value: 0,
-					},
+					{ label: t("system.role.scopeGlobal"), value: "global" },
+					{ label: t("system.role.scopeDomain"), value: "domain" },
 				]}
 			/>
 
-			<ProFormTextArea
-				allowClear
-				width="md"
-				name="remark"
-				label={t("common.remark")}
-			/>
-
-			<Form.Item name="menus" label={t("system.role.assignMenu")}>
+			<Form.Item name="menus" label={t("system.role.assignMenu")} tooltip="按钮节点标注 [按钮] 前缀，与菜单统一勾选">
 				<FormTreeItem treeData={treeData} />
 			</Form.Item>
 		</DrawerForm>
 	);
-};
+}

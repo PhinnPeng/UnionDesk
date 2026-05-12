@@ -17,15 +17,15 @@ export function MenuScopeFilter({ value, onChange }: MenuScopeFilterProps) {
 			value={value}
 			onChange={nextValue => onChange(nextValue as MenuScope)}
 			size="large"
-			className="w-full md:w-auto"
+			className="w-full"
+			block
 			options={[
 				{
 					label: (
-						<div className="flex items-center gap-2 px-4 py-2">
+						<div className="flex items-center gap-2 px-4 py-2 w-full justify-center">
 							<AppstoreOutlined />
-							<div className="flex flex-col items-start">
+							<div className="flex flex-col items-center text-center">
 								<span className="font-medium">{t("system.menu.platformScope")}</span>
-								<span className="text-xs opacity-60">{t("system.menu.scopeFilterPlatformHint")}</span>
 							</div>
 						</div>
 					),
@@ -33,11 +33,10 @@ export function MenuScopeFilter({ value, onChange }: MenuScopeFilterProps) {
 				},
 				{
 					label: (
-						<div className="flex items-center gap-2 px-4 py-2">
+						<div className="flex items-center gap-2 px-4 py-2 w-full justify-center">
 							<TeamOutlined />
-							<div className="flex flex-col items-start">
+							<div className="flex flex-col items-center text-center">
 								<span className="font-medium">{t("system.menu.businessScope")}</span>
-								<span className="text-xs opacity-60">{t("system.menu.scopeFilterBusinessHint")}</span>
 							</div>
 						</div>
 					),

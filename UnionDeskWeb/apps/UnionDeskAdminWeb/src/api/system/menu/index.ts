@@ -6,13 +6,15 @@ import type { MenuItemType } from "./types";
 
 export * from "./types";
 
-export function fetchMenuTree(params?: { scope?: "platform" | "business" }): Promise<MenuItemType[]> {
+export function fetchMenuTree(params: { scope: "platform" | "business" }): Promise<MenuItemType[]>;
+export function fetchMenuTree(params?: { scope?: "platform" | "business" }): Promise<MenuItemType[] | Record<string, MenuItemType[]>>;
+export function fetchMenuTree(params?: { scope?: "platform" | "business" }): Promise<MenuItemType[] | Record<string, MenuItemType[]>> {
 	const query = new URLSearchParams();
 	if (params?.scope) {
 		query.set("scope", params.scope);
 	}
 	const path = query.size > 0 ? `v1/iam/menus/tree?${query.toString()}` : "v1/iam/menus/tree";
-	return requestBackendJson<MenuItemType[]>(path);
+	return requestBackendJson<MenuItemType[] | Record<string, MenuItemType[]>>(path);
 }
 
 export function fetchCreateMenu(data: CreateMenuPayload): Promise<unknown> {

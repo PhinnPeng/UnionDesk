@@ -42,7 +42,7 @@ const searchHistoryLocalStorageKey = `__search-history-${location.hostname}__`;
 
 export function GlobalSearch() {
 	const appScope = useAppScope();
-	const wholeMenus = useAccessStore(state => appScope === appScopes.platform ? state.platformMenus : state.wholeMenus);
+	const wholeMenus = useAccessStore(state => appScope === appScopes.platform ? state.platformMenus : state.userMenus);
 	const { isMobile } = useDeviceType();
 	const [open, setOpen] = useState(false);
 	const navigate = useNavigate();

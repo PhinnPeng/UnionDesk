@@ -1,12 +1,9 @@
-import { createElement } from "react";
-
 import type { MenuItemType } from "#src/api/system/menu";
 import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 
-import { WarningOutlined } from "@ant-design/icons";
+import { parseIconValue, ReactIconRenderer } from "#src/icons/render-icon";
 import { Tag } from "antd";
-import { menuIcons } from "#src/icons/menu-icons";
 
 function getNodeTypeLabel(t: TFunction<"translation", undefined>, nodeType?: string) {
 	switch (nodeType) {
@@ -106,15 +103,10 @@ export function getConstantColumns(t: TFunction<"translation", undefined>): ProC
 				if (!iconName) {
 					return "-";
 				}
-				const IconComponent = menuIcons[iconName];
-				if (!IconComponent) {
-					return (
-						<span title={`Unknown icon: ${iconName}`}>
-							<WarningOutlined style={{ color: "var(--colorWarning, #d97706)" }} />
-						</span>
-					);
+				if (!parseIconValue(iconName)) {
+					return <span title={iconName}>-</span>;
 				}
-				return <span title={iconName}>{createElement(IconComponent)}</span>;
+				return <span title={iconName}><ReactIconRenderer iconValue={iconName} style={{ fontSize: 18 }} /></span>;
 			},
 		},
 		{

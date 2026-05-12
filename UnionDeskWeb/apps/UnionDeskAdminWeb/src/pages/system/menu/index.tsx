@@ -1,4 +1,4 @@
-import type { MenuItemType } from "#src/api/system/menu";
+﻿import type { MenuItemType } from "#src/api/system/menu";
 import type { ActionType, ProColumns, ProCoreActionType } from "@ant-design/pro-components";
 
 import { fetchDeleteMenu, fetchMenuTree } from "#src/api/system/menu";
@@ -8,10 +8,11 @@ import { BasicContent } from "#src/components/basic-content";
 import { BasicTable } from "#src/components/basic-table";
 import { useAuth } from "#src/hooks/use-auth";
 
+import { ConfirmPopover } from "#src/components/confirm-popover";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import { DownOutlined, RightOutlined } from "@ant-design/icons";
-import { Button, Card, Popconfirm, Space, Tag } from "antd";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Button, Card, Space, Tag } from "antd";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Detail } from "./components/detail";
@@ -84,9 +85,13 @@ export default function Menu() {
 	const canExpandRow = (record: MenuItemType) => record.nodeType !== "button" && Array.isArray(record.children) && record.children.length > 0;
 
 	const handleDeleteRow = async (id: number, action?: ProCoreActionType<object>) => {
-		await fetchDeleteMenu(id);
-		await action?.reload?.();
-		window.$message?.success(t("common.deleteSuccess"));
+		try {
+			await fetchDeleteMenu(id);
+			await action?.reload?.();
+			window.$message?.success(t("common.deleteSuccess"));
+		} catch (error) {
+			window.$message?.error(error instanceof Error ? error.message : t("common.deleteFailed"));
+		}
 	};
 
 	const columns: ProColumns<MenuItemType>[] = useMemo(() => {
@@ -96,38 +101,114 @@ export default function Menu() {
 				title: t("common.action"),
 				valueType: "option",
 				key: "option",
-				width: 120,
+				width: 140,
+				align: "center",
 				fixed: "right",
-				render: (_, record, __, action) => [
-					<AuthGuarded key="editable" auth={updateAuth}>
-						<BasicButton
-							type="link"
-							size="small"
-							onClick={() => {
-								setIsOpen(true);
-								setTitle(t("system.menu.editMenu"));
-								setDetailData({ ...record });
-							}}
-						>
-							{t("common.edit")}
-						</BasicButton>
-					</AuthGuarded>,
-					<AuthGuarded key="delete" auth={deleteAuth}>
-						<Popconfirm
-							title={t("common.confirmDelete")}
-							onConfirm={() => handleDeleteRow(record.id, action)}
-							okText={t("common.confirm")}
-							cancelText={t("common.cancel")}
-						>
-							<BasicButton type="link" size="small">
-								{t("common.delete")}
+				render: (_, record, __, action) => {
+					if (record.required === true) {
+						return (
+							<div className="flex justify-center items-center gap-2">
+								<Tag>系统</Tag>
+								<AuthGuarded key="editable" auth={updateAuth}>
+									<BasicButton
+										type="link"
+										size="small"
+										onClick={() => {
+											setIsOpen(true);
+											setTitle(t("system.menu.editMenu"));
+											setDetailData({ ...record });
+										}}
+									>
+										{t("common.edit")}
+									</BasicButton>
+								</AuthGuarded>
+								<AuthGuarded auth={deleteAuth}>
+									<ConfirmPopover
+										title={t("common.confirmDelete")}
+										onConfirm={() => handleDeleteRow(record.id, action)}
+										okText={t("common.confirm")}
+										cancelText={t("common.cancel")}
+									>
+										<BasicButton type="link" size="small" danger>
+											{t("common.delete")}
+										</BasicButton>
+									</ConfirmPopover>
+								</AuthGuarded>
+							</div>
+						);
+					}
+
+					const btns: ReactNode[] = [];
+
+					if (record.nodeType === "catalog") {
+						btns.push(
+							<AuthGuarded key="add-child" auth={createAuth}>
+								<BasicButton
+									type="link"
+									size="small"
+									onClick={() => {
+										setIsOpen(true);
+										setTitle(t("system.menu.addMenu"));
+										setDetailData({ parentId: record.id, nodeType: "menu" });
+									}}
+								>
+									{t("common.add")}
+								</BasicButton>
+							</AuthGuarded>,
+						);
+					}
+
+					if (record.nodeType === "menu") {
+						btns.push(
+							<AuthGuarded key="add-button" auth={createAuth}>
+								<BasicButton
+									type="link"
+									size="small"
+									onClick={() => {
+										setIsOpen(true);
+										setTitle(t("system.menu.addButton"));
+										setDetailData({ parentId: record.id, nodeType: "button" });
+									}}
+								>
+									{t("system.menu.addButton")}
+								</BasicButton>
+							</AuthGuarded>,
+						);
+					}
+
+					btns.push(
+						<AuthGuarded key="editable" auth={updateAuth}>
+							<BasicButton
+								type="link"
+								size="small"
+								onClick={() => {
+									setIsOpen(true);
+									setTitle(t("system.menu.editMenu"));
+									setDetailData({ ...record });
+								}}
+							>
+								{t("common.edit")}
 							</BasicButton>
-						</Popconfirm>
-					</AuthGuarded>,
-				],
+						</AuthGuarded>,
+						<AuthGuarded key="delete" auth={deleteAuth}>
+							<ConfirmPopover
+								title={t("common.confirmDelete")}
+								onConfirm={() => handleDeleteRow(record.id, action)}
+								okText={t("common.confirm")}
+								cancelText={t("common.cancel")}
+							>
+								<BasicButton type="link" size="small">
+									{t("common.delete")}
+								</BasicButton>
+							</ConfirmPopover>
+						</AuthGuarded>,
+					);
+
+					return <div className="flex justify-center gap-2">{btns}</div>;
+				},
 			},
 		];
-	}, [deleteAuth, t, updateAuth]);
+	}, [createAuth, deleteAuth, t, updateAuth]);
 
 	useEffect(() => {
 		if (previousScopeRef.current === scopeFilter) {
@@ -149,6 +230,7 @@ export default function Menu() {
 
 				<BasicTable<MenuItemType>
 					adaptive
+					pagination={false}
 					columns={columns}
 					className="menu-tree-table"
 					expandable={{
@@ -169,14 +251,23 @@ export default function Menu() {
 					}}
 					actionRef={actionRef}
 					request={async () => {
-						const treeData = await fetchMenuTree({ scope: scopeFilter });
-						const visibleTreeData = filterMenuTreeByScope(treeData, scopeFilter);
-						setFlatParentMenus(flattenMenuTree(visibleTreeData).filter(item => item.nodeType !== "button"));
-						return {
-							data: visibleTreeData,
-							success: true,
-							total: visibleTreeData.length,
-						};
+						try {
+							const treeData = await fetchMenuTree({ scope: scopeFilter });
+							const visibleTreeData = filterMenuTreeByScope(treeData, scopeFilter);
+							setFlatParentMenus(flattenMenuTree(visibleTreeData).filter(item => item.nodeType !== "button"));
+							return {
+								data: visibleTreeData,
+								success: true,
+								total: visibleTreeData.length,
+							};
+						} catch (error) {
+							window.$message?.error(error instanceof Error ? error.message : "加载菜单失败");
+							return {
+								data: [],
+								success: false,
+								total: 0,
+							};
+						}
 					}}
 					headerTitle={(
 						<Space>

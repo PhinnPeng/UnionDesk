@@ -64,8 +64,13 @@ public class AdminMenuService {
     }
 
     public List<AdminMenuNode> listMenuTree() {
-        Map<Long, String> requiredPermissionByMenuId = loadRequiredPermissionByMenuId();
-        List<AdminMenuNode> nodes = jdbcTemplate.query("""
+        return listMenuTree(null);
+    }
+
+    public List<AdminMenuNode> listMenuTree(@Nullable String scope) {
+        String normalizedScope = normalizeScopeFilter(scope);
+        Map<Long, String> requiredPermissionByMenuId = loadRequiredPermissionByMenuId(normalizedScope);
+        StringBuilder sql = new StringBuilder("""
                         SELECT
                             id,
                             code,
@@ -82,9 +87,19 @@ public class AdminMenuService {
                             status,
                             required
                         FROM iam_admin_menu
-                        ORDER BY order_no, id
-                        """,
-                (rs, rowNum) -> mapNode(rs, requiredPermissionByMenuId));
+                        WHERE 1 = 1
+                        """);
+        List<Object> args = new ArrayList<>();
+        if (normalizedScope != null) {
+            sql.append(" AND scope = ?");
+            args.add(normalizedScope);
+        }
+        sql.append(" ORDER BY order_no, id");
+        List<AdminMenuNode> nodes = args.isEmpty()
+                ? jdbcTemplate.query(sql.toString(), (rs, rowNum) -> mapNode(rs, requiredPermissionByMenuId))
+                : jdbcTemplate.query(sql.toString(),
+                (rs, rowNum) -> mapNode(rs, requiredPermissionByMenuId),
+                args.toArray());
         return buildTree(nodes);
     }
 
@@ -126,8 +141,24 @@ public class AdminMenuService {
                         """.formatted(placeholders),
                 (rs, rowNum) -> mapNode(rs),
                 normalizedRoleCodes.toArray());
-        List<AdminMenuNode> menuNodes = authorizedNodes.stream()
+        List<AdminMenuNode> authorizedMenus = authorizedNodes.stream()
                 .filter(node -> NODE_TYPE_MENU.equals(node.nodeType()))
+                .toList();
+        // 自动补齐授权 menu 节点的所有祖先 catalog 节点，确保前端能构建完整的目录-菜单父子结构
+        Map<Long, AdminMenuNode> menuNodesById = new LinkedHashMap<>();
+        for (AdminMenuNode menu : authorizedMenus) {
+            menuNodesById.put(menu.id(), menu);
+            Long parentId = menu.parentId();
+            while (parentId != null && !menuNodesById.containsKey(parentId)) {
+                AdminMenuNode parent = findNodeById(parentId).orElse(null);
+                if (parent == null || !NODE_TYPE_CATALOG.equals(parent.nodeType()) || parent.status() != 1) {
+                    break;
+                }
+                menuNodesById.put(parent.id(), parent);
+                parentId = parent.parentId();
+            }
+        }
+        List<AdminMenuNode> menuNodes = menuNodesById.values().stream()
                 .sorted(Comparator.comparingInt(AdminMenuNode::orderNo).thenComparingLong(AdminMenuNode::id))
                 .toList();
         List<GrantedPermission> actionNodes = authorizedNodes.stream()
@@ -156,7 +187,7 @@ public class AdminMenuService {
         long nodeId = insertNode(validated);
         String generatedCode = generateNodeCode(nodeId);
         jdbcTemplate.update("UPDATE iam_admin_menu SET code = ? WHERE id = ?", generatedCode, nodeId);
-        if (NODE_TYPE_MENU.equals(validated.nodeType())) {
+        if (NODE_TYPE_MENU.equals(validated.nodeType()) && StringUtils.hasText(validated.permissionCode())) {
             insertRequiredButton(nodeId, validated.permissionCode(), validated.scope());
         }
         return findNodeById(nodeId).orElseThrow(() -> new IllegalStateException("menu create failed"));
@@ -164,20 +195,21 @@ public class AdminMenuService {
 
     @Transactional
     public AdminMenuNode updateMenu(long menuId, UpdateAdminMenuCommand command) {
-        AdminMenuNode existing = findNodeById(menuId).orElseThrow(() -> new IllegalArgumentException("menu not found"));
+        AdminMenuNode existing = findNodeById(menuId).orElseThrow(() -> new IllegalArgumentException("菜单不存在"));
         String nextNodeType = command.nodeType() == null ? existing.nodeType() : command.nodeType();
-        if (!existing.nodeType().equals(nextNodeType)) {
-            throw new IllegalArgumentException("node type change is not supported");
+        if (NODE_TYPE_BUTTON.equals(nextNodeType) && !NODE_TYPE_BUTTON.equals(existing.nodeType())) {
+            throw new IllegalArgumentException("不允许将菜单类型修改为按钮");
         }
         String existingMenuPermissionCode = NODE_TYPE_MENU.equals(existing.nodeType())
                 ? findRequiredButton(menuId).map(AdminMenuNode::permissionCode).orElse(null)
                 : existing.permissionCode();
+        boolean isCatalog = NODE_TYPE_CATALOG.equals(nextNodeType);
         ValidatedNode validated = validateNode(
                 nextNodeType,
                 command.name() == null ? existing.name() : command.name(),
-                command.routePath() == null ? existing.routePath() : command.routePath(),
-                command.componentKey() == null ? existing.componentKey() : command.componentKey(),
-                command.permissionCode() == null ? existingMenuPermissionCode : command.permissionCode(),
+                isCatalog ? null : (command.routePath() == null ? existing.routePath() : command.routePath()),
+                isCatalog ? null : (command.componentKey() == null ? existing.componentKey() : command.componentKey()),
+                isCatalog ? null : (command.permissionCode() == null ? existingMenuPermissionCode : command.permissionCode()),
                 command.scope() == null ? existing.scope() : command.scope(),
                 command.parentId() == null ? existing.parentId() : command.parentId(),
                 command.orderNo() == null ? existing.orderNo() : command.orderNo(),
@@ -188,6 +220,7 @@ public class AdminMenuService {
         jdbcTemplate.update("""
                         UPDATE iam_admin_menu
                         SET
+                            node_type = ?,
                             scope = ?,
                             name = ?,
                             route_path = ?,
@@ -200,6 +233,7 @@ public class AdminMenuService {
                             status = ?
                         WHERE id = ?
                         """,
+                validated.nodeType(),
                 validated.scope(),
                 validated.name(),
                 validated.routePath(),
@@ -214,29 +248,20 @@ public class AdminMenuService {
         if (NODE_TYPE_MENU.equals(existing.nodeType())) {
             updateRequiredButton(menuId, validated.permissionCode(), validated.scope());
         }
-        return findNodeById(menuId).orElseThrow(() -> new IllegalArgumentException("menu not found"));
+        return findNodeById(menuId).orElseThrow(() -> new IllegalArgumentException("菜单不存在"));
     }
 
     @Transactional
     public void deleteMenu(long menuId) {
-        AdminMenuNode existing = findNodeById(menuId).orElseThrow(() -> new IllegalArgumentException("menu not found"));
-        if (existing.required()) {
-            throw new IllegalArgumentException("required button cannot be deleted");
-        }
+        AdminMenuNode existing = findNodeById(menuId).orElseThrow(() -> new IllegalArgumentException("菜单不存在"));
         Integer childCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM iam_admin_menu WHERE parent_id = ?",
                 Integer.class,
                 menuId);
         if (childCount != null && childCount > 0) {
-            throw new IllegalArgumentException("menu has children, delete child nodes first");
+            throw new IllegalArgumentException("请先删除该菜单下的所有子节点");
         }
-        Integer relationCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM iam_admin_role_menu_relation WHERE menu_id = ?",
-                Integer.class,
-                menuId);
-        if (relationCount != null && relationCount > 0) {
-            throw new IllegalArgumentException("menu is bound to roles, unbind first");
-        }
+        jdbcTemplate.update("DELETE FROM iam_admin_role_menu_relation WHERE menu_id = ?", menuId);
         jdbcTemplate.update("DELETE FROM iam_admin_menu WHERE id = ?", menuId);
     }
 
@@ -272,6 +297,9 @@ public class AdminMenuService {
         Set<Long> normalizedButtonIds = buttonIds == null ? new LinkedHashSet<>() : new LinkedHashSet<>(buttonIds);
         ensureNodeType(normalizedMenuIds, NODE_TYPE_MENU);
         ensureNodeType(normalizedButtonIds, NODE_TYPE_BUTTON);
+        RequiredMenuIds requiredMenuIds = loadRequiredMenuAndButtonIds(roleId);
+        normalizedMenuIds.addAll(requiredMenuIds.menuIds());
+        normalizedButtonIds.addAll(requiredMenuIds.buttonIds());
         if (!normalizedButtonIds.isEmpty()) {
             String buttonPlaceholders = String.join(",", normalizedButtonIds.stream().map(id -> "?").toList());
             List<Long> parentMenuIds = jdbcTemplate.query(
@@ -313,6 +341,37 @@ public class AdminMenuService {
         }
         replaceRolePermissionRows(roleId, normalizedButtonIds);
         return loadRolePermissions(roleId);
+    }
+
+    private RequiredMenuIds loadRequiredMenuAndButtonIds(int roleId) {
+        String roleScope = jdbcTemplate.queryForObject("SELECT scope FROM role WHERE id = ?", String.class, roleId);
+        String normalizedRoleScope = StringUtils.hasText(roleScope) ? roleScope.trim().toLowerCase(Locale.ROOT) : "business";
+        String menuScope = "global".equals(normalizedRoleScope) ? "platform" : "business";
+        List<Long> menuIds = jdbcTemplate.query("""
+                        SELECT id
+                        FROM iam_admin_menu
+                        WHERE node_type = 'menu'
+                          AND required = 1
+                          AND scope = ?
+                          AND status = 1
+                        """,
+                (rs, rowNum) -> rs.getLong("id"),
+                menuScope);
+        List<Long> buttonIds = List.of();
+        if (!menuIds.isEmpty()) {
+            String placeholders = String.join(",", menuIds.stream().map(id -> "?").toList());
+            buttonIds = jdbcTemplate.query("""
+                            SELECT id
+                            FROM iam_admin_menu
+                            WHERE parent_id IN (%s)
+                              AND node_type = 'button'
+                              AND required = 1
+                              AND status = 1
+                            """.formatted(placeholders),
+                    (rs, rowNum) -> rs.getLong("id"),
+                    menuIds.toArray());
+        }
+        return new RequiredMenuIds(menuIds, buttonIds);
     }
 
     private Set<String> loadGrantedPermissionCodesByRole(String roleCode) {
@@ -388,6 +447,9 @@ public class AdminMenuService {
     }
 
     private void updateRequiredButton(long menuId, String permissionCode, String scope) {
+        if (!StringUtils.hasText(permissionCode)) {
+            return;
+        }
         PermissionDefinition definition = requirePermissionDefinition(permissionCode);
         Optional<AdminMenuNode> requiredButton = findRequiredButton(menuId);
         if (requiredButton.isEmpty()) {
@@ -443,7 +505,7 @@ public class AdminMenuService {
         }, keyHolder);
         Number generatedId = keyHolder.getKey();
         if (generatedId == null) {
-            throw new IllegalStateException("button create failed");
+            throw new IllegalStateException("按钮节点创建失败");
         }
         return generatedId.longValue();
     }
@@ -463,7 +525,7 @@ public class AdminMenuService {
             Long selfId) {
         String normalizedNodeType = normalizeRequired(nodeType, "nodeType").toLowerCase(Locale.ROOT);
         if (!SUPPORTED_NODE_TYPES.contains(normalizedNodeType)) {
-            throw new IllegalArgumentException("unsupported node type");
+            throw new IllegalArgumentException("不支持的节点类型");
         }
         String normalizedName = normalizeRequired(name, "name");
         String normalizedRoutePath = StringUtils.hasText(routePath) ? normalizeRoute(routePath) : null;
@@ -472,20 +534,20 @@ public class AdminMenuService {
         String normalizedScope = StringUtils.hasText(scope) ? normalizeScope(scope) : null;
         Long normalizedParentId = parentId;
         if (normalizedParentId != null) {
-            AdminMenuNode parent = findNodeById(normalizedParentId).orElseThrow(() -> new IllegalArgumentException("parent menu not found"));
+            AdminMenuNode parent = findNodeById(normalizedParentId).orElseThrow(() -> new IllegalArgumentException("父级菜单不存在"));
             if (selfId != null && selfId.equals(normalizedParentId)) {
-                throw new IllegalArgumentException("parent menu is invalid");
+                throw new IllegalArgumentException("不能将自身设为父级菜单");
             }
             if (NODE_TYPE_BUTTON.equals(normalizedNodeType) && !NODE_TYPE_MENU.equals(parent.nodeType())) {
-                throw new IllegalArgumentException("button parent must be menu");
+                throw new IllegalArgumentException("按钮节点的父级必须是菜单节点");
             }
             if (NODE_TYPE_MENU.equals(normalizedNodeType)
                     && !NODE_TYPE_MENU.equals(parent.nodeType())
                     && !NODE_TYPE_CATALOG.equals(parent.nodeType())) {
-                throw new IllegalArgumentException("menu parent must be catalog or menu");
+                throw new IllegalArgumentException("菜单节点的父级必须是目录或菜单节点");
             }
             if (NODE_TYPE_CATALOG.equals(normalizedNodeType) && !NODE_TYPE_CATALOG.equals(parent.nodeType())) {
-                throw new IllegalArgumentException("catalog parent must be catalog");
+                throw new IllegalArgumentException("目录节点的父级必须是目录节点");
             }
             if (normalizedScope == null) {
                 normalizedScope = parent.scope();
@@ -496,23 +558,19 @@ public class AdminMenuService {
         }
         if (NODE_TYPE_CATALOG.equals(normalizedNodeType)) {
             if (normalizedRoutePath != null || normalizedComponentKey != null || normalizedPermissionCode != null) {
-                throw new IllegalArgumentException("catalog does not support route, component or permission code");
+                throw new IllegalArgumentException("目录节点不支持路由路径、组件或权限码");
             }
         }
         if (NODE_TYPE_MENU.equals(normalizedNodeType)) {
             if (!StringUtils.hasText(normalizedRoutePath) || !StringUtils.hasText(normalizedComponentKey)) {
-                throw new IllegalArgumentException("menu requires routePath and componentKey");
+                throw new IllegalArgumentException("菜单节点必须填写路由路径和组件路径");
             }
-            normalizedPermissionCode = normalizeRequired(normalizedPermissionCode, "permissionCode");
+            normalizedPermissionCode = null;
             ensureRoutePathAvailable(normalizedRoutePath, selfId);
-            ensurePermissionDefinitionExists(normalizedPermissionCode);
-            if (selfId == null) {
-                ensurePermissionCodeAvailable(normalizedPermissionCode, null);
-            }
         }
         if (NODE_TYPE_BUTTON.equals(normalizedNodeType)) {
             if (!StringUtils.hasText(normalizedPermissionCode)) {
-                throw new IllegalArgumentException("button requires permissionCode");
+                throw new IllegalArgumentException("按钮节点必须填写权限码");
             }
             ensurePermissionCodeAvailable(normalizedPermissionCode, selfId);
             ensurePermissionDefinitionExists(normalizedPermissionCode);
@@ -556,27 +614,27 @@ public class AdminMenuService {
         }
         Integer count = jdbcTemplate.queryForObject(sql.toString(), Integer.class, args.toArray());
         if (count != null && count > 0) {
-            throw new IllegalArgumentException("routePath already exists");
+            throw new IllegalArgumentException("路由路径已被其他菜单使用");
         }
     }
 
     private void ensurePermissionDefinitionExists(String permissionCode) {
         if (AdminPermissionCatalog.findByCode(permissionCode).isEmpty()) {
-            throw new IllegalArgumentException("permissionCode not found");
+            throw new IllegalArgumentException("权限码不存在，请从权限码列表中选择");
         }
     }
 
     private String normalizeScope(String scope) {
         String normalizedScope = normalizeRequired(scope, "scope").toLowerCase(Locale.ROOT);
         if (!List.of("platform", "business").contains(normalizedScope)) {
-            throw new IllegalArgumentException("unsupported scope");
+            throw new IllegalArgumentException("不支持的域类型，必须是 platform 或 business");
         }
         return normalizedScope;
     }
 
     private PermissionDefinition requirePermissionDefinition(String permissionCode) {
         return AdminPermissionCatalog.findByCode(permissionCode)
-                .orElseThrow(() -> new IllegalArgumentException("permissionCode not found"));
+                .orElseThrow(() -> new IllegalArgumentException("权限码不存在"));
     }
 
     private void ensurePermissionCodeAvailable(String permissionCode, Long selfId) {
@@ -593,7 +651,7 @@ public class AdminMenuService {
         }
         Integer count = jdbcTemplate.queryForObject(sql.toString(), Integer.class, args.toArray());
         if (count != null && count > 0) {
-            throw new IllegalArgumentException("permissionCode already exists");
+            throw new IllegalArgumentException("权限码已被其他节点使用");
         }
     }
 
@@ -609,7 +667,7 @@ public class AdminMenuService {
                 Long.class,
                 args.toArray());
         if (count == null || count != nodeIds.size()) {
-            throw new IllegalArgumentException(expectedType + " node not found");
+            throw new IllegalArgumentException("存在无效的菜单节点引用");
         }
     }
 
@@ -751,7 +809,7 @@ public class AdminMenuService {
         }
     }
 
-    private List<AdminMenuNode> buildTree(List<AdminMenuNode> nodes) {
+    public static List<AdminMenuNode> buildTree(List<AdminMenuNode> nodes) {
         Map<Long, AdminMenuNodeBuilder> byId = new LinkedHashMap<>();
         for (AdminMenuNode node : nodes) {
             byId.put(node.id(), new AdminMenuNodeBuilder(node));
@@ -815,20 +873,48 @@ public class AdminMenuService {
     }
 
     private Map<Long, String> loadRequiredPermissionByMenuId() {
-        return jdbcTemplate.query("""
+        return loadRequiredPermissionByMenuId(null);
+    }
+
+    private Map<Long, String> loadRequiredPermissionByMenuId(@Nullable String scope) {
+        StringBuilder sql = new StringBuilder("""
                         SELECT parent_id, permission_code
                         FROM iam_admin_menu
                         WHERE node_type = 'button'
                           AND required = 1
                           AND parent_id IS NOT NULL
-                        """,
+                        """);
+        List<Object> args = new ArrayList<>();
+        if (scope != null) {
+            sql.append(" AND scope = ?");
+            args.add(scope);
+        }
+        if (args.isEmpty()) {
+            return jdbcTemplate.query(sql.toString(),
+                    rs -> {
+                        Map<Long, String> permissions = new LinkedHashMap<>();
+                        while (rs.next()) {
+                            permissions.put(rs.getLong("parent_id"), rs.getString("permission_code"));
+                        }
+                        return permissions;
+                    });
+        }
+        return jdbcTemplate.query(sql.toString(),
                 rs -> {
                     Map<Long, String> permissions = new LinkedHashMap<>();
                     while (rs.next()) {
                         permissions.put(rs.getLong("parent_id"), rs.getString("permission_code"));
                     }
                     return permissions;
-                });
+                },
+                args.toArray());
+    }
+
+    private String normalizeScopeFilter(@Nullable String scope) {
+        if (!StringUtils.hasText(scope)) {
+            return null;
+        }
+        return scope.trim().toLowerCase(Locale.ROOT);
     }
 
     public record AdminMenuNode(
@@ -879,6 +965,11 @@ public class AdminMenuService {
 
     public record RolePermissions(
             int roleId,
+            List<Long> menuIds,
+            List<Long> buttonIds) {
+    }
+
+    private record RequiredMenuIds(
             List<Long> menuIds,
             List<Long> buttonIds) {
     }

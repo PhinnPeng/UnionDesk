@@ -14,6 +14,7 @@ const initialState: UserInfoType = {
 	roles: [],
 	actions: [],
 	platformAccess: false,
+	businessDomainAccess: false,
 	menus: [],
 };
 

@@ -5,13 +5,13 @@ import { fetchCreateMenu, fetchUpdateMenu } from "#src/api/system/menu";
 import { fetchAdminPermissionCodes } from "#src/api/platform/iam";
 import { handleTree } from "#src/utils/tree";
 
-import { Alert, Form } from "antd";
+import { Alert, Col, Form } from "antd";
 import {
 	ModalForm,
+	ProForm,
 	ProFormCascader,
 	ProFormDependency,
 	ProFormDigit,
-	ProForm,
 	ProFormRadio,
 	ProFormSelect,
 	ProFormText,
@@ -20,11 +20,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { componentRegistry, registeredComponentKeys } from "./component-registry";
-import { MenuIconPicker } from "./menu-icon-picker";
+import { IconPicker } from "./icon-picker";
+import { PERMISSION_CODE_LABELS } from "./permission-code-labels";
 
 type MenuFormValues = Partial<MenuItemType> & {
 	parentId?: number[] | number | null
 	hidden?: boolean
+	implementationType?: "component" | "external" | "iframe"
 };
 
 interface DetailProps {
@@ -50,16 +52,13 @@ function groupPermissionOptions(items: AdminPermissionCodeView[], translate: (ke
 		label: scope === "platform" ? translate("system.menu.platformPermissions") : scope === "domain" ? translate("system.menu.domainPermissions") : translate("system.menu.sharedPermissions"),
 		options: options.map(item => ({
 			label: (
-				<div className="flex flex-col gap-1">
-					<div className="flex items-center gap-2">
-						<span className="rounded bg-blue-50 px-2 py-0.5 text-xs text-blue-700">{item.code}</span>
-						<span>{item.name}</span>
-					</div>
-					<span className="text-xs text-slate-500">{item.httpMethod} {item.pathPattern}</span>
+				<div className="flex items-center gap-2">
+					<span className="rounded bg-blue-600 px-2 py-0.5 text-xs text-white flex-shrink-0 font-mono">{item.code}</span>
+					<span className="text-sm">{PERMISSION_CODE_LABELS[item.code] ?? item.name}</span>
 				</div>
 			),
 			value: item.code,
-			searchText: `${item.code} ${item.name} ${item.httpMethod} ${item.pathPattern}`,
+			searchText: `${item.code} ${PERMISSION_CODE_LABELS[item.code] ?? ""} ${item.name}`,
 		})),
 	}));
 }
@@ -136,6 +135,7 @@ export function Detail({
 		}));
 	}, []);
 
+
 	useEffect(() => {
 		if (!open) {
 			return;
@@ -179,12 +179,14 @@ export function Detail({
 	const onFinish = async (values: MenuFormValues) => {
 		const nodeTypeValue = values.nodeType ?? "menu";
 		const parentId = normalizeParentId(values.parentId);
+		const isExternalOrIframe = values.implementationType === "external" || values.implementationType === "iframe";
+		const isCatalog = nodeTypeValue === "catalog";
 		const payload = {
 			name: values.name ?? "",
 			nodeType: nodeTypeValue,
-			routePath: nodeTypeValue === "button" ? null : (values.routePath?.trim() || null),
-			componentKey: nodeTypeValue === "menu" ? normalizeComponentKey(values.componentKey) : null,
-			permissionCode: values.permissionCode?.trim() || null,
+			routePath: (isCatalog || nodeTypeValue === "button") ? null : (values.routePath?.trim() || null),
+			componentKey: nodeTypeValue === "menu" && !isExternalOrIframe ? normalizeComponentKey(values.componentKey) : null,
+			permissionCode: isCatalog ? null : (values.permissionCode?.trim() || null),
 			scope: values.scope ?? resolveScopeValue(parentId, detailData.scope),
 			parentId,
 			orderNo: Number(values.orderNo ?? 0),
@@ -212,144 +214,121 @@ export function Detail({
 			title={title}
 			open={open}
 			labelAlign="left"
+			layout="horizontal"
 			onOpenChange={(visible) => {
 				if (visible === false) {
 					onCloseChange();
 				}
 			}}
-			labelCol={{ span: 6 }}
-			layout="horizontal"
+			grid
+			rowProps={{ gutter: 16 }}
 			form={form}
 			autoFocusFirstInput
 			modalProps={{
 				destroyOnHidden: true,
 			}}
-			grid
-			width={{
-				xl: 860,
-				md: 560,
-			}}
+			width={640}
 			onFinish={onFinish}
 			initialValues={{
 				nodeType: "menu",
 				status: 1,
 				hidden: false,
 				scope: defaultScope,
+				implementationType: "component",
 			}}
 		>
+			{/* 菜单类型 — 编辑时隐藏 button 选项，防止将菜单改为按钮 */}
 			<ProFormRadio.Group
-				fieldProps={{
-					buttonStyle: "solid",
-				}}
+				fieldProps={{ buttonStyle: "solid" }}
 				name="nodeType"
 				label={t("system.menu.menuType")}
 				tooltip={t("system.menu.menuTypeTooltip")}
-				labelCol={{ span: 3 }}
-				colProps={{ md: 24, xl: 24 }}
+				labelCol={{ span: 4 }}
+				colProps={{ span: 24 }}
 				radioType="button"
 				required
 				options={[
 					{ label: t("system.menu.catalog"), value: "catalog" },
 					{ label: t("system.menu.menu"), value: "menu" },
-					{ label: t("system.menu.button"), value: "button" },
+					...(!detailData.id ? [{ label: t("system.menu.button"), value: "button" }] : []),
 				]}
 			/>
 
+			{/* 上级菜单 */}
 			<ProFormCascader
 				name="parentId"
 				label={t("system.menu.parentMenu")}
 				tooltip={t("system.menu.parentMenuTooltip")}
-				labelCol={{ span: 3 }}
-				colProps={{ md: 24, xl: 24 }}
+				labelCol={{ span: 4 }}
+				colProps={{ span: 24 }}
 				fieldProps={{
 					showSearch: true,
 					autoClearSearchValue: true,
-					fieldNames: {
-						label: "name",
-						value: "id",
-						children: "children",
-					},
+					fieldNames: { label: "name", value: "id", children: "children" },
 				}}
-				request={async () => {
-					return handleTree(flatParentMenus);
-				}}
+				request={async () => handleTree(flatParentMenus)}
 			/>
 
-			<ProFormRadio.Group
-				name="scope"
-				label={t("system.menu.scope")}
-				tooltip={t("system.menu.scopeTooltip")}
-				radioType="button"
-				labelCol={{ span: 6 }}
-				colProps={{ md: 24, xl: 12 }}
-				fieldProps={{
-					buttonStyle: "solid",
-					disabled: Boolean(detailData.id),
-				}}
+			{/* 菜单名称 */}
+			<ProFormText
+				allowClear
 				rules={[{ required: true }]}
-				options={[
-					{ label: t("system.menu.businessScope"), value: "business" },
-					{ label: t("system.menu.platformScope"), value: "platform" },
-				]}
+				labelCol={{ span: 4 }}
+				colProps={{ span: 24 }}
+				name="name"
+				label={t("system.menu.name")}
+				tooltip={t("system.menu.nameTooltip")}
 			/>
 
-			<ProFormDependency name={["nodeType"]}>
-				{({ nodeType: dependencyNodeType }) => {
+			<ProFormDependency name={["nodeType", "implementationType"]}>
+				{({ nodeType: dependencyNodeType, implementationType }) => {
 					const dependencyValue = String(dependencyNodeType ?? "menu");
-					const dependencyShowRoutePath = dependencyValue !== "button";
+					const implType = String(implementationType ?? "component");
+					const dependencyShowRoutePath = dependencyValue === "menu";
 					const dependencyShowIcon = dependencyValue !== "button";
-					const dependencyShowComponentKey = dependencyValue === "menu";
+					const dependencyShowComponentKey = dependencyValue === "menu" && implType === "component";
 					const dependencyShowPermissionCode = dependencyValue !== "catalog";
+					const routePathLabel = implType === "external" ? t("system.menu.externalLinkUrl") : implType === "iframe" ? t("system.menu.iframeLink") : t("system.menu.routePath");
+					const routePathTooltip = implType === "external" ? t("system.menu.externalLinkUrlTooltip") : implType === "iframe" ? t("system.menu.iframeLinkTooltip") : t("system.menu.routePathTooltip");
 
 					return (
 						<>
-							<ProFormText
-								allowClear
-								rules={[{ required: true }]}
-								labelCol={{ span: 6 }}
-								colProps={{ md: 24, xl: 12 }}
-								name="name"
-								label={t("system.menu.name")}
-								tooltip={t("system.menu.nameTooltip")}
-							/>
-							{dependencyShowRoutePath ? (
+							{dependencyValue === "menu" && (
+								<ProFormRadio.Group
+									name="implementationType"
+									label={t("system.menu.implementationType")}
+									tooltip={t("system.menu.implementationTypeTooltip")}
+									radioType="button"
+									labelCol={{ span: 4 }}
+									colProps={{ span: 24 }}
+									fieldProps={{ buttonStyle: "solid" }}
+									options={[
+										{ label: t("system.menu.componentPage"), value: "component" },
+										{ label: t("system.menu.externalLink"), value: "external" },
+										{ label: t("system.menu.iframe"), value: "iframe" },
+									]}
+								/>
+							)}
+							{/* 路由路径 */}
+							{dependencyShowRoutePath && (
 								<ProFormText
 									allowClear
-									labelCol={{ span: 6 }}
-									colProps={{ md: 24, xl: 12 }}
+									labelCol={{ span: 8 }}
+									colProps={{ span: 12 }}
 									name="routePath"
-									label={t("system.menu.routePath")}
-									tooltip={t("system.menu.routePathTooltip")}
+									label={routePathLabel}
+									tooltip={routePathTooltip}
 								/>
-							) : null}
-							<ProFormDigit
-								allowClear
-								rules={[{ required: true }]}
-								labelCol={{ span: 6 }}
-								colProps={{ md: 24, xl: 12 }}
-								name="orderNo"
-								label={t("system.menu.menuOrder")}
-								tooltip={t("system.menu.menuOrderTooltip")}
-							/>
-							{dependencyShowIcon ? (
-								<ProForm.Item
-									name="icon"
-									label={t("system.menu.menuIcon")}
-									tooltip={t("system.menu.menuIconTooltip")}
-									labelCol={{ span: 6 }}
-									colProps={{ md: 24, xl: 12 }}
-									rules={[{ required: true }]}
-								>
-									<MenuIconPicker placeholder={t("system.menu.menuIcon")} />
-								</ProForm.Item>
-							) : null}
-							{dependencyShowComponentKey ? (
+							)}
+
+							{/* 组件路径 */}
+							{dependencyShowComponentKey && (
 								<ProFormSelect
 									name="componentKey"
 									label={t("system.menu.componentUrl")}
 									tooltip={t("system.menu.componentUrlTooltip")}
-									labelCol={{ span: 6 }}
-									colProps={{ md: 24, xl: 12 }}
+									labelCol={{ span: 8 }}
+									colProps={{ span: 12 }}
 									fieldProps={{
 										showSearch: true,
 										optionFilterProp: "searchText",
@@ -357,14 +336,16 @@ export function Detail({
 									}}
 									placeholder={t("system.menu.componentUrl")}
 								/>
-							) : null}
-							{dependencyShowPermissionCode ? (
+							)}
+
+							{/* 权限码 */}
+							{dependencyShowPermissionCode && (
 								<ProFormSelect
 									name="permissionCode"
 									label={t("system.menu.permissionCode")}
 									tooltip={t("system.menu.permissionCodeTooltip")}
-									labelCol={{ span: 6 }}
-									colProps={{ md: 24, xl: 12 }}
+									labelCol={{ span: 4 }}
+									colProps={{ span: 24 }}
 									fieldProps={{
 										showSearch: true,
 										optionFilterProp: "searchText",
@@ -373,31 +354,65 @@ export function Detail({
 										allowClear: true,
 									}}
 								/>
-							) : null}
+							)}
+
+							{/* 状态 */}
 							<ProFormRadio.Group
 								name="status"
 								label={t("common.status")}
 								tooltip={t("system.menu.statusTooltip")}
 								radioType="button"
-								labelCol={{ span: 6 }}
-								colProps={{ md: 24, xl: 12 }}
+								labelCol={{ span: 4 }}
+								colProps={{ span: 24 }}
+								fieldProps={{ buttonStyle: "solid" }}
 								options={[
 									{ label: t("common.enabled"), value: 1 },
 									{ label: t("common.deactivated"), value: 0 },
 								]}
 							/>
+
+							{/* 是否隐藏 */}
 							<ProFormRadio.Group
 								name="hidden"
 								label={t("system.menu.hideInMenu")}
 								tooltip={t("system.menu.hideInMenuTooltip")}
 								radioType="button"
-								labelCol={{ span: 6 }}
-								colProps={{ md: 24, xl: 12 }}
+								labelCol={{ span: 4 }}
+								colProps={{ span: 24 }}
+								fieldProps={{ buttonStyle: "solid" }}
 								options={[
 									{ label: t("common.yes"), value: true },
 									{ label: t("common.no"), value: false },
 								]}
 							/>
+
+							{/* 菜单图标 */}
+							{dependencyShowIcon && (
+								<Col span={24}>
+									<ProForm.Item
+										name="icon"
+										label={t("system.menu.menuIcon")}
+										tooltip={t("system.menu.menuIconTooltip")}
+										labelCol={{ span: 4 }}
+										wrapperCol={{ span: 20 }}
+										rules={[]}
+									>
+										<IconPicker />
+									</ProForm.Item>
+								</Col>
+							)}
+
+							{/* 菜单排序 */}
+							<ProFormDigit
+								allowClear
+								rules={[{ required: true }]}
+								labelCol={{ span: 4 }}
+								colProps={{ span: 24 }}
+								name="orderNo"
+								label={t("system.menu.menuOrder")}
+								tooltip={t("system.menu.menuOrderTooltip")}
+							/>
+
 							{currentNodeType === "menu" && normalizedComponentKey && !registeredComponentKeys.has(normalizedComponentKey) ? (
 								<Alert
 									className="mt-2"
@@ -411,6 +426,7 @@ export function Detail({
 					);
 				}}
 			</ProFormDependency>
+
 		</ModalForm>
 	);
 }

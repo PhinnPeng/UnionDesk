@@ -22,7 +22,9 @@ import com.uniondesk.iam.core.IamService.UserAccount;
 import com.uniondesk.iam.core.PermissionCodes;
 import com.uniondesk.iam.core.RequirePermission;
 import jakarta.validation.Valid;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -116,9 +119,21 @@ public class IamController {
     }
 
     @GetMapping("/menus/tree")
-    public List<IamDtos.MenuTreeNodeView> listMenusTree(@RequestParam(required = false) String clientScope) {
+    public Object listMenusTree(@RequestParam(name = "scope", required = false) String scope) {
         requireSuperAdminContext();
-        return adminMenuService.listMenuTree().stream().map(this::toMenuTreeNodeView).toList();
+        if (StringUtils.hasText(scope)) {
+            return adminMenuService.listMenuTree(scope).stream()
+                    .map(this::toMenuTreeNodeView)
+                    .toList();
+        }
+        Map<String, List<IamDtos.MenuTreeNodeView>> response = new LinkedHashMap<>();
+        response.put("platform", adminMenuService.listMenuTree("platform").stream()
+                .map(this::toMenuTreeNodeView)
+                .toList());
+        response.put("business", adminMenuService.listMenuTree("business").stream()
+                .map(this::toMenuTreeNodeView)
+                .toList());
+        return response;
     }
 
     @PostMapping("/menus")
@@ -163,6 +178,7 @@ public class IamController {
     public void deleteMenu(@PathVariable long menuId) {
         requireSuperAdminContext();
         adminMenuService.deleteMenu(menuId);
+        iamService.evictAuthorizationCache();
     }
 
     @GetMapping("/admin-permission-codes")
@@ -312,6 +328,9 @@ public class IamController {
     @GetMapping("/me/permission-snapshot")
     public IamDtos.PermissionSnapshotView currentPermissionSnapshot() {
         PermissionSnapshot snapshot = iamService.loadPermissionSnapshot(requireCurrentContext());
+        List<IamDtos.MenuView> menuTree = snapshot.menuTree().stream()
+                .map(this::toMenuView)
+                .toList();
         return new IamDtos.PermissionSnapshotView(
                 new IamDtos.UserView(
                         snapshot.user().id(),
@@ -323,20 +342,7 @@ public class IamController {
                 snapshot.domains().stream()
                         .map(domain -> new IamDtos.DomainView(domain.id(), domain.code(), domain.name()))
                         .toList(),
-                snapshot.menus().stream()
-                        .map(menu -> new IamDtos.MenuView(
-                                menu.id(),
-                                menu.resourceCode(),
-                                menu.resourceName(),
-                                menu.pathPattern(),
-                                menu.parentId(),
-                                menu.orderNo(),
-                                menu.icon(),
-                                menu.component(),
-                                menu.scope(),
-                                menu.hidden(),
-                                menu.permissionCode()))
-                        .toList(),
+                menuTree,
                 snapshot.actions().stream()
                         .map(action -> new IamDtos.ActionView(
                                 action.resourceCode(),
@@ -417,6 +423,22 @@ public class IamController {
                 node.status(),
                 node.required(),
                 node.children().stream().map(this::toMenuTreeNodeView).toList());
+    }
+
+    private IamDtos.MenuView toMenuView(AdminMenuNode node) {
+        return new IamDtos.MenuView(
+                node.id(),
+                node.code(),
+                node.name(),
+                node.routePath(),
+                node.parentId(),
+                node.orderNo(),
+                node.icon(),
+                node.componentKey(),
+                node.scope(),
+                node.hidden(),
+                node.permissionCode(),
+                node.children().stream().map(this::toMenuView).toList());
     }
 
     private IamDtos.RoleView toRoleView(RoleView role) {

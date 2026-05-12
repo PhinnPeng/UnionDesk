@@ -4,7 +4,13 @@
 		"id": "Role Id",
 		"addRole": "Add Role",
 		"editRole": "Edit Role",
-		"assignMenu": "Assign Menu"
+		"assignMenu": "Assign Menu",
+		"assignButton": "Button Permissions",
+		"scope": "Scope",
+		"scopeGlobal": "Global",
+		"scopeDomain": "Domain",
+		"systemRole": "System Role",
+		"assignPermission": "Assign Permission"
 	},
 	"user": {
 		"name": "User Name",
@@ -16,6 +22,7 @@
 		"name": "Menu Name",
 		"routePath": "Route Path",
 		"addMenu": "Add Menu",
+		"addButton": "Add Button",
 		"editMenu": "Edit Menu",
 		"menuType": "Menu Type",
 		"menuTypeDesc": "Menu type description: catalog, menu, button",
@@ -57,7 +64,12 @@
 		"permissionCodeTooltip": "Backend API permission key used for button-level access control",
 		"statusTooltip": "Disabled menus and their children become inaccessible",
 		"hideInMenuTooltip": "When set to Yes, the menu remains reachable by path but is hidden from the sidebar",
-		"unregisteredComponentHint": "Unregistered component hint"
+		"unregisteredComponentHint": "Unregistered component hint",
+		"implementationType": "Implementation Type",
+		"implementationTypeTooltip": "Select menu implementation: component page, external link, or embedded page",
+		"componentPage": "Component Page",
+		"externalLinkUrlTooltip": "Full URL of the external link, e.g. https://example.com",
+		"iframeLinkTooltip": "URL of the embedded page, e.g. https://example.com/embed"
 	},
 	"dept": {
 		"name": "Department Name",

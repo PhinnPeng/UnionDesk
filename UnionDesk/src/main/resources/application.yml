@@ -2,9 +2,9 @@ spring:
   application:
     name: uniondesk
   datasource:
-    url: jdbc:mysql://localhost:3306/uniondesk?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: uniondesk
-    password: uniondesk
+    url: jdbc:mysql://127.0.0.1:30306/uniondesk?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: uniondesk_app
+    password: gq0fd2sqOCncrNp3eBeGuLty
   flyway:
     enabled: true
     validate-on-migrate: false

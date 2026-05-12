@@ -250,30 +250,15 @@ public class IamService {
         UserSummary user = loadCurrentUserSummary(context.userId());
         List<String> roles = listUserRoleCodesByClient(context.userId(), context.clientCode());
         List<DomainSummary> domains = loadDomainSummaries(context.userId(), roles);
-        List<IamResource> menus;
+        List<AdminMenuService.AdminMenuNode> menuTree = List.of();
         List<IamResource> actions;
         if ("ud-admin-web".equalsIgnoreCase(context.clientCode())) {
             AdminMenuService.PermissionSnapshotData snapshotData = adminMenuService.loadPermissionSnapshot(roles);
             String activeMenuScope = resolveAdminMenuScope(context.role());
-            menus = snapshotData.menus().stream()
+            List<AdminMenuService.AdminMenuNode> activeMenus = snapshotData.menus().stream()
                     .filter(menu -> activeMenuScope.equals(menu.scope()))
-                    .map(menu -> new IamResource(
-                            menu.id(),
-                            "menu",
-                            menu.code(),
-                            menu.name(),
-                            context.clientCode(),
-                            menu.scope(),
-                            null,
-                            menu.routePath(),
-                            menu.parentId(),
-                            menu.orderNo(),
-                            menu.icon(),
-                            menu.componentKey(),
-                            menu.hidden(),
-                            menu.status(),
-                            menu.permissionCode()))
                     .toList();
+            menuTree = AdminMenuService.buildTree(activeMenus);
             actions = snapshotData.actions().stream()
                     .map(action -> new IamResource(
                             action.id(),
@@ -293,7 +278,6 @@ public class IamService {
                             null))
                     .toList();
         } else {
-            menus = loadResourcesForRoles(roles, context.clientCode(), List.of("menu"));
             actions = loadResourcesForRoles(roles, context.clientCode(), List.of("action", "api"));
         }
         return new PermissionSnapshot(
@@ -301,7 +285,7 @@ public class IamService {
                 context.clientCode(),
                 roles,
                 domains,
-                menus,
+                menuTree,
                 actions,
                 Instant.now(clock).toString());
     }
@@ -636,9 +620,6 @@ public class IamService {
     public RoleView updateRole(int roleId, UpdateRoleCommand command) {
         RoleView existing = findRoleById(roleId)
                 .orElseThrow(() -> new IllegalArgumentException("role not found"));
-        if (existing.system()) {
-            throw new IllegalArgumentException("system role cannot be updated");
-        }
         String code = command.code() != null ? normalize(command.code(), "code") : existing.code();
         String name = command.name() != null ? normalize(command.name(), "name") : existing.name();
         String scope = command.scope() != null ? normalize(command.scope(), "scope").toLowerCase() : existing.scope();
@@ -1792,7 +1773,7 @@ public class IamService {
             String clientCode,
             List<String> roles,
             List<DomainSummary> domains,
-            List<IamResource> menus,
+            List<AdminMenuService.AdminMenuNode> menuTree,
             List<IamResource> actions,
             String issuedAt) {
     }

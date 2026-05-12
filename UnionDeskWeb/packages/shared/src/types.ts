@@ -205,7 +205,7 @@ export type PermissionSnapshotMenu = {
   id?: number;
   code: string;
   name: string;
-  path: string;
+  path: string | null;
   parentId?: number | null;
   orderNo?: number;
   icon?: string | null;
@@ -213,6 +213,7 @@ export type PermissionSnapshotMenu = {
   scope?: "platform" | "business" | string;
   hidden?: boolean;
   permissionCode?: string | null;
+  children?: PermissionSnapshotMenu[];
 };
 
 export type PermissionSnapshotAction = {
@@ -227,7 +228,7 @@ export type PermissionSnapshot = {
   clientCode: ClientCode;
   roles: string[];
   domains: PermissionSnapshotDomain[];
-  menus: PermissionSnapshotMenu[];
+  menuTree: PermissionSnapshotMenu[];
   actions: PermissionSnapshotAction[];
   issuedAt: string;
 };

@@ -65,7 +65,7 @@ public final class IamDtos {
             String clientCode,
             List<String> roles,
             List<DomainView> domains,
-            List<MenuView> menus,
+            List<MenuView> menuTree,
             List<ActionView> actions,
             String issuedAt) {
     }
@@ -94,7 +94,8 @@ public final class IamDtos {
             String component,
             String scope,
             boolean hidden,
-            String permissionCode) {
+            String permissionCode,
+            List<MenuView> children) {
     }
 
     public record ActionView(

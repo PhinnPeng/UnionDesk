@@ -3,12 +3,12 @@ import type { IconUnit } from "@ant-design/pro-editor";
 import PickerPanel from "@ant-design/pro-editor/es/IconPicker/features/PickerPanel";
 import StoreUpdater from "@ant-design/pro-editor/es/IconPicker/container/StoreUpdater";
 import { Provider, createStore } from "@ant-design/pro-editor/es/IconPicker/store";
-import { Input, Popover, Tag } from "antd";
+import { Input, Popover } from "antd";
 import { createElement, useCallback, useMemo, useState } from "react";
 
 import { menuIcons } from "#src/icons/menu-icons";
 
-interface MenuIconPickerProps {
+export interface MenuIconPickerProps {
 	disabled?: boolean
 	onChange?: (value: string) => void
 	placeholder?: string
@@ -69,9 +69,9 @@ export function MenuIconPicker({
 				placeholder={placeholder}
 				value={value ?? ""}
 				prefix={previewIcon ? (
-					<Tag variant="filled" color="blue" className="m-0">
-						{createElement(previewIcon, { style: { fontSize: 14 } })}
-					</Tag>
+					<span style={{ display: "inline-flex", alignItems: "center", color: "#1677ff", fontSize: 16 }}>
+						{createElement(previewIcon)}
+					</span>
 				) : null}
 				suffix={(
 					<DownOutlined

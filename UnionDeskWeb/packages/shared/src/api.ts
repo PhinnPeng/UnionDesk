@@ -526,10 +526,10 @@ export async function fetchPermissionSnapshot(): Promise<PermissionSnapshot> {
   }
 }
 
-export async function fetchMenusTree(clientScope?: string): Promise<MenuTreeNode[]> {
+export async function fetchMenusTree(scope?: string): Promise<MenuTreeNode[] | Record<string, MenuTreeNode[]>> {
   try {
-    const response = await api.get<MenuTreeNode[]>("/iam/menus/tree", {
-      params: clientScope ? { clientScope } : undefined
+    const response = await api.get<MenuTreeNode[] | Record<string, MenuTreeNode[]>>("/iam/menus/tree", {
+      params: scope ? { scope } : undefined
     });
     return unwrapApiResponse(response.data);
   } catch (error) {

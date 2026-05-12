@@ -87,9 +87,9 @@
                 <artifactId>flyway-maven-plugin</artifactId>
                 <version>${flyway.version}</version>
                 <configuration>
-                    <url>jdbc:mysql://localhost:3306/uniondesk?useUnicode=true&amp;characterEncoding=utf8&amp;useSSL=false&amp;serverTimezone=UTC&amp;allowPublicKeyRetrieval=true</url>
-                    <user>uniondesk</user>
-                    <password>uniondesk</password>
+                    <url>jdbc:mysql://127.0.0.1:30306/uniondesk?useUnicode=true&amp;characterEncoding=utf8&amp;useSSL=false&amp;serverTimezone=Asia/Shanghai&amp;allowPublicKeyRetrieval=true</url>
+                    <user>uniondesk_app</user>
+                    <password>gq0fd2sqOCncrNp3eBeGuLty</password>
                     <cleanDisabled>false</cleanDisabled>
                     <locations>
                         <location>filesystem:src/main/resources/db/migration</location>

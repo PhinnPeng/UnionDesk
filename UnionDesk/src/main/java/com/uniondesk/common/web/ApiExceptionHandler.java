@@ -28,7 +28,7 @@ public class ApiExceptionHandler {
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(RuntimeException ex) {
         ErrorCodes errorCode = resolveErrorCode(ex.getMessage());
-        String message = errorCode == ErrorCodes.BAD_REQUEST && containsCjk(ex.getMessage())
+        String message = errorCode == ErrorCodes.BAD_REQUEST && StringUtils.hasText(ex.getMessage())
                 ? ex.getMessage()
                 : errorCode.message();
         return toResponse(errorCode, message);

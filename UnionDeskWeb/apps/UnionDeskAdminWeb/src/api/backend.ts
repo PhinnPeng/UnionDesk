@@ -1,4 +1,4 @@
-import { CLIENT_CODE_HEADER, LANG_HEADER, AUTH_HEADER } from "#src/utils/request/constants";
+import { AUTH_HEADER, AUTH_REFRESH_PATH, AUTH_WHITE_LIST_PATHS, CLIENT_CODE_HEADER, LANG_HEADER } from "#src/utils/request/constants";
 import { handleErrorResponse } from "#src/utils/request/error-response";
 import { useAuthStore } from "#src/store/auth";
 import { usePreferencesStore } from "#src/store/preferences";
@@ -8,11 +8,8 @@ import { parseApiResponse } from "./utils";
 const BACKEND_API_BASE_URL = "http://localhost:8080/api";
 
 const requestWhiteList = [
-	"v1/auth/login",
-	"v1/auth/login-config",
-	"v1/auth/captcha/challenge",
-	"v1/auth/captcha/verify",
-	"v1/auth/refresh-token",
+	...AUTH_WHITE_LIST_PATHS.map(path => `v1${path}`),
+	`v1${AUTH_REFRESH_PATH}`,
 ];
 
 type BackendJsonRequestOptions = {

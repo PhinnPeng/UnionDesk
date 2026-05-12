@@ -5,7 +5,7 @@ import { useAuthStore } from "#src/store/auth";
 import { usePreferencesStore } from "#src/store/preferences";
 import ky from "ky";
 
-import { AUTH_HEADER, CLIENT_CODE_HEADER, LANG_HEADER, REFRESH_TOKEN_PATH } from "./constants";
+import { AUTH_HEADER, AUTH_REFRESH_PATH, AUTH_WHITE_LIST_PATHS, CLIENT_CODE_HEADER, LANG_HEADER } from "./constants";
 import { handleErrorResponse } from "./error-response";
 import { globalProgress } from "./global-progress";
 import { goLogin } from "./go-login";
@@ -21,11 +21,8 @@ type AfterResponseHook = NonNullable<Hooks["afterResponse"]>[number];
 
 const requestWhiteList = [
 	loginPath,
-	"/auth/login",
-	"/auth/login-config",
-	"/auth/captcha/challenge",
-	"/auth/captcha/verify",
-	"/auth/refresh-token",
+	...AUTH_WHITE_LIST_PATHS,
+	AUTH_REFRESH_PATH,
 ];
 
 const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 10000;
@@ -80,7 +77,7 @@ const afterResponseHook = (async (request: Request, options: RequestOptions, res
 			return handleErrorResponse(response);
 		}
 		if (response.status === 401) {
-			if ([`/${REFRESH_TOKEN_PATH}`].some(url => requestUrl.endsWith(url))) {
+			if ([AUTH_REFRESH_PATH].some(url => requestUrl.endsWith(url))) {
 				goLogin();
 				return response;
 			}

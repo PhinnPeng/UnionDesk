@@ -1,34 +1,49 @@
-import type { RoleItemType } from "./types";
-import { request } from "#src/utils/request";
+import type { RoleItemType, RolePayload, RolePermissions } from "./types";
+
+import { requestBackendJson } from "#src/api/backend";
 
 export * from "./types";
 
 /* 获取角色列表 */
-export function fetchRoleList(data: any) {
-	return request.get<ApiListResponse<RoleItemType>>("role-list", { searchParams: data, ignoreLoading: true }).json();
+export function fetchRoleList(): Promise<RoleItemType[]> {
+	return requestBackendJson<RoleItemType[]>("v1/iam/roles");
 }
 
 /* 新增角色 */
-export function fetchAddRoleItem(data: RoleItemType) {
-	return request.post<ApiResponse<string>>("role-item", { json: data, ignoreLoading: true }).json();
+export function fetchAddRole(data: RolePayload): Promise<RoleItemType> {
+	return requestBackendJson<RoleItemType>("v1/iam/roles", {
+		method: "POST",
+		json: data,
+	});
 }
 
 /* 修改角色 */
-export function fetchUpdateRoleItem(data: RoleItemType) {
-	return request.put<ApiResponse<string>>("role-item", { json: data, ignoreLoading: true }).json();
+export function fetchUpdateRole(id: number, data: RolePayload): Promise<RoleItemType> {
+	return requestBackendJson<RoleItemType>(`v1/iam/roles/${id}`, {
+		method: "PUT",
+		json: data,
+	});
 }
 
 /* 删除角色 */
-export function fetchDeleteRoleItem(id: number) {
-	return request.delete<ApiResponse<string>>("role-item", { json: id, ignoreLoading: true }).json();
+export function fetchDeleteRole(id: number): Promise<void> {
+	return requestBackendJson<void>(`v1/iam/roles/${id}`, {
+		method: "DELETE",
+	});
 }
 
-/* 获取菜单 */
-export function fetchRoleMenu() {
-	return request.get<ApiResponse<RoleItemType[]>>("role-menu", { ignoreLoading: true }).json();
+/* 获取角色权限（菜单+按钮 ID） */
+export function fetchRolePermissions(roleId: number): Promise<RolePermissions> {
+	return requestBackendJson<RolePermissions>(`v1/iam/roles/${roleId}/permissions`);
 }
 
-/* 角色绑定的菜单 id */
-export function fetchMenuByRoleId(data: { id: number }) {
-	return request.get<ApiResponse<string[]>>("menu-by-role-id", { searchParams: data, ignoreLoading: false }).json();
+/* 更新角色权限 */
+export function fetchUpdateRolePermissions(
+	roleId: number,
+	data: { menuIds: number[]; buttonIds: number[] },
+): Promise<RolePermissions> {
+	return requestBackendJson<RolePermissions>(`v1/iam/roles/${roleId}/permissions`, {
+		method: "PUT",
+		json: data,
+	});
 }

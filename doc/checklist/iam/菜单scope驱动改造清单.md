@@ -54,3 +54,15 @@
 - [x] 菜单域切换组件改为双行说明样式，平台端与业务端各自显示路径提示。
 - [x] `fetchMenuTree` / `fetchMenuList` 参数类型收窄为平台端与业务端。
 - [x] 相关测试已同步更新并通过验证。
+
+## 2026-05-09 菜单树 scope 收口修复
+- [x] `GET /api/v1/iam/menus/tree` 已透传 `scope`，并按当前用户授权菜单树返回。
+- [x] `AdminMenuService` 已收口授权树查询与 required 按钮映射，避免平台 / 业务菜单混流。
+- [x] `AdminMenuRequiredMenuIntegrationTest` 已覆盖 `/permission-snapshot` 与 `/menus/tree?scope=platform` 路由集合一致性回归。
+
+## 2026-05-12 Flyway 回溯排查与无损修复
+- [ ] 在隔离 MySQL 容器或临时 schema 中导出 `iam_admin_menu`、`iam_admin_role_menu_relation` 与 `flyway_schema_history` 快照，只做对比，不碰当前 `uniondesk` 库。
+- [ ] 复核 `V202605110001__fix_platform_permission_tree_and_buttons.sql` 与 `V202605110002__remove_platform_catalog_wrapper.sql`，确认当前菜单变化都是前向幂等迁移，不存在回滚脚本误执行。
+- [ ] 如果发现菜单节点或按钮授权缺失，只新增一条只增不删的正向迁移恢复数据，不改写已执行的历史迁移。
+- [ ] 后续验证统一切到隔离环境，禁止在当前共享库上直接做 `flyway:clean`、`flyway:repair` 或会删除数据的临时 SQL。
+- [ ] 更新启动说明，明确 `spring-boot:run` 会触发 Flyway，日常联调先用隔离库或显式关闭迁移后再起后端。

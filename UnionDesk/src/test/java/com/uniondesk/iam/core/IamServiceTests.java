@@ -1,6 +1,7 @@
 package com.uniondesk.iam.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -153,9 +154,9 @@ class IamServiceTests {
         IamService.PermissionSnapshot snapshot = service.loadPermissionSnapshot(
                 new UserContext(42L, "super_admin", 1L, "sid-1", "ud-admin-web"));
 
-        assertThat(snapshot.menus()).singleElement().satisfies(menu -> {
+        assertThat(snapshot.menuTree()).singleElement().satisfies(menu -> {
             assertThat(menu.scope()).isEqualTo("platform");
-            assertThat(menu.pathPattern()).isEqualTo("/platform/menu");
+            assertThat(menu.routePath()).isEqualTo("/platform/menu");
         });
     }
 
@@ -233,9 +234,9 @@ class IamServiceTests {
         IamService.PermissionSnapshot snapshot = service.loadPermissionSnapshot(
                 new UserContext(42L, "domain_admin", 1L, "sid-1", "ud-admin-web"));
 
-        assertThat(snapshot.menus()).singleElement().satisfies(menu -> {
+        assertThat(snapshot.menuTree()).singleElement().satisfies(menu -> {
             assertThat(menu.scope()).isEqualTo("business");
-            assertThat(menu.pathPattern()).isEqualTo("/system/menu");
+            assertThat(menu.routePath()).isEqualTo("/system/menu");
         });
     }
 
@@ -305,9 +306,62 @@ class IamServiceTests {
         IamService.PermissionSnapshot snapshot = service.loadPermissionSnapshot(
                 new UserContext(42L, "ghost_role", 1L, "sid-1", "ud-admin-web"));
 
-        assertThat(snapshot.menus()).singleElement().satisfies(menu -> {
+        assertThat(snapshot.menuTree()).singleElement().satisfies(menu -> {
             assertThat(menu.scope()).isEqualTo("business");
-            assertThat(menu.pathPattern()).isEqualTo("/system/menu");
+            assertThat(menu.routePath()).isEqualTo("/system/menu");
         });
+    }
+
+    @Test
+    void updateRoleAllowsSystemRole() throws Exception {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        IamService service = new IamService(
+                jdbcTemplate,
+                Clock.systemUTC(),
+                mock(PasswordEncoder.class),
+                mock(AdminMenuService.class),
+                new PermissionScopePolicy());
+
+        IamService.RoleView existing = new IamService.RoleView(11, "super_admin", "超级管理员", "global", true);
+        IamService.RoleView updated = new IamService.RoleView(11, "super_admin_v2", "超级管理员2", "global", true);
+
+        when(jdbcTemplate.queryForObject(
+                argThat(sql -> sql != null && sql.contains("FROM role") && sql.contains("WHERE id = ?") && sql.contains("LIMIT 1")),
+                org.mockito.ArgumentMatchers.<RowMapper<IamService.RoleView>>any(),
+                org.mockito.ArgumentMatchers.<Object[]>any()))
+                .thenReturn(existing, updated);
+
+        IamService.RoleView result = service.updateRole(
+                11,
+                new IamService.UpdateRoleCommand("super_admin_v2", "超级管理员2", "global"));
+
+        assertThat(result).isEqualTo(updated);
+        verify(jdbcTemplate).update(
+                argThat(sql -> sql != null && sql.contains("UPDATE role") && sql.contains("SET code = ?") && sql.contains("name = ?") && sql.contains("scope = ?")),
+                eq("super_admin_v2"),
+                eq("超级管理员2"),
+                eq("global"),
+                eq(11));
+    }
+
+    @Test
+    void deleteRoleStillRejectsSystemRole() throws Exception {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        IamService service = new IamService(
+                jdbcTemplate,
+                Clock.systemUTC(),
+                mock(PasswordEncoder.class),
+                mock(AdminMenuService.class),
+                new PermissionScopePolicy());
+
+        when(jdbcTemplate.queryForObject(
+                argThat(sql -> sql != null && sql.contains("FROM role") && sql.contains("WHERE id = ?") && sql.contains("LIMIT 1")),
+                org.mockito.ArgumentMatchers.<RowMapper<IamService.RoleView>>any(),
+                org.mockito.ArgumentMatchers.<Object[]>any()))
+                .thenReturn(new IamService.RoleView(11, "super_admin", "超级管理员", "global", true));
+
+        assertThatThrownBy(() -> service.deleteRole(11))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("system role cannot be deleted");
     }
 }

@@ -28,6 +28,7 @@ export interface UserInfoType {
 	roles: Array<string>
 	actions: Array<string>
 	platformAccess: boolean
+	businessDomainAccess?: boolean
 	// 路由可以在此处动态添加
 	menus?: AppRouteRecordRaw[]
 }

@@ -4,6 +4,21 @@ import type { TFunction } from "i18next";
 
 import { Tag } from "antd";
 
+function getScopeLabel(t: TFunction<"translation", undefined>, scope?: string) {
+	switch (scope) {
+		case "global":
+			return t("system.role.scopeGlobal");
+		case "domain":
+			return t("system.role.scopeDomain");
+		default:
+			return scope || "-";
+	}
+}
+
+function getScopeColor(scope?: string) {
+	return scope === "global" ? "blue" : "green";
+}
+
 export function getConstantColumns(t: TFunction<"translation", undefined>): ProColumns<RoleItemType>[] {
 	return [
 		{
@@ -15,63 +30,33 @@ export function getConstantColumns(t: TFunction<"translation", undefined>): ProC
 		{
 			title: t("system.role.name"),
 			dataIndex: "name",
-			disable: true,
 			ellipsis: true,
-			width: 120,
-			formItemProps: {
-				rules: [
-					{
-						required: true,
-						message: t("form.required"),
-					},
-				],
-			},
+			width: 150,
 		},
 		{
-			disable: true,
 			title: t("system.role.id"),
 			dataIndex: "code",
-			width: 120,
-			filters: true,
-			onFilter: true,
+			width: 150,
 			ellipsis: true,
 		},
 		{
-			disable: true,
-			title: t("common.status"),
-			dataIndex: "status",
-			valueType: "select",
-			width: 80,
-			render: (text, record) => {
-				return <Tag color={record.status === 1 ? "success" : "default"}>{text}</Tag>;
-			},
-			valueEnum: {
-				1: {
-					text: t("common.enabled"),
-				},
-				0: {
-					text: t("common.deactivated"),
-				},
+			title: t("system.role.scope"),
+			dataIndex: "scope",
+			width: 110,
+			render: (_, record) => {
+				const label = getScopeLabel(t, record.scope);
+				return <Tag color={getScopeColor(record.scope)}>{label}</Tag>;
 			},
 		},
 		{
-			title: t("common.remark"),
-			dataIndex: "remark",
-			search: false,
-		},
-		{
-			title: t("common.createTime"),
-			dataIndex: "createTime",
-			valueType: "date",
+			title: t("system.role.systemRole"),
+			dataIndex: "system",
 			width: 100,
-			search: false,
-		},
-		{
-			title: t("common.updateTime"),
-			dataIndex: "updateTime",
-			valueType: "dateTime",
-			width: 170,
-			search: false,
+			render: (_, record) => {
+				return record.system
+					? <Tag color="orange">{t("common.yes")}</Tag>
+					: <Tag color="default">{t("common.no")}</Tag>;
+			},
 		},
 	];
 }

@@ -26,6 +26,7 @@ export const componentRegistry: { label: string, value: string }[] = [
 	{ label: "平台管理/系统设置", value: "platform/system-settings" },
 	{ label: "平台管理/审计日志", value: "platform/audit-logs" },
 	{ label: "平台管理/工单详情", value: "platform/ticket-detail" },
+	{ label: "平台管理/组织配置", value: "platform/org-config" },
 
 	{ label: "个人中心/个人资料", value: "personal-center/my-profile" },
 	{ label: "个人中心/设置", value: "personal-center/settings" },

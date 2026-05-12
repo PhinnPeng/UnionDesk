@@ -2,6 +2,8 @@ import type { LoginUserView, PermissionSnapshot, PermissionSnapshotMenu } from "
 
 import type { AppRouteRecordRaw } from "#src/router/types";
 
+import { hasBusinessDomainAccess } from "#src/utils/access/business-domain";
+
 import type { UserInfoType } from "./types";
 
 const BUSINESS_BACKEND_MENU_PATH_MAP = new Map<string, string>([
@@ -65,11 +67,14 @@ export function buildUserInfoFromLoginUser(user: LoginUserView, roles: readonly 
 		roles: normalizeAccessRoles(roles),
 		actions: [],
 		platformAccess: false,
+		businessDomainAccess: false,
 		menus: [],
 	};
 }
 
 export function buildUserInfoFromPermissionSnapshot(snapshot: PermissionSnapshot): UserInfoType {
+	// 使用后端返回的树形结构 menuTree
+	const menus = buildBackendRoutesFromSnapshot(snapshot.menuTree);
 	return {
 		id: snapshot.user.id,
 		avatar: "",
@@ -80,7 +85,8 @@ export function buildUserInfoFromPermissionSnapshot(snapshot: PermissionSnapshot
 		roles: normalizeAccessRoles(snapshot.roles),
 		actions: snapshot.actions.map(action => action.code),
 		platformAccess: hasPlatformAccess(snapshot),
-		menus: buildBackendRoutesFromSnapshot(snapshot.menus),
+		businessDomainAccess: hasBusinessDomainAccess(menus),
+		menus,
 	};
 }
 
@@ -89,11 +95,12 @@ export function hasPlatformAccess(snapshot: PermissionSnapshot): boolean {
 }
 
 export function buildBackendRoutesFromSnapshot(menus: readonly PermissionSnapshotMenu[]): BackendAppRouteRecordRaw[] {
-	if (!menus.length) {
+	const flatMenus = flattenSnapshotMenus(menus);
+	if (!flatMenus.length) {
 		return [];
 	}
 
-	const nodes = menus.map((menu) => ({
+	const nodes = flatMenus.map((menu) => ({
 		menu,
 		scope: menu.scope,
 		path: normalizeBackendMenuPath(menu.path, menu.scope),
@@ -123,13 +130,31 @@ export function buildBackendRoutesFromSnapshot(menus: readonly PermissionSnapsho
 	return roots.map(node => toAppRouteRecordRaw(node));
 }
 
+function flattenSnapshotMenus(menus: readonly PermissionSnapshotMenu[]): PermissionSnapshotMenu[] {
+	const flatMenus: PermissionSnapshotMenu[] = [];
+	const visit = (nodes: readonly PermissionSnapshotMenu[]) => {
+		for (const node of nodes) {
+			const { children, ...menu } = node;
+			flatMenus.push(menu);
+			if (children?.length) {
+				visit(children);
+			}
+		}
+	};
+	visit(menus);
+	return flatMenus;
+}
+
 function getBackendMenuPathMap(scope?: PermissionSnapshotMenu["scope"]) {
 	return scope === "platform"
 		? PLATFORM_BACKEND_MENU_PATH_MAP
 		: BUSINESS_BACKEND_MENU_PATH_MAP;
 }
 
-function normalizeBackendMenuPath(path: string, scope?: PermissionSnapshotMenu["scope"]) {
+function normalizeBackendMenuPath(path: string | null | undefined, scope?: PermissionSnapshotMenu["scope"]) {
+	if (!path) {
+		return "";
+	}
 	const normalizedPath = path.trim().replace(/\/+$/, "");
 	return getBackendMenuPathMap(scope).get(normalizedPath) ?? normalizedPath;
 }
@@ -187,6 +212,9 @@ function normalizeBackendRouteGroups(nodes: BackendRouteNode[]) {
 }
 
 function isDescendantPath(childPath: string, parentPath: string) {
+	if (!parentPath) {
+		return false;
+	}
 	return childPath === parentPath || childPath.startsWith(`${parentPath}/`);
 }
 
