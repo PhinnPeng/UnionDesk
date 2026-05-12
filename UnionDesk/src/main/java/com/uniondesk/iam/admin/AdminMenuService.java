@@ -197,6 +197,9 @@ public class AdminMenuService {
     public AdminMenuNode updateMenu(long menuId, UpdateAdminMenuCommand command) {
         AdminMenuNode existing = findNodeById(menuId).orElseThrow(() -> new IllegalArgumentException("菜单不存在"));
         String nextNodeType = command.nodeType() == null ? existing.nodeType() : command.nodeType();
+        if (existing.required() && !existing.nodeType().equals(nextNodeType)) {
+            throw new IllegalArgumentException("系统必需菜单节点不允许修改类型");
+        }
         if (NODE_TYPE_BUTTON.equals(nextNodeType) && !NODE_TYPE_BUTTON.equals(existing.nodeType())) {
             throw new IllegalArgumentException("不允许将菜单类型修改为按钮");
         }

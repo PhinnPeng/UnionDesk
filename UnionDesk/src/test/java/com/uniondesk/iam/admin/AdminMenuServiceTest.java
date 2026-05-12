@@ -296,6 +296,51 @@ class AdminMenuServiceTest {
     }
 
     @Test
+    void updateMenuRejectsRequiredNodeTypeChangeBeforeDatabaseConstraint() throws Exception {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        AdminMenuService service = new AdminMenuService(jdbcTemplate, Clock.systemUTC());
+        AdminMenuService.AdminMenuNode requiredMenu = new AdminMenuService.AdminMenuNode(
+                38L,
+                "ADM0000000038",
+                "menu",
+                "platform",
+                "菜单管理",
+                "/platform/menu",
+                "./system/menu",
+                "platform.menu.read",
+                null,
+                20,
+                "MenuOutlined",
+                false,
+                1,
+                true,
+                List.of());
+
+        when(jdbcTemplate.queryForObject(
+                argThat(sql -> sql != null && sql.contains("FROM iam_admin_menu") && sql.contains("WHERE id = ?") && sql.contains("LIMIT 1")),
+                org.mockito.ArgumentMatchers.<RowMapper<AdminMenuService.AdminMenuNode>>any(),
+                org.mockito.ArgumentMatchers.<Object[]>any()))
+                .thenReturn(requiredMenu);
+
+        assertThatThrownBy(() -> service.updateMenu(
+                38L,
+                new AdminMenuService.UpdateAdminMenuCommand(
+                        "catalog",
+                        "菜单管理",
+                        null,
+                        null,
+                        null,
+                        "platform",
+                        null,
+                        20,
+                        "MenuOutlined",
+                        false,
+                        1)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("系统必需菜单节点不允许修改类型");
+    }
+
+    @Test
     void deleteMenuRemovesRoleBindingsAndMenuRow() throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuService service = new AdminMenuService(jdbcTemplate, Clock.systemUTC());
