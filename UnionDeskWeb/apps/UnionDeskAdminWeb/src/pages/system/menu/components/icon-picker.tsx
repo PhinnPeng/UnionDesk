@@ -1,25 +1,17 @@
 import { parseIconValue } from "#src/icons/render-icon";
-
-import { Icon } from "@iconify/react";
-import { Input, Popover, Select, Spin, Tabs, Tooltip } from "antd";
+import { Icon } from "@iconify/react/offline";
+import { Input, Pagination, Popover, Select, Tabs, Tooltip } from "antd";
 import type { MouseEvent } from "react";
-import { useRef, useState } from "react";
+import { useMemo, useState } from "react";
+
+import { PRESET_ICON_COLLECTION_OPTIONS, getPresetCollectionIcons, searchPresetIcons } from "#src/icons/iconify-offline-catalog";
+
+import { ICON_PICKER_PAGE_SIZE, paginateIcons } from "./icon-picker-utils";
 
 interface IconPickerProps {
 	value?: string
 	onChange?: (value: string) => void
 }
-
-const PRESET_COLLECTIONS = [
-	{ label: "Ant Design", value: "ant-design" },
-	{ label: "Material Design Icons", value: "mdi" },
-	{ label: "Lucide", value: "lucide" },
-	{ label: "Heroicons", value: "heroicons" },
-	{ label: "Tabler Icons", value: "tabler" },
-	{ label: "Font Awesome 6", value: "fa6-solid" },
-	{ label: "Remix Icon", value: "ri" },
-	{ label: "Carbon", value: "carbon" },
-];
 
 function IconGrid({ icons, selected, onSelect }: { icons: string[]; selected?: string; onSelect: (icon: string) => void }) {
 	if (icons.length === 0) return null;
@@ -59,66 +51,111 @@ function IconGrid({ icons, selected, onSelect }: { icons: string[]; selected?: s
 	);
 }
 
+function IconResults({
+	icons,
+	total,
+	page,
+	emptyText,
+	selected,
+	onSelect,
+	onPageChange,
+}: {
+	icons: string[]
+	total: number
+	page: number
+	emptyText: string
+	selected?: string
+	onSelect: (icon: string) => void
+	onPageChange: (page: number) => void
+}) {
+	const showPagination = total > ICON_PICKER_PAGE_SIZE;
+
+	return (
+		<div style={{ height: 260, display: "flex", flexDirection: "column" }}>
+			{icons.length === 0
+				? (
+					<div className="flex flex-1 items-center justify-center text-sm" style={{ color: "var(--ant-color-text-quaternary)" }}>
+						{emptyText}
+					</div>
+				)
+				: (
+					<>
+						<div style={{ flex: 1, overflowY: "auto" }}>
+							<IconGrid icons={icons} selected={selected} onSelect={onSelect} />
+						</div>
+						{showPagination ? (
+							<div className="flex justify-center" style={{ marginTop: 4 }}>
+								<Pagination
+									size="small"
+									hideOnSinglePage
+									showLessItems
+									showSizeChanger={false}
+									current={page}
+									pageSize={ICON_PICKER_PAGE_SIZE}
+									total={total}
+									onChange={onPageChange}
+								/>
+							</div>
+						) : null}
+					</>
+				)}
+		</div>
+	);
+}
+
 export function IconPicker({ value, onChange }: IconPickerProps) {
 	const [open, setOpen] = useState(false);
 	const [tab, setTab] = useState<"search" | "browse">("search");
-
-	const [searchIcons, setSearchIcons] = useState<string[]>([]);
-	const [searchLoading, setSearchLoading] = useState(false);
 	const [keyword, setKeyword] = useState("");
-	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [searchPage, setSearchPage] = useState(1);
+	const [collection, setCollection] = useState(PRESET_ICON_COLLECTION_OPTIONS[0]?.value ?? "ant-design");
+	const [browsePage, setBrowsePage] = useState(1);
 
-	const [collection, setCollection] = useState(PRESET_COLLECTIONS[0].value);
-	const [browseIcons, setBrowseIcons] = useState<string[]>([]);
-	const [browseLoading, setBrowseLoading] = useState(false);
-	const browseLoadedRef = useRef<string>("");
+	const searchIcons = useMemo(() => searchPresetIcons(keyword), [keyword]);
+	const browseIcons = useMemo(() => getPresetCollectionIcons(collection), [collection]);
 
-	const search = (kw: string) => {
-		setKeyword(kw);
-		if (timerRef.current) clearTimeout(timerRef.current);
-		if (!kw || kw.length < 2) { setSearchIcons([]); return; }
-		timerRef.current = setTimeout(async () => {
-			setSearchLoading(true);
-			try {
-				const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(kw)}&limit=120`);
-				const data = await res.json();
-				setSearchIcons(data.icons ?? []);
-			}
-			catch { setSearchIcons([]); }
-			finally { setSearchLoading(false); }
-		}, 400);
-	};
-
-	const loadCollection = async (prefix: string) => {
-		if (browseLoadedRef.current === prefix) return;
-		browseLoadedRef.current = prefix;
-		setBrowseLoading(true);
-		setBrowseIcons([]);
-		try {
-			const res = await fetch(`https://api.iconify.design/collection?prefix=${prefix}&limit=240`);
-			const data = await res.json();
-			const uncategorized: string[] = data.uncategorized ?? [];
-			const categorized: string[] = Object.values(data.categories ?? {}).flat() as string[];
-			const names = [...new Set([...uncategorized, ...categorized])].slice(0, 240);
-			setBrowseIcons(names.map(name => `${prefix}:${name}`));
-		}
-		catch { setBrowseIcons([]); }
-		finally { setBrowseLoading(false); }
-	};
+	const searchPageIcons = useMemo(
+		() => paginateIcons(searchIcons, searchPage, ICON_PICKER_PAGE_SIZE),
+		[searchIcons, searchPage],
+	);
+	const browsePageIcons = useMemo(
+		() => paginateIcons(browseIcons, browsePage, ICON_PICKER_PAGE_SIZE),
+		[browseIcons, browsePage],
+	);
 
 	const handleTabChange = (key: string) => {
 		setTab(key as "search" | "browse");
-		if (key === "browse") loadCollection(collection);
 	};
 
 	const handleCollectionChange = (prefix: string) => {
 		setCollection(prefix);
-		browseLoadedRef.current = "";
-		loadCollection(prefix);
+		setBrowsePage(1);
 	};
 
-	const handleSelect = (icon: string) => { onChange?.(icon); setOpen(false); };
-	const handleClear = (e: MouseEvent) => { e.stopPropagation(); onChange?.(""); };
+	const handleSearchChange = (kw: string) => {
+		setKeyword(kw);
+		setSearchPage(1);
+	};
+
+	const handleSearchPageChange = (page: number) => {
+		setSearchPage(page);
+	};
+
+	const handleBrowsePageChange = (page: number) => {
+		setBrowsePage(page);
+	};
+
+	const handleSelect = (icon: string) => {
+		onChange?.(icon);
+		setOpen(false);
+	};
+
+	const handleClear = (e: MouseEvent) => {
+		e.stopPropagation();
+		onChange?.("");
+	};
+
+	const searchEmptyText = keyword.trim().length < 2 ? "请输入至少 2 个字符搜索图标" : "未找到匹配图标";
 
 	const popoverContent = (
 		<div style={{ width: 380 }}>
@@ -134,21 +171,21 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
 							<>
 								<Input.Search
 									autoFocus
-									placeholder="搜索图标（如：home、user、setting）"
+									placeholder="搜索图标，例如：home、user、setting"
 									value={keyword}
-									onChange={e => search(e.target.value)}
+									onChange={e => handleSearchChange(e.target.value)}
 									allowClear
 									style={{ marginBottom: 8 }}
 								/>
-								<div style={{ height: 260, overflowY: "auto" }}>
-									{searchLoading && <div className="flex justify-center items-center h-full"><Spin /></div>}
-									{!searchLoading && searchIcons.length === 0 && (
-										<div className="flex justify-center items-center h-full text-sm" style={{ color: "var(--ant-color-text-quaternary)" }}>
-											{keyword.length < 2 ? "请输入至少2个字符搜索" : "未找到匹配图标"}
-										</div>
-									)}
-									{!searchLoading && <IconGrid icons={searchIcons} selected={value} onSelect={handleSelect} />}
-								</div>
+								<IconResults
+									icons={searchPageIcons}
+									total={searchIcons.length}
+									page={searchPage}
+									emptyText={searchEmptyText}
+									selected={value}
+									onSelect={handleSelect}
+									onPageChange={handleSearchPageChange}
+								/>
 							</>
 						),
 					},
@@ -161,16 +198,18 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
 									size="small"
 									style={{ width: "100%", marginBottom: 8 }}
 									value={collection}
-									options={PRESET_COLLECTIONS}
+									options={PRESET_ICON_COLLECTION_OPTIONS}
 									onChange={handleCollectionChange}
 								/>
-								<div style={{ height: 260, overflowY: "auto" }}>
-									{browseLoading && <div className="flex justify-center items-center h-full"><Spin /></div>}
-									{!browseLoading && browseIcons.length === 0 && (
-										<div className="flex justify-center items-center h-full text-sm" style={{ color: "var(--ant-color-text-quaternary)" }}>暂无图标</div>
-									)}
-									{!browseLoading && <IconGrid icons={browseIcons} selected={value} onSelect={handleSelect} />}
-								</div>
+								<IconResults
+									icons={browsePageIcons}
+									total={browseIcons.length}
+									page={browsePage}
+									emptyText="暂无图标"
+									selected={value}
+									onSelect={handleSelect}
+									onPageChange={handleBrowsePageChange}
+								/>
 							</>
 						),
 					},
@@ -203,7 +242,7 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
 								style={{ color: "var(--ant-color-text-quaternary)" }}
 								onClick={handleClear}
 							>
-								✕
+								清除
 							</span>
 						</>
 					)

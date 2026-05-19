@@ -341,6 +341,109 @@ class AdminMenuServiceTest {
     }
 
     @Test
+    void createMenuRejectsPlatformRouteAlias() {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        AdminMenuService service = new AdminMenuService(jdbcTemplate, Clock.systemUTC());
+
+        assertThatThrownBy(() -> service.createMenu(new AdminMenuService.CreateAdminMenuCommand(
+                "menu",
+                "角色管理",
+                "/system/roles",
+                "./system/role",
+                null,
+                "platform",
+                null,
+                1,
+                "TeamOutlined",
+                false,
+                1)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("请使用规范路由路径：/platform/role");
+    }
+
+    @Test
+    void createMenuRejectsCanonicalDuplicateRoutePath() {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        AdminMenuService service = new AdminMenuService(jdbcTemplate, Clock.systemUTC());
+        when(jdbcTemplate.queryForList(
+                org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null
+                        && sql.contains("SELECT route_path, scope")
+                        && sql.contains("route_path IS NOT NULL"))))
+                .thenReturn(List.of(Map.of("route_path", "/platform/roles", "scope", "platform")));
+
+        assertThatThrownBy(() -> service.createMenu(new AdminMenuService.CreateAdminMenuCommand(
+                "menu",
+                "角色管理",
+                "/platform/role",
+                "./system/role",
+                null,
+                "platform",
+                null,
+                1,
+                "TeamOutlined",
+                false,
+                1)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("路由路径已被其他菜单使用");
+    }
+
+    @Test
+    void updateMenuIgnoresLegacyBusinessRouteAliasWhenCheckingDuplicates() {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        AdminMenuService service = new AdminMenuService(jdbcTemplate, Clock.systemUTC());
+        AdminMenuService.AdminMenuNode existingMenu = new AdminMenuService.AdminMenuNode(
+                38L,
+                "ADM0000000038",
+                "menu",
+                "platform",
+                "角色管理",
+                "/platform/role",
+                "./system/role",
+                null,
+                11L,
+                11,
+                "TeamOutlined",
+                false,
+                1,
+                false,
+                List.of());
+
+        when(jdbcTemplate.queryForObject(
+                argThat(sql -> sql != null && sql.contains("FROM iam_admin_menu") && sql.contains("WHERE id = ?") && sql.contains("LIMIT 1")),
+                org.mockito.ArgumentMatchers.<RowMapper<AdminMenuService.AdminMenuNode>>any(),
+                org.mockito.ArgumentMatchers.<Object[]>any()))
+                .thenReturn(existingMenu, existingMenu);
+        when(jdbcTemplate.queryForObject(
+                argThat(sql -> sql != null && sql.contains("WHERE parent_id = ?") && sql.contains("required = 1")),
+                org.mockito.ArgumentMatchers.<RowMapper<AdminMenuService.AdminMenuNode>>any(),
+                org.mockito.ArgumentMatchers.<Object[]>any()))
+                .thenThrow(new org.springframework.dao.EmptyResultDataAccessException(1));
+        when(jdbcTemplate.queryForList(
+                argThat(sql -> sql != null
+                        && sql.contains("SELECT route_path, scope")
+                        && sql.contains("route_path IS NOT NULL")),
+                org.mockito.ArgumentMatchers.<Object[]>any()))
+                .thenReturn(List.of(Map.of("route_path", "/system/roles", "scope", "business")));
+
+        AdminMenuService.AdminMenuNode updated = service.updateMenu(
+                38L,
+                new AdminMenuService.UpdateAdminMenuCommand(
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null));
+
+        assertThat(updated).isSameAs(existingMenu);
+    }
+
+    @Test
     void deleteMenuRemovesRoleBindingsAndMenuRow() throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuService service = new AdminMenuService(jdbcTemplate, Clock.systemUTC());

@@ -4,17 +4,27 @@
   "packageManager": "pnpm@10.7.1",
   "scripts": {
     "dev:customer": "pnpm --filter customer-web dev",
-    "dev:admin": "pnpm --filter admin-web dev",
-    "dev": "pnpm --filter admin-web dev",
+    "dev:admin": "pnpm --filter react-antd-admin dev",
+    "dev": "pnpm --filter react-antd-admin dev",
     "check:utf8": "node ./scripts/check-utf8.mjs",
-    "build:admin": "pnpm --filter admin-web build",
-    "lint:admin": "pnpm run check:utf8 && pnpm --filter admin-web lint",
-    "typecheck:admin": "pnpm --filter admin-web typecheck",
+    "build:admin": "pnpm --filter react-antd-admin build",
+    "lint:admin": "pnpm run check:utf8 && pnpm --filter react-antd-admin lint",
+    "typecheck:admin": "pnpm --filter react-antd-admin typecheck",
     "build": "pnpm -r build",
     "lint": "pnpm run check:utf8 && pnpm -r lint",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
     "umi": "4.6.47"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^19.2.14",
+      "@types/react-dom": "^19.2.3"
+    }
+  },
+  "dependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3"
   }
 }

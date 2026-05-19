@@ -21,6 +21,8 @@ const FORM_INITIAL_VALUES: LoginInfo = {
 	password: "admin123",
 };
 
+const DEFAULT_CAPTCHA_HINT = "请拖动滑块完成验证";
+
 export function PasswordLogin() {
 	const [loading, setLoading] = useState(false);
 	const [configLoading, setConfigLoading] = useState(true);
@@ -46,12 +48,12 @@ export function PasswordLogin() {
 					return;
 				}
 				setCaptchaEnabled(config.captchaEnabled);
-				setCaptchaHint(config.captchaHint ?? "请拖动滑块完成验证");
+				setCaptchaHint(config.captchaHint?.trim() || DEFAULT_CAPTCHA_HINT);
 			}
 			catch (error) {
 				if (active) {
-					setCaptchaEnabled(false);
-					setCaptchaHint("");
+					setCaptchaEnabled(true);
+					setCaptchaHint(DEFAULT_CAPTCHA_HINT);
 				}
 			}
 			finally {

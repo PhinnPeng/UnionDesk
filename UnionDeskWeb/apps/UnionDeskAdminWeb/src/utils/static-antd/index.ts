@@ -1,8 +1,4 @@
 /* eslint-disable import/no-mutable-exports */
-import type { MessageInstance } from "antd/es/message/interface";
-import type { ModalStaticFunctions } from "antd/es/modal/confirm";
-import type { NotificationInstance } from "antd/es/notification/interface";
-
 import {
 	message as antdMessage,
 	Modal as antdModal,
@@ -10,11 +6,13 @@ import {
 	App,
 } from "antd";
 
-let message: MessageInstance = antdMessage;
-let notification: NotificationInstance = antdNotification;
+export type StaticAntdMessage = ReturnType<typeof App.useApp>["message"];
+export type StaticAntdNotification = ReturnType<typeof App.useApp>["notification"];
+export type StaticAntdModal = Omit<Pick<typeof antdModal, "info" | "success" | "error" | "warning" | "confirm" | "warn">, "warn">;
 
-const { ...resetFns } = antdModal;
-let modal: Omit<ModalStaticFunctions, "warn"> = resetFns;
+let message: StaticAntdMessage = antdMessage;
+let notification: StaticAntdNotification = antdNotification;
+let modal: StaticAntdModal = antdModal;
 
 /**
  * @see https://ant.design/components/app

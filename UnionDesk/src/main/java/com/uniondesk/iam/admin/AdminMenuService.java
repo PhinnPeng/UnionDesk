@@ -569,7 +569,7 @@ public class AdminMenuService {
                 throw new IllegalArgumentException("菜单节点必须填写路由路径和组件路径");
             }
             normalizedPermissionCode = null;
-            ensureRoutePathAvailable(normalizedRoutePath, selfId);
+            ensureRoutePathAvailable(normalizedRoutePath, normalizedScope, selfId);
         }
         if (NODE_TYPE_BUTTON.equals(normalizedNodeType)) {
             if (!StringUtils.hasText(normalizedPermissionCode)) {
@@ -601,6 +601,59 @@ public class AdminMenuService {
             normalized = "/" + normalized;
         }
         return normalized;
+    }
+
+    private void ensureRoutePathAvailable(String routePath, String scope, Long selfId) {
+        String canonicalRoutePath = canonicalRoutePath(routePath, scope);
+        if (!routePath.equals(canonicalRoutePath)) {
+            throw new IllegalArgumentException("请使用规范路由路径：" + canonicalRoutePath);
+        }
+        List<Object> args = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("""
+                SELECT route_path, scope
+                FROM iam_admin_menu
+                WHERE route_path IS NOT NULL
+                """);
+        if (selfId != null) {
+            sql.append(" AND id <> ?");
+            args.add(selfId);
+        }
+        List<Map<String, Object>> existingRouteRows = args.isEmpty()
+                ? jdbcTemplate.queryForList(sql.toString())
+                : jdbcTemplate.queryForList(sql.toString(), args.toArray());
+        boolean exists = existingRouteRows.stream()
+                .map(row -> {
+                    String existingRoutePath = Objects.toString(row.get("route_path"), null);
+                    if (existingRoutePath == null) {
+                        return null;
+                    }
+                    String existingScope = Objects.toString(row.get("scope"), scope);
+                    return canonicalRoutePath(existingRoutePath, existingScope);
+                })
+                .filter(Objects::nonNull)
+                .anyMatch(canonicalRoutePath::equals);
+        if (exists) {
+            throw new IllegalArgumentException("路由路径已被其他菜单使用");
+        }
+    }
+
+    private String canonicalRoutePath(String routePath, String scope) {
+        if (!"platform".equalsIgnoreCase(scope)) {
+            return switch (routePath) {
+                case "/system/menus" -> "/system/menu";
+                case "/system/roles" -> "/system/role";
+                case "/system/users" -> "/system/user";
+                case "/system/users/offboard-pool" -> "/system/user/offboard-pool";
+                default -> routePath;
+            };
+        }
+        return switch (routePath) {
+            case "/platform/menus", "/system/menus" -> "/platform/menu";
+            case "/platform/roles", "/system/roles" -> "/platform/role";
+            case "/platform/users", "/system/users" -> "/platform/user";
+            case "/platform/user/offboard-pool", "/system/user/offboard-pool", "/system/users/offboard-pool" -> "/platform/offboard-pool";
+            default -> routePath;
+        };
     }
 
     private void ensureRoutePathAvailable(String routePath, Long selfId) {

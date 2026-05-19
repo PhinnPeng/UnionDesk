@@ -170,6 +170,7 @@ export type PlatformOrganizationView = {
   orderNo: number;
   status: number;
   remark?: string | null;
+  createdAt: string;
 };
 
 export type IamResource = {
@@ -307,11 +308,13 @@ export type IamUser = {
   username: string;
   mobile: string;
   email?: string | null;
+  remark?: string | null;
   accountType: "admin" | "customer" | string;
   status: number;
   employmentStatus: "active" | "offboarded" | string;
   roleCodes: string[];
   businessDomainIds: number[];
+  organizationIds: number[];
   offboardedAt?: string | null;
   offboardedBy?: number | null;
   offboardReason?: string | null;
@@ -321,21 +324,25 @@ export type CreateIamUserPayload = {
   username: string;
   mobile: string;
   email?: string | null;
+  remark?: string | null;
   password: string;
   accountType: "admin" | "customer" | string;
   roleCodes: string[];
   businessDomainIds: number[];
+  organizationIds?: number[];
 };
 
 export type UpdateIamUserPayload = {
   username?: string;
   mobile?: string;
   email?: string | null;
+  remark?: string | null;
   password?: string;
   accountType?: "admin" | "customer" | string;
   roleCodes?: string[];
   businessDomainIds?: number[];
   status?: number;
+  organizationIds?: number[];
 };
 
 export type TicketStatus = "open" | "processing" | "waiting_customer" | "resolved" | "closed" | string;

@@ -4,7 +4,7 @@ import { BasicContent } from "#src/components/basic-content";
 
 import { fetchP0InboxPage, fetchP0InboxUnreadCount, markP0InboxMessageRead, toErrorMessage } from "@uniondesk/shared";
 import { App, Alert, Button, Card, Space, Table, Tag } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useState } from "react";
 
 export default function PlatformInbox() {
@@ -43,7 +43,7 @@ export default function PlatformInbox() {
 		}
 	};
 
-	const columns: ColumnsType<P0InboxMessage> = [
+	const columns: TableColumnsType<P0InboxMessage> = [
 		{ title: "标题", dataIndex: "title", width: 220 },
 		{ title: "业务域", dataIndex: "domain_name", width: 160, render: v => v ?? "-" },
 		{

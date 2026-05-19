@@ -52,9 +52,10 @@ describe("generateRoutesFromBackend", () => {
 			expect(matches.length, pathname).toBeGreaterThan(0);
 			expect(leafRoute?.path ?? leafRoute?.index, pathname).not.toBe("*");
 		}
+		expect(matchRoutes(routes, "/platform/role")?.at(-1)?.route?.Component).toBeDefined();
 	});
 
-	it("keeps children from multiple platform catalogs normalized to the same route path", async () => {
+	it("keeps the organization catalog and its child routes aligned with the platform permission tree", async () => {
 		const snapshotMenus: PermissionSnapshotMenu[] = [
 			{
 				id: 1,
@@ -73,20 +74,41 @@ describe("generateRoutesFromBackend", () => {
 						path: "/platform/user",
 						component: "platform/user",
 						scope: "platform",
+						permissionCode: "platform.user.read",
 					},
 					{
-						id: 6,
+						id: 3,
 						code: "MENU_DEPT",
 						parentId: 1,
-						name: "部门管理",
+						name: "组织架构",
 						path: "/platform/dept",
 						component: "platform/dept",
+						scope: "platform",
+						permissionCode: "platform.organization.read",
+					},
+					{
+						id: 4,
+						code: "MENU_OFFBOARD_POOL",
+						parentId: 1,
+						name: "离职池",
+						path: "/platform/offboard-pool",
+						component: "platform/offboard-pool",
+						scope: "platform",
+						permissionCode: "platform.user.offboard_pool.read",
+					},
+					{
+						id: 5,
+						code: "MENU_ORG_CONFIG",
+						parentId: 1,
+						name: "组织配置",
+						path: "/platform/org-config",
+						component: "platform/org-config",
 						scope: "platform",
 					},
 				],
 			},
 			{
-				id: 3,
+				id: 6,
 				code: "CAT_PERMISSION",
 				parentId: null,
 				name: "权限管理",
@@ -95,18 +117,18 @@ describe("generateRoutesFromBackend", () => {
 				scope: "platform",
 				children: [
 					{
-						id: 4,
+						id: 7,
 						code: "MENU_ROLE",
-						parentId: 3,
+						parentId: 6,
 						name: "角色管理",
 						path: "/platform/role",
 						component: "./system/role",
 						scope: "platform",
 					},
 					{
-						id: 5,
+						id: 8,
 						code: "MENU_MENU",
-						parentId: 3,
+						parentId: 6,
 						name: "菜单管理",
 						path: "/platform/menu",
 						component: "./system/menu",
@@ -119,7 +141,13 @@ describe("generateRoutesFromBackend", () => {
 		const backendRoutes = buildBackendRoutesFromSnapshot(snapshotMenus);
 		const routes = removeDuplicateRoutes(await generateRoutesFromBackend(backendRoutes));
 
-		for (const pathname of ["/platform/user", "/platform/role", "/platform/menu"]) {
+		const organizationMatches = matchRoutes(routes, "/platform/dept") ?? [];
+		const organizationRoute = organizationMatches.at(-1)?.route;
+
+		expect(matchRoutes(routes, "/platform/user")?.at(-1)?.route?.handle?.auth).toBe("platform.user.read");
+		expect(organizationRoute?.handle?.auth).toBe("platform.organization.read");
+		expect(matchRoutes(routes, "/platform/offboard-pool")?.at(-1)?.route?.handle?.auth).toBe("platform.user.offboard_pool.read");
+		for (const pathname of ["/platform/user", "/platform/dept", "/platform/offboard-pool", "/platform/org-config", "/platform/role", "/platform/menu"]) {
 			const matches = matchRoutes(routes, pathname) ?? [];
 			const leafRoute = matches.at(-1)?.route;
 

@@ -47,13 +47,17 @@ UnionDesk/
    │  └─ resources/
    │     ├─ application.yml
    │     ├─ logback-spring.xml
-   │     └─ db/migration/  # Flyway SQL
+   │     └─ db/migration/
+   │        ├─ current/     # Flyway SQL (active)
+   │        └─ archive/     # Historical migrations
    └─ test/                # 单元测试
 ```
 
 ## 启动方式
 
-### 启动数据库
+### 参考启动数据库（按需）
+
+> 如果本机已经有可用的 MySQL，可以直接复用；没有再参考这一步启动。
 
 ```powershell
 docker compose up -d
@@ -103,5 +107,5 @@ docker compose up -d
 ## 当前说明
 
 - 当前安全配置仍为开发态放行，便于联调；后续需要接入 JWT 与 RBAC
-- 数据库迁移由 Flyway 管理
-- 本地开发数据库当前固定为 MySQL 8.0，以保证 Flyway 兼容性和启动稳定性
+- 数据库迁移由 Flyway 管理，当前活跃脚本位于 `src/main/resources/db/migration/current/`，历史脚本归档到 `archive/`
+- 本地开发若需要独立数据库环境，当前固定为 MySQL 8.0，以保证 Flyway 兼容性和启动稳定性；已有可用数据库时可直接复用，不必每次启动容器

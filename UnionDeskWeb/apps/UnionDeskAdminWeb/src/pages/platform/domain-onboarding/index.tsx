@@ -4,7 +4,7 @@ import { BasicContent } from "#src/components/basic-content";
 
 import { fetchP0AdminDomainsPage, fetchP0DomainCustomersPage, fetchP0InvitationCodes, toErrorMessage } from "@uniondesk/shared";
 import { App, Alert, Select, Space, Table, Tabs, Tag } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useState } from "react";
 
 export default function PlatformDomainOnboarding() {
@@ -67,7 +67,7 @@ export default function PlatformDomainOnboarding() {
 		void loadCustomers();
 	}, [loadCustomers, loadInvites]);
 
-	const invColumns: ColumnsType<P0InvitationCode> = [
+	const invColumns: TableColumnsType<P0InvitationCode> = [
 		{ title: "邀请码", dataIndex: "code", width: 160 },
 		{ title: "渠道", dataIndex: "channel", render: v => v ?? "-" },
 		{ title: "过期时间", dataIndex: "expires_at", render: v => v ?? "-" },
@@ -75,7 +75,7 @@ export default function PlatformDomainOnboarding() {
 		{ title: "状态", dataIndex: "status", width: 100, render: s => <Tag>{s ?? "-"}</Tag> },
 	];
 
-	const cusColumns: ColumnsType<P0DomainCustomer> = [
+	const cusColumns: TableColumnsType<P0DomainCustomer> = [
 		{ title: "展示名", dataIndex: "display_name" },
 		{ title: "手机", dataIndex: "phone", width: 140, render: v => v ?? "-" },
 		{

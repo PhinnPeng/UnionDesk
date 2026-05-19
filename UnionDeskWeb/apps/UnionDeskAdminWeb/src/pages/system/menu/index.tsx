@@ -1,5 +1,6 @@
-﻿import type { MenuItemType } from "#src/api/system/menu";
+import type { MenuItemType } from "#src/api/system/menu";
 import type { ActionType, ProColumns, ProCoreActionType } from "@ant-design/pro-components";
+import type { Key } from "react";
 
 import { fetchDeleteMenu, fetchMenuTree } from "#src/api/system/menu";
 import { AuthGuarded } from "#src/components/auth-guarded";
@@ -7,10 +8,10 @@ import { BasicButton } from "#src/components/basic-button";
 import { BasicContent } from "#src/components/basic-content";
 import { BasicTable } from "#src/components/basic-table";
 import { useAuth } from "#src/hooks/use-auth";
+import { getAllExpandedKeys } from "#src/utils/get-all-expanded-keys";
 
 import { ConfirmPopover } from "#src/components/confirm-popover";
-import { PlusCircleOutlined } from "@ant-design/icons";
-import { DownOutlined, RightOutlined } from "@ant-design/icons";
+import { CompressOutlined, DownOutlined, ExpandOutlined, PlusCircleOutlined, ReloadOutlined, RightOutlined } from "@ant-design/icons";
 import { Button, Card, Space, Tag } from "antd";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -73,7 +74,9 @@ export default function Menu() {
 	const [title, setTitle] = useState("");
 	const [detailData, setDetailData] = useState<Partial<MenuItemType>>({});
 	const [flatParentMenus, setFlatParentMenus] = useState<MenuItemType[]>([]);
+	const [menuTreeData, setMenuTreeData] = useState<MenuItemType[]>([]);
 	const [scopeFilter, setScopeFilter] = useState<MenuScope>(routeScope === "platform" ? "platform" : "business");
+	const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
 	const actionRef = useRef<ActionType>(null);
 	const permissionScope = routeScope === "platform" ? "platform" : "domain";
 	const createAuth = `${permissionScope}.menu.create`;
@@ -89,7 +92,8 @@ export default function Menu() {
 			await fetchDeleteMenu(id);
 			await action?.reload?.();
 			window.$message?.success(t("common.deleteSuccess"));
-		} catch (error) {
+		}
+		catch (error) {
 			window.$message?.error(error instanceof Error ? error.message : t("common.deleteFailed"));
 		}
 	};
@@ -235,6 +239,8 @@ export default function Menu() {
 					className="menu-tree-table"
 					expandable={{
 						rowExpandable: canExpandRow,
+						expandedRowKeys: expandedKeys,
+						onExpandedRowsChange: keys => setExpandedKeys(keys as Key[]),
 						expandIcon: ({ expanded, onExpand, record }) => {
 							if (!canExpandRow(record)) {
 								return null;
@@ -254,13 +260,16 @@ export default function Menu() {
 						try {
 							const treeData = await fetchMenuTree({ scope: scopeFilter });
 							const visibleTreeData = filterMenuTreeByScope(treeData, scopeFilter);
+							setMenuTreeData(visibleTreeData);
+							setExpandedKeys(getAllExpandedKeys(visibleTreeData, "id") as Key[]);
 							setFlatParentMenus(flattenMenuTree(visibleTreeData).filter(item => item.nodeType !== "button"));
 							return {
 								data: visibleTreeData,
 								success: true,
 								total: visibleTreeData.length,
 							};
-						} catch (error) {
+						}
+						catch (error) {
 							window.$message?.error(error instanceof Error ? error.message : "加载菜单失败");
 							return {
 								data: [],
@@ -283,11 +292,33 @@ export default function Menu() {
 								onClick={() => {
 									setIsOpen(true);
 									setTitle(t("system.menu.addMenu"));
+									setDetailData({});
 								}}
 							>
 								{t("common.add")}
 							</Button>
 						</AuthGuarded>,
+						<Button
+							key="expand-all"
+							icon={<ExpandOutlined />}
+							onClick={() => setExpandedKeys(getAllExpandedKeys(menuTreeData, "id") as Key[])}
+						>
+							展开全部
+						</Button>,
+						<Button
+							key="collapse-all"
+							icon={<CompressOutlined />}
+							onClick={() => setExpandedKeys([])}
+						>
+							收起全部
+						</Button>,
+						<Button
+							key="refresh"
+							icon={<ReloadOutlined />}
+							onClick={() => actionRef.current?.reload()}
+						>
+							刷新
+						</Button>,
 					]}
 				/>
 			</div>

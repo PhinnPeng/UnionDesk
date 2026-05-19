@@ -1,7 +1,7 @@
 import type { InitOptions } from "i18next";
 
-import enUS from "antd/locale/en_US";
-import zhCN from "antd/locale/zh_CN";
+import enUS from "antd/locale/en_US.js";
+import zhCN from "antd/locale/zh_CN.js";
 import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
 

@@ -21,6 +21,7 @@ import { matchRoutes, Navigate, useLocation, useNavigate } from "react-router";
 import { removeDuplicateRoutes } from "./utils";
 
 const noLoginWhiteList = Array.from(whiteRouteNames).filter(item => item !== loginPath);
+const EMPTY_MENUS: AppRouteRecordRaw[] = [];
 
 interface AuthGuardProps {
 	children?: React.ReactNode
@@ -46,10 +47,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	const currentRoute = useCurrentRoute();
 	const { pathname, search } = useLocation();
 	const isLogin = useAuthStore(state => Boolean(state.token));
+	const authUserMenus = useAuthStore(state => state.user?.menus ?? EMPTY_MENUS);
 	const isAuthorized = useUserStore(state => Boolean(state.id));
 	const userRoles = useUserStore(state => state.roles);
 	const userActions = useUserStore(state => state.actions);
-	const userMenus = useUserStore(state => state.menus ?? []);
+	const userMenus = useUserStore(state => state.menus ?? EMPTY_MENUS);
 	const { setAccessStore, isAccessChecked, routeList } = useAccessStore();
 	const { enableBackendAccess, enableFrontendAceess } = usePreferencesStore(state => state);
 
@@ -141,6 +143,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
 		return children;
 	}
 
+	if (pathname === "/") {
+		hideLoading();
+		const hasBusinessMenus = authUserMenus.some(menu => menu.handle?.scope !== appScopes.platform);
+		const homePath = hasBusinessMenus ? getAppHomePath(appScopes.business) : getAppHomePath(appScopes.platform);
+		return <Navigate to={homePath} replace />;
+	}
+
 	if (!isAccessChecked) {
 		return null;
 	}
@@ -151,12 +160,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	}
 
 	hideLoading();
-
-	if (pathname === "/") {
-		const hasBusinessMenus = userMenus.some(menu => menu.handle?.scope !== appScopes.platform);
-		const homePath = hasBusinessMenus ? getAppHomePath(appScopes.business) : getAppHomePath(appScopes.platform);
-		return <Navigate to={homePath} replace />;
-	}
 
 	const routeRoles = currentRoute?.handle?.roles;
 	const ignoreAccess = currentRoute?.handle?.ignoreAccess;

@@ -75,7 +75,7 @@ MVP 按 P0 / P1 / P2 三个批次交付，详见 `doc/产品需求文档 v1.0.md
 - [x] 管理端平台入口、菜单/角色基础页面
 - [x] 后端工程脚手架（Spring Boot + Flyway + MyBatis）
 - [ ] 后端启动链路与 Flyway 迁移链路稳定化
-- [ ] 本地一键启动（docker compose + MySQL + MinIO）
+- [ ] 本地基础依赖启动说明（按需参考 docker compose + MySQL + MinIO）
 - [ ] 鉴权与 IAM 最小闭环
 - [ ] 工单核心闭环（提交 → 处理 → 关闭）
 
@@ -84,7 +84,7 @@ MVP 按 P0 / P1 / P2 三个批次交付，详见 `doc/产品需求文档 v1.0.md
 ### 阶段 0：基础设施
 1. 稳定 `UnionDesk/` Spring Boot 启动链路，按 Flyway 执行并验证迁移脚本（见 `doc/数据模型迁移策略.md`）。
 2. `UnionDeskWeb/` 已初始化，含 `apps/UnionDeskAdminWeb`、`apps/UnionDeskCustomerWeb`、`packages/`。
-3. 提供 `docker-compose.yml`（MySQL 8、Redis、MinIO）。
+3. 提供 `docker-compose.yml`（MySQL 8、Redis、MinIO）作为本地依赖参考；已有可用环境时可直接复用或跳过。
 
 ### 阶段 1：最小闭环
 1. 登录 / Token 刷新 / 基于 `business_domain_id` 的数据权限。
@@ -99,12 +99,12 @@ MVP 按 P0 / P1 / P2 三个批次交付，详见 `doc/产品需求文档 v1.0.md
 3. 通知模板（站内 → 邮件/短信）。
 4. OpenAPI 驱动的前端类型化 API Client。
 
-## 7. 快速开始（占位）
+## 7. 快速开始（参考）
 
-> 后端工程已存在，但启动链路仍在 Sprint 0 稳定中；前端已可本地启动。
+> 后端工程已存在；基础依赖仅在本机没有可用环境时按需启动。前端已可本地启动。
 
 ```powershell
-# 启动依赖（MySQL / Redis / MinIO）
+# 如本机没有可用的 MySQL / Redis / MinIO，再按需启动
 docker compose up -d
 
 # 后端

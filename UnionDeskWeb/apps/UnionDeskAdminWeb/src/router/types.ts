@@ -2,10 +2,12 @@ import type { ReactNode } from "react";
 import type { IndexRouteObject, NonIndexRouteObject, createBrowserRouter as RemixRouter } from "react-router";
 
 export interface IndexRouteMeta extends Omit<IndexRouteObject, "id"> {
+	id?: string
 	redirect?: string
 	handle: RouteMeta
 }
 export interface NonIndexRouteMeta extends Omit<NonIndexRouteObject, "id"> {
+	id?: string
 	redirect?: string
 	handle: RouteMeta
 	children?: AppRouteRecordRaw[]

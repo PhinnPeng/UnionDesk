@@ -45,7 +45,6 @@ class IamServiceIntegrationTest {
                 .collect(Collectors.toSet());
 
         assertThat(actionCodes).contains(
-                "platform.permission.manage",
                 "platform.menu.create",
                 "platform.menu.update",
                 "platform.menu.delete",
@@ -53,6 +52,7 @@ class IamServiceIntegrationTest {
                 "platform.role.update",
                 "platform.role.delete",
                 "platform.role_permission.read",
-                "platform.role_permission.update");
+                "platform.role_permission.update",
+                "platform.user.reset_password");
     }
 }

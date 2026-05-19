@@ -92,7 +92,7 @@
                     <password>gq0fd2sqOCncrNp3eBeGuLty</password>
                     <cleanDisabled>false</cleanDisabled>
                     <locations>
-                        <location>filesystem:src/main/resources/db/migration</location>
+                        <location>filesystem:src/main/resources/db/migration/current</location>
                     </locations>
                 </configuration>
                 <dependencies>

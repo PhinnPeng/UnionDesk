@@ -53,6 +53,12 @@ FLUSH PRIVILEGES;
 
 ## 执行 Flyway 迁移
 
+### 迁移目录
+
+- 活跃迁移目录：`UnionDesk/src/main/resources/db/migration/current/`
+- 历史脚本归档：`UnionDesk/src/main/resources/db/migration/archive/`
+- 当前重基线文件：`V202605200002__rebaseline_current_schema.sql`
+
 ### 方式一：使用 Maven 命令（推荐）
 
 ```bash
@@ -62,7 +68,7 @@ cd UnionDesk
 # 清空数据库（仅开发环境，生产环境禁用）
 .\mvnw.cmd flyway:clean
 
-# 执行迁移
+# 执行迁移（只扫描 current 目录）
 .\mvnw.cmd flyway:migrate
 
 # 查看迁移历史
@@ -82,7 +88,7 @@ USE uniondesk;
 SELECT * FROM flyway_schema_history ORDER BY installed_rank;
 ```
 
-应该看到 15 条迁移记录，状态均为 `Success`。
+应该看到当前基线 `V202605200002__rebaseline_current_schema.sql` 以及后续活跃增量脚本，状态均为 `Success`。如果是刚刚 `clean + migrate` 的空库，通常只会先看到 1 条基线记录。
 
 ### 2. 检查核心表是否存在
 

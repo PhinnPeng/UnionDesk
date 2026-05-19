@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
 
-import { Icon } from "@iconify/react";
+import "#src/icons/iconify-offline-catalog";
+
+import { Icon } from "@iconify/react/offline";
 
 /**
  * 图标存储格式：Iconify 标准格式 `"prefix:name"`，如 `"mdi:home"`

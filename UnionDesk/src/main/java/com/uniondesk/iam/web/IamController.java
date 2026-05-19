@@ -248,9 +248,9 @@ public class IamController {
     }
 
     @GetMapping("/users")
-    public List<IamDtos.UserAccountView> listUsers() {
+    public List<IamDtos.UserAccountView> listUsers(@RequestParam(required = false) Long organizationId) {
         requireSuperAdminContext();
-        return iamService.listUsers(false).stream().map(this::toUserAccountView).toList();
+        return iamService.listUsers(false, organizationId).stream().map(this::toUserAccountView).toList();
     }
 
     @PostMapping("/users")
@@ -267,10 +267,12 @@ public class IamController {
                 request.username(),
                 request.mobile(),
                 request.email(),
+                request.remark(),
                 request.password(),
                 request.accountType(),
                 request.roleCodes(),
-                request.businessDomainIds()));
+                request.businessDomainIds(),
+                request.organizationIds()));
         return toUserAccountView(user);
     }
 
@@ -281,11 +283,13 @@ public class IamController {
                 request.username(),
                 request.mobile(),
                 request.email(),
+                request.remark(),
                 request.password(),
                 request.accountType(),
                 request.roleCodes(),
                 request.businessDomainIds(),
-                request.status()));
+                request.status(),
+                request.organizationIds()));
         return toUserAccountView(user);
     }
 
@@ -308,7 +312,7 @@ public class IamController {
     @GetMapping("/users/offboard-pool")
     public List<IamDtos.UserAccountView> listOffboardPool() {
         requireSuperAdminContext();
-        return iamService.listUsers(true).stream().map(this::toUserAccountView).toList();
+        return iamService.listUsers(true, null).stream().map(this::toUserAccountView).toList();
     }
 
     @DeleteMapping("/users/{userId}")
@@ -451,11 +455,13 @@ public class IamController {
                 user.username(),
                 user.mobile(),
                 user.email(),
+                user.remark(),
                 user.accountType(),
                 user.status(),
                 user.employmentStatus(),
                 user.roleCodes(),
                 user.businessDomainIds(),
+                user.organizationIds(),
                 user.offboardedAt(),
                 user.offboardedBy(),
                 user.offboardReason());

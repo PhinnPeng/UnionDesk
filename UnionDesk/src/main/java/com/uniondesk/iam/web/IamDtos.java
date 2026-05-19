@@ -195,11 +195,13 @@ public final class IamDtos {
             String username,
             String mobile,
             String email,
+            String remark,
             String accountType,
             int status,
             String employmentStatus,
             List<String> roleCodes,
             List<Long> businessDomainIds,
+            List<Long> organizationIds,
             String offboardedAt,
             Long offboardedBy,
             String offboardReason) {
@@ -209,21 +211,25 @@ public final class IamDtos {
             @NotBlank String username,
             @NotBlank String mobile,
             String email,
+            String remark,
             @NotBlank String password,
             @NotBlank String accountType,
             @NotEmpty List<String> roleCodes,
-            @NotNull List<Long> businessDomainIds) {
+            @NotNull List<Long> businessDomainIds,
+            List<Long> organizationIds) {
     }
 
     public record UpdateUserRequest(
             String username,
             String mobile,
             String email,
+            String remark,
             String password,
             String accountType,
             List<String> roleCodes,
             List<Long> businessDomainIds,
-            Integer status) {
+            Integer status,
+            List<Long> organizationIds) {
     }
 
     public record OffboardUserRequest(

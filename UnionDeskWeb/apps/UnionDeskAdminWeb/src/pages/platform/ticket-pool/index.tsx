@@ -4,7 +4,7 @@ import { BasicContent } from "#src/components/basic-content";
 
 import { claimP0AdminTicket, fetchP0AdminDomainTicketsPage, fetchP0AdminDomainsPage, toErrorMessage } from "@uniondesk/shared";
 import { App, Alert, Button, Card, Select, Space, Table, Tag } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useState } from "react";
 
 export default function PlatformTicketPool() {
@@ -65,7 +65,7 @@ export default function PlatformTicketPool() {
 		}
 	};
 
-	const columns: ColumnsType<P0AdminTicketListItem> = [
+	const columns: TableColumnsType<P0AdminTicketListItem> = [
 		{ title: "编号", dataIndex: "ticket_no", width: 160 },
 		{ title: "标题", dataIndex: "title" },
 		{ title: "类型", dataIndex: "type_name", width: 120, render: v => v ?? "-" },

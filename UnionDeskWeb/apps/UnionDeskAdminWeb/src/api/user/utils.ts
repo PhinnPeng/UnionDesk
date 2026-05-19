@@ -18,6 +18,7 @@ const PLATFORM_BACKEND_MENU_PATH_MAP = new Map<string, string>([
 	["/platform/roles", "/platform/role"],
 	["/platform/users", "/platform/user"],
 	["/platform/user/offboard-pool", "/platform/offboard-pool"],
+	["/system/role", "/platform/role"],
 	["/system/menus", "/platform/menu"],
 	["/system/roles", "/platform/role"],
 	["/system/users", "/platform/user"],
@@ -258,6 +259,7 @@ function sortBackendRouteNodes(nodes: BackendRouteNode[]) {
 
 function toAppRouteRecordRaw(node: BackendRouteNode): BackendAppRouteRecordRaw {
 	const route: BackendAppRouteRecordRaw = {
+		id: getBackendRouteId(node),
 		path: node.path,
 		handle: {
 			title: node.menu.name,
@@ -277,4 +279,11 @@ function toAppRouteRecordRaw(node: BackendRouteNode): BackendAppRouteRecordRaw {
 	}
 
 	return route;
+}
+
+function getBackendRouteId(node: BackendRouteNode) {
+	const stableKey = typeof node.menu.id === "number"
+		? String(node.menu.id)
+		: node.menu.code || node.path;
+	return `backend:${node.scope ?? "unknown"}:${stableKey}`;
 }

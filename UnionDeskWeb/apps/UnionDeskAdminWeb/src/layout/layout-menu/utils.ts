@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 
 import type { MenuItemType } from "./types";
 import { isString } from "#src/utils/is";
+import { removeTrailingSlash } from "#src/router/utils/remove-trailing-slash";
 import { cloneElement, isValidElement } from "react";
 
 /**
@@ -125,6 +126,44 @@ export function findRootMenuByPath(menus: MenuItemType[], path?: string): {
 		rootMenu,
 		rootMenuPath,
 	};
+}
+
+interface MenuMatchLike {
+	id?: string
+	pathname?: string
+	handle?: {
+		currentActiveMenu?: string
+		hideInMenu?: boolean
+	}
+}
+
+export function getSelectedMenuKeys(matches: MenuMatchLike[], menuParentKeys: Record<string, string[]>) {
+	// First, try to find a route that specifies currentActiveMenu (highest priority)
+	const currentActiveMatch = matches.findLast(routeItem =>
+		routeItem.handle?.currentActiveMenu,
+	);
+
+	// If found, return the currentActiveMenu path with its parent keys
+	if (currentActiveMatch?.handle?.currentActiveMenu) {
+		const activeMenuPath = removeTrailingSlash(currentActiveMatch.handle.currentActiveMenu);
+		const parentKeys = menuParentKeys[activeMenuPath] || [];
+		return [...parentKeys, activeMenuPath];
+	}
+
+	// Fallback: Find the last visible route (not hidden in menu)
+	const latestVisibleMatch = matches.findLast(routeItem =>
+		routeItem.handle?.hideInMenu !== true,
+	);
+
+	// Prefer pathname over id because backend routes now use backend:* ids
+	const routePath = removeTrailingSlash(latestVisibleMatch?.pathname ?? latestVisibleMatch?.id ?? "");
+	if (routePath.length > 0) {
+		const parentKeys = menuParentKeys[routePath] || [];
+		return [...parentKeys, routePath];
+	}
+
+	// Default return empty array if no matches found
+	return [];
 }
 
 /**

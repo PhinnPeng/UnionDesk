@@ -38,6 +38,7 @@ public class IamService {
     private final PasswordEncoder passwordEncoder;
     private final AdminMenuService adminMenuService;
     private final PermissionScopePolicy permissionScopePolicy;
+    private final OrganizationService organizationService;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
     private final Map<String, CacheEntry<List<ApiGrant>>> apiGrantCache = new ConcurrentHashMap<>();
     private final Map<String, CacheEntry<List<IamResource>>> menuResourceCache = new ConcurrentHashMap<>();
@@ -47,12 +48,14 @@ public class IamService {
             Clock clock,
             PasswordEncoder passwordEncoder,
             AdminMenuService adminMenuService,
-            PermissionScopePolicy permissionScopePolicy) {
+            PermissionScopePolicy permissionScopePolicy,
+            OrganizationService organizationService) {
         this.jdbcTemplate = jdbcTemplate;
         this.clock = clock;
         this.passwordEncoder = passwordEncoder;
         this.adminMenuService = adminMenuService;
         this.permissionScopePolicy = permissionScopePolicy;
+        this.organizationService = organizationService;
     }
 
     public boolean isApiAllowed(UserContext context, String method, String requestPath) {
@@ -710,13 +713,20 @@ public class IamService {
         return loadRolePermissions(roleId);
     }
 
-    public List<UserAccount> listUsers(boolean offboardedOnly) {
+    public List<UserAccount> listUsers(boolean offboardedOnly, Long organizationId) {
+        final List<Long> targetOrgIds;
+        if (organizationId != null) {
+            targetOrgIds = organizationService.collectDescendantOrgIds(organizationId);
+        } else {
+            targetOrgIds = List.of();
+        }
         String sql = """
                 SELECT
                     id,
                     username,
                     mobile,
                     email,
+                    remark,
                     account_type,
                     status,
                     employment_status,
@@ -732,28 +742,18 @@ public class IamService {
                 rs.getString("username"),
                 rs.getString("mobile"),
                 rs.getString("email"),
+                rs.getString("remark"),
                 rs.getString("account_type"),
                 rs.getInt("status"),
                 rs.getString("employment_status"),
                 rs.getTimestamp("offboarded_at") == null ? null : rs.getTimestamp("offboarded_at").toInstant().toString(),
                 rs.getObject("offboarded_by", Long.class),
                 rs.getString("offboard_reason"),
-                List.of(),
-                List.of()));
+                listUserRoleCodes(rs.getLong("id")),
+                listUserDomainIds(rs.getLong("id")),
+                listUserOrganizationIdsOrEmpty(rs.getLong("id"))));
         return users.stream()
-                .map(user -> new UserAccount(
-                        user.id(),
-                        user.username(),
-                        user.mobile(),
-                        user.email(),
-                        user.accountType(),
-                        user.status(),
-                        user.employmentStatus(),
-                        user.offboardedAt(),
-                        user.offboardedBy(),
-                        user.offboardReason(),
-                        listUserRoleCodes(user.id()),
-                        listUserDomainIds(user.id())))
+                .filter(user -> targetOrgIds.isEmpty() || user.organizationIds().stream().anyMatch(targetOrgIds::contains))
                 .toList();
     }
 
@@ -767,11 +767,16 @@ public class IamService {
         }
         String password = normalize(command.password(), "password");
         String email = StringUtils.hasText(command.email()) ? command.email().trim() : null;
+        String remark = normalizeOptional(command.remark());
         List<String> roleCodes = command.roleCodes() == null ? List.of() : command.roleCodes().stream()
                 .filter(StringUtils::hasText)
                 .map(String::trim)
                 .toList();
         List<Long> businessDomainIds = command.businessDomainIds() == null ? List.of() : command.businessDomainIds().stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        List<Long> organizationIds = command.organizationIds() == null ? List.of() : command.organizationIds().stream()
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
@@ -781,13 +786,14 @@ public class IamService {
         try {
             jdbcTemplate.update("""
                             INSERT INTO user_account (
-                                username, mobile, email, password_hash, status, account_type, employment_status
+                                username, mobile, email, remark, password_hash, status, account_type, employment_status
                             )
-                            VALUES (?, ?, ?, ?, 1, ?, 'active')
+                            VALUES (?, ?, ?, ?, ?, 1, ?, 'active')
                             """,
                     username,
                     mobile,
                     email,
+                    remark,
                     passwordEncoder.encode(password),
                     accountType);
         } catch (DuplicateKeyException ex) {
@@ -798,6 +804,7 @@ public class IamService {
             throw new IllegalStateException("user create failed");
         }
         replaceUserRoleBindings(userId, roleCodes, businessDomainIds);
+        organizationService.replaceUserOrganizations(userId, organizationIds);
         return loadUser(userId).orElseThrow(() -> new IllegalStateException("user load failed"));
     }
 
@@ -817,6 +824,10 @@ public class IamService {
         if (command.email() != null) {
             assignments.add("email = ?");
             args.add(StringUtils.hasText(command.email()) ? command.email().trim() : null);
+        }
+        if (command.remark() != null) {
+            assignments.add("remark = ?");
+            args.add(normalizeOptional(command.remark()));
         }
         if (command.password() != null) {
             assignments.add("password_hash = ?");
@@ -843,14 +854,18 @@ public class IamService {
                 throw new IllegalArgumentException("username/mobile/email already exists");
             }
         }
-        if (command.roleCodes() != null || command.businessDomainIds() != null) {
+        if (command.roleCodes() != null || command.businessDomainIds() != null || command.organizationIds() != null) {
             List<String> roleCodes = command.roleCodes() != null
                     ? command.roleCodes().stream().filter(StringUtils::hasText).map(String::trim).toList()
                     : existing.roleCodes();
             List<Long> businessDomainIds = command.businessDomainIds() != null
                     ? command.businessDomainIds().stream().filter(Objects::nonNull).distinct().toList()
                     : existing.businessDomainIds();
+            List<Long> organizationIds = command.organizationIds() != null
+                    ? command.organizationIds().stream().filter(Objects::nonNull).distinct().toList()
+                    : existing.organizationIds();
             replaceUserRoleBindings(userId, roleCodes, businessDomainIds);
+            organizationService.replaceUserOrganizations(userId, organizationIds);
         }
         return loadUser(userId).orElseThrow(() -> new IllegalArgumentException("user not found"));
     }
@@ -936,6 +951,7 @@ public class IamService {
         jdbcTemplate.update("UPDATE user_account SET offboarded_by = NULL WHERE offboarded_by = ?", userId);
         jdbcTemplate.update("DELETE FROM user_domain_role WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM user_global_role WHERE user_id = ?", userId);
+        jdbcTemplate.update("DELETE FROM user_organization WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM auth_login_log WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM auth_login_session WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM user_account WHERE id = ?", userId);
@@ -1076,6 +1092,17 @@ public class IamService {
         return roleCodes;
     }
 
+    private List<Long> listUserOrganizationIdsOrEmpty(long userId) {
+        try {
+            List<Long> organizationIds = organizationService.listUserOrganizationIds(userId);
+            return organizationIds == null ? List.of() : organizationIds;
+        } catch (DataAccessException ex) {
+            // Organization links are optional for reads; missing relation data should not
+            // prevent the platform user list from rendering.
+            return List.of();
+        }
+    }
+
     private void guardLastProtectedRoleHolder(long userId) {
         List<String> currentRoles = listUserRoleCodes(userId);
         for (String protectedRole : PROTECTED_ROLE_CODES) {
@@ -1123,6 +1150,7 @@ public class IamService {
                                 username,
                                 mobile,
                                 email,
+                                remark,
                                 account_type,
                                 status,
                                 employment_status,
@@ -1133,11 +1161,12 @@ public class IamService {
                             WHERE id = ?
                             LIMIT 1
                             """,
-                    (rs, rowNum) -> new UserAccount(
+                            (rs, rowNum) -> new UserAccount(
                             rs.getLong("id"),
                             rs.getString("username"),
                             rs.getString("mobile"),
                             rs.getString("email"),
+                            rs.getString("remark"),
                             rs.getString("account_type"),
                             rs.getInt("status"),
                             rs.getString("employment_status"),
@@ -1145,7 +1174,8 @@ public class IamService {
                             rs.getObject("offboarded_by", Long.class),
                             rs.getString("offboard_reason"),
                             listUserRoleCodes(rs.getLong("id")),
-                            listUserDomainIds(rs.getLong("id"))),
+                            listUserDomainIds(rs.getLong("id")),
+                            listUserOrganizationIdsOrEmpty(rs.getLong("id"))),
                     userId);
             return Optional.of(user);
         } catch (EmptyResultDataAccessException ex) {
@@ -1544,6 +1574,10 @@ public class IamService {
         return value.trim();
     }
 
+    private String normalizeOptional(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
     private static int rolePriority(String role) {
         return switch (role) {
             case "super_admin" -> 0;
@@ -1724,6 +1758,7 @@ public class IamService {
             String username,
             String mobile,
             String email,
+            String remark,
             String accountType,
             int status,
             String employmentStatus,
@@ -1731,28 +1766,33 @@ public class IamService {
             Long offboardedBy,
             String offboardReason,
             List<String> roleCodes,
-            List<Long> businessDomainIds) {
+            List<Long> businessDomainIds,
+            List<Long> organizationIds) {
     }
 
     public record CreateUserCommand(
             String username,
             String mobile,
             String email,
+            String remark,
             String password,
             String accountType,
             List<String> roleCodes,
-            List<Long> businessDomainIds) {
+            List<Long> businessDomainIds,
+            List<Long> organizationIds) {
     }
 
     public record UpdateUserCommand(
             String username,
             String mobile,
             String email,
+            String remark,
             String password,
             String accountType,
             List<String> roleCodes,
             List<Long> businessDomainIds,
-            Integer status) {
+            Integer status,
+            List<Long> organizationIds) {
     }
 
     public record UserSummary(

@@ -170,6 +170,28 @@ export function BasicTable<
 		}));
 	}, [props.columns]);
 
+	const searchConfig = props.search as false | NonNullable<ProTableProps<DataType, Params, ValueType>["search"]>;
+
+	const searchProps = useMemo(() => {
+		const defaultSearch = {
+			labelWidth: "auto" as const,
+			span: { xs: 24, sm: 12, md: 8, lg: 8, xl: 6, xxl: 6 },
+		};
+
+		if (searchConfig === false) {
+			return false;
+		}
+
+		if (searchConfig == null) {
+			return defaultSearch;
+		}
+
+		return {
+			...defaultSearch,
+			...searchConfig,
+		};
+	}, [searchConfig]);
+
 	return (
 		<div className="h-full" ref={tableWrapperRef}>
 			<ProTable
@@ -182,11 +204,7 @@ export function BasicTable<
 					fullScreen: true,
 					...props.options,
 				}}
-				search={{
-					labelWidth: "auto",
-					span: { xs: 24, sm: 12, md: 8, lg: 8, xl: 6, xxl: 6 },
-					...props.search,
-				}}
+				search={searchProps}
 				rootClassName={cn(BASIC_TABLE_ROOT_CLASS_NAME, props.rootClassName)}
 				className={cn(classes.basicTable, props.className)}
 				scroll={{ y: scrollY, x: "max-content", ...props.scroll }}

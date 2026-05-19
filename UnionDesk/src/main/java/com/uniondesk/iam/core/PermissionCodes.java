@@ -15,12 +15,21 @@ public final class PermissionCodes {
     public static final String PLATFORM_ROLE_PERMISSION_UPDATE = "platform.role_permission.update";
     public static final String PLATFORM_ROLE_BIND = "platform.role.bind";
 
+    public static final String PLATFORM_ORGANIZATION_READ = "platform.organization.read";
+    public static final String PLATFORM_ORGANIZATION_CREATE = "platform.organization.create";
+    public static final String PLATFORM_ORGANIZATION_UPDATE = "platform.organization.update";
+    public static final String PLATFORM_ORGANIZATION_DELETE = "platform.organization.delete";
+
     public static final String PLATFORM_USER_READ = "platform.user.read";
     public static final String PLATFORM_USER_CREATE = "platform.user.create";
+    public static final String PLATFORM_USER_IMPORT = "platform.user.import";
     public static final String PLATFORM_USER_UPDATE = "platform.user.update";
     public static final String PLATFORM_USER_DISABLE = "platform.user.disable";
+    public static final String PLATFORM_USER_RESET_PASSWORD = "platform.user.reset_password";
     public static final String PLATFORM_USER_RESTORE = "platform.user.restore";
     public static final String PLATFORM_USER_OFFBOARD_POOL_READ = "platform.user.offboard_pool.read";
+    public static final String PLATFORM_USER_OFFBOARD_POOL_EXPORT = "platform.user.offboard_pool.export";
+    public static final String PLATFORM_USER_OFFBOARD_POOL_BATCH_RESTORE = "platform.user.offboard_pool.batch_restore";
     public static final String PLATFORM_USER_DELETE = "platform.user.delete";
 
     public static final String PLATFORM_PERMISSION_MANAGE = "platform.permission.manage";

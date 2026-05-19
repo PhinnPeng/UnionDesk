@@ -16,10 +16,11 @@ import type { AppRouteRecordRaw } from "#src/router/types";
 export function addRouteIdByPath(routes: AppRouteRecordRaw[], parentId = "") {
 	return routes.map((route) => {
 		// 如何是 index 路由，则 id 为父级路径 + "/"
-		const newRoute = { ...route, id: route.index ? `${parentId}/` : route.path };
+		const routeId = route.id ?? (route.index ? `${parentId}/` : route.path);
+		const newRoute = { ...route, id: routeId };
 
 		if (newRoute.children && newRoute.children.length > 0) {
-			newRoute.children = addRouteIdByPath(newRoute.children, route.path);
+			newRoute.children = addRouteIdByPath(newRoute.children, String(routeId));
 		}
 
 		return newRoute;

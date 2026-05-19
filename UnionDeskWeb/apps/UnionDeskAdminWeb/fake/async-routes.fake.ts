@@ -1,6 +1,5 @@
-import { about, access, home, outside, personalCenter, routeNest, system } from "#/src/router/extra-info";
 import { defineFakeRoute } from "vite-plugin-fake-server/client";
-import { ADMIN_TOKEN } from "./constants";
+import { ADMIN_TOKEN, about, access, home, outside, personalCenter, routeNest, system } from "./constants";
 import { resultSuccess } from "./utils";
 
 /**

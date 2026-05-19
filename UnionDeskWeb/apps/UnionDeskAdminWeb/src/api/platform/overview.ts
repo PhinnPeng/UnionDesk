@@ -1,7 +1,8 @@
-import type { BusinessDomainView, IamUser, LoginLogView } from "@uniondesk/shared";
+import type { IamUser, LoginLogView } from "@uniondesk/shared";
 
 import { requestBackendJson } from "#src/api/backend";
 
+import { fetchBusinessDomains } from "./domain";
 import { fetchPlatformOffboardPoolUsers, fetchPlatformUsers } from "./iam";
 
 export interface PlatformOverview {
@@ -13,10 +14,6 @@ export interface PlatformOverview {
 	announcementCount: number;
 	recentAuditCount: number;
 	loginLogs: LoginLogView[];
-}
-
-function fetchPlatformDomains(): Promise<BusinessDomainView[]> {
-	return requestBackendJson<BusinessDomainView[]>("v1/domains");
 }
 
 function fetchPlatformLoginLogs(limit = 5): Promise<LoginLogView[]> {
@@ -33,7 +30,7 @@ function countDisabledUsers(users: IamUser[]): number {
 
 export async function fetchPlatformOverview(): Promise<PlatformOverview> {
 	const [domains, users, offboardUsers, loginLogs] = await Promise.all([
-		fetchPlatformDomains(),
+		fetchBusinessDomains(),
 		fetchPlatformUsers(),
 		fetchPlatformOffboardPoolUsers(),
 		fetchPlatformLoginLogs(),

@@ -11,7 +11,7 @@ import {
 import StepUpModal from "#src/components/step-up-modal";
 import { BasicContent } from "#src/components/basic-content";
 import { App, Alert, Button, Card, Checkbox, Form, Input, Modal, Select, Space, Table, Tag, Typography } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useState } from "react";
 
 const registrationOptions: { value: P0RegistrationPolicy; label: string }[] = [
@@ -146,7 +146,7 @@ export default function PlatformBusinessDomains() {
 		}
 	};
 
-	const columns: ColumnsType<P0AdminDomain> = [
+	const columns: TableColumnsType<P0AdminDomain> = [
 		{ title: "名称", dataIndex: "name", width: 200 },
 		{ title: "短码", dataIndex: "code", width: 140 },
 		{

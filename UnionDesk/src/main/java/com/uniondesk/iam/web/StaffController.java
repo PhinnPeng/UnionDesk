@@ -49,7 +49,7 @@ public class StaffController {
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String keyword) {
-        List<StaffDtos.StaffAccountView> rows = iamService.listUsers(false).stream()
+        List<StaffDtos.StaffAccountView> rows = iamService.listUsers(false, null).stream()
                 .map(this::toStaffAccountView)
                 .filter(view -> matchesStatus(view, status))
                 .filter(view -> matchesKeyword(view, keyword))
@@ -76,10 +76,12 @@ public class StaffController {
                 request.loginName(),
                 request.phone(),
                 request.email(),
+                null,
                 request.password(),
                 request.accountType(),
                 request.roleCodes(),
-                request.businessDomainIds()));
+                request.businessDomainIds(),
+                null));
         return toStaffAccountView(created);
     }
 
@@ -92,11 +94,13 @@ public class StaffController {
                 request.loginName(),
                 request.phone(),
                 request.email(),
+                null,
                 request.password(),
                 request.accountType(),
                 request.roleCodes(),
                 request.businessDomainIds(),
-                request.status()));
+                request.status(),
+                null));
         authVersionService.incrementVersion(updated.id(), updated.accountType());
         return toStaffAccountView(updated);
     }

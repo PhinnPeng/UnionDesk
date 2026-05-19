@@ -1,10 +1,9 @@
-import type { ColumnsType } from "antd/es/table";
-
 import { BasicContent } from "#src/components/basic-content";
 import { fetchBusinessDomains } from "#src/api/platform/domain";
 import { fetchLoginLogsPage, fetchPlatformAuditLogs } from "#src/api/platform/audit";
 
 import { App, Card, DatePicker, Form, Input, Select, Space, Table, Tag, Tabs, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 
@@ -121,7 +120,7 @@ export default function PlatformAuditLogs() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [activeTab]);
 
-	const auditColumns: ColumnsType<PlatformAuditLogView> = [
+	const auditColumns: TableColumnsType<PlatformAuditLogView> = [
 		{
 			title: "业务域",
 			dataIndex: "businessDomainId",
@@ -163,7 +162,7 @@ export default function PlatformAuditLogs() {
 		},
 	];
 
-	const loginColumns: ColumnsType<LoginLogView> = [
+	const loginColumns: TableColumnsType<LoginLogView> = [
 		{
 			title: "业务域",
 			dataIndex: "businessDomainId",
@@ -349,4 +348,3 @@ export default function PlatformAuditLogs() {
 		</BasicContent>
 	);
 }
-

@@ -43,8 +43,8 @@ class StaffControllerTests {
         MockMvc mockMvc = mockMvc();
         UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-1", "ud-admin-web"));
         when(platformRoleService.getCurrentPlatformRoles(2L)).thenReturn(List.of("platform_admin"));
-        when(iamService.listUsers(false)).thenReturn(List.of(staffAccount(1L, "admin", 1, "active")));
-        when(iamService.listUsers(true)).thenReturn(List.of());
+        when(iamService.listUsers(false, null)).thenReturn(List.of(staffAccount(1L, "admin", 1, "active")));
+        when(iamService.listUsers(true, null)).thenReturn(List.of());
         when(platformRoleService.getCurrentPlatformRoles(1L)).thenReturn(List.of("domain_admin"));
 
         mockMvc.perform(get("/api/v1/admin/staff"))
@@ -144,8 +144,8 @@ class StaffControllerTests {
         UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-1", "ud-admin-web"));
         when(platformRoleService.getCurrentPlatformRoles(2L)).thenReturn(List.of("platform_admin"));
         when(iamService.updateUser(eq(1L), any())).thenReturn(staffAccount(1L, "admin-updated", 1, "active"));
-        when(iamService.listUsers(false)).thenReturn(List.of(staffAccount(1L, "admin", 1, "active")));
-        when(iamService.listUsers(true)).thenReturn(List.of());
+        when(iamService.listUsers(false, null)).thenReturn(List.of(staffAccount(1L, "admin", 1, "active")));
+        when(iamService.listUsers(true, null)).thenReturn(List.of());
         when(platformRoleService.getCurrentPlatformRoles(1L)).thenReturn(List.of("platform_admin"));
 
         mockMvc.perform(put("/api/v1/admin/staff/1")
@@ -173,8 +173,8 @@ class StaffControllerTests {
         UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-1", "ud-admin-web"));
         when(platformRoleService.getCurrentPlatformRoles(2L)).thenReturn(List.of("platform_admin"));
         when(iamService.offboardUser(1L, 2L, "manual")).thenReturn(staffAccount(1L, "admin", 0, "offboarded"));
-        when(iamService.listUsers(false)).thenReturn(List.of());
-        when(iamService.listUsers(true)).thenReturn(List.of(staffAccount(1L, "admin", 0, "offboarded")));
+        when(iamService.listUsers(false, null)).thenReturn(List.of());
+        when(iamService.listUsers(true, null)).thenReturn(List.of(staffAccount(1L, "admin", 0, "offboarded")));
         when(platformRoleService.getCurrentPlatformRoles(1L)).thenReturn(List.of("platform_admin"));
 
         mockMvc.perform(post("/api/v1/admin/staff/1/disable").param("reason", "manual"))
@@ -235,6 +235,7 @@ class StaffControllerTests {
                 loginName,
                 "1380000000" + id,
                 loginName + "@uniondesk.local",
+                null,
                 "admin",
                 status,
                 employmentStatus,
@@ -242,6 +243,7 @@ class StaffControllerTests {
                 null,
                 null,
                 List.of("super_admin"),
-                List.of(10L));
+                List.of(10L),
+                List.of());
     }
 }

@@ -85,6 +85,73 @@ class AdminPermissionCatalogTests {
     }
 
     @Test
+    void organizationAndPlaceholderPlatformPermissionsAreRegistered() {
+        assertThat(AdminPermissionCatalog.findByCode(PermissionCodes.PLATFORM_ORGANIZATION_READ))
+                .hasValueSatisfying(permission -> {
+                    assertThat(permission.name()).isEqualTo("View organization structure");
+                    assertThat(permission.permissionScope()).isEqualTo("platform");
+                    assertThat(permission.httpMethod()).isEqualTo("GET");
+                    assertThat(permission.pathPattern()).isEqualTo("/api/v1/iam/organizations");
+                });
+
+        assertThat(AdminPermissionCatalog.findByCode(PermissionCodes.PLATFORM_ORGANIZATION_CREATE))
+                .hasValueSatisfying(permission -> {
+                    assertThat(permission.name()).isEqualTo("Create organization");
+                    assertThat(permission.permissionScope()).isEqualTo("platform");
+                    assertThat(permission.httpMethod()).isEqualTo("POST");
+                    assertThat(permission.pathPattern()).isEqualTo("/api/v1/iam/organizations");
+                });
+
+        assertThat(AdminPermissionCatalog.findByCode(PermissionCodes.PLATFORM_ORGANIZATION_UPDATE))
+                .hasValueSatisfying(permission -> {
+                    assertThat(permission.name()).isEqualTo("Update organization");
+                    assertThat(permission.permissionScope()).isEqualTo("platform");
+                    assertThat(permission.httpMethod()).isEqualTo("PUT");
+                    assertThat(permission.pathPattern()).isEqualTo("/api/v1/iam/organizations/*");
+                });
+
+        assertThat(AdminPermissionCatalog.findByCode(PermissionCodes.PLATFORM_ORGANIZATION_DELETE))
+                .hasValueSatisfying(permission -> {
+                    assertThat(permission.name()).isEqualTo("Delete organization");
+                    assertThat(permission.permissionScope()).isEqualTo("platform");
+                    assertThat(permission.httpMethod()).isEqualTo("DELETE");
+                    assertThat(permission.pathPattern()).isEqualTo("/api/v1/iam/organizations/*");
+                });
+
+        assertThat(AdminPermissionCatalog.findByCode(PermissionCodes.PLATFORM_USER_IMPORT))
+                .hasValueSatisfying(permission -> {
+                    assertThat(permission.name()).isEqualTo("Import platform users");
+                    assertThat(permission.permissionScope()).isEqualTo("platform");
+                    assertThat(permission.httpMethod()).isNull();
+                    assertThat(permission.pathPattern()).isNull();
+                });
+
+        assertThat(AdminPermissionCatalog.findByCode(PermissionCodes.PLATFORM_USER_RESET_PASSWORD))
+                .hasValueSatisfying(permission -> {
+                    assertThat(permission.name()).isEqualTo("Reset platform user password");
+                    assertThat(permission.permissionScope()).isEqualTo("platform");
+                    assertThat(permission.httpMethod()).isNull();
+                    assertThat(permission.pathPattern()).isNull();
+                });
+
+        assertThat(AdminPermissionCatalog.findByCode(PermissionCodes.PLATFORM_USER_OFFBOARD_POOL_EXPORT))
+                .hasValueSatisfying(permission -> {
+                    assertThat(permission.name()).isEqualTo("Export offboard pool");
+                    assertThat(permission.permissionScope()).isEqualTo("platform");
+                    assertThat(permission.httpMethod()).isNull();
+                    assertThat(permission.pathPattern()).isNull();
+                });
+
+        assertThat(AdminPermissionCatalog.findByCode(PermissionCodes.PLATFORM_USER_OFFBOARD_POOL_BATCH_RESTORE))
+                .hasValueSatisfying(permission -> {
+                    assertThat(permission.name()).isEqualTo("Batch restore offboard pool");
+                    assertThat(permission.permissionScope()).isEqualTo("platform");
+                    assertThat(permission.httpMethod()).isNull();
+                    assertThat(permission.pathPattern()).isNull();
+                });
+    }
+
+    @Test
     void domainMemberReadPermissionIsListed() {
         assertThat(AdminPermissionCatalog.findByCode(PermissionCodes.DOMAIN_MEMBER_READ))
                 .hasValueSatisfying(permission -> {

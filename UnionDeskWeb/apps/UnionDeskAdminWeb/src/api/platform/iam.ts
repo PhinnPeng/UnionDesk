@@ -1,13 +1,43 @@
-import type { IamUser } from "@uniondesk/shared";
+import type { CreateIamUserPayload, IamUser, UpdateIamUserPayload } from "@uniondesk/shared";
 
 import { requestBackendJson } from "#src/api/backend";
 
-export function fetchPlatformUsers(): Promise<IamUser[]> {
-	return requestBackendJson<IamUser[]>("v1/iam/users");
+export function fetchPlatformUsers(organizationId?: number): Promise<IamUser[]> {
+	const query = organizationId != null ? `?organizationId=${organizationId}` : "";
+	return requestBackendJson<IamUser[]>(`v1/iam/users${query}`);
 }
 
 export function fetchPlatformOffboardPoolUsers(): Promise<IamUser[]> {
 	return requestBackendJson<IamUser[]>("v1/iam/users/offboard-pool");
+}
+
+export function fetchCreatePlatformUser(data: CreateIamUserPayload): Promise<IamUser> {
+	return requestBackendJson<IamUser>("v1/iam/users", {
+		method: "POST",
+		json: data,
+	});
+}
+
+export function fetchUpdatePlatformUser(id: number, data: UpdateIamUserPayload): Promise<IamUser> {
+	return requestBackendJson<IamUser>(`v1/iam/users/${id}`, {
+		method: "PUT",
+		json: data,
+	});
+}
+
+export function fetchOffboardPlatformUser(id: number, reason?: string): Promise<IamUser> {
+	return requestBackendJson<IamUser>(`v1/iam/users/${id}/offboard`, {
+		method: "POST",
+		json: {
+			reason,
+		},
+	});
+}
+
+export function fetchRestorePlatformUser(id: number): Promise<IamUser> {
+	return requestBackendJson<IamUser>(`v1/iam/users/${id}/restore`, {
+		method: "POST",
+	});
 }
 
 export interface AdminPermissionCodeView {

@@ -5,16 +5,19 @@ import type { TFunction } from "i18next";
 import { parseIconValue, ReactIconRenderer } from "#src/icons/render-icon";
 import { Tag } from "antd";
 
-function getNodeTypeLabel(t: TFunction<"translation", undefined>, nodeType?: string) {
-	switch (nodeType) {
+/**
+ * 菜单类型标签（模块化组件设计）
+ */
+function MenuTypeTag({ type, t }: { type?: string; t: TFunction<"translation", undefined> }) {
+	switch (type) {
 		case "catalog":
-			return t("system.menu.catalog");
+			return <Tag color="cyan">{t("system.menu.catalog")}</Tag>;
 		case "menu":
-			return t("system.menu.menu");
+			return <Tag color="blue">{t("system.menu.menu")}</Tag>;
 		case "button":
-			return t("system.menu.button");
+			return <Tag color="orange">{t("system.menu.button")}</Tag>;
 		default:
-			return nodeType || "-";
+			return <span>{type || "-"}</span>;
 	}
 }
 
@@ -62,10 +65,7 @@ export function getConstantColumns(t: TFunction<"translation", undefined>): ProC
 			title: t("system.menu.menuType"),
 			dataIndex: "nodeType",
 			width: 110,
-			render: (_, record) => {
-				const label = getNodeTypeLabel(t, record.nodeType);
-				return label === "-" ? label : <Tag color="blue">{label}</Tag>;
-			},
+			render: (_, record) => <MenuTypeTag type={record.nodeType} t={t} />,
 		},
 		{
 			title: t("system.menu.routePath"),

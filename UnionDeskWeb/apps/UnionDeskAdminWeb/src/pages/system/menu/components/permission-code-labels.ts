@@ -1,4 +1,4 @@
-/** 权限码 → 中文描述映射表 */
+/** 权限码 -> 中文描述映射表 */
 export const PERMISSION_CODE_LABELS: Record<string, string> = {
 	"platform.menu.read": "查看菜单",
 	"platform.menu.create": "创建菜单",
@@ -11,12 +11,20 @@ export const PERMISSION_CODE_LABELS: Record<string, string> = {
 	"platform.role_permission.read": "查看角色权限",
 	"platform.role_permission.update": "编辑角色权限",
 	"platform.role.bind": "绑定角色",
+	"platform.organization.read": "查看组织架构",
+	"platform.organization.create": "新增组织",
+	"platform.organization.update": "编辑组织",
+	"platform.organization.delete": "删除组织",
 	"platform.user.read": "查看平台用户",
 	"platform.user.create": "创建平台用户",
+	"platform.user.import": "导入用户",
 	"platform.user.update": "编辑平台用户",
-	"platform.user.disable": "禁用平台用户",
+	"platform.user.disable": "平台用户离职",
+	"platform.user.reset_password": "重置平台用户密码",
 	"platform.user.restore": "恢复平台用户",
 	"platform.user.offboard_pool.read": "查看离职池",
+	"platform.user.offboard_pool.export": "导出离职池",
+	"platform.user.offboard_pool.batch_restore": "批量恢复",
 	"platform.user.delete": "删除平台用户",
 	"platform.permission.manage": "权限管理",
 	"platform.audit_log.read": "查看审计日志",

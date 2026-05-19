@@ -15,7 +15,7 @@ import {
 import { BasicContent } from "#src/components/basic-content";
 
 import { App, Button, Card, Form, Input, InputNumber, Modal, Select, Space, Switch, Table, Tabs, Typography } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import type { TableColumnsType } from "antd";
 import { useEffect, useMemo, useState } from "react";
 
 type EditorKind = "rule" | "calendar" | null;
@@ -179,7 +179,7 @@ export default function PlatformSlaManagement() {
 		}
 	};
 
-	const ruleColumns: ColumnsType<SlaRuleView> = [
+	const ruleColumns: TableColumnsType<SlaRuleView> = [
 		{ title: "名称", dataIndex: "name", width: 180 },
 		{ title: "工单类型", dataIndex: "ticketTypeId", width: 110, render: value => value ?? "-" },
 		{ title: "优先级", dataIndex: "priorityLevelId", width: 110, render: value => value ?? "-" },
@@ -213,7 +213,7 @@ export default function PlatformSlaManagement() {
 		},
 	];
 
-	const calendarColumns: ColumnsType<SlaCalendarView> = [
+	const calendarColumns: TableColumnsType<SlaCalendarView> = [
 		{ title: "名称", dataIndex: "name", width: 180 },
 		{ title: "配置", dataIndex: "config", ellipsis: true, render: value => JSON.stringify(value ?? {}) },
 		{
@@ -334,4 +334,3 @@ export default function PlatformSlaManagement() {
 		</BasicContent>
 	);
 }
-

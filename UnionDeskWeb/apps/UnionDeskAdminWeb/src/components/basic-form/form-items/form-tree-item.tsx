@@ -1,14 +1,13 @@
 import type { TreeProps } from "antd";
 
-import type { BasicDataNode } from "antd/lib/tree";
 import { Checkbox, Input, Tree } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-export interface TreeDataNodeWithId extends BasicDataNode {
+export interface TreeDataNodeWithId {
 	id: string
 	title: string
-	children: TreeDataNodeWithId[]
+	children?: TreeDataNodeWithId[]
 }
 
 interface FormTreeItemProps {

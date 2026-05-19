@@ -1,6 +1,7 @@
 import type { ButtonProps } from "antd";
 
 import { BasicButton } from "#src/components/basic-button";
+import type { AppRouteRecordRaw } from "#src/router/types";
 import { useUserStore } from "#src/store/user";
 import { hasBusinessDomainAccess } from "#src/utils/access/business-domain";
 import { cn } from "#src/utils/cn";
@@ -11,12 +12,13 @@ import { useLocation, useNavigate } from "react-router";
 import { platformHomePath } from "#src/router/extra-info";
 
 const businessHomePath = import.meta.env.VITE_BASE_HOME_PATH || "/system/menu";
+const EMPTY_MENUS: AppRouteRecordRaw[] = [];
 
 export function PlatformEntryButton({ className, ...restProps }: ButtonProps) {
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
 	const platformAccess = useUserStore(state => state.platformAccess);
-	const menus = useUserStore(state => state.menus ?? []);
+	const menus = useUserStore(state => state.menus);
 	const businessDomainAccess = useUserStore(state => state.businessDomainAccess);
 
 	if (!platformAccess) {
@@ -26,7 +28,7 @@ export function PlatformEntryButton({ className, ...restProps }: ButtonProps) {
 	const isPlatformRoute = pathname.startsWith("/platform");
 	const hasBusinessAccess = typeof businessDomainAccess === "boolean"
 		? businessDomainAccess
-		: hasBusinessDomainAccess(menus);
+		: hasBusinessDomainAccess(menus ?? EMPTY_MENUS);
 	if (isPlatformRoute && !hasBusinessAccess) {
 		return null;
 	}
