@@ -73,11 +73,11 @@ export function resolvePlatformUserStatus(user: IamUser): PlatformUserStatus {
 }
 
 export function buildDepartmentNameMap(departments: PlatformOrganizationView[]): Map<number, string> {
-	return new Map(departments.map(department => [department.id, `${department.name} / ${department.code}`]));
+	return new Map(departments.map(department => [department.id, department.name]));
 }
 
 export function buildRoleNameMap(roles: RoleItemType[]): Map<string, string> {
-	return new Map(roles.map(role => [role.code, `${role.name} / ${role.code}`]));
+	return new Map(roles.map(role => [role.code, role.name]));
 }
 
 export function toPlatformUserRow(
@@ -94,10 +94,10 @@ export function toPlatformUserRow(
 		mobile: user.mobile || "-",
 		email: user.email || "-",
 		departmentLabels: organizationIds.length > 0
-			? organizationIds.map(organizationId => departmentNameMap.get(organizationId) ?? `部门 #${organizationId}`)
-			: ["全局"],
+			? organizationIds.map(organizationId => departmentNameMap.get(organizationId) ?? "-")
+			: ["所有部门"],
 		roleLabels: roleCodes.length > 0
-			? roleCodes.map(roleCode => roleNameMap.get(roleCode) ?? roleCode)
+			? roleCodes.map(roleCode => roleNameMap.get(roleCode) ?? "-")
 			: ["-"],
 		status: resolvePlatformUserStatus(user),
 		lastLoginAt: "-",

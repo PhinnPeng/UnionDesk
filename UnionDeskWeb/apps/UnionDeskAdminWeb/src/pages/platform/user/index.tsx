@@ -4,11 +4,12 @@ import type { TableProps } from "antd";
 import type { Key } from "react";
 
 import type { RoleItemType } from "#src/api/system/role";
-import { fetchOffboardPlatformUser, fetchPlatformUsers } from "#src/api/platform/iam";
+import { fetchOffboardPlatformUser, fetchPlatformOffboardPoolUsers, fetchPlatformUsers } from "#src/api/platform/iam";
 import { fetchPlatformOrganizations } from "#src/api/platform/organization";
 import { fetchRoleList } from "#src/api/system/role";
 import { AuthGuarded } from "#src/components/auth-guarded";
 import { BasicContent } from "#src/components/basic-content";
+import { useAuth } from "#src/hooks/use-auth";
 import {
 	PLATFORM_USER_ROW_ACTIONS,
 	PLATFORM_USER_TOOLBAR_ACTIONS,
@@ -100,8 +101,11 @@ function collectOrganizationDescendantIds(organizations: PlatformOrganizationVie
 export default function PlatformUser() {
 	const { message } = App.useApp();
 	const navigate = useNavigate();
+	const { hasPermission } = useAuth();
+	const canReadOffboardPool = hasPermission("platform.user.offboard_pool.read");
 
 	const [users, setUsers] = useState<IamUser[]>([]);
+	const [offboardUsers, setOffboardUsers] = useState<IamUser[]>([]);
 	const [organizations, setOrganizations] = useState<PlatformOrganizationView[]>([]);
 	const [roles, setRoles] = useState<RoleItemType[]>([]);
 	const [searchValues, setSearchValues] = useState<PlatformUserSearchValues>({});
@@ -128,6 +132,22 @@ export default function PlatformUser() {
 		}
 	}, [message]);
 
+	const reloadOffboardUsers = useCallback(async () => {
+		if (!canReadOffboardPool) {
+			setOffboardUsers([]);
+			return;
+		}
+
+		try {
+			const offboardPoolUsers = await fetchPlatformOffboardPoolUsers();
+			setOffboardUsers(offboardPoolUsers);
+		}
+		catch (error) {
+			setOffboardUsers([]);
+			message.error(toErrorMessage(error));
+		}
+	}, [canReadOffboardPool, message]);
+
 	const reloadLookups = useCallback(async () => {
 		const [organizationResult, roleResult] = await Promise.allSettled([
 			fetchPlatformOrganizations(),
@@ -151,8 +171,9 @@ export default function PlatformUser() {
 
 	useEffect(() => {
 		void reloadUsers();
+		void reloadOffboardUsers();
 		void reloadLookups();
-	}, [reloadLookups, reloadUsers]);
+	}, [reloadLookups, reloadOffboardUsers, reloadUsers]);
 
 	useEffect(() => {
 		setSelectedRowKeys([]);
@@ -162,20 +183,24 @@ export default function PlatformUser() {
 	const roleNameMap = useMemo(() => buildRoleNameMap(roles), [roles]);
 	const platformRoles = useMemo(() => filterRolesByAppScope(roles, appScopes.platform), [roles]);
 	const platformRoleCodeSet = useMemo(() => new Set(platformRoles.map(role => role.code)), [platformRoles]);
-	const userByIdMap = useMemo(() => new Map(users.map(user => [user.id, user])), [users]);
+	const visibleUsers = useMemo(
+		() => (canReadOffboardPool ? replaceUsers(users, offboardUsers) : users),
+		[canReadOffboardPool, offboardUsers, users],
+	);
+	const userByIdMap = useMemo(() => new Map(visibleUsers.map(user => [user.id, user])), [visibleUsers]);
 	const selectedOrganizationIds = useMemo(
 		() => collectOrganizationDescendantIds(organizations, selectedOrganizationId),
 		[organizations, selectedOrganizationId],
 	);
 	const filteredUsers = useMemo(() => {
 		const usersInSelectedOrganization = selectedOrganizationIds == null
-			? users
-			: users.filter((user) => {
+			? visibleUsers
+			: visibleUsers.filter((user) => {
 				const organizationIds = user.organizationIds ?? [];
 				return organizationIds.some(organizationId => selectedOrganizationIds.has(organizationId));
 			});
 		return filterPlatformUsers(usersInSelectedOrganization, searchValues);
-	}, [searchValues, selectedOrganizationIds, users]);
+	}, [searchValues, selectedOrganizationIds, visibleUsers]);
 
 	const tableRows = useMemo(
 		() => filteredUsers.map(user => toPlatformUserRow(user, departmentNameMap, roleNameMap)),
@@ -238,8 +263,11 @@ export default function PlatformUser() {
 			cancelText: "取消",
 			onOk: async () => {
 				try {
-					const updatedUsers = await Promise.all(targets.map(user => fetchOffboardPlatformUser(user.id)));
-					syncUsers(updatedUsers);
+					await Promise.all(targets.map(user => fetchOffboardPlatformUser(user.id)));
+					await Promise.all([
+						reloadUsers(),
+						reloadOffboardUsers(),
+					]);
 					setSelectedRowKeys([]);
 					message.success(targets.length > 1 ? "批量离职成功" : "用户离职成功");
 				}

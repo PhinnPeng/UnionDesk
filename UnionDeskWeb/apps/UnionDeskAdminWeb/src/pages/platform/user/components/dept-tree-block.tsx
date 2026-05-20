@@ -14,7 +14,34 @@ interface DeptTreeBlockProps {
 	onSelect?: (departmentId: number | null) => void;
 }
 
-function transformToTreeData(nodes: OrganizationTreeNode[], searchValue: string): TreeDataNode[] {
+export const ALL_DEPARTMENTS_TREE_KEY = "__all_departments__";
+const ALL_DEPARTMENTS_TREE_LABEL = "所有部门";
+
+type DeptTreeNode = {
+	id: string;
+	name: string;
+	children: DeptTreeNode[];
+};
+
+function toDeptTreeNode(node: OrganizationTreeNode): DeptTreeNode {
+	return {
+		id: String(node.id),
+		name: node.name,
+		children: node.children.map(toDeptTreeNode),
+	};
+}
+
+function buildDepartmentTreeNodes(organizations: PlatformOrganizationView[]): DeptTreeNode[] {
+	return [
+		{
+			id: ALL_DEPARTMENTS_TREE_KEY,
+			name: ALL_DEPARTMENTS_TREE_LABEL,
+			children: buildOrganizationTree(organizations).map(toDeptTreeNode),
+		},
+	];
+}
+
+function transformToTreeData(nodes: DeptTreeNode[], searchValue: string): TreeDataNode[] {
 	return nodes.reduce<TreeDataNode[]>((acc, node) => {
 		const children = transformToTreeData(node.children, searchValue);
 		const isMatch = node.name.toLowerCase().includes(searchValue.toLowerCase());
@@ -47,10 +74,10 @@ function getAllKeys(nodes: TreeDataNode[]): Key[] {
 
 export function DeptTreeBlock({ organizations, selectedDepartmentId = null, onSelect }: DeptTreeBlockProps) {
 	const [searchValue, setSearchValue] = useState("");
-	const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
+	const [expandedKeys, setExpandedKeys] = useState<Key[]>([ALL_DEPARTMENTS_TREE_KEY]);
 	const [autoExpandParent, setAutoExpandParent] = useState(true);
 
-	const organizationTree = useMemo(() => buildOrganizationTree(organizations), [organizations]);
+	const organizationTree = useMemo(() => buildDepartmentTreeNodes(organizations), [organizations]);
 
 	const treeData = useMemo(() => {
 		return transformToTreeData(organizationTree, searchValue);
@@ -64,7 +91,9 @@ export function DeptTreeBlock({ organizations, selectedDepartmentId = null, onSe
 		setAutoExpandParent(true);
 		if (value) {
 			setExpandedKeys(allKeys);
+			return;
 		}
+		setExpandedKeys([ALL_DEPARTMENTS_TREE_KEY]);
 	};
 
 	const isAllExpanded = expandedKeys.length === allKeys.length && allKeys.length > 0;
@@ -126,7 +155,7 @@ export function DeptTreeBlock({ organizations, selectedDepartmentId = null, onSe
 							blockNode
 							switcherIcon={<DownOutlined />}
 							treeData={treeData}
-							selectedKeys={selectedDepartmentId == null ? [] : [String(selectedDepartmentId)]}
+							selectedKeys={selectedDepartmentId == null ? [ALL_DEPARTMENTS_TREE_KEY] : [String(selectedDepartmentId)]}
 							expandedKeys={expandedKeys}
 							autoExpandParent={autoExpandParent}
 							onExpand={(keys) => {
@@ -134,7 +163,13 @@ export function DeptTreeBlock({ organizations, selectedDepartmentId = null, onSe
 								setAutoExpandParent(false);
 							}}
 							onSelect={(keys) => {
-								const id = keys.length > 0 ? Number(keys[0]) : null;
+								const key = keys.length > 0 ? keys[0] : null;
+								if (key == null || key === ALL_DEPARTMENTS_TREE_KEY) {
+									onSelect?.(null);
+									return;
+								}
+
+								const id = Number(key);
 								onSelect?.(id != null && id === selectedDepartmentId ? null : id);
 							}}
 							className="bg-transparent"

@@ -65,10 +65,19 @@ describe("platform user utils", () => {
 			buildRoleNameMap(roles),
 		);
 
-		expect(row.departmentLabels).toEqual(["销售 / sales"]);
-		expect(row.roleLabels).toEqual(["超级管理员 / super_admin"]);
+		expect(row.departmentLabels).toEqual(["销售"]);
+		expect(row.roleLabels).toEqual(["超级管理员"]);
 		expect(row.status).toBe("active");
 		expect(resolvePlatformUserStatus(users[0])).toBe("active");
+
+		const globalRow = toPlatformUserRow(
+			users[1],
+			buildDepartmentNameMap(departments),
+			buildRoleNameMap(roles),
+		);
+
+		expect(globalRow.departmentLabels).toEqual(["所有部门"]);
+		expect(globalRow.roleLabels).toEqual(["-"]);
 	});
 
 	it("filters users by username, account, mobile and email", () => {

@@ -5,37 +5,48 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({
-	fetchPlatformUsers: vi.fn(),
-	fetchPlatformOrganizations: vi.fn(),
-	fetchRoleList: vi.fn(),
-	fetchOffboardPlatformUser: vi.fn(),
-	navigate: vi.fn(),
-	tableColumns: [] as Array<{ key?: string; title?: React.ReactNode; dataIndex?: string; align?: string }>,
-	allowedCodes: new Set<string>(),
-	detailProps: undefined as
-		| undefined
-		| {
-			open: boolean;
-			mode: "create" | "edit";
-			user: null | { id: number; username: string; organizationIds: number[] };
-			onSuccess: (user: any) => void | Promise<void>;
+const mocks = vi.hoisted(() => {
+	const allowedCodes = new Set<string>();
+
+	return {
+		fetchPlatformUsers: vi.fn(),
+		fetchPlatformOffboardPoolUsers: vi.fn(),
+		fetchPlatformOrganizations: vi.fn(),
+		fetchRoleList: vi.fn(),
+		fetchOffboardPlatformUser: vi.fn(),
+		navigate: vi.fn(),
+		tableColumns: [] as Array<{ key?: string; title?: React.ReactNode; dataIndex?: string; align?: string }>,
+		allowedCodes,
+		hasPermission: (code?: string | null) => !code || allowedCodes.has(code),
+		detailProps: undefined as
+			| undefined
+			| {
+				open: boolean;
+				mode: "create" | "edit";
+				user: null | { id: number; username: string; organizationIds: number[] };
+				onSuccess: (user: any) => void | Promise<void>;
+			},
+		resetPasswordProps: undefined as
+			| undefined
+			| {
+				open: boolean;
+				user: null | { id: number; username: string };
+				onClose: () => void;
+				onSuccess: (user: any) => void | Promise<void>;
+			},
+		messageApi: {
+			success: vi.fn(),
+			error: vi.fn(),
 		},
-	resetPasswordProps: undefined as
-		| undefined
-		| {
-			open: boolean;
-			user: null | { id: number; username: string };
-			onClose: () => void;
-			onSuccess: (user: any) => void | Promise<void>;
-		},
-	confirm: vi.fn(),
-	messageSuccess: vi.fn(),
-	messageError: vi.fn(),
-}));
+		confirm: vi.fn(),
+		messageSuccess: vi.fn(),
+		messageError: vi.fn(),
+	};
+});
 
 vi.mock("#src/api/platform/iam", () => ({
 	fetchPlatformUsers: mocks.fetchPlatformUsers,
+	fetchPlatformOffboardPoolUsers: mocks.fetchPlatformOffboardPoolUsers,
 	fetchOffboardPlatformUser: mocks.fetchOffboardPlatformUser,
 }));
 
@@ -45,6 +56,13 @@ vi.mock("#src/api/platform/organization", () => ({
 
 vi.mock("#src/api/system/role", () => ({
 	fetchRoleList: mocks.fetchRoleList,
+}));
+
+vi.mock("#src/hooks/use-auth", () => ({
+	useAuth: () => ({
+		hasPermission: mocks.hasPermission,
+		routeScope: "platform",
+	}),
 }));
 
 vi.mock("#src/components/basic-content", () => ({
@@ -83,6 +101,9 @@ vi.mock("./components/dept-tree-block", () => ({
 		onSelect: (departmentId: number | null) => void;
 	}) => (
 		<div data-testid="department-tree">
+			<button type="button" onClick={() => props.onSelect(null)}>
+				所有部门
+			</button>
 			{props.organizations.map(organization => (
 				<button
 					key={organization.id}
@@ -92,9 +113,6 @@ vi.mock("./components/dept-tree-block", () => ({
 					{organization.name}
 				</button>
 			))}
-			<button type="button" onClick={() => props.onSelect(null)}>
-				全部用户
-			</button>
 		</div>
 	),
 }));
@@ -127,10 +145,7 @@ vi.mock("antd", () => ({
 	Alert: ({ message }: { message: React.ReactNode }) => <div>{message}</div>,
 	App: {
 		useApp: () => ({
-			message: {
-				success: mocks.messageSuccess,
-				error: mocks.messageError,
-			},
+			message: mocks.messageApi,
 		}),
 	},
 	Button: ({ children, onClick, disabled }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean }) => (
@@ -201,13 +216,18 @@ function getNodeText(node: React.ReactNode): string {
 		return node.map(getNodeText).join("");
 	}
 	if (isValidElement(node)) {
-		return getNodeText(node.props.children);
+		const element = node as React.ReactElement<{ children?: React.ReactNode }>;
+		return getNodeText(element.props.children);
 	}
 	return "";
 }
 
 function isCenteredTitle(node: React.ReactNode): boolean {
-	return isValidElement(node) && String(node.props.className ?? "").includes("text-center");
+	if (!isValidElement(node)) {
+		return false;
+	}
+	const element = node as React.ReactElement<{ className?: string }>;
+	return String(element.props.className ?? "").includes("text-center");
 }
 
 const userRows = [
@@ -251,6 +271,7 @@ const userRows = [
 
 function mockPageData() {
 	mocks.fetchPlatformUsers.mockResolvedValue(userRows);
+	mocks.fetchPlatformOffboardPoolUsers.mockResolvedValue([]);
 	mocks.fetchPlatformOrganizations.mockResolvedValue([
 		{
 			id: 10,
@@ -300,6 +321,7 @@ function mockPageData() {
 describe("PlatformUser page", () => {
 	beforeEach(() => {
 		mocks.fetchPlatformUsers.mockReset();
+		mocks.fetchPlatformOffboardPoolUsers.mockReset();
 		mocks.fetchPlatformOrganizations.mockReset();
 		mocks.fetchRoleList.mockReset();
 		mocks.fetchOffboardPlatformUser.mockReset();
@@ -309,6 +331,8 @@ describe("PlatformUser page", () => {
 		mocks.detailProps = undefined;
 		mocks.resetPasswordProps = undefined;
 		mocks.confirm.mockReset();
+		mocks.messageApi.success.mockReset();
+		mocks.messageApi.error.mockReset();
 		mocks.messageSuccess.mockReset();
 		mocks.messageError.mockReset();
 	});
@@ -320,6 +344,7 @@ describe("PlatformUser page", () => {
 		render(<PlatformUser />);
 
 		await waitFor(() => {
+			expect(screen.getByTestId("department-tree")).toHaveTextContent("所有部门");
 			expect(screen.getByTestId("department-tree")).toHaveTextContent("平台组织");
 			expect(screen.getByTestId("user-row-1")).toBeInTheDocument();
 			expect(screen.getByTestId("user-row-2")).toBeInTheDocument();
@@ -360,6 +385,14 @@ describe("PlatformUser page", () => {
 
 		await waitFor(() => {
 			expect(screen.queryByTestId("user-row-1")).not.toBeInTheDocument();
+			expect(screen.getByTestId("user-row-2")).toBeInTheDocument();
+			expect(screen.getByTestId("user-row-3")).toBeInTheDocument();
+		});
+
+		await userEvent.click(within(screen.getByTestId("department-tree")).getByRole("button", { name: "所有部门" }));
+
+		await waitFor(() => {
+			expect(screen.getByTestId("user-row-1")).toBeInTheDocument();
 			expect(screen.getByTestId("user-row-2")).toBeInTheDocument();
 			expect(screen.getByTestId("user-row-3")).toBeInTheDocument();
 		});
@@ -410,11 +443,15 @@ describe("PlatformUser page", () => {
 	it("supports row offboard, batch offboard and opens reset password modal", async () => {
 		mocks.allowedCodes.add("platform.user.disable");
 		mocks.allowedCodes.add("platform.user.reset_password");
+		mocks.allowedCodes.add("platform.user.offboard_pool.read");
+		let pageUsers = userRows.map(user => ({ ...user }));
 		mockPageData();
-		mocks.fetchOffboardPlatformUser.mockImplementation(async (id: number) => ({
-			...userRows.find(user => user.id === id),
-			employmentStatus: "offboarded",
-		}));
+		mocks.fetchPlatformUsers.mockImplementation(async () => pageUsers);
+		mocks.fetchPlatformOffboardPoolUsers.mockImplementation(async () => pageUsers.filter(user => user.employmentStatus === "offboarded"));
+		mocks.fetchOffboardPlatformUser.mockImplementation(async (id: number) => {
+			pageUsers = pageUsers.map(user => (user.id === id ? { ...user, employmentStatus: "offboarded" } : user));
+			return pageUsers.find(user => user.id === id) ?? userRows[0];
+		});
 
 		render(<PlatformUser />);
 
@@ -426,12 +463,20 @@ describe("PlatformUser page", () => {
 		let confirmArgs = mocks.confirm.mock.calls.at(-1)?.[0];
 		await confirmArgs.onOk();
 		expect(mocks.fetchOffboardPlatformUser).toHaveBeenCalledWith(2);
+		await waitFor(() => {
+			expect(mocks.fetchPlatformUsers).toHaveBeenCalledTimes(2);
+			expect(mocks.fetchPlatformOffboardPoolUsers).toHaveBeenCalledTimes(2);
+		});
 
 		await userEvent.click(within(screen.getByTestId("user-row-1")).getByRole("button", { name: "选择" }));
 		await userEvent.click(screen.getByRole("button", { name: "批量离职" }));
 		confirmArgs = mocks.confirm.mock.calls.at(-1)?.[0];
 		await confirmArgs.onOk();
 		expect(mocks.fetchOffboardPlatformUser).toHaveBeenCalledWith(1);
+		await waitFor(() => {
+			expect(mocks.fetchPlatformUsers).toHaveBeenCalledTimes(3);
+			expect(mocks.fetchPlatformOffboardPoolUsers).toHaveBeenCalledTimes(3);
+		});
 
 		await userEvent.click(within(screen.getByTestId("user-row-1")).getByRole("button", { name: "重置密码" }));
 
