@@ -39,9 +39,9 @@ import type {
   UpdateRolePayload,
   UpdateRolePermissionsPayload,
   P0PageResult,
-  P0AdminDomain,
-  P0CreateAdminDomainPayload,
-  P0UpdateAdminDomainPayload,
+  AdminDomain,
+  CreateAdminDomainPayload,
+  UpdateAdminDomainPayload,
   P0StepUpRequest,
   P0StepUpResponse,
   P0InboxPageResponse,
@@ -698,7 +698,7 @@ function toP0VisibilityList(legacy?: string | null): P0VisibilityPolicyCode[] {
   return ["public"];
 }
 
-function legacyDomainToP0(row: BusinessDomainView): P0AdminDomain {
+function legacyDomainToAdmin(row: BusinessDomainView): AdminDomain {
   return {
     id: String(row.id),
     code: row.code,
@@ -720,39 +720,41 @@ export async function postAuthStepUp(payload: P0StepUpRequest): Promise<P0StepUp
   }
 }
 
-type P0RequestOptions = {
+type RequestOptions = {
   stepUpToken?: string;
 };
 
-function withStepUpHeaders(options?: P0RequestOptions): { headers?: Record<string, string> } {
+function withStepUpHeaders(options?: RequestOptions): { headers?: Record<string, string> } {
   if (!options?.stepUpToken) {
     return {};
   }
   return { headers: { "X-UD-Step-Up-Token": options.stepUpToken } };
 }
 
-/** P0：`GET /api/v1/admin/domains`；404 时回退到演示 `GET /domains` 并映射为分页结构 */
-export async function fetchP0AdminDomainsPage(params: {
+/** 业务域管理列表：`GET /api/v1/admin/domains`；404 时回退到演示 `GET /domains` 并映射为分页结构 */
+export async function fetchAdminDomainsPage(params: {
   page: number;
   page_size: number;
   status?: string;
   keyword?: string;
-}): Promise<P0PageResult<P0AdminDomain>> {
+  created_from?: string;
+  created_to?: string;
+}): Promise<P0PageResult<AdminDomain>> {
   try {
-    const response = await api.get<P0PageResult<P0AdminDomain>>("/admin/domains", { params });
+    const response = await api.get<P0PageResult<AdminDomain>>("/admin/domains", { params });
     return unwrapApiResponse(response.data);
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
       const legacy = await fetchDomains();
-      const list = legacy.map(legacyDomainToP0);
+      const list = legacy.map(legacyDomainToAdmin);
       return { total: list.length, list };
     }
     throw toError(error);
   }
 }
 
-/** P0：`POST /api/v1/admin/domains` */
-export async function createP0AdminDomain(payload: P0CreateAdminDomainPayload): Promise<{ id: string; code: string }> {
+/** 创建业务域：`POST /api/v1/admin/domains` */
+export async function createAdminDomain(payload: CreateAdminDomainPayload): Promise<{ id: string; code: string }> {
   try {
     const response = await api.post<{ id: string; code: string }>("/admin/domains", payload);
     return unwrapApiResponse(response.data);
@@ -761,8 +763,8 @@ export async function createP0AdminDomain(payload: P0CreateAdminDomainPayload): 
   }
 }
 
-/** P0：`PUT /api/v1/admin/domains/{domain_id}` */
-export async function updateP0AdminDomain(domainId: string, payload: P0UpdateAdminDomainPayload): Promise<void> {
+/** 更新业务域：`PUT /api/v1/admin/domains/{domain_id}` */
+export async function updateAdminDomain(domainId: string, payload: UpdateAdminDomainPayload): Promise<void> {
   try {
     await api.put(`/admin/domains/${encodeURIComponent(domainId)}`, payload);
   } catch (error) {
@@ -770,8 +772,8 @@ export async function updateP0AdminDomain(domainId: string, payload: P0UpdateAdm
   }
 }
 
-/** P0：`DELETE /api/v1/admin/domains/{domain_id}`（需 one_time step-up） */
-export async function deleteP0AdminDomain(domainId: string, options?: P0RequestOptions): Promise<void> {
+/** 删除业务域：`DELETE /api/v1/admin/domains/{domain_id}`（需 one_time step-up） */
+export async function deleteAdminDomain(domainId: string, options?: RequestOptions): Promise<void> {
   try {
     await api.delete(`/admin/domains/${encodeURIComponent(domainId)}`, {
       ...withStepUpHeaders(options)

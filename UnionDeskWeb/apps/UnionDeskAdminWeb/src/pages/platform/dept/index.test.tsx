@@ -1,5 +1,7 @@
 import type React from "react";
 
+import { isValidElement } from "react";
+
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -15,6 +17,13 @@ const mocks = vi.hoisted(() => ({
 		| {
 			onSearch: (values: { keyword?: string; createdRange?: null }) => void;
 			onReset: () => void;
+		},
+	tableColumns: [] as Array<{ title?: React.ReactNode; align?: string; key?: string }>,
+	expandable: undefined as
+		| undefined
+		| {
+			expandedRowKeys?: Array<string | number>;
+			expandIcon?: (props: { expanded: boolean; onExpand: (record: unknown, event: unknown) => void; record: { children?: unknown[] } }) => React.ReactNode;
 		},
 	detailProps: undefined as
 		| undefined
@@ -79,8 +88,13 @@ vi.mock("#src/components/basic-table", () => ({
 		headerTitle?: React.ReactNode;
 		toolBarRender?: () => React.ReactNode[];
 		tableExtraRender?: () => React.ReactNode;
-		expandable?: { expandedRowKeys?: Array<string | number> };
+		expandable?: {
+			expandedRowKeys?: Array<string | number>;
+			expandIcon?: (props: { expanded: boolean; onExpand: (record: unknown, event: unknown) => void; record: { children?: unknown[] } }) => React.ReactNode;
+		};
 	}) => {
+		mocks.tableColumns = columns;
+		mocks.expandable = expandable;
 		const actionColumn = columns.find(column => column.key === "action");
 		const renderRow = (record: { id: number; name: string; code: string; children?: any[] }) => (
 			<div key={record.id} data-testid={`dept-row-${record.id}`}>
@@ -175,6 +189,15 @@ vi.mock("./components/detail", () => ({
 
 import PlatformDept from "./index";
 
+function isCenteredTitle(node: React.ReactNode): boolean {
+	if (!isValidElement(node)) {
+		return false;
+	}
+
+	const element = node as React.ReactElement<{ className?: string }>;
+	return String(element.props.className ?? "").includes("text-center");
+}
+
 const organizationRows = [
 	{
 		id: 1,
@@ -225,6 +248,8 @@ describe("PlatformDept page", () => {
 		mocks.fetchDeletePlatformOrganization.mockReset();
 		mocks.fetchPlatformUsers.mockReset();
 		mocks.searchProps = undefined;
+		mocks.tableColumns = [];
+		mocks.expandable = undefined;
 		mocks.detailProps = undefined;
 		mocks.confirm.mockReset();
 		mocks.messageSuccess.mockReset();
@@ -245,11 +270,21 @@ describe("PlatformDept page", () => {
 			expect(screen.getByTestId("dept-row-1")).toBeInTheDocument();
 			expect(screen.getByTestId("dept-row-2")).toBeInTheDocument();
 			expect(screen.getByTestId("dept-row-3")).toBeInTheDocument();
+			expect(mocks.tableColumns.every(column => column.align === "center")).toBe(true);
+			expect(mocks.tableColumns.every(column => isCenteredTitle(column.title))).toBe(true);
 		});
 
 		await waitFor(() => {
 			expect(screen.getByTestId("dept-expanded-keys")).toHaveAttribute("data-keys", "1,2,3");
 		});
+
+		const expandIcon = mocks.expandable?.expandIcon?.({
+			expanded: false,
+			onExpand: vi.fn(),
+			record: { children: [{}] },
+		});
+		expect(isValidElement(expandIcon)).toBe(true);
+		expect(String((expandIcon as React.ReactElement<{ className?: string }>).props.className ?? "")).toContain("mr-1.5");
 
 		await userEvent.click(screen.getByRole("button", { name: "收起全部" }));
 		expect(screen.getByTestId("dept-expanded-keys")).toHaveAttribute("data-keys", "");

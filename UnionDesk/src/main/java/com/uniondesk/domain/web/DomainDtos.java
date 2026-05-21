@@ -19,7 +19,11 @@ public final class DomainDtos {
             int status,
             LocalDateTime created_at,
             LocalDateTime updated_at,
-            LocalDateTime deleted_at) {
+            LocalDateTime deleted_at,
+            Long created_by,
+            Long updated_by,
+            String creator_name,
+            String updater_name) {
     }
 
     public record DomainBriefView(

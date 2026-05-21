@@ -29,6 +29,10 @@ function getExpandedTreeKeys(nodes: OrganizationTreeNode[]): Key[] {
 	return getAllExpandedKeys(nodes, "id") as Key[];
 }
 
+function centeredTitle(title: string) {
+	return <div className="w-full text-center">{title}</div>;
+}
+
 export default function PlatformDept() {
 	const { message } = App.useApp();
 	const [organizations, setOrganizations] = useState<PlatformOrganizationView[]>([]);
@@ -179,58 +183,61 @@ export default function PlatformDept() {
 	const columns: ProColumns<OrganizationTreeNode>[] = useMemo(() => {
 		return [
 			{
-				title: "部门名称",
+				title: centeredTitle("部门名称"),
 				dataIndex: "name",
 				width: 180,
 				ellipsis: true,
-				align: "left",
+				align: "center",
 				search: false,
 				render: (_, record) => <Typography.Text strong>{record.name}</Typography.Text>,
 			},
 			{
-				title: "部门编码",
+				title: centeredTitle("部门编码"),
 				dataIndex: "code",
 				width: 160,
 				ellipsis: true,
-				align: "left",
+				align: "center",
 				search: false,
 				render: (_, record) => <Tag>{record.code}</Tag>,
 			},
 			{
-				title: "上级部门",
+				title: centeredTitle("上级部门"),
 				dataIndex: "parentName",
 				width: 180,
 				ellipsis: true,
-				align: "left",
+				align: "center",
 				search: false,
 				render: (_, record) => record.parentName ?? "无上级部门",
 			},
 			{
-				title: "负责人",
+				title: centeredTitle("负责人"),
 				dataIndex: "leaderName",
 				width: 180,
 				ellipsis: true,
-				align: "left",
+				align: "center",
 				search: false,
 				render: (_, record) => record.leaderName ?? "-",
 			},
 			{
-				title: "排序",
+				title: centeredTitle("排序"),
 				dataIndex: "orderNo",
 				width: 90,
+				align: "center",
 				search: false,
 			},
 			{
-				title: "创建时间",
+				title: centeredTitle("创建时间"),
 				dataIndex: "createdAt",
 				width: 160,
+				align: "center",
 				search: false,
 				render: (_, record) => formatOrganizationDateTime(record.createdAt),
 			},
 			{
-				title: "状态",
+				title: centeredTitle("状态"),
 				dataIndex: "status",
 				width: 100,
+				align: "center",
 				search: false,
 				render: (_, record) => (
 					<Tag color={record.status === 1 ? "success" : "default"}>
@@ -239,10 +246,11 @@ export default function PlatformDept() {
 				),
 			},
 			{
-				title: "操作",
+				title: centeredTitle("操作"),
 				key: "action",
 				width: 180,
 				fixed: "right",
+				align: "center",
 				search: false,
 				render: (_, record) => (
 					<div className="flex items-center justify-center gap-2">
@@ -313,9 +321,12 @@ export default function PlatformDept() {
 							const Icon = expanded ? DownOutlined : RightOutlined;
 
 							return (
-								<Icon
-									onClick={event => onExpand(record, event)}
-								/>
+								<span className="mr-1.5 inline-flex items-center align-middle">
+									<Icon
+										className="cursor-pointer"
+										onClick={event => onExpand(record, event)}
+									/>
+								</span>
 							);
 						},
 					}}

@@ -1,19 +1,19 @@
-import type { P0AdminDomain } from "@uniondesk/shared";
+import type { AdminDomain } from "@uniondesk/shared";
 
 import { BasicContent } from "#src/components/basic-content";
 
-import { fetchP0AdminDomainsPage, presignP0Attachment, toErrorMessage, uploadP0AttachmentLocal } from "@uniondesk/shared";
+import { fetchAdminDomainsPage, presignP0Attachment, toErrorMessage, uploadP0AttachmentLocal } from "@uniondesk/shared";
 import { App, Alert, Button, Card, Select, Space, Typography, Upload } from "antd";
 import { useCallback, useEffect, useState } from "react";
 
 export default function PlatformAttachments() {
 	const { message } = App.useApp();
-	const [domains, setDomains] = useState<P0AdminDomain[]>([]);
+	const [domains, setDomains] = useState<AdminDomain[]>([]);
 	const [domainId, setDomainId] = useState<string | undefined>();
 
 	const loadDomains = useCallback(async () => {
 		try {
-			const page = await fetchP0AdminDomainsPage({ page: 1, page_size: 100 });
+			const page = await fetchAdminDomainsPage({ page: 1, page_size: 100 });
 			setDomains(page.list);
 			setDomainId(prev => prev ?? page.list[0]?.id);
 		} catch (e) {

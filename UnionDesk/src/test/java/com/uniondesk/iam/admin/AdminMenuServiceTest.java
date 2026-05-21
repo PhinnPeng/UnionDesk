@@ -306,7 +306,7 @@ class AdminMenuServiceTest {
                 "platform",
                 "菜单管理",
                 "/platform/menu",
-                "./system/menu",
+                "./platform/system/menu",
                 "platform.menu.read",
                 null,
                 20,

@@ -450,8 +450,8 @@ export type P0VisibilityPolicyCode = "public" | "domain_customer_only" | "channe
 
 export type P0RegistrationPolicy = "open" | "invitation_only" | "admin_only";
 
-/** 平台 / 域管理侧业务域行（对齐 P0 Domain DTO） */
-export type P0AdminDomain = {
+/** 平台 / 域管理侧业务域行（对齐 Domain DTO） */
+export type AdminDomain = {
   id: string;
   code: string;
   name: string;
@@ -460,9 +460,14 @@ export type P0AdminDomain = {
   registration_policy: P0RegistrationPolicy;
   status?: string | null;
   created_at?: string | null;
+  updated_at?: string | null;
+  created_by?: string | null;
+  updated_by?: string | null;
+  creator_name?: string | null;
+  updater_name?: string | null;
 };
 
-export type P0CreateAdminDomainPayload = {
+export type CreateAdminDomainPayload = {
   name: string;
   code: string;
   logo?: string;
@@ -470,12 +475,12 @@ export type P0CreateAdminDomainPayload = {
   registration_policy: P0RegistrationPolicy;
 };
 
-export type P0UpdateAdminDomainPayload = {
+export type UpdateAdminDomainPayload = {
   name?: string;
   logo?: string;
   visibility_policy_codes?: P0VisibilityPolicyCode[];
   registration_policy?: P0RegistrationPolicy;
-  status?: string;
+  status?: string | number;
 };
 
 export type P0StepUpRequest = {

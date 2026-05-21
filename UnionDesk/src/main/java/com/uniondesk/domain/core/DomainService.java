@@ -3,6 +3,8 @@ package com.uniondesk.domain.core;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.uniondesk.auth.core.UserContext;
+import com.uniondesk.auth.core.UserContextHolder;
 import com.uniondesk.common.web.PageResult;
 import com.uniondesk.domain.web.DomainDtos;
 import java.sql.ResultSet;
@@ -11,6 +13,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -30,8 +33,14 @@ public class DomainService {
         this.objectMapper = objectMapper;
     }
 
-    public PageResult<DomainDtos.DomainView> listAdminDomains(int page, int pageSize, String status, String keyword) {
-        DomainQuery query = buildDomainQuery(status, keyword, false, false);
+    public PageResult<DomainDtos.DomainView> listAdminDomains(
+            int page,
+            int pageSize,
+            String status,
+            String keyword,
+            LocalDateTime createdFrom,
+            LocalDateTime createdTo) {
+        DomainQuery query = buildDomainQuery(status, keyword, createdFrom, createdTo, false, false);
         return new PageResult<>(
                 countDomains(query),
                 jdbcTemplate.query("""
@@ -45,8 +54,14 @@ public class DomainService {
                                     d.status,
                                     d.created_at,
                                     d.updated_at,
-                                    d.deleted_at
+                                    d.deleted_at,
+                                    d.created_by,
+                                    d.updated_by,
+                                    uc.username AS creator_name,
+                                    uu.username AS updater_name
                                 FROM business_domain d
+                                LEFT JOIN user_account uc ON uc.id = d.created_by
+                                LEFT JOIN user_account uu ON uu.id = d.updated_by
                                 %s
                                 ORDER BY d.id DESC
                                 LIMIT ? OFFSET ?
@@ -56,7 +71,7 @@ public class DomainService {
     }
 
     public PageResult<DomainDtos.DomainBriefView> listCustomerDomains(int page, int pageSize, String keyword) {
-        DomainQuery query = buildDomainQuery("active", keyword, false, true);
+        DomainQuery query = buildDomainQuery("active", keyword, null, null, false, true);
         return new PageResult<>(
                 countDomains(query),
                 jdbcTemplate.query("""
@@ -82,19 +97,25 @@ public class DomainService {
         try {
             return jdbcTemplate.queryForObject("""
                             SELECT
-                                id,
-                                code,
-                                name,
-                                logo,
-                                visibility_policy_codes,
-                                registration_policy,
-                                status,
-                                created_at,
-                                updated_at,
-                                deleted_at
-                            FROM business_domain
-                            WHERE id = ?
-                              AND deleted_at IS NULL
+                                d.id,
+                                d.code,
+                                d.name,
+                                d.logo,
+                                d.visibility_policy_codes,
+                                d.registration_policy,
+                                d.status,
+                                d.created_at,
+                                d.updated_at,
+                                d.deleted_at,
+                                d.created_by,
+                                d.updated_by,
+                                uc.username AS creator_name,
+                                uu.username AS updater_name
+                            FROM business_domain d
+                            LEFT JOIN user_account uc ON uc.id = d.created_by
+                            LEFT JOIN user_account uu ON uu.id = d.updated_by
+                            WHERE d.id = ?
+                              AND d.deleted_at IS NULL
                             LIMIT 1
                             """,
                     this::mapDomainView,
@@ -106,30 +127,39 @@ public class DomainService {
 
     @Transactional
     public DomainDtos.DomainCreateResponse createDomain(DomainDtos.CreateDomainRequest request) {
+        UserContext context = UserContextHolder.requireCurrent();
         List<String> visibilityPolicyCodes = normalizeVisibilityPolicyCodes(request.visibility_policy_codes());
         String registrationPolicy = normalizeRegistrationPolicy(request.registration_policy());
         String legacyVisibilityPolicy = visibilityPolicyCodes.isEmpty() ? "public" : visibilityPolicyCodes.getFirst();
         jdbcTemplate.update("""
                         INSERT INTO business_domain (
-                            code, name, visibility_policy, status, created_at, updated_at, registration_policy, visibility_policy_codes, logo, deleted_at
+                            code, name, visibility_policy, status, created_at, updated_at, 
+                            registration_policy, visibility_policy_codes, logo, deleted_at, created_by
                         )
-                        VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3), ?, ?, ?, NULL)
+                        VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3), ?, ?, ?, NULL, ?)
                         """,
                 request.code().trim(),
                 request.name().trim(),
                 legacyVisibilityPolicy,
                 registrationPolicy,
                 toJson(visibilityPolicyCodes),
-                request.logo());
+                request.logo(),
+                context.userId());
+
         Long id = jdbcTemplate.queryForObject("SELECT id FROM business_domain WHERE code = ? LIMIT 1", Long.class, request.code().trim());
         if (id == null) {
             throw new IllegalStateException("business domain create failed");
         }
+
+        recordAudit(0L, context, "domain:" + request.code(), "domain.create",
+                Map.of("code", request.code(), "name", request.name()), "success");
+
         return new DomainDtos.DomainCreateResponse(id, request.code().trim());
     }
 
     @Transactional
     public DomainDtos.DomainView updateDomain(long id, DomainDtos.UpdateDomainRequest request) {
+        UserContext context = UserContextHolder.requireCurrent();
         DomainDtos.DomainView existing = getDomain(id);
         String code = StringUtils.hasText(request.code()) ? request.code().trim() : existing.code();
         String name = StringUtils.hasText(request.name()) ? request.name().trim() : existing.name();
@@ -141,9 +171,11 @@ public class DomainService {
                 ? existing.registration_policy()
                 : normalizeRegistrationPolicy(request.registration_policy());
         int status = request.status() == null ? existing.status() : request.status();
+
         jdbcTemplate.update("""
                         UPDATE business_domain
-                        SET code = ?, name = ?, logo = ?, visibility_policy_codes = ?, registration_policy = ?, status = ?, updated_at = CURRENT_TIMESTAMP(3)
+                        SET code = ?, name = ?, logo = ?, visibility_policy_codes = ?, 
+                            registration_policy = ?, status = ?, updated_at = CURRENT_TIMESTAMP(3), updated_by = ?
                         WHERE id = ?
                           AND deleted_at IS NULL
                         """,
@@ -153,33 +185,76 @@ public class DomainService {
                 toJson(visibilityPolicyCodes),
                 registrationPolicy,
                 status,
+                context.userId(),
                 id);
+
+        recordAudit(0L, context, "domain:" + code, "domain.update",
+                Map.of("id", id, "name", name, "status", status), "success");
+
         return getDomain(id);
     }
 
     @Transactional
     public void deleteDomain(long id) {
+        UserContext context = UserContextHolder.requireCurrent();
+        DomainDtos.DomainView existing = getDomain(id);
         int updated = jdbcTemplate.update("""
                         UPDATE business_domain
-                        SET deleted_at = CURRENT_TIMESTAMP(3), status = 0, updated_at = CURRENT_TIMESTAMP(3)
+                        SET deleted_at = CURRENT_TIMESTAMP(3), status = 0, updated_at = CURRENT_TIMESTAMP(3), updated_by = ?
                         WHERE id = ?
                           AND deleted_at IS NULL
                         """,
+                context.userId(),
                 id);
         if (updated == 0) {
             throw new IllegalArgumentException("business domain not found");
+        }
+
+        recordAudit(0L, context, "domain:" + existing.code(), "domain.delete",
+                Map.of("id", id, "code", existing.code()), "success");
+    }
+
+    private void recordAudit(
+            long businessDomainId,
+            UserContext context,
+            String target,
+            String action,
+            Map<String, Object> detail,
+            String result) {
+        jdbcTemplate.update("""
+                        INSERT INTO audit_log (
+                            business_domain_id, operator_subject_id, operator_actor_type, target, action,
+                            detail, result, request_id
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                businessDomainId,
+                context.userId(),
+                "staff",
+                target,
+                action,
+                toJsonMap(detail),
+                result,
+                context.sessionId());
+    }
+
+    private String toJsonMap(Map<String, Object> detail) {
+        try {
+            return objectMapper.writeValueAsString(detail);
+        } catch (JsonProcessingException ex) {
+            return "{}";
         }
     }
 
     private long countDomains(DomainQuery query) {
         Long total = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM business_domain d%s".formatted(query.whereClause()),
+                "SELECT COUNT(*) FROM business_domain d %s".formatted(query.whereClause()),
                 Long.class,
                 query.args().toArray());
         return total == null ? 0L : total;
     }
 
-    private DomainQuery buildDomainQuery(String status, String keyword, boolean includeDeleted, boolean customerVisibleOnly) {
+    private DomainQuery buildDomainQuery(String status, String keyword, LocalDateTime createdFrom, LocalDateTime createdTo, boolean includeDeleted, boolean customerVisibleOnly) {
         List<String> conditions = new ArrayList<>();
         List<Object> args = new ArrayList<>();
         if (!includeDeleted) {
@@ -199,6 +274,14 @@ public class DomainService {
             String like = "%" + keyword.trim() + "%";
             args.add(like);
             args.add(like);
+        }
+        if (createdFrom != null) {
+            conditions.add("d.created_at >= ?");
+            args.add(createdFrom);
+        }
+        if (createdTo != null) {
+            conditions.add("d.created_at <= ?");
+            args.add(createdTo);
         }
         String whereClause = conditions.isEmpty() ? "" : " WHERE " + String.join(" AND ", conditions);
         return new DomainQuery(whereClause, List.copyOf(args));
@@ -224,7 +307,11 @@ public class DomainService {
                 rs.getInt("status"),
                 toLocalDateTime(rs.getTimestamp("created_at")),
                 toLocalDateTime(rs.getTimestamp("updated_at")),
-                toLocalDateTime(rs.getTimestamp("deleted_at")));
+                toLocalDateTime(rs.getTimestamp("deleted_at")),
+                rs.getObject("created_by", Long.class),
+                rs.getObject("updated_by", Long.class),
+                rs.getString("creator_name"),
+                rs.getString("updater_name"));
     }
 
     private List<String> readVisibilityPolicyCodes(String json) {

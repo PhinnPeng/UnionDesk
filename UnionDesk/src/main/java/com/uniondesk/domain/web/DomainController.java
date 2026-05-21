@@ -5,6 +5,7 @@ import com.uniondesk.domain.core.DomainService;
 import com.uniondesk.iam.core.PermissionCodes;
 import com.uniondesk.iam.core.RequirePermission;
 import jakarta.validation.Valid;
+import java.time.LocalDateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,13 +44,15 @@ public class DomainController {
     }
 
     @GetMapping("/admin/domains")
-    @RequirePermission(PermissionCodes.DOMAIN_ADMIN_READ)
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_READ)
     public PageResult<DomainDtos.DomainView> listAdmin(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
+            @RequestParam(defaultValue = "20") int page_size,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String keyword) {
-        return domainService.listAdminDomains(page, pageSize, status, keyword);
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) LocalDateTime created_from,
+            @RequestParam(required = false) LocalDateTime created_to) {
+        return domainService.listAdminDomains(page, page_size, status, keyword, created_from, created_to);
     }
 
     @GetMapping("/admin/domains/{id}")

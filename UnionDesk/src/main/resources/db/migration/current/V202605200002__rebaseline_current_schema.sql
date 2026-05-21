@@ -1228,7 +1228,7 @@ VALUES
 (48, 'ADM0000000048', 'menu', 'platform', '权限管理', '/platform/permission', './platform/permission', NULL, NULL, 11, 'SafetyCertificateOutlined', 0, 1, 0, '2026-05-18 16:56:57.952', '2026-05-18 16:57:02.908'),
 (49, 'ADM0000000049', 'menu', 'platform', '角色管理', '/platform/role', './system/role', NULL, 48, 11, 'TeamOutlined', 0, 1, 0, '2026-05-18 16:56:57.984', '2026-05-18 16:56:59.942'),
 (5, 'ADM0000000005', 'menu', 'business', '离职池', '/system/users/offboard-pool', './system/users/offboard-pool', NULL, 4, 104, 'DeleteOutlined', 0, 1, 0, '2026-05-18 16:56:28.093', '2026-05-18 16:56:28.155'),
-(50, 'ADM0000000050', 'menu', 'platform', '菜单管理', '/platform/menu', './system/menu', NULL, 48, 12, 'MenuOutlined', 0, 1, 0, '2026-05-18 16:56:58.015', '2026-05-18 16:56:59.974'),
+(50, 'ADM0000000050', 'menu', 'platform', '菜单管理', '/platform/menu', './platform/system/menu', NULL, 48, 12, 'MenuOutlined', 0, 1, 0, '2026-05-18 16:56:58.015', '2026-05-18 16:56:59.974'),
 (51, 'ADM0000000051', 'menu', 'platform', '审计日志', '/platform/audit-logs', './platform/audit-logs', NULL, NULL, 13, 'FileSearchOutlined', 0, 1, 0, '2026-05-18 16:56:58.046', '2026-05-18 16:57:02.908'),
 (52, 'ADM0000000052', 'menu', 'platform', '域配置', '/platform/domain-config', './platform/domain-config', NULL, NULL, 14, 'SettingOutlined', 0, 1, 0, '2026-05-18 16:56:58.077', '2026-05-18 16:57:02.908'),
 (53, 'ADM0000000053', 'menu', 'platform', 'SLA管理', '/platform/sla-management', './platform/sla-management', NULL, NULL, 15, 'ClockCircleOutlined', 0, 1, 0, '2026-05-18 16:56:58.108', '2026-05-18 16:57:02.908'),

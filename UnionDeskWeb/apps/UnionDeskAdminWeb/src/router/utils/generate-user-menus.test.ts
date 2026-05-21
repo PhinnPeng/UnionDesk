@@ -80,7 +80,7 @@ describe("generateUserMenus", () => {
 						parentId: 6,
 						name: "菜单管理",
 						path: "/platform/menu",
-						component: "./system/menu",
+						component: "./platform/system/menu",
 						scope: "platform",
 					},
 				],

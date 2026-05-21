@@ -1,15 +1,15 @@
-import type { P0AdminDomain, P0DomainCustomer, P0InvitationCode } from "@uniondesk/shared";
+import type { AdminDomain, P0DomainCustomer, P0InvitationCode } from "@uniondesk/shared";
 
 import { BasicContent } from "#src/components/basic-content";
 
-import { fetchP0AdminDomainsPage, fetchP0DomainCustomersPage, fetchP0InvitationCodes, toErrorMessage } from "@uniondesk/shared";
+import { fetchAdminDomainsPage, fetchP0DomainCustomersPage, fetchP0InvitationCodes, toErrorMessage } from "@uniondesk/shared";
 import { App, Alert, Select, Space, Table, Tabs, Tag } from "antd";
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useState } from "react";
 
 export default function PlatformDomainOnboarding() {
 	const { message } = App.useApp();
-	const [domains, setDomains] = useState<P0AdminDomain[]>([]);
+	const [domains, setDomains] = useState<AdminDomain[]>([]);
 	const [domainId, setDomainId] = useState<string | undefined>();
 	const [invites, setInvites] = useState<P0InvitationCode[]>([]);
 	const [customers, setCustomers] = useState<P0DomainCustomer[]>([]);
@@ -18,7 +18,7 @@ export default function PlatformDomainOnboarding() {
 
 	const loadDomains = useCallback(async () => {
 		try {
-			const page = await fetchP0AdminDomainsPage({ page: 1, page_size: 100 });
+			const page = await fetchAdminDomainsPage({ page: 1, page_size: 100 });
 			setDomains(page.list);
 			setDomainId(prev => prev ?? page.list[0]?.id);
 		} catch (e) {

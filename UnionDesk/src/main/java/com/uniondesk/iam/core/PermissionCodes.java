@@ -40,6 +40,7 @@ public final class PermissionCodes {
     public static final String DOMAIN_USER_CREATE = "domain.user.create";
     public static final String DOMAIN_USER_UPDATE = "domain.user.update";
     public static final String DOMAIN_USER_REMOVE = "domain.user.remove";
+    public static final String PLATFORM_DOMAIN_READ = "domain.read";
     public static final String DOMAIN_READ = "domain.read";
     public static final String DOMAIN_AUDIT_LOG_READ = "domain.audit_log.read";
     public static final String DOMAIN_LOGIN_LOG_READ = "domain.login_log.read";

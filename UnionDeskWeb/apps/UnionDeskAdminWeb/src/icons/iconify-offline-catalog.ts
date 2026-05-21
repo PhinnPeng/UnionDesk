@@ -73,7 +73,8 @@ export function createIconPickerCatalog(sources: readonly IconCollectionSource[]
 		collections,
 		collectionOptions: collections.map(({ label, value }) => ({ label, value })),
 		getCollectionIcons(prefix: string) {
-			return collectionMap.get(prefix)?.iconNames ?? [];
+			const icons = collectionMap.get(prefix)?.iconNames ?? [];
+			return icons.map(name => `${prefix}:${name}`);
 		},
 		searchIcons(keyword: string) {
 			const normalizedKeyword = keyword.trim().toLowerCase();

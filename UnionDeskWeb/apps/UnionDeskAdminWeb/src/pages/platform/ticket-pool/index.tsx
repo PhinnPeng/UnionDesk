@@ -1,22 +1,22 @@
-import type { P0AdminDomain, P0AdminTicketListItem } from "@uniondesk/shared";
+import type { AdminDomain, P0AdminTicketListItem } from "@uniondesk/shared";
 
 import { BasicContent } from "#src/components/basic-content";
 
-import { claimP0AdminTicket, fetchP0AdminDomainTicketsPage, fetchP0AdminDomainsPage, toErrorMessage } from "@uniondesk/shared";
+import { claimP0AdminTicket, fetchP0AdminDomainTicketsPage, fetchAdminDomainsPage, toErrorMessage } from "@uniondesk/shared";
 import { App, Alert, Button, Card, Select, Space, Table, Tag } from "antd";
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useState } from "react";
 
 export default function PlatformTicketPool() {
 	const { message } = App.useApp();
-	const [domains, setDomains] = useState<P0AdminDomain[]>([]);
+	const [domains, setDomains] = useState<AdminDomain[]>([]);
 	const [domainId, setDomainId] = useState<string | undefined>();
 	const [rows, setRows] = useState<P0AdminTicketListItem[]>([]);
 	const [loading, setLoading] = useState(false);
 
 	const loadDomains = useCallback(async () => {
 		try {
-			const page = await fetchP0AdminDomainsPage({ page: 1, page_size: 100 });
+			const page = await fetchAdminDomainsPage({ page: 1, page_size: 100 });
 			setDomains(page.list);
 			setDomainId(prev => prev ?? page.list[0]?.id);
 		} catch (e) {
