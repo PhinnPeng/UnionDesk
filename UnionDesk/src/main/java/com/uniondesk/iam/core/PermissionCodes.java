@@ -44,7 +44,10 @@ public final class PermissionCodes {
     public static final String DOMAIN_READ = "domain.read";
     public static final String DOMAIN_AUDIT_LOG_READ = "domain.audit_log.read";
     public static final String DOMAIN_LOGIN_LOG_READ = "domain.login_log.read";
+    /** @deprecated use {@link #DOMAIN_ADMIN_LIST_READ} and {@link #DOMAIN_ADMIN_DETAIL_READ} */
     public static final String DOMAIN_ADMIN_READ = "domain.admin.read";
+    public static final String DOMAIN_ADMIN_LIST_READ = "domain.admin.list.read";
+    public static final String DOMAIN_ADMIN_DETAIL_READ = "domain.admin.detail.read";
     public static final String DOMAIN_ADMIN_CREATE = "domain.admin.create";
     public static final String DOMAIN_ADMIN_UPDATE = "domain.admin.update";
     public static final String DOMAIN_ADMIN_DELETE = "domain.admin.delete";

@@ -265,6 +265,7 @@ public class IamController {
         }
         UserAccount user = iamService.createUser(new CreateUserCommand(
                 request.username(),
+                request.nickname(),
                 request.mobile(),
                 request.email(),
                 request.remark(),
@@ -281,6 +282,7 @@ public class IamController {
         requireSuperAdminContext();
         UserAccount user = iamService.updateUser(userId, new UpdateUserCommand(
                 request.username(),
+                request.nickname(),
                 request.mobile(),
                 request.email(),
                 request.remark(),
@@ -453,6 +455,7 @@ public class IamController {
         return new IamDtos.UserAccountView(
                 user.id(),
                 user.username(),
+                user.nickname(),
                 user.mobile(),
                 user.email(),
                 user.remark(),

@@ -89,6 +89,8 @@ class AdminMenuRequiredMenuIntegrationTest {
         Long homeMenuId = jdbcTemplate.queryForObject(
                 "SELECT id FROM iam_admin_menu WHERE route_path = '/platform/home' LIMIT 1",
                 Long.class);
+
+
         Long homeRequiredButtonId = jdbcTemplate.queryForObject(
                 """
                         SELECT id

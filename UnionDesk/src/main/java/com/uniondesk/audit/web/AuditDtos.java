@@ -18,7 +18,8 @@ public final class AuditDtos {
             String detail,
             String result,
             LocalDateTime occurredAt,
-            String requestId) {
+            String requestId,
+            String ip) {
     }
 
     public record LoginLogView(

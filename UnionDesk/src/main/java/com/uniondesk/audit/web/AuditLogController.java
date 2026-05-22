@@ -31,10 +31,15 @@ public class AuditLogController {
             @RequestParam(name = "domainId", required = false) Long legacyDomainId,
             @RequestParam(required = false) String operator,
             @RequestParam(required = false) String action,
+            @RequestParam(required = false) String module,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String ip,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String nickname,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
         Long resolvedDomainId = domainId != null ? domainId : legacyDomainId;
-        return auditLogService.listPlatformAuditLogs(page, pageSize, resolvedDomainId, operator, action, startTime, endTime);
+        return auditLogService.listPlatformAuditLogs(page, pageSize, resolvedDomainId, operator, action, startTime, endTime, module, keyword, ip, username, nickname);
     }
 
     @GetMapping("/domains/{domainId}/audit-logs")

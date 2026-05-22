@@ -29,6 +29,11 @@ class AuditLogControllerTests {
                 eq("admin"),
                 eq("ticket.create"),
                 any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
                 any()))
                 .thenReturn(new PageResult<>(1, List.of(new AuditDtos.AuditLogView(
                         1L,
@@ -41,7 +46,8 @@ class AuditLogControllerTests {
                         "{\"k\":\"v\"}",
                         "success",
                         LocalDateTime.parse("2026-05-03T08:30:00"),
-                        "req-1"))));
+                        "req-1",
+                        "127.0.0.1"))));
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new AuditLogController(auditLogService)).build();
 
         mockMvc.perform(get("/api/v1/admin/audit-logs")
@@ -55,7 +61,19 @@ class AuditLogControllerTests {
                 .andExpect(jsonPath("$.list[0].action").value("ticket.create"))
                 .andExpect(jsonPath("$.list[0].operatorName").value("admin"));
 
-        verify(auditLogService).listPlatformAuditLogs(eq(2), eq(10), eq(5L), eq("admin"), eq("ticket.create"), any(), any());
+        verify(auditLogService).listPlatformAuditLogs(
+                eq(2),
+                eq(10),
+                eq(5L),
+                eq("admin"),
+                eq("ticket.create"),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any());
     }
 
     @Test
@@ -80,7 +98,8 @@ class AuditLogControllerTests {
                         "{\"k\":\"v\"}",
                         "success",
                         LocalDateTime.parse("2026-05-03T08:30:00"),
-                        "req-1"))));
+                        "req-1",
+                        "127.0.0.1"))));
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new AuditLogController(auditLogService)).build();
 
         mockMvc.perform(get("/api/v1/admin/domains/10/audit-logs")

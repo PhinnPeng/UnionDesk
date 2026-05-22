@@ -44,7 +44,7 @@ public class DomainController {
     }
 
     @GetMapping("/admin/domains")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_READ)
+    @RequirePermission(PermissionCodes.DOMAIN_ADMIN_LIST_READ)
     public PageResult<DomainDtos.DomainView> listAdmin(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int page_size,
@@ -56,7 +56,7 @@ public class DomainController {
     }
 
     @GetMapping("/admin/domains/{id}")
-    @RequirePermission(PermissionCodes.DOMAIN_ADMIN_READ)
+    @RequirePermission(PermissionCodes.DOMAIN_ADMIN_DETAIL_READ)
     public DomainDtos.DomainView getAdmin(@PathVariable long id) {
         return domainService.getDomain(id);
     }

@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -151,7 +152,7 @@ public class DomainService {
             throw new IllegalStateException("business domain create failed");
         }
 
-        recordAudit(0L, context, "domain:" + request.code(), "domain.create",
+        recordAudit(id, context, "domain:" + request.code(), "domain.create",
                 Map.of("code", request.code(), "name", request.name()), "success");
 
         return new DomainDtos.DomainCreateResponse(id, request.code().trim());
@@ -171,10 +172,11 @@ public class DomainService {
                 ? existing.registration_policy()
                 : normalizeRegistrationPolicy(request.registration_policy());
         int status = request.status() == null ? existing.status() : request.status();
+        String legacyVisibilityPolicy = visibilityPolicyCodes.isEmpty() ? "public" : visibilityPolicyCodes.getFirst();
 
         jdbcTemplate.update("""
                         UPDATE business_domain
-                        SET code = ?, name = ?, logo = ?, visibility_policy_codes = ?, 
+                        SET code = ?, name = ?, logo = ?, visibility_policy = ?, visibility_policy_codes = ?,
                             registration_policy = ?, status = ?, updated_at = CURRENT_TIMESTAMP(3), updated_by = ?
                         WHERE id = ?
                           AND deleted_at IS NULL
@@ -182,13 +184,14 @@ public class DomainService {
                 code,
                 name,
                 logo,
+                legacyVisibilityPolicy,
                 toJson(visibilityPolicyCodes),
                 registrationPolicy,
                 status,
                 context.userId(),
                 id);
 
-        recordAudit(0L, context, "domain:" + code, "domain.update",
+        recordAudit(id, context, "domain:" + code, "domain.update",
                 Map.of("id", id, "name", name, "status", status), "success");
 
         return getDomain(id);
@@ -210,7 +213,7 @@ public class DomainService {
             throw new IllegalArgumentException("business domain not found");
         }
 
-        recordAudit(0L, context, "domain:" + existing.code(), "domain.delete",
+        recordAudit(id, context, "domain:" + existing.code(), "domain.delete",
                 Map.of("id", id, "code", existing.code()), "success");
     }
 
@@ -221,21 +224,77 @@ public class DomainService {
             String action,
             Map<String, Object> detail,
             String result) {
-        jdbcTemplate.update("""
-                        INSERT INTO audit_log (
-                            business_domain_id, operator_subject_id, operator_actor_type, target, action,
-                            detail, result, request_id
-                        )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        Long auditDomainId = businessDomainId > 0 ? businessDomainId : null;
+        try {
+            jdbcTemplate.update("""
+                            INSERT INTO audit_log (
+                                business_domain_id, operator_subject_id, operator_actor_type, target, action,
+                                detail, result, request_id
+                            )
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                            """,
+                    auditDomainId,
+                    ensureIdentitySubject(context.userId()),
+                    "staff",
+                    target,
+                    action,
+                    toJsonMap(detail),
+                    result,
+                    context.sessionId());
+        } catch (RuntimeException ex) {
+            // 审计写入失败不应阻断业务域主流程
+        }
+    }
+
+    private long ensureIdentitySubject(long userId) {
+        try {
+            Long existing = jdbcTemplate.queryForObject("""
+                            SELECT id
+                            FROM identity_subject
+                            WHERE id = ?
+                            LIMIT 1
+                            """,
+                    Long.class,
+                    userId);
+            if (existing != null) {
+                return existing;
+            }
+        } catch (EmptyResultDataAccessException ignored) {
+            // create below
+        }
+        String phone = jdbcTemplate.queryForObject("""
+                        SELECT COALESCE(NULLIF(mobile, ''), CONCAT('user-', ?))
+                        FROM user_account
+                        WHERE id = ?
+                        LIMIT 1
                         """,
-                businessDomainId,
-                context.userId(),
-                "staff",
-                target,
-                action,
-                toJsonMap(detail),
-                result,
-                context.sessionId());
+                String.class,
+                userId,
+                userId);
+        if (!StringUtils.hasText(phone)) {
+            phone = "user-" + userId;
+        }
+        try {
+            jdbcTemplate.update("""
+                            INSERT INTO identity_subject (id, subject_type, phone, status)
+                            VALUES (?, 'person', ?, 'active')
+                            """,
+                    userId,
+                    phone);
+        } catch (DuplicateKeyException ignored) {
+            Long subjectId = jdbcTemplate.queryForObject("""
+                            SELECT id
+                            FROM identity_subject
+                            WHERE phone = ?
+                            LIMIT 1
+                            """,
+                    Long.class,
+                    phone);
+            if (subjectId != null) {
+                return subjectId;
+            }
+        }
+        return userId;
     }
 
     private String toJsonMap(Map<String, Object> detail) {
@@ -318,12 +377,20 @@ public class DomainService {
         if (!StringUtils.hasText(json)) {
             return DEFAULT_VISIBILITY_POLICY_CODES;
         }
+        String trimmed = json.trim();
         try {
-            List<String> values = objectMapper.readValue(json, new TypeReference<List<String>>() {
-            });
-            return values == null || values.isEmpty() ? DEFAULT_VISIBILITY_POLICY_CODES : List.copyOf(values);
+            if (trimmed.startsWith("[")) {
+                List<String> values = objectMapper.readValue(trimmed, new TypeReference<List<String>>() {
+                });
+                return values == null || values.isEmpty() ? DEFAULT_VISIBILITY_POLICY_CODES : List.copyOf(values);
+            }
+            if (trimmed.startsWith("\"")) {
+                String single = objectMapper.readValue(trimmed, String.class);
+                return normalizeVisibilityPolicyCodes(List.of(single));
+            }
+            return normalizeVisibilityPolicyCodes(List.of(trimmed));
         } catch (JsonProcessingException ex) {
-            throw new IllegalStateException("invalid visibility_policy_codes", ex);
+            return normalizeVisibilityPolicyCodes(List.of(trimmed.replace("\"", "")));
         }
     }
 

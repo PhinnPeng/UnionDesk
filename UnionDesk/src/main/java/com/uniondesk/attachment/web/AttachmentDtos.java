@@ -58,8 +58,14 @@ public final class AttachmentDtos {
     }
 
     public record AttachmentPresignResponse(
+            @JsonProperty("attachment_id")
+            @JsonAlias({"attachmentId"})
             long attachmentId,
+            @JsonProperty("upload_url")
+            @JsonAlias({"uploadUrl"})
             String uploadUrl,
+            @JsonProperty("expires_in")
+            @JsonAlias({"expires_in_seconds", "expiresInSeconds"})
             int expiresInSeconds) {
 
         public static AttachmentPresignResponse from(AttachmentService.AttachmentPresignResult result) {
@@ -68,20 +74,24 @@ public final class AttachmentDtos {
                     result.uploadUrl(),
                     result.expiresInSeconds());
         }
+    }
 
-        @JsonProperty("attachment_id")
-        public long attachmentIdSnake() {
-            return attachmentId;
-        }
+    public record AttachmentDownloadResponse(
+            @JsonProperty("download_url")
+            @JsonAlias({"downloadUrl"})
+            String downloadUrl,
+            @JsonProperty("expires_in")
+            @JsonAlias({"expires_in_seconds", "expiresInSeconds"})
+            int expiresInSeconds,
+            @JsonProperty("storage_type")
+            @JsonAlias({"storageType"})
+            String storageType) {
 
-        @JsonProperty("upload_url")
-        public String uploadUrlSnake() {
-            return uploadUrl;
-        }
-
-        @JsonProperty("expires_in_seconds")
-        public int expiresInSecondsSnake() {
-            return expiresInSeconds;
+        public static AttachmentDownloadResponse from(AttachmentService.AttachmentDownloadAccess access) {
+            return new AttachmentDownloadResponse(
+                    access.downloadUrl(),
+                    access.expiresInSeconds(),
+                    access.storageType());
         }
     }
 }

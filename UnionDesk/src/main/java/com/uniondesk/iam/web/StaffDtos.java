@@ -22,6 +22,7 @@ public final class StaffDtos {
     public record StaffAccountView(
             long id,
             String loginName,
+            String nickname,
             String phone,
             String email,
             int status,
@@ -34,6 +35,7 @@ public final class StaffDtos {
 
     public record CreateStaffRequest(
             @NotBlank String loginName,
+            String nickname,
             @NotBlank String phone,
             String email,
             @NotBlank String password,
@@ -44,6 +46,7 @@ public final class StaffDtos {
 
     public record UpdateStaffRequest(
             String loginName,
+            String nickname,
             String phone,
             String email,
             String password,

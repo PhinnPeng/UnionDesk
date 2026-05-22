@@ -233,7 +233,8 @@ class StaffControllerTests {
         return new IamService.UserAccount(
                 id,
                 loginName,
-                "1380000000" + id,
+                "Staff " + loginName,
+                "138000000" + id,
                 loginName + "@uniondesk.local",
                 null,
                 "admin",

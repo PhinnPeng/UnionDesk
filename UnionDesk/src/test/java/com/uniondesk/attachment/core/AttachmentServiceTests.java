@@ -3,24 +3,23 @@ package com.uniondesk.attachment.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
+import com.uniondesk.attachment.storage.AttachmentObjectStorage;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -37,32 +36,20 @@ class AttachmentServiceTests {
     @Mock
     private JdbcTemplate jdbcTemplate;
 
-    @TempDir
-    Path tempDir;
+    @Mock
+    private AttachmentObjectStorage objectStorage;
 
-    private String originalTmpDir;
     private AttachmentService attachmentService;
 
     @BeforeEach
     void setUp() {
-        originalTmpDir = System.getProperty("java.io.tmpdir");
-        System.setProperty("java.io.tmpdir", tempDir.toString());
-        attachmentService = new AttachmentService(jdbcTemplate, CLOCK);
+        attachmentService = new AttachmentService(jdbcTemplate, CLOCK, objectStorage);
         stubDefaultPolicyFallback();
         stubAttachmentPersistence();
     }
 
-    @AfterEach
-    void tearDown() {
-        if (originalTmpDir == null) {
-            System.clearProperty("java.io.tmpdir");
-        } else {
-            System.setProperty("java.io.tmpdir", originalTmpDir);
-        }
-    }
-
     @Test
-    void uploadAttachmentFallsBackToLocalStorageAndWritesFile() throws IOException, NoSuchAlgorithmException {
+    void uploadAttachmentStoresInObjectStorage() throws NoSuchAlgorithmException {
         byte[] content = "hello".getBytes(StandardCharsets.UTF_8);
 
         AttachmentService.AttachmentUploadResult result = attachmentService.uploadAttachment(
@@ -77,11 +64,27 @@ class AttachmentServiceTests {
                         null,
                         null));
 
-        assertThat(result.storageType()).isEqualTo("local");
-        Path localFile = Path.of(result.localPath());
-        assertThat(Files.exists(localFile)).isTrue();
-        assertThat(Files.readAllBytes(localFile)).containsExactly(content);
+        assertThat(result.storageType()).isEqualTo(AttachmentService.STORAGE_TYPE_OBJECT);
         assertThat(result.checksum()).isEqualTo(sha256(content));
+        verify(objectStorage).putObject(anyString(), eq(content), eq("text/plain"));
+    }
+
+    @Test
+    void presignAttachmentReturnsMinioUploadUrl() {
+        when(objectStorage.presignPut(anyString(), anyString(), anyLong()))
+                .thenReturn(new AttachmentObjectStorage.PresignedUrl("http://127.0.0.1:9000/bucket/key?sig=1", 300));
+
+        AttachmentService.AttachmentPresignResult result = attachmentService.presignAttachment(
+                new AttachmentService.PresignAttachmentCommand(
+                        1L,
+                        "customer",
+                        "note.pdf",
+                        "application/pdf",
+                        1024L,
+                        "ticket"));
+
+        assertThat(result.uploadUrl()).contains("9000");
+        assertThat(result.expiresInSeconds()).isEqualTo(300);
     }
 
     @Test

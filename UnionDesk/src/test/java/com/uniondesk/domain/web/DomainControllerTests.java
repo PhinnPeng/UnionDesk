@@ -115,6 +115,10 @@ class DomainControllerTests {
                 1,
                 now,
                 now,
+                null,
+                null,
+                null,
+                null,
                 null);
     }
 }

@@ -50,6 +50,8 @@ public final class AdminPermissionCatalog {
             new PermissionDefinition(PermissionCodes.PLATFORM_LOGIN_LOG_READ, "View platform login logs", "platform", "GET", "/api/v1/admin/login-logs"),
             new PermissionDefinition(PermissionCodes.DOMAIN_AUDIT_LOG_READ, "View domain audit logs", "domain", "GET", "/api/v1/admin/domains/*/audit-logs"),
             new PermissionDefinition(PermissionCodes.DOMAIN_LOGIN_LOG_READ, "View domain login logs", "domain", "GET", "/api/v1/admin/domains/*/login-logs"),
+            new PermissionDefinition(PermissionCodes.DOMAIN_ADMIN_LIST_READ, "View domain admin list", "platform", "GET", "/api/v1/admin/domains"),
+            new PermissionDefinition(PermissionCodes.DOMAIN_ADMIN_DETAIL_READ, "View domain admin detail", "platform", "GET", "/api/v1/admin/domains/*"),
             new PermissionDefinition(PermissionCodes.DOMAIN_ADMIN_READ, "View domain admin domains", "platform", "GET", "/api/v1/admin/domains/**"),
             new PermissionDefinition(PermissionCodes.DOMAIN_ADMIN_CREATE, "Create business domain", "platform", "POST", "/api/v1/admin/domains"),
             new PermissionDefinition(PermissionCodes.DOMAIN_ADMIN_UPDATE, "Update business domain", "platform", "PUT", "/api/v1/admin/domains/*"),

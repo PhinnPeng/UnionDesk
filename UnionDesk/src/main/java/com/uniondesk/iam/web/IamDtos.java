@@ -193,6 +193,7 @@ public final class IamDtos {
     public record UserAccountView(
             long id,
             String username,
+            String nickname,
             String mobile,
             String email,
             String remark,
@@ -209,6 +210,7 @@ public final class IamDtos {
 
     public record CreateUserRequest(
             @NotBlank String username,
+            String nickname,
             @NotBlank String mobile,
             String email,
             String remark,
@@ -221,6 +223,7 @@ public final class IamDtos {
 
     public record UpdateUserRequest(
             String username,
+            String nickname,
             String mobile,
             String email,
             String remark,

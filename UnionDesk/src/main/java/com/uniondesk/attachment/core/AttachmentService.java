@@ -1,19 +1,14 @@
 package com.uniondesk.attachment.core;
 
+import com.uniondesk.attachment.storage.AttachmentObjectStorage;
 import com.uniondesk.auth.core.UserContext;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -25,15 +20,22 @@ import org.springframework.util.StringUtils;
 @Service
 public class AttachmentService {
 
+    public static final String STORAGE_TYPE_OBJECT = "object_storage";
+
     private static final Set<String> DEFAULT_ALLOWED_EXTENSIONS = Set.of(
             "pdf", "png", "jpg", "jpeg", "gif", "webp", "txt", "zip");
 
     private final JdbcTemplate jdbcTemplate;
     private final Clock clock;
+    private final AttachmentObjectStorage objectStorage;
 
-    public AttachmentService(JdbcTemplate jdbcTemplate, Clock clock) {
+    public AttachmentService(
+            JdbcTemplate jdbcTemplate,
+            Clock clock,
+            AttachmentObjectStorage objectStorage) {
         this.jdbcTemplate = jdbcTemplate;
         this.clock = clock;
+        this.objectStorage = objectStorage;
     }
 
     @Transactional
@@ -44,15 +46,11 @@ public class AttachmentService {
         AttachmentPolicy policy = loadPolicy(command.businessDomainId());
         validateAttachment(command, policy);
         long uploaderSubjectId = context == null ? ensureAnonymousSubject() : ensureIdentitySubject(context.userId());
-        String storageType = "local";
         String storageKey = StringUtils.hasText(command.storageKey()) ? command.storageKey() : buildStorageKey(command.fileName());
-        Path storedPath = resolveStorageRoot().resolve(storageKey);
-        try {
-            Files.createDirectories(storedPath.getParent());
-            Files.write(storedPath, command.content(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException ex) {
-            throw new IllegalStateException("附件写入失败", ex);
-        }
+        String contentType = StringUtils.hasText(command.contentType())
+                ? command.contentType()
+                : "application/octet-stream";
+        objectStorage.putObject(storageKey, command.content(), contentType);
 
         String checksum = checksum(command.content());
         long attachmentId;
@@ -77,7 +75,7 @@ public class AttachmentService {
                     command.fileName(),
                     command.contentType(),
                     command.content().length,
-                    storageType,
+                    STORAGE_TYPE_OBJECT,
                     storageKey,
                     checksum,
                     command.attachmentId());
@@ -96,7 +94,7 @@ public class AttachmentService {
                     command.fileName(),
                     command.contentType(),
                     command.content().length,
-                    storageType,
+                    STORAGE_TYPE_OBJECT,
                     storageKey,
                     checksum,
                     LocalDateTime.now(clock));
@@ -112,32 +110,49 @@ public class AttachmentService {
                     command.targetId(),
                     command.relationType() == null ? "primary" : command.relationType());
         }
-        return new AttachmentUploadResult(attachmentId, storageType, storageKey, storedPath.toString(), checksum);
+        return new AttachmentUploadResult(attachmentId, STORAGE_TYPE_OBJECT, storageKey, checksum);
     }
 
     @Transactional
     public AttachmentPresignResult presignAttachment(PresignAttachmentCommand command) {
+        validatePresignMetadata(command);
+        AttachmentPolicy policy = loadPolicy(command.businessDomainId());
+        validatePresignSize(command.fileSize(), policy);
         String storageKey = buildStorageKey(command.fileName());
         jdbcTemplate.update("""
                         INSERT INTO file_attachment (
                             business_domain_id, uploader_subject_id, portal_type, file_name, mime_type,
                             file_size, storage_type, storage_key, checksum, status, created_at
                         )
-                        VALUES (?, NULL, ?, ?, ?, ?, 'local', ?, NULL, 'pending', ?)
+                        VALUES (?, NULL, ?, ?, ?, ?, ?, ?, NULL, 'pending', ?)
                         """,
                 command.businessDomainId(),
                 command.portalType(),
                 command.fileName(),
                 command.mimeType(),
                 command.fileSize(),
+                STORAGE_TYPE_OBJECT,
                 storageKey,
                 LocalDateTime.now(clock));
         long attachmentId = loadLatestAttachmentId(storageKey);
-        return new AttachmentPresignResult(attachmentId, "/api/v1/attachments/upload", 300);
+        AttachmentObjectStorage.PresignedUrl presigned = objectStorage.presignPut(
+                storageKey,
+                command.mimeType(),
+                command.fileSize());
+        return new AttachmentPresignResult(attachmentId, presigned.url(), presigned.expiresInSeconds());
     }
 
     @Transactional
     public void confirmAttachment(long attachmentId) {
+        AttachmentFileView view = findAttachment(attachmentId);
+        requireObjectStorage(view);
+        AttachmentObjectStorage.ObjectHead head = objectStorage.headObject(view.storageKey());
+        if (!head.exists()) {
+            throw new IllegalArgumentException("对象存储中未找到附件，请先完成上传");
+        }
+        if (head.size() != view.fileSize()) {
+            throw new IllegalArgumentException("附件大小与登记信息不一致");
+        }
         int updated = jdbcTemplate.update("""
                         UPDATE file_attachment
                         SET status = 'confirmed'
@@ -147,6 +162,14 @@ public class AttachmentService {
         if (updated == 0) {
             throw new IllegalArgumentException("attachment not found");
         }
+    }
+
+    @Transactional(readOnly = true)
+    public AttachmentDownloadAccess resolveDownloadAccess(long attachmentId) {
+        AttachmentFileView view = findAttachment(attachmentId);
+        requireObjectStorage(view);
+        AttachmentObjectStorage.PresignedUrl presigned = objectStorage.presignGet(view.storageKey());
+        return new AttachmentDownloadAccess(presigned.url(), presigned.expiresInSeconds(), STORAGE_TYPE_OBJECT);
     }
 
     @Transactional
@@ -210,14 +233,12 @@ public class AttachmentService {
                 attachmentId);
     }
 
-    @Transactional(readOnly = true)
-    public byte[] loadAttachmentContent(long attachmentId) {
-        AttachmentFileView view = findAttachment(attachmentId);
-        Path file = resolveStorageRoot().resolve(view.storageKey());
-        try {
-            return Files.readAllBytes(file);
-        } catch (IOException ex) {
-            throw new IllegalStateException("附件读取失败", ex);
+    private void requireObjectStorage(AttachmentFileView view) {
+        if ("local".equals(view.storageType())) {
+            throw new IllegalStateException("本地存储附件已不再支持，请联系管理员迁移到对象存储");
+        }
+        if (!STORAGE_TYPE_OBJECT.equals(view.storageType())) {
+            throw new IllegalStateException("不支持的附件存储类型: " + view.storageType());
         }
     }
 
@@ -228,6 +249,24 @@ public class AttachmentService {
         }
         long maxBytes = policy.maxSingleSizeMb() * 1024L * 1024L;
         if (command.content().length > maxBytes) {
+            throw new IllegalArgumentException("附件大小超限");
+        }
+    }
+
+    private void validatePresignMetadata(PresignAttachmentCommand command) {
+        String extension = fileExtension(command.fileName());
+        AttachmentPolicy policy = loadPolicy(command.businessDomainId());
+        if (!policy.allowedExtensions().contains(extension)) {
+            throw new IllegalArgumentException("附件类型不在白名单内");
+        }
+    }
+
+    private void validatePresignSize(long fileSize, AttachmentPolicy policy) {
+        long maxBytes = policy.maxSingleSizeMb() * 1024L * 1024L;
+        if (fileSize <= 0) {
+            throw new IllegalArgumentException("附件大小无效");
+        }
+        if (fileSize > maxBytes) {
             throw new IllegalArgumentException("附件大小超限");
         }
     }
@@ -288,16 +327,6 @@ public class AttachmentService {
             return "";
         }
         return fileName.substring(fileName.lastIndexOf('.') + 1).trim().toLowerCase(Locale.ROOT);
-    }
-
-    private Path resolveStorageRoot() {
-        Path root = Path.of(System.getProperty("java.io.tmpdir"), "uniondesk", "attachments");
-        try {
-            Files.createDirectories(root);
-        } catch (IOException ex) {
-            throw new IllegalStateException("无法初始化本地附件目录", ex);
-        }
-        return root;
     }
 
     private String buildStorageKey(String fileName) {
@@ -397,7 +426,6 @@ public class AttachmentService {
             long attachmentId,
             String storageType,
             String storageKey,
-            String localPath,
             String checksum) {
     }
 
@@ -405,6 +433,12 @@ public class AttachmentService {
             long attachmentId,
             String uploadUrl,
             int expiresInSeconds) {
+    }
+
+    public record AttachmentDownloadAccess(
+            String downloadUrl,
+            int expiresInSeconds,
+            String storageType) {
     }
 
     public record PresignAttachmentCommand(

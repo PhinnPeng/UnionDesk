@@ -74,6 +74,7 @@ public class StaffController {
     public StaffDtos.StaffAccountView createStaff(@Valid @RequestBody StaffDtos.CreateStaffRequest request) {
         IamService.UserAccount created = iamService.createUser(new CreateUserCommand(
                 request.loginName(),
+                request.nickname(),
                 request.phone(),
                 request.email(),
                 null,
@@ -92,6 +93,7 @@ public class StaffController {
             @Valid @RequestBody StaffDtos.UpdateStaffRequest request) {
         IamService.UserAccount updated = iamService.updateUser(staffId, new UpdateUserCommand(
                 request.loginName(),
+                request.nickname(),
                 request.phone(),
                 request.email(),
                 null,
@@ -169,6 +171,7 @@ public class StaffController {
         return new StaffDtos.StaffAccountView(
                 user.id(),
                 user.username(),
+                user.nickname(),
                 user.mobile(),
                 user.email(),
                 user.status(),
@@ -203,6 +206,7 @@ public class StaffController {
         }
         String normalized = keyword.trim().toLowerCase(Locale.ROOT);
         return contains(view.loginName(), normalized)
+                || contains(view.nickname(), normalized)
                 || contains(view.phone(), normalized)
                 || contains(view.email(), normalized);
     }

@@ -762,6 +762,7 @@ CREATE TABLE IF NOT EXISTS `ticket_template` (
 CREATE TABLE IF NOT EXISTS `user_account` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(64) NOT NULL,
+  `nickname` varchar(64) DEFAULT NULL,
   `mobile` varchar(20) NOT NULL,
   `email` varchar(128) DEFAULT NULL,
   `remark` varchar(255) DEFAULT NULL,

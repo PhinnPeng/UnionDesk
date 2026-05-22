@@ -63,7 +63,8 @@ class AuditLogServiceTests {
                         "{\"k\":\"v\"}",
                         "success",
                         LocalDateTime.parse("2026-05-03T08:30:00"),
-                        "req-1")));
+                        "req-1",
+                        "127.0.0.1")));
 
         PageResult<AuditDtos.AuditLogView> page = auditLogService.listPlatformAuditLogs(
                 0,

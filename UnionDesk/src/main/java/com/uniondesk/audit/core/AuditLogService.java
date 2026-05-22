@@ -31,7 +31,23 @@ public class AuditLogService {
             String action,
             LocalDateTime startTime,
             LocalDateTime endTime) {
-        AuditQuery query = buildAuditQuery(domainId, operator, action, startTime, endTime);
+        return listPlatformAuditLogs(page, pageSize, domainId, operator, action, startTime, endTime, null, null, null, null, null);
+    }
+
+    public PageResult<AuditDtos.AuditLogView> listPlatformAuditLogs(
+            int page,
+            int pageSize,
+            Long domainId,
+            String operator,
+            String action,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            String module,
+            String keyword,
+            String ip,
+            String username,
+            String nickname) {
+        AuditQuery query = buildAuditQuery(domainId, operator, action, startTime, endTime, module, keyword, ip, username, nickname);
         return new PageResult<>(
                 countAuditLogs(query),
                 jdbcTemplate.query("""
@@ -46,10 +62,12 @@ public class AuditLogService {
                                     CAST(a.detail AS CHAR) AS detail,
                                     a.result,
                                     a.occurred_at,
-                                    a.request_id
+                                    a.request_id,
+                                    als.client_ip AS ip
                                 FROM audit_log a
                                 LEFT JOIN identity_subject s ON s.id = a.operator_subject_id
                                 LEFT JOIN user_account ua ON ua.id = a.operator_subject_id
+                                LEFT JOIN auth_login_session als ON als.sid = a.request_id
                                 %s
                                 ORDER BY a.occurred_at DESC, a.id DESC
                                 LIMIT ? OFFSET ?
@@ -97,8 +115,8 @@ public class AuditLogService {
                                 LEFT JOIN user_account ua ON ua.id = l.subject_id
                                 %s
                                 ORDER BY l.created_at DESC, l.id DESC
-                        LIMIT ? OFFSET ?
-                        """.formatted(query.whereClause()),
+                                LIMIT ? OFFSET ?
+                                """.formatted(query.whereClause()),
                         this::mapLoginLogView,
                         pagingArgs(query, page, pageSize)));
     }
@@ -111,7 +129,22 @@ public class AuditLogService {
             String result,
             LocalDateTime startTime,
             LocalDateTime endTime) {
-        LoginQuery query = buildPlatformLoginQuery(subjectId, portalType, result, startTime, endTime);
+        return listPlatformLoginLogs(page, pageSize, subjectId, portalType, result, startTime, endTime, null, null, null, null);
+    }
+
+    public PageResult<AuditDtos.LoginLogView> listPlatformLoginLogs(
+            int page,
+            int pageSize,
+            Long subjectId,
+            String portalType,
+            String result,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            String keyword,
+            String ip,
+            String username,
+            String nickname) {
+        LoginQuery query = buildPlatformLoginQuery(subjectId, portalType, result, startTime, endTime, keyword, ip, username, nickname);
         return new PageResult<>(
                 countLoginLogs(query),
                 jdbcTemplate.query("""
@@ -143,6 +176,7 @@ public class AuditLogService {
                         FROM audit_log a
                         LEFT JOIN identity_subject s ON s.id = a.operator_subject_id
                         LEFT JOIN user_account ua ON ua.id = a.operator_subject_id
+                        LEFT JOIN auth_login_session als ON als.sid = a.request_id
                         %s
                         """.formatted(query.whereClause()),
                 Long.class,
@@ -162,7 +196,17 @@ public class AuditLogService {
         return total == null ? 0L : total;
     }
 
-    private AuditQuery buildAuditQuery(Long domainId, String operator, String action, LocalDateTime startTime, LocalDateTime endTime) {
+    private AuditQuery buildAuditQuery(
+            Long domainId,
+            String operator,
+            String action,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            String module,
+            String keyword,
+            String ip,
+            String username,
+            String nickname) {
         List<String> conditions = new ArrayList<>();
         List<Object> args = new ArrayList<>();
         if (domainId != null) {
@@ -180,6 +224,30 @@ public class AuditLogService {
         if (StringUtils.hasText(action)) {
             conditions.add("a.action LIKE ?");
             args.add("%" + action.trim() + "%");
+        }
+        if (StringUtils.hasText(module)) {
+            conditions.add("a.action LIKE ?");
+            args.add(module.trim() + "%");
+        }
+        if (StringUtils.hasText(keyword)) {
+            String like = "%" + keyword.trim() + "%";
+            conditions.add("(ua.username LIKE ? OR ua.mobile LIKE ? OR ua.email LIKE ? OR s.phone LIKE ?)");
+            args.add(like);
+            args.add(like);
+            args.add(like);
+            args.add(like);
+        }
+        if (StringUtils.hasText(ip)) {
+            conditions.add("als.client_ip LIKE ?");
+            args.add("%" + ip.trim() + "%");
+        }
+        if (StringUtils.hasText(username)) {
+            conditions.add("ua.username LIKE ?");
+            args.add("%" + username.trim() + "%");
+        }
+        if (StringUtils.hasText(nickname)) {
+            conditions.add("ua.nickname LIKE ?");
+            args.add("%" + nickname.trim() + "%");
         }
         if (startTime != null) {
             conditions.add("a.occurred_at >= ?");
@@ -222,7 +290,16 @@ public class AuditLogService {
         return new LoginQuery(whereClause(conditions), List.copyOf(args));
     }
 
-    private LoginQuery buildPlatformLoginQuery(Long subjectId, String portalType, String result, LocalDateTime startTime, LocalDateTime endTime) {
+    private LoginQuery buildPlatformLoginQuery(
+            Long subjectId,
+            String portalType,
+            String result,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            String keyword,
+            String ip,
+            String username,
+            String nickname) {
         List<String> conditions = new ArrayList<>();
         List<Object> args = new ArrayList<>();
         if (subjectId != null) {
@@ -236,6 +313,26 @@ public class AuditLogService {
         if (StringUtils.hasText(result)) {
             conditions.add("l.result = ?");
             args.add(result.trim());
+        }
+        if (StringUtils.hasText(keyword)) {
+            String like = "%" + keyword.trim() + "%";
+            conditions.add("(ua.username LIKE ? OR ua.mobile LIKE ? OR ua.email LIKE ? OR l.login_name LIKE ?)");
+            args.add(like);
+            args.add(like);
+            args.add(like);
+            args.add(like);
+        }
+        if (StringUtils.hasText(ip)) {
+            conditions.add("l.ip LIKE ?");
+            args.add("%" + ip.trim() + "%");
+        }
+        if (StringUtils.hasText(username)) {
+            conditions.add("ua.username LIKE ?");
+            args.add("%" + username.trim() + "%");
+        }
+        if (StringUtils.hasText(nickname)) {
+            conditions.add("ua.nickname LIKE ?");
+            args.add("%" + nickname.trim() + "%");
         }
         if (startTime != null) {
             conditions.add("l.created_at >= ?");
@@ -286,7 +383,8 @@ public class AuditLogService {
                 rs.getString("detail"),
                 rs.getString("result"),
                 toLocalDateTime(rs.getTimestamp("occurred_at")),
-                rs.getString("request_id"));
+                rs.getString("request_id"),
+                rs.getString("ip"));
     }
 
     private AuditDtos.LoginLogView mapLoginLogView(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {

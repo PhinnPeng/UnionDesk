@@ -32,9 +32,8 @@ class AttachmentControllerTests {
         AttachmentService attachmentService = mock(AttachmentService.class);
         when(attachmentService.uploadAttachment(any(), any())).thenReturn(new AttachmentService.AttachmentUploadResult(
                 7L,
-                "local",
+                AttachmentService.STORAGE_TYPE_OBJECT,
                 "2026-05-03/test-guide.pdf",
-                "C:\\tmp\\uniondesk\\attachments\\2026-05-03\\test-guide.pdf",
                 "checksum-1"));
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new AttachmentController(attachmentService)).build();
         UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-1", "ud-admin-web"));
@@ -51,7 +50,7 @@ class AttachmentControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.attachmentId").value(7))
                 .andExpect(jsonPath("$.downloadUrl").value("/api/v1/attachments/7/download"))
-                .andExpect(jsonPath("$.storageType").value("local"));
+                .andExpect(jsonPath("$.storageType").value("object_storage"));
 
         verify(attachmentService).uploadAttachment(any(), any());
     }
@@ -61,7 +60,7 @@ class AttachmentControllerTests {
         AttachmentService attachmentService = mock(AttachmentService.class);
         when(attachmentService.presignAttachment(any())).thenReturn(new AttachmentService.AttachmentPresignResult(
                 9L,
-                "/api/v1/attachments/upload",
+                "http://127.0.0.1:9000/uniondesk-attachments/key?X-Amz-Signature=abc",
                 300));
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new AttachmentController(attachmentService)).build();
 
@@ -77,8 +76,8 @@ class AttachmentControllerTests {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.attachmentId").value(9))
-                .andExpect(jsonPath("$.uploadUrl").value("/api/v1/attachments/upload"));
+                .andExpect(jsonPath("$.attachment_id").value(9))
+                .andExpect(jsonPath("$.upload_url").value("http://127.0.0.1:9000/uniondesk-attachments/key?X-Amz-Signature=abc"));
 
         verify(attachmentService).presignAttachment(any());
     }
@@ -92,5 +91,23 @@ class AttachmentControllerTests {
                 .andExpect(status().isNoContent());
 
         verify(attachmentService).confirmAttachment(7L);
+    }
+
+    @Test
+    void downloadReturnsPresignedAccess() throws Exception {
+        AttachmentService attachmentService = mock(AttachmentService.class);
+        when(attachmentService.resolveDownloadAccess(7L)).thenReturn(new AttachmentService.AttachmentDownloadAccess(
+                "http://127.0.0.1:9000/uniondesk-attachments/key?get=1",
+                300,
+                AttachmentService.STORAGE_TYPE_OBJECT));
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new AttachmentController(attachmentService)).build();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/attachments/7/download"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.download_url").value("http://127.0.0.1:9000/uniondesk-attachments/key?get=1"))
+                .andExpect(jsonPath("$.expires_in").value(300))
+                .andExpect(jsonPath("$.storage_type").value("object_storage"));
+
+        verify(attachmentService).resolveDownloadAccess(7L);
     }
 }

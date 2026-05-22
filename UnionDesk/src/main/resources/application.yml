@@ -1,6 +1,10 @@
 spring:
   application:
     name: uniondesk
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 22MB
   datasource:
     url: jdbc:mysql://127.0.0.1:30306/uniondesk?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: uniondesk_app
@@ -12,6 +16,11 @@ spring:
 
 server:
   port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 management:
   endpoints:
@@ -26,3 +35,10 @@ uniondesk:
       secret: uniondesk-demo-jwt-secret-please-change-me
       access-token-ttl: PT24H
       refresh-token-ttl: P7D
+  storage:
+    endpoint: ${MINIO_ENDPOINT:http://127.0.0.1:9000}
+    access-key: ${MINIO_ACCESS_KEY:comm_minio}
+    secret-key: ${MINIO_SECRET_KEY:Ck3LnjpLGY2aGhyIu2OoMAFd}
+    bucket: ${MINIO_BUCKET:uniondesk-attachments}
+    region: us-east-1
+    presign-expiry-seconds: 300

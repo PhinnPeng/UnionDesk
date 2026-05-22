@@ -724,6 +724,7 @@ public class IamService {
                 SELECT
                     id,
                     username,
+                    nickname,
                     mobile,
                     email,
                     remark,
@@ -740,6 +741,7 @@ public class IamService {
         List<UserAccount> users = jdbcTemplate.query(sql, (rs, rowNum) -> new UserAccount(
                 rs.getLong("id"),
                 rs.getString("username"),
+                rs.getString("nickname"),
                 rs.getString("mobile"),
                 rs.getString("email"),
                 rs.getString("remark"),
@@ -783,14 +785,16 @@ public class IamService {
         if (roleCodes.isEmpty()) {
             throw new IllegalArgumentException("roleCodes is required");
         }
+        String nickname = StringUtils.hasText(command.nickname()) ? command.nickname().trim() : null;
         try {
             jdbcTemplate.update("""
                             INSERT INTO user_account (
-                                username, mobile, email, remark, password_hash, status, account_type, employment_status
+                                username, nickname, mobile, email, remark, password_hash, status, account_type, employment_status
                             )
-                            VALUES (?, ?, ?, ?, ?, 1, ?, 'active')
+                            VALUES (?, ?, ?, ?, ?, ?, 1, ?, 'active')
                             """,
                     username,
+                    nickname,
                     mobile,
                     email,
                     remark,
@@ -816,6 +820,10 @@ public class IamService {
         if (command.username() != null) {
             assignments.add("username = ?");
             args.add(normalize(command.username(), "username"));
+        }
+        if (command.nickname() != null) {
+            assignments.add("nickname = ?");
+            args.add(StringUtils.hasText(command.nickname()) ? command.nickname().trim() : null);
         }
         if (command.mobile() != null) {
             assignments.add("mobile = ?");
@@ -1148,6 +1156,7 @@ public class IamService {
                             SELECT
                                 id,
                                 username,
+                                nickname,
                                 mobile,
                                 email,
                                 remark,
@@ -1164,6 +1173,7 @@ public class IamService {
                             (rs, rowNum) -> new UserAccount(
                             rs.getLong("id"),
                             rs.getString("username"),
+                            rs.getString("nickname"),
                             rs.getString("mobile"),
                             rs.getString("email"),
                             rs.getString("remark"),
@@ -1756,6 +1766,7 @@ public class IamService {
     public record UserAccount(
             long id,
             String username,
+            String nickname,
             String mobile,
             String email,
             String remark,
@@ -1772,6 +1783,7 @@ public class IamService {
 
     public record CreateUserCommand(
             String username,
+            String nickname,
             String mobile,
             String email,
             String remark,
@@ -1784,6 +1796,7 @@ public class IamService {
 
     public record UpdateUserCommand(
             String username,
+            String nickname,
             String mobile,
             String email,
             String remark,
