@@ -8,7 +8,9 @@
 
 ## 1. 设计目标
 
-> **与 PRD 的关系**：`product/prd.md` §5 描述目标域数据模型（`identity_subject` / `staff_account` 等）；本文档描述**当前仓库 Flyway 已落库**的表结构与命名（含过渡期 `user_account` 等）。
+> **文档定位（L4）**：逻辑实体、命名与隔离约定；与 [`product/foundation-rules.md`](../product/foundation-rules.md)（L3）同步。  
+> **与 PRD**：[`product/prd.md`](../product/prd.md) §5 为概念简表；物理变更按 Sprint 登记 [`database-increment-plan.md`](./database-increment-plan.md)（L5），DDL 见 Flyway（L7）。  
+> 下文表结构描述**以 Flyway 已落库为准**（含过渡期 `user_account` 等）；与 L3 目标态不一致时，以 L3 + Backlog 为准并登记偏差。
 
 1. 支持多业务域隔离，统一使用 `business_domain_id` 作为域范围字段。
 2. 支持平台管理端与业务端共用同一套 IAM、登录与审计体系。

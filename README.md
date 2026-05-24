@@ -2,7 +2,7 @@
 
 > 面向企业客户服务场景的多业务域工单平台，统一处理 **咨询**、**工单**、**反馈/建议** 三类请求。
 
-当前仓库为 UnionDesk 的项目工作区。产品需求、系统架构、数据库设计、技术栈方案已沉淀在 `doc/`；前端工作区 `UnionDeskWeb/` 已初始化（含 `UnionDeskAdminWeb` 管理端与 `UnionDeskCustomerWeb` 客户端），后端 `UnionDesk/` 已存在 Spring Boot + Flyway + MyBatis 工程，当前重点是修复并稳定启动链路与迁移链路。本 README 用于描述当前真实状态与下一步动作；`AGENTS.md` 用于约束后续开发协作。
+当前仓库为 UnionDesk 的项目工作区。产品需求、领域规则与迭代 Backlog 以 **`docs/`** 为权威（见 [`docs/README.md`](docs/README.md)）；根目录 `doc/` 为历史文档，只读参考。前端 `UnionDeskWeb/`、后端 `UnionDesk/` 已存在。本 README 描述运行方式；`AGENTS.md` 约束 Agent 协作。
 
 ---
 
@@ -12,12 +12,10 @@
 UnionDesk/
 ├─ AGENTS.md                # 开发协作与代码代理（Agent）指导规范
 ├─ README.md                # 本文件
-├─ doc/                     # 中文设计文档
-│  ├─ 产品需求文档 v1.0.md   # 产品需求文档（唯一需求真相源）
-│  ├─ 系统架构设计.md        # 模块化单体架构 + 演进路线
-│  ├─ 数据库设计.md          # 实体、索引、生命周期
-│  ├─ 技术栈方案.md          # 前后端、数据、日志、部署选型
-│  └─ README.md             # 文档总览
+├─ docs/                    # 产品/架构/Backlog（权威）
+│  ├─ product/              # PRD、Backlog、Sprint 计划
+│  └─ architecture/         # 数据模型、增量计划、ADR
+├─ doc/                     # 历史设计文档（只读参考）
 ├─ UnionDesk/               # 后端服务工程（已存在，启动链路待稳定）
 └─ UnionDeskWeb/            # 前端工作区（已初始化）
    ├─ apps/UnionDeskAdminWeb     # 管理端
@@ -33,11 +31,11 @@ UnionDesk/
   - `apps/UnionDeskAdminWeb`：管理端（客服工作台、配置、权限）
   - `packages/`：共享 API Client、类型、组件
 
-详细职责与模块划分见 `doc/系统架构设计.md`。
+详细职责见 [`docs/product/prd.md`](docs/product/prd.md) 与历史 `doc/系统架构设计.md`。
 
 ## 3. MVP 目标（摘自 PRD V1.0）
 
-MVP 按 P0 / P1 / P2 三个批次交付，详见 `doc/产品需求文档 v1.0.md § 1.4`。
+MVP 范围详见 [`docs/product/prd.md`](docs/product/prd.md) §1.4；迭代排期见 [`docs/product/backlog-stories.md`](docs/product/backlog-stories.md)。
 
 **P0 最小闭环**：身份登录、业务域管理、RBAC、客户提单、客服处理、基础 SLA、审计日志、站内信必达 + SMTP 可用时邮件、基础附件上传、健康检查、最小部署。
 
@@ -66,34 +64,27 @@ MVP 按 P0 / P1 / P2 三个批次交付，详见 `doc/产品需求文档 v1.0.md
 
 ## 5. 当前完成度
 
-- [x] 产品需求文档 PRD
-- [x] 系统架构设计文档
-- [x] 数据库设计文档
-- [x] 技术栈方案
+- [x] 文档权威链 `docs/`（vision、prd、foundation-rules、backlog）
+- [x] Product Backlog（`docs/product/backlog-stories.md`）
 - [x] `AGENTS.md` 开发协作规范
 - [x] 前端 Monorepo 脚手架（pnpm + Vite + AntD）
 - [x] 管理端平台入口、菜单/角色基础页面
 - [x] 后端工程脚手架（Spring Boot + Flyway + MyBatis）
 - [ ] 后端启动链路与 Flyway 迁移链路稳定化
-- [ ] 本地基础依赖启动说明（按需参考 docker compose + MySQL + MinIO）
+- [x] 联调环境说明（见 [`docs/product/sprint-0-plan.md`](docs/product/sprint-0-plan.md) §3，已部署则勿重复 compose）
 - [ ] 鉴权与 IAM 最小闭环
 - [ ] 工单核心闭环（提交 → 处理 → 关闭）
 
 ## 6. 下一步路线
 
-### 阶段 0：基础设施
-1. 稳定 `UnionDesk/` Spring Boot 启动链路，按 Flyway 执行并验证迁移脚本（见 `doc/数据模型迁移策略.md`）。
-2. `UnionDeskWeb/` 已初始化，含 `apps/UnionDeskAdminWeb`、`apps/UnionDeskCustomerWeb`、`packages/`。
-3. 提供 `docker-compose.yml`（MySQL 8、Redis、MinIO）作为本地依赖参考；已有可用环境时可直接复用或跳过。
+### 阶段 0：S0 收口（当前）
+1. S0 文档入库与权威链对齐（见 [`docs/product/sprint-0-plan.md`](docs/product/sprint-0-plan.md)）。
+2. 联调使用**已部署** MySQL/Redis/MinIO（见 sprint-0-plan §3）；`docker-compose.yml` 仅结构演示。
 
-### 阶段 1：最小闭环
-1. 登录 / Token 刷新 / 基于 `business_domain_id` 的数据权限。
-2. 业务域 CRUD + 工单类型 + 动态字段配置。
-3. 客户端完成"选域 → 提单 → 查单"。
-4. 管理端完成"工单池 → 分配 → 回复 → 关闭"。
-5. 审计日志（`ticket_event_log` / `operation_log`）。
+### 阶段 1：S1 管理端 Walking Skeleton（下一步）
+1. 按 Backlog Commit：平台登录/菜单、IAM、跨域、CustomerWeb 接注册 API 等（见 backlog S1）。
 
-### 阶段 2：增强
+### 阶段 2 及以后（下轮规划）
 1. SLA 计时与超时预警。
 2. 咨询会话与"咨询转工单"。
 3. 通知模板（站内 → 邮件/短信）。
@@ -101,32 +92,32 @@ MVP 按 P0 / P1 / P2 三个批次交付，详见 `doc/产品需求文档 v1.0.md
 
 ## 7. 快速开始（参考）
 
-> 后端工程已存在；基础依赖仅在本机没有可用环境时按需启动。前端已可本地启动。
+> **开发环境已部署时，不需要重复部署中间件。**  
+> 仓库内 `docker-compose.yml` **仅演示** compose 结构，日常联调**不要**以此为准重复 `docker compose up`。连接信息见 [`docs/product/sprint-0-plan.md`](docs/product/sprint-0-plan.md) §联调环境。
 
 ```powershell
-# 如本机没有可用的 MySQL / Redis / MinIO，再按需启动
-docker compose up -d
-
-# 后端
+# 后端（库 uniondesk，见 UnionDesk/src/main/resources/application.yml）
 cd UnionDesk
 .\mvnw.cmd spring-boot:run
 
-# 前端
+# 管理端（S0/S1 重点）
 cd UnionDeskWeb
 pnpm install
-pnpm -C apps/UnionDeskCustomerWeb dev
 pnpm -C apps/UnionDeskAdminWeb dev
+
+# 客户端（可选）
+pnpm -C apps/UnionDeskCustomerWeb dev
 ```
+
+验证：`GET http://127.0.0.1:8080/actuator/health` → `{"status":"UP"}`。
 
 ## 8. 参考
 
-- 产品需求：`doc/产品需求文档 v1.0.md`（唯一需求真相源）
-- 系统架构：`doc/系统架构设计.md`
-- 数据库设计：`doc/数据库设计.md`
-- 技术栈方案：`doc/技术栈方案.md`
-- 数据迁移：`doc/数据模型迁移策略.md`
+- **文档权威链**：[`docs/README.md`](docs/README.md)
+- 产品 / Backlog / Sprint：[`docs/product/`](docs/product/)
+- 领域规则：[`docs/product/foundation-rules.md`](docs/product/foundation-rules.md)
+- 历史文档（只读）：`doc/` 目录
 - 开发协作规范：`AGENTS.md`
-- GitNexus（`analyze --embeddings`）Windows / 网络修复与重装后打补丁：`scripts/gitnexus/README.md`
 
 ## 9. 编码规范
 

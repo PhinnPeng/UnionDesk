@@ -79,9 +79,9 @@
 - 所有系统错误消息（含后端异常提示、前端错误提示、校验失败信息等）均使用中文
 - 日志文件需要统一生成在固定目录下，不允许分散生成
 - 如果更改涉及后端代码、后端配置或后端数据库迁移，必须在交付前重启后端并验证服务可用；至少确认进程已重新启动、端口监听正常、关键接口可访问
-- 所有计划任务、针对模块进行的开发，都需要给出开发清单，存储文件为：`doc/checklist/[业务域]/[模块].md`的形式，确保业务可控，在没有开发清单的情况下不得进行开发
-- 完成一项\多项开发清单计划后，请更新对应的开发任务清单
+- **Sprint 迭代任务源**：[`docs/product/backlog-stories.md`](docs/product/backlog-stories.md)（L6）；Epic 见 [`docs/product/backlog-epics.md`](docs/product/backlog-epics.md)。当前承诺：**S0 收口** → **S1**，勿擅自展开 S2+ Story。
+- 模块级开发清单（可选）：`doc/checklist/[业务域]/[模块].md`；与 Backlog 冲突时以 Backlog 为准。
 
 # 2. 项目介绍
 
-请查阅doc目录下的相关文档，必须按照doc下文档执行推进
+请查阅 [`docs/README.md`](docs/README.md) 权威链与 [`docs/product/`](docs/product/) 下文档；历史 `doc/` 目录只读参考。

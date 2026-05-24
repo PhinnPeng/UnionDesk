@@ -7,21 +7,53 @@
 - `UnionDesk`：后端服务
 - `UnionDeskWeb`：前端应用，包含 `UnionDeskCustomerWeb` 和 `UnionDeskAdminWeb`
 
+## 文档权威与阅读顺序
+
+> Solo + Agent 协作：权威链写在本节；战略变更时再扩展索引文档。
+
+**冲突时按下列层级裁决（编号越小优先级越高）：**
+
+| 层级 | 文档 | 回答的问题 |
+|:---|:---|:---|
+| L1 | [`product/vision.md`](product/vision.md) | 方向、北极星、MVP 成功定义、非目标 |
+| L2 | [`product/prd.md`](product/prd.md) | 做什么、角色、功能叙述、项目边界 |
+| L3 | [`product/foundation-rules.md`](product/foundation-rules.md) | 身份、域、工单状态机；可测试 FR/DR/TR |
+| L4 | [`architecture/data-model.md`](architecture/data-model.md) | 逻辑实体、命名与隔离约定 |
+| L5 | [`architecture/database-increment-plan.md`](architecture/database-increment-plan.md) | 按 Sprint 新增/变更哪些表（不写 SQL） |
+| L6 | [`product/backlog-stories.md`](product/backlog-stories.md) | User Story、AC、Sprint 承诺 |
+| L7 | 代码与 Flyway | 实现层；落后于 L1–L6 时须登记偏差 |
+
+**协作约定：**
+
+- **迭代任务源**：[`product/backlog-stories.md`](product/backlog-stories.md)（当前承诺：**S0 收口** → **S1**）。
+- **数据库**：按 Sprint 增量；Flyway/DDL 为 L7，不作为 L3 规则来源。
+- **Agent 读文档顺序**：vision → prd → foundation-rules → backlog → 架构子文档。
+
 ## 文档结构
 
 ```
 docs/
-├── README.md                         # 本文档总览
-├── product/                          # 产品层 - 业务视角
-│   └── prd.md                        # 产品需求文档，定义业务规则与全局约束
-├── architecture/                     # 架构层 - 技术决策视角
-│   └── data-model.md                 # 数据库设计文档，完整数据字典
-└── operations/                       # 运维层 - 部署视角
-    ├── deployment-guide.md           # 部署手册，含 Flyway 迁移与可观测性
-    └── backup-restore.md             # 备份恢复手册
+├── README.md                         # 本文档（含权威链）
+├── product/
+│   ├── vision.md
+│   ├── prd.md
+│   ├── foundation-rules.md
+│   ├── backlog-epics.md
+│   ├── backlog-stories.md            # L6 迭代任务源
+│   ├── sprint-0-plan.md
+│   └── implementation-inventory.md
+├── architecture/
+│   ├── data-model.md
+│   ├── database-increment-plan.md
+│   └── adr-external-dependencies.md
+└── operations/
+    ├── deployment-guide.md
+    └── backup-restore.md
 ```
 
 ## 维护规则
 
-- 需求边界变化时，优先同步 `product/prd.md`、`architecture/data-model.md`。
-- 与代码实现出现偏差时，以当前代码实现和 Flyway 迁移事实为准，并在文档里说明差异。
+- 需求边界变化：L1 vision（仅战略级）→ L2 prd → L3 foundation → L6 backlog。
+- 逻辑字段变更：L3 → L4 同步 → L5 登记 → L7 Flyway。
+- 与代码出现偏差：登记 `qa/implementation-traceability.md`（待建），**不以 Flyway 脚本反写需求**。
+- 历史文档：仓库根目录 `doc/` 为只读参考，**以 `docs/` 为准**。
