@@ -4,8 +4,7 @@ import { fetchLoginConfig } from "#src/api/auth";
 import { BasicButton } from "#src/components/basic-button";
 import { PASSWORD_RULES, USERNAME_RULES } from "#src/constants/rules";
 import { useAuthStore } from "#src/store/auth";
-import { useUserStore } from "#src/store/user";
-import { platformHomePath } from "#src/router/extra-info";
+import { resolveBackHomePath } from "#src/router/extra-info/app-scope";
 
 import { Button, Form, Input, message, Space } from "antd";
 import { use, useEffect, useState } from "react";
@@ -14,6 +13,8 @@ import { useNavigate, useSearchParams } from "react-router";
 
 import { FormModeContext } from "../form-mode-context";
 import { LoginCaptcha } from "./login-captcha";
+import { resolveRequestErrorMessage } from "#src/utils/resolve-request-error";
+
 import { buildPasswordLoginPayload } from "../utils";
 
 const FORM_INITIAL_VALUES: LoginInfo = {
@@ -86,15 +87,11 @@ export function PasswordLogin() {
 			messageLoadingApi?.destroy();
 			window.$message?.success(t("authority.loginSuccess"));
 			const redirect = searchParams.get("redirect");
-			// 根据用户权限决定跳转路径：有平台权限跳转到平台首页，否则跳转到业务域首页
-			const userInfo = useUserStore.getState();
-			const homePath = userInfo.platformAccess ? platformHomePath : import.meta.env.VITE_BASE_HOME_PATH;
-			navigate(redirect ?? homePath);
+			navigate(redirect ?? resolveBackHomePath(), { replace: true });
 		}
 		catch (error) {
 			messageLoadingApi?.destroy();
-			const errorMessage = error instanceof Error ? error.message : "登录失败，请重试";
-			window.$message?.error(errorMessage);
+			window.$message?.error(resolveRequestErrorMessage(error, "登录失败，请检查账号、密码与验证码后重试"));
 			setCaptchaToken("");
 			setCaptchaKey(key => key + 1);
 		}

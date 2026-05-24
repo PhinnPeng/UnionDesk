@@ -20,10 +20,10 @@ const mocks = vi.hoisted(() => {
 		reset: vi.fn(),
 	};
 	const userState = {
-		id: 0,
-		roles: [],
+		id: 2,
+		roles: ["admin"],
 		actions: [],
-		menus: [],
+		menus: [] as typeof authState.user.menus,
 		setUserInfo: vi.fn(),
 		reset: vi.fn(),
 	};
@@ -43,6 +43,7 @@ const mocks = vi.hoisted(() => {
 		userState,
 		accessState,
 		preferencesState,
+		pathname: "/",
 		navigate: vi.fn(),
 		fetchUserInfoAndRoutes: vi.fn().mockResolvedValue({
 			userInfo: authState.user,
@@ -127,7 +128,7 @@ vi.mock("react-router", async () => {
 		...actual,
 		Navigate: ({ to }: { to: string }) => <div data-testid="navigate">{to}</div>,
 		useLocation: () => ({
-			pathname: "/",
+			pathname: mocks.pathname,
 			search: "",
 		}),
 		useNavigate: () => mocks.navigate,
@@ -139,6 +140,7 @@ import { AuthGuard } from "./auth-guard";
 
 describe("AuthGuard", () => {
 	beforeEach(() => {
+		mocks.pathname = "/";
 		mocks.navigate.mockReset();
 		mocks.fetchUserInfoAndRoutes.mockClear();
 		mocks.generateRoutesFromBackend.mockClear();
@@ -162,5 +164,39 @@ describe("AuthGuard", () => {
 		await waitFor(() => {
 			expect(screen.getByTestId("navigate")).toHaveTextContent("/platform/home");
 		});
+	});
+
+	it("redirects logged-in users away from the login page", async () => {
+		mocks.pathname = "/login";
+
+		render(
+			<AuthGuard>
+				<div>child</div>
+			</AuthGuard>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("navigate")).toHaveTextContent("/platform/home");
+		});
+	});
+
+	it("clears stale session and redirects to login when permission snapshot returns 401", async () => {
+		const { HttpRequestError } = await import("#src/utils/http-request-error");
+		mocks.pathname = "/platform/home";
+		mocks.accessState.isAccessChecked = false;
+		mocks.userState.id = 0;
+		mocks.fetchUserInfoAndRoutes.mockRejectedValueOnce(new HttpRequestError(401, "Unauthorized"));
+
+		render(
+			<AuthGuard>
+				<div>child</div>
+			</AuthGuard>,
+		);
+
+		await waitFor(() => {
+			expect(mocks.goLogin).toHaveBeenCalledTimes(1);
+		});
+		expect(mocks.accessState.setAccessStore).not.toHaveBeenCalled();
+		expect(mocks.navigate).not.toHaveBeenCalled();
 	});
 });

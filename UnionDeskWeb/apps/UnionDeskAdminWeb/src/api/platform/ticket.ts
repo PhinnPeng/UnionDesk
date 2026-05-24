@@ -1,8 +1,6 @@
 import { requestBackendJson } from "#src/api/backend";
-import { backendRequest } from "#src/utils/request";
 
 import type { PageResult } from "./audit";
-import type { AttachmentPresignRequest, AttachmentPresignResponse, AttachmentUploadResponse } from "./attachment";
 
 export interface TicketRow {
 	id: number
@@ -135,16 +133,9 @@ export function mergeAdminTicket(domainId: number, ticketId: number, payload: Me
 	});
 }
 
-export function presignAttachment(payload: AttachmentPresignRequest): Promise<AttachmentPresignResponse> {
-	return requestBackendJson<AttachmentPresignResponse>("v1/attachments/presign", {
-		method: "POST",
-		json: payload,
-	});
-}
-
-export async function uploadAttachmentLocal(form: FormData): Promise<AttachmentUploadResponse> {
-	const response = await backendRequest.post("v1/attachments/upload", {
-		body: form,
-	});
-	return response.json<AttachmentUploadResponse>();
-}
+export {
+	confirmAttachment,
+	presignAttachment,
+	uploadAttachment,
+} from "./attachment";
+export type { AttachmentPresignRequest, AttachmentPresignResponse, AttachmentUploadResponse } from "./attachment";

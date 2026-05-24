@@ -1,4 +1,4 @@
-import type { LoginLogView } from "@uniondesk/shared";
+import type { LoginLogView } from "#src/api/platform/audit";
 
 import { fetchPlatformOverview } from "#src/api/platform/overview";
 import { BasicContent } from "#src/components/basic-content";
@@ -13,8 +13,9 @@ function resolveAuditTitle(log: LoginLogView): string {
 
 function resolveAuditDescription(log: LoginLogView): string {
 	const parts = [
-		log.loginIdentifierMasked,
-		log.reason || "无附加原因",
+		log.loginName,
+		log.failReason || "无附加原因",
+		log.ip,
 		log.createdAt,
 	];
 	return parts.filter(Boolean).join(" · ");
@@ -178,7 +179,7 @@ export default function PlatformHome() {
 											<List.Item.Meta
 												title={(
 													<Space size={8}>
-														<span>{log.username || "未知账号"}</span>
+														<span>{log.operatorName || log.loginName || "未知账号"}</span>
 														<Tag color={log.result === "success" ? "success" : "error"}>
 															{resolveAuditTitle(log)}
 														</Tag>

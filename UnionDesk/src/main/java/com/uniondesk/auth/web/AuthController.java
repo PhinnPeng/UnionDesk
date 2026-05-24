@@ -3,7 +3,6 @@ package com.uniondesk.auth.web;
 import com.uniondesk.auth.core.AuthCaptchaService;
 import com.uniondesk.auth.core.AuthClientHeaders;
 import com.uniondesk.auth.core.AuthService;
-import com.uniondesk.auth.core.LoginAuditService.LoginLog;
 import com.uniondesk.auth.core.LoginConfigService.LoginConfig;
 import com.uniondesk.auth.core.LoginConfigService.UpdateLoginConfigCommand;
 import com.uniondesk.auth.core.LoginSessionService.OnlineSession;
@@ -156,14 +155,6 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/login-logs")
-    @RequirePermission(PermissionCodes.PLATFORM_USER_READ)
-    public List<AuthDtos.LoginLogView> listLoginLogs(@RequestParam(defaultValue = "100") int limit) {
-        return authService.listLoginLogs(limit).stream()
-                .map(this::toLoginLogView)
-                .toList();
-    }
-
     @PostMapping("/logout")
     public void logout(HttpServletRequest httpRequest) {
         authService.logoutCurrentSession(
@@ -214,19 +205,4 @@ public class AuthController {
                 session.userAgent());
     }
 
-    private AuthDtos.LoginLogView toLoginLogView(LoginLog log) {
-        return new AuthDtos.LoginLogView(
-                log.id(),
-                log.sid(),
-                log.userId(),
-                log.username(),
-                log.loginIdentifierMasked(),
-                log.loginIdentifierType(),
-                log.eventType(),
-                log.result(),
-                log.reason(),
-                log.clientIp(),
-                log.userAgent(),
-                log.createdAt());
-    }
 }

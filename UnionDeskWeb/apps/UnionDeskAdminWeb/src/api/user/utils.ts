@@ -2,6 +2,7 @@ import type { LoginUserView, PermissionSnapshot, PermissionSnapshotMenu } from "
 
 import type { AppRouteRecordRaw } from "#src/router/types";
 
+import { buildRoutesFromAdminMenuSnapshot } from "#src/menu/admin-menu-tree";
 import { hasBusinessDomainAccess } from "#src/utils/access/business-domain";
 
 import type { UserInfoType } from "./types";
@@ -25,13 +26,6 @@ const PLATFORM_BACKEND_MENU_PATH_MAP = new Map<string, string>([
 	["/system/user/offboard-pool", "/platform/offboard-pool"],
 	["/system/users/offboard-pool", "/platform/offboard-pool"],
 ]);
-
-interface BackendRouteNode {
-	menu: PermissionSnapshotMenu
-	scope: PermissionSnapshotMenu["scope"]
-	path: string
-	children: BackendRouteNode[]
-}
 
 type BackendAppRouteRecordRaw = AppRouteRecordRaw & {
 	component?: string
@@ -74,7 +68,6 @@ export function buildUserInfoFromLoginUser(user: LoginUserView, roles: readonly 
 }
 
 export function buildUserInfoFromPermissionSnapshot(snapshot: PermissionSnapshot): UserInfoType {
-	// 使用后端返回的树形结构 menuTree
 	const menus = buildBackendRoutesFromSnapshot(snapshot.menuTree);
 	return {
 		id: snapshot.user.id,
@@ -96,54 +89,10 @@ export function hasPlatformAccess(snapshot: PermissionSnapshot): boolean {
 }
 
 export function buildBackendRoutesFromSnapshot(menus: readonly PermissionSnapshotMenu[]): BackendAppRouteRecordRaw[] {
-	const flatMenus = flattenSnapshotMenus(menus);
-	if (!flatMenus.length) {
-		return [];
-	}
-
-	const nodes = flatMenus.map((menu) => ({
-		menu,
-		scope: menu.scope,
-		path: normalizeBackendMenuPath(menu.path, menu.scope),
-		children: [] as BackendRouteNode[],
-	}));
-
-	const nodesById = new Map<number, BackendRouteNode>();
-	for (const node of nodes) {
-		if (typeof node.menu.id === "number") {
-			nodesById.set(node.menu.id, node);
-		}
-	}
-
-	const roots: BackendRouteNode[] = [];
-	for (const node of nodes) {
-		const parentId = node.menu.parentId;
-		if (typeof parentId === "number" && nodesById.has(parentId)) {
-			nodesById.get(parentId)!.children.push(node);
-		}
-		else {
-			roots.push(node);
-		}
-	}
-
-	normalizeBackendRouteGroups(roots);
-	sortBackendRouteNodes(roots);
-	return roots.map(node => toAppRouteRecordRaw(node));
-}
-
-function flattenSnapshotMenus(menus: readonly PermissionSnapshotMenu[]): PermissionSnapshotMenu[] {
-	const flatMenus: PermissionSnapshotMenu[] = [];
-	const visit = (nodes: readonly PermissionSnapshotMenu[]) => {
-		for (const node of nodes) {
-			const { children, ...menu } = node;
-			flatMenus.push(menu);
-			if (children?.length) {
-				visit(children);
-			}
-		}
-	};
-	visit(menus);
-	return flatMenus;
+	return buildRoutesFromAdminMenuSnapshot(menus, {
+		normalizeMenuPath: normalizeBackendMenuPath,
+		normalizeComponentPath: normalizeBackendComponentPath,
+	});
 }
 
 function getBackendMenuPathMap(scope?: PermissionSnapshotMenu["scope"]) {
@@ -196,94 +145,4 @@ function normalizeBackendComponentPath(component: string | null | undefined, pat
 		return normalizedComponent;
 	}
 	return formatBackendComponentStem(mappedStem);
-}
-
-function normalizeBackendRouteGroups(nodes: BackendRouteNode[]) {
-	for (const node of nodes) {
-		if (node.children.length > 0) {
-			normalizeBackendRouteGroups(node.children);
-			if (!node.children.every(child => isDescendantPath(child.path, node.path))) {
-				const commonPrefix = getCommonPathPrefix(node.children.map(child => child.path));
-				if (commonPrefix) {
-					node.path = commonPrefix;
-				}
-			}
-		}
-	}
-}
-
-function isDescendantPath(childPath: string, parentPath: string) {
-	if (!parentPath) {
-		return false;
-	}
-	return childPath === parentPath || childPath.startsWith(`${parentPath}/`);
-}
-
-function getCommonPathPrefix(paths: string[]) {
-	if (!paths.length) {
-		return "";
-	}
-
-	const segmentsList = paths.map(path => path.split("/").filter(Boolean));
-	const shortestLength = Math.min(...segmentsList.map(segments => segments.length));
-	const commonSegments: string[] = [];
-
-	for (let index = 0; index < shortestLength; index += 1) {
-		const currentSegment = segmentsList[0][index];
-		if (segmentsList.every(segments => segments[index] === currentSegment)) {
-			commonSegments.push(currentSegment);
-		}
-		else {
-			break;
-		}
-	}
-
-	return commonSegments.length ? `/${commonSegments.join("/")}` : "";
-}
-
-function sortBackendRouteNodes(nodes: BackendRouteNode[]) {
-	nodes.sort((left, right) => {
-		const leftOrder = left.menu.orderNo ?? 0;
-		const rightOrder = right.menu.orderNo ?? 0;
-		if (leftOrder !== rightOrder) {
-			return leftOrder - rightOrder;
-		}
-		return left.path.localeCompare(right.path);
-	});
-	for (const node of nodes) {
-		if (node.children.length) {
-			sortBackendRouteNodes(node.children);
-		}
-	}
-}
-
-function toAppRouteRecordRaw(node: BackendRouteNode): BackendAppRouteRecordRaw {
-	const route: BackendAppRouteRecordRaw = {
-		id: getBackendRouteId(node),
-		path: node.path,
-		handle: {
-			title: node.menu.name,
-			icon: node.menu.icon ?? undefined,
-			order: node.menu.orderNo ?? 0,
-			scope: node.menu.scope ?? undefined,
-			hideInMenu: node.menu.hidden ?? false,
-			auth: node.menu.permissionCode ?? undefined,
-		},
-	};
-
-	if (node.children.length) {
-		route.children = node.children.map(child => toAppRouteRecordRaw(child));
-	}
-	if (node.menu.component || !node.children.length) {
-		route.component = normalizeBackendComponentPath(node.menu.component, node.path, node.scope);
-	}
-
-	return route;
-}
-
-function getBackendRouteId(node: BackendRouteNode) {
-	const stableKey = typeof node.menu.id === "number"
-		? String(node.menu.id)
-		: node.menu.code || node.path;
-	return `backend:${node.scope ?? "unknown"}:${stableKey}`;
 }

@@ -1,6 +1,7 @@
 import type { AuthType, LoginInfo } from "#src/api/user/types";
 
 import { fetchLogin, fetchLogout, fetchPermissionSnapshot } from "#src/api/auth";
+import { syncAuthStoreToSharedApi } from "#src/api/sync-shared-session";
 import { buildUserInfoFromLoginUser } from "#src/api/user/utils";
 import { buildUserInfoFromPermissionSnapshot } from "#src/api/user/utils";
 import { useAccessStore } from "#src/store/access";
@@ -50,6 +51,7 @@ export const useAuthStore = create<AuthType & AuthAction>()(
 			set({
 				...nextState,
 			});
+			syncAuthStoreToSharedApi();
 			try {
 				const snapshot = await fetchPermissionSnapshot();
 				userInfo = buildUserInfoFromPermissionSnapshot(snapshot);
@@ -77,10 +79,18 @@ export const useAuthStore = create<AuthType & AuthAction>()(
 			set({
 				...initialState,
 			});
+			syncAuthStoreToSharedApi();
 			useUserStore.getState().reset();
 			useAccessStore.getState().reset();
 			useTabsStore.getState().resetTabs();
 		},
 
-	}), { name: getAppNamespace("access-token") }),
+	}), {
+		name: getAppNamespace("access-token"),
+		onRehydrateStorage: () => (state) => {
+			if (state) {
+				syncAuthStoreToSharedApi();
+			}
+		},
+	}),
 );

@@ -395,8 +395,13 @@ CREATE TABLE IF NOT EXISTS `login_log` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `subject_id` bigint unsigned DEFAULT NULL,
   `portal_type` varchar(16) NOT NULL,
+  `client_code` varchar(64) DEFAULT NULL,
+  `sid` char(36) DEFAULT NULL,
+  `event_type` varchar(32) NOT NULL DEFAULT 'LOGIN',
   `business_domain_id` bigint unsigned DEFAULT NULL,
   `login_name` varchar(128) NOT NULL,
+  `login_identifier_masked` varchar(128) DEFAULT NULL,
+  `login_identifier_type` varchar(16) DEFAULT NULL,
   `ip` varchar(64) DEFAULT NULL,
   `user_agent` varchar(255) DEFAULT NULL,
   `result` varchar(16) NOT NULL,
@@ -405,10 +410,13 @@ CREATE TABLE IF NOT EXISTS `login_log` (
   PRIMARY KEY (`id`),
   KEY `idx_login_log_subject_created` (`subject_id`,`created_at`),
   KEY `idx_login_log_name_created` (`login_name`,`created_at`),
-  KEY `fk_login_log_domain` (`business_domain_id`),
+  KEY `idx_login_log_portal_created` (`portal_type`,`created_at`),
+  KEY `idx_login_log_domain_created` (`business_domain_id`,`created_at`),
+  KEY `idx_login_log_client_created` (`client_code`,`created_at`),
+  KEY `idx_login_log_sid` (`sid`),
   CONSTRAINT `fk_login_log_domain` FOREIGN KEY (`business_domain_id`) REFERENCES `business_domain` (`id`),
   CONSTRAINT `fk_login_log_subject` FOREIGN KEY (`subject_id`) REFERENCES `identity_subject` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='登录日志（PRD，可与 auth_login_log 并存）';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='登录日志';
 
 CREATE TABLE IF NOT EXISTS `notification_log` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,

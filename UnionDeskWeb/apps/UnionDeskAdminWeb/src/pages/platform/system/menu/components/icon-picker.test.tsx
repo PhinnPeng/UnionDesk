@@ -34,6 +34,21 @@ describe("IconPicker", () => {
 		expect(document.querySelector(".ant-pagination")).not.toBeNull();
 	});
 
+	it("shows ant design icon name in preview when editing", () => {
+		render(<IconPicker value="SafetyCertificateOutlined" />);
+
+		expect(screen.getByText("SafetyCertificateOutlined")).toBeInTheDocument();
+		expect(screen.getByText("清除")).toBeInTheDocument();
+		expect(screen.queryByText("选择图标")).not.toBeInTheDocument();
+	});
+
+	it("shows iconify icon value in preview when editing", () => {
+		render(<IconPicker value="lucide:home" />);
+
+		expect(screen.getAllByText("lucide:home").length).toBeGreaterThan(0);
+		expect(screen.queryByText("选择图标")).not.toBeInTheDocument();
+	});
+
 	it("keeps browse results and pagination visible when the iconify api is unavailable", async () => {
 		const user = userEvent.setup();
 

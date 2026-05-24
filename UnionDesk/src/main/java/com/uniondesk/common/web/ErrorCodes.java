@@ -11,7 +11,8 @@ public enum ErrorCodes {
     FORBIDDEN(40301, "无操作权限", HttpStatus.FORBIDDEN),
     NOT_FOUND(40401, "资源不存在", HttpStatus.NOT_FOUND),
     VALIDATION_ERROR(40001, "参数校验失败", HttpStatus.BAD_REQUEST),
-    BAD_REQUEST(40002, "请求参数错误", HttpStatus.BAD_REQUEST);
+    BAD_REQUEST(40002, "请求参数错误", HttpStatus.BAD_REQUEST),
+    INTERNAL_ERROR(50001, "服务暂时不可用，请稍后重试", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int code;
     private final String message;

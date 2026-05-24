@@ -2,6 +2,9 @@ package com.uniondesk.common.web;
 
 import com.uniondesk.auth.core.AuthenticationFailedException;
 import com.uniondesk.auth.core.AuthCaptchaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -14,6 +17,8 @@ import java.util.Locale;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     @ExceptionHandler(AuthenticationFailedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthenticationFailed(AuthenticationFailedException ex) {
@@ -42,6 +47,18 @@ public class ApiExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
         return toResponse(ErrorCodes.VALIDATION_ERROR);
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataAccess(DataAccessException ex) {
+        log.error("数据库访问失败", ex);
+        return toResponse(ErrorCodes.INTERNAL_ERROR);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception ex) {
+        log.error("未处理的服务器异常", ex);
+        return toResponse(ErrorCodes.INTERNAL_ERROR);
     }
 
     private ResponseEntity<ApiResponse<Void>> toResponse(ErrorCodes errorCode) {

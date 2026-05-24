@@ -455,6 +455,7 @@ export type AdminDomain = {
   id: string;
   code: string;
   name: string;
+  description?: string | null;
   logo?: string | null;
   visibility_policy_codes: P0VisibilityPolicyCode[];
   registration_policy: P0RegistrationPolicy;
@@ -470,6 +471,7 @@ export type AdminDomain = {
 export type CreateAdminDomainPayload = {
   name: string;
   code: string;
+  description?: string;
   logo?: string;
   visibility_policy_codes: P0VisibilityPolicyCode[];
   registration_policy: P0RegistrationPolicy;
@@ -477,6 +479,7 @@ export type CreateAdminDomainPayload = {
 
 export type UpdateAdminDomainPayload = {
   name?: string;
+  description?: string;
   logo?: string;
   visibility_policy_codes?: P0VisibilityPolicyCode[];
   registration_policy?: P0RegistrationPolicy;
@@ -574,7 +577,7 @@ export type P0AttachmentPresignResponse = {
 export type P0AttachmentLocalUploadResponse = {
   attachment_id: string;
   download_url: string;
-  storage_type: "local";
+  storage_type: "object_storage";
 };
 
 export const DEMO_DOMAINS: DemoDomain[] = [

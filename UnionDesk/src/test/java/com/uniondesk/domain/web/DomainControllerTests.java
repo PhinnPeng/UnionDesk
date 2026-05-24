@@ -109,6 +109,7 @@ class DomainControllerTests {
                 id,
                 "default",
                 "Default Domain",
+                null,
                 "logo.png",
                 List.of("public"),
                 "open",

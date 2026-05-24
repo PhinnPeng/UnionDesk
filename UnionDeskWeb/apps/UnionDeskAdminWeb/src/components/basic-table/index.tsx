@@ -13,6 +13,8 @@ import { useSize } from "ahooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { TABLE_SEARCH_FORM_SEARCH_DEFAULTS } from "#src/components/table-search-form";
+
 import { BASIC_TABLE_ROOT_CLASS_NAME } from "./constants";
 import { useStyles } from "./styles";
 
@@ -173,21 +175,16 @@ export function BasicTable<
 	const searchConfig = props.search as false | NonNullable<ProTableProps<DataType, Params, ValueType>["search"]>;
 
 	const searchProps = useMemo(() => {
-		const defaultSearch = {
-			labelWidth: "auto" as const,
-			span: { xs: 24, sm: 12, md: 8, lg: 8, xl: 6, xxl: 6 },
-		};
-
 		if (searchConfig === false) {
 			return false;
 		}
 
 		if (searchConfig == null) {
-			return defaultSearch;
+			return { ...TABLE_SEARCH_FORM_SEARCH_DEFAULTS };
 		}
 
 		return {
-			...defaultSearch,
+			...TABLE_SEARCH_FORM_SEARCH_DEFAULTS,
 			...searchConfig,
 		};
 	}, [searchConfig]);

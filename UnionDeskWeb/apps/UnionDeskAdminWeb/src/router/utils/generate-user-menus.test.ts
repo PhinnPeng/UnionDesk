@@ -7,7 +7,7 @@ import { appScopes } from "#src/router/extra-info/app-scope";
 import { generateUserMenus } from "./generate-user-menus";
 
 describe("generateUserMenus", () => {
-	it("does not render duplicate platform catalog keys when backend catalogs share a normalized path", () => {
+	it("renders platform catalogs with nested children matching admin menu tree", () => {
 		const snapshotMenus: PermissionSnapshotMenu[] = [
 			{
 				id: 1,
@@ -88,14 +88,24 @@ describe("generateUserMenus", () => {
 		];
 
 		const menus = generateUserMenus(buildBackendRoutesFromSnapshot(snapshotMenus), appScopes.platform);
-		const topLevelKeys = menus.map(menu => menu.key);
 
-		expect(new Set(topLevelKeys).size).toBe(topLevelKeys.length);
-		expect(JSON.stringify(menus)).toContain("/platform/user");
-		expect(JSON.stringify(menus)).toContain("/platform/dept");
-		expect(JSON.stringify(menus)).toContain("/platform/offboard-pool");
-		expect(JSON.stringify(menus)).toContain("/platform/org-config");
-		expect(JSON.stringify(menus)).toContain("/platform/role");
-		expect(JSON.stringify(menus)).toContain("/platform/menu");
+		expect(menus).toHaveLength(2);
+		expect(menus.map(menu => menu.label)).toEqual(["组织管理", "权限管理"]);
+
+		const organizationChildren = menus[0]?.children?.map(child => child.key) ?? [];
+		expect(organizationChildren).toEqual(expect.arrayContaining([
+			"/platform/user",
+			"/platform/dept",
+			"/platform/offboard-pool",
+			"/platform/org-config",
+		]));
+		expect(organizationChildren).toHaveLength(4);
+
+		const permissionChildren = menus[1]?.children?.map(child => child.key) ?? [];
+		expect(permissionChildren).toEqual(expect.arrayContaining([
+			"/platform/role",
+			"/platform/menu",
+		]));
+		expect(permissionChildren).toHaveLength(2);
 	});
 });

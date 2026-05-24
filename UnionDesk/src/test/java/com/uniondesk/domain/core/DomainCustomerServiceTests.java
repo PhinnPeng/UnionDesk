@@ -52,6 +52,7 @@ class DomainCustomerServiceTests {
                 10L,
                 "default",
                 "Default Domain",
+                null,
                 "logo.png",
                 List.of("public"),
                 registrationPolicy,

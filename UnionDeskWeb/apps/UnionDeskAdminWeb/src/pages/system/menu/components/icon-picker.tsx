@@ -1,4 +1,4 @@
-import { parseIconValue } from "#src/icons/render-icon";
+import { resolveMenuIcon } from "#src/icons/resolve-menu-icon";
 import { Icon } from "@iconify/react/offline";
 import { Input, Pagination, Popover, Select, Tabs, Tooltip } from "antd";
 import type { MouseEvent } from "react";
@@ -232,10 +232,12 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
 				onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--ant-color-primary)")}
 				onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--ant-color-border)")}
 			>
-				{value && parseIconValue(value)
+				{value?.trim()
 					? (
 						<>
-							<Icon icon={value} style={{ fontSize: 18, flexShrink: 0 }} />
+							<span className="inline-flex flex-shrink-0 items-center">
+								{resolveMenuIcon(value, { fontSize: 18 })}
+							</span>
 							<span className="flex-1 text-sm truncate" style={{ color: "var(--ant-color-text)" }}>{value}</span>
 							<span
 								className="text-xs flex-shrink-0"

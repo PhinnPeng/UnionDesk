@@ -2,6 +2,7 @@ import type { FallbackProps } from "react-error-boundary";
 
 // https://undraw.co/search
 import BugFixing from "#src/assets/svg/undraw-bug-fixing.svg?react";
+import { resolveBackHomePath } from "#src/router/extra-info/app-scope";
 import { usePreferencesStore } from "#src/store/preferences";
 
 import { ArrowLeftOutlined, ReloadOutlined } from "@ant-design/icons";
@@ -10,8 +11,6 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
-const { VITE_BASE_HOME_PATH } = import.meta.env;
-
 export function PageError({ error, resetErrorBoundary }: FallbackProps) {
 	const navigate = useNavigate();
 	const { t } = useTranslation();
@@ -19,7 +18,7 @@ export function PageError({ error, resetErrorBoundary }: FallbackProps) {
 
 	const goHome = () => {
 		resetErrorBoundary();
-		navigate(VITE_BASE_HOME_PATH);
+		navigate(resolveBackHomePath());
 	};
 	const refresh = () => {
 		location.reload();

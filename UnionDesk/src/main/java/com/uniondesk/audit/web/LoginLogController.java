@@ -34,9 +34,26 @@ public class LoginLogController {
             @RequestParam(required = false) String ip,
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String nickname,
+            @RequestParam(name = "business_domain_id", required = false) Long businessDomainId,
+            @RequestParam(name = "client_code", required = false) String clientCode,
+            @RequestParam(name = "event_type", required = false, defaultValue = "LOGIN") String eventType,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
-        return auditLogService.listPlatformLoginLogs(page, pageSize, subjectId, portalType, result, startTime, endTime, keyword, ip, username, nickname);
+        return auditLogService.listPlatformLoginLogs(
+                page,
+                pageSize,
+                subjectId,
+                portalType,
+                result,
+                startTime,
+                endTime,
+                keyword,
+                ip,
+                username,
+                nickname,
+                businessDomainId,
+                clientCode,
+                eventType);
     }
 
     @GetMapping("/domains/{domainId}/login-logs")

@@ -3,7 +3,7 @@ import type { AppRouteRecordRaw } from "#src/router/types";
 import type { AppScope } from "#src/router/extra-info/app-scope";
 
 import { appScopes, isPlatformRoutePath } from "#src/router/extra-info/app-scope";
-import { parseIconValue, ReactIconRenderer } from "#src/icons/render-icon";
+import { resolveMenuIcon } from "#src/icons/resolve-menu-icon";
 import { isString } from "#src/utils/is";
 
 import { createElement } from "react";
@@ -62,8 +62,9 @@ export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[], scop
 				),
 		};
 
-		if (iconName && isString(iconName) && parseIconValue(iconName)) {
-			menuItem.icon = createElement(ReactIconRenderer, { iconValue: iconName });
+		const menuIcon = resolveMenuIcon(iconName);
+		if (menuIcon) {
+			menuItem.icon = menuIcon;
 		}
 
 		if (visibleChildren.length > 0) {

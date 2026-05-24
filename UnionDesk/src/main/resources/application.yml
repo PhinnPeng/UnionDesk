@@ -36,7 +36,7 @@ uniondesk:
       access-token-ttl: PT24H
       refresh-token-ttl: P7D
   storage:
-    endpoint: ${MINIO_ENDPOINT:http://127.0.0.1:9000}
+    endpoint: ${MINIO_ENDPOINT:http://127.0.0.1:30090}
     access-key: ${MINIO_ACCESS_KEY:comm_minio}
     secret-key: ${MINIO_SECRET_KEY:Ck3LnjpLGY2aGhyIu2OoMAFd}
     bucket: ${MINIO_BUCKET:uniondesk-attachments}

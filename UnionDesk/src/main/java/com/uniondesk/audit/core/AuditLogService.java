@@ -95,30 +95,21 @@ public class AuditLogService {
             String action,
             LocalDateTime startTime,
             LocalDateTime endTime) {
-        LoginQuery query = buildDomainLoginQuery(domainId, operator, action, startTime, endTime);
-        return new PageResult<>(
-                countLoginLogs(query),
-                jdbcTemplate.query("""
-                                SELECT
-                                    l.id,
-                                    l.subject_id,
-                                    COALESCE(ua.username, l.login_name, 'system') AS operator_name,
-                                    l.business_domain_id,
-                                    l.login_name,
-                                    l.portal_type,
-                                    l.ip,
-                                    l.user_agent,
-                                    l.result,
-                                    l.fail_reason,
-                                    l.created_at
-                                FROM login_log l
-                                LEFT JOIN user_account ua ON ua.id = l.subject_id
-                                %s
-                                ORDER BY l.created_at DESC, l.id DESC
-                                LIMIT ? OFFSET ?
-                                """.formatted(query.whereClause()),
-                        this::mapLoginLogView,
-                        pagingArgs(query, page, pageSize)));
+        return listPlatformLoginLogs(
+                page,
+                pageSize,
+                null,
+                null,
+                action,
+                startTime,
+                endTime,
+                operator,
+                null,
+                null,
+                null,
+                domainId,
+                null,
+                "LOGIN");
     }
 
     public PageResult<AuditDtos.LoginLogView> listPlatformLoginLogs(
@@ -129,7 +120,8 @@ public class AuditLogService {
             String result,
             LocalDateTime startTime,
             LocalDateTime endTime) {
-        return listPlatformLoginLogs(page, pageSize, subjectId, portalType, result, startTime, endTime, null, null, null, null);
+        return listPlatformLoginLogs(
+                page, pageSize, subjectId, portalType, result, startTime, endTime, null, null, null, null, null, null, "LOGIN");
     }
 
     public PageResult<AuditDtos.LoginLogView> listPlatformLoginLogs(
@@ -144,30 +136,71 @@ public class AuditLogService {
             String ip,
             String username,
             String nickname) {
-        LoginQuery query = buildPlatformLoginQuery(subjectId, portalType, result, startTime, endTime, keyword, ip, username, nickname);
+        return listPlatformLoginLogs(
+                page, pageSize, subjectId, portalType, result, startTime, endTime,
+                keyword, ip, username, nickname, null, null, "LOGIN");
+    }
+
+    public PageResult<AuditDtos.LoginLogView> listPlatformLoginLogs(
+            int page,
+            int pageSize,
+            Long subjectId,
+            String portalType,
+            String result,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            String keyword,
+            String ip,
+            String username,
+            String nickname,
+            Long businessDomainId,
+            String clientCode,
+            String eventType) {
+        LoginQuery query = buildPlatformLoginQuery(
+                subjectId, portalType, result, startTime, endTime, keyword, ip, username, nickname,
+                businessDomainId, clientCode, eventType);
         return new PageResult<>(
                 countLoginLogs(query),
-                jdbcTemplate.query("""
-                                SELECT
-                                    l.id,
-                                    l.subject_id,
-                                    COALESCE(ua.username, l.login_name, 'system') AS operator_name,
-                                    l.business_domain_id,
-                                    l.login_name,
-                                    l.portal_type,
-                                    l.ip,
-                                    l.user_agent,
-                                    l.result,
-                                    l.fail_reason,
-                                    l.created_at
-                                FROM login_log l
-                                LEFT JOIN user_account ua ON ua.id = l.subject_id
-                                %s
-                                ORDER BY l.created_at DESC, l.id DESC
-                                LIMIT ? OFFSET ?
-                                """.formatted(query.whereClause()),
+                jdbcTemplate.query(loginLogSelectSql() + query.whereClause() + """
+                                 ORDER BY l.created_at DESC, l.id DESC
+                                 LIMIT ? OFFSET ?
+                                 """,
                         this::mapLoginLogView,
                         pagingArgs(query, page, pageSize)));
+    }
+
+    private String loginLogSelectSql() {
+        return """
+                SELECT
+                    l.id,
+                    l.subject_id,
+                    COALESCE(ua.nickname, ca.display_name, ua.username, ca.login_name, l.login_name, 'system') AS operator_name,
+                    l.business_domain_id,
+                    bd.name AS domain_name,
+                    l.login_name,
+                    l.portal_type,
+                    l.client_code,
+                    l.event_type,
+                    l.ip,
+                    l.user_agent,
+                    l.result,
+                    l.fail_reason,
+                    l.created_at
+                FROM login_log l
+                LEFT JOIN user_account ua ON ua.username = l.login_name
+                LEFT JOIN customer_account ca ON ca.subject_id = l.subject_id
+                LEFT JOIN business_domain bd ON bd.id = l.business_domain_id
+                """;
+    }
+
+    private String loginLogCountSql() {
+        return """
+                SELECT COUNT(*)
+                FROM login_log l
+                LEFT JOIN user_account ua ON ua.username = l.login_name
+                LEFT JOIN customer_account ca ON ca.subject_id = l.subject_id
+                LEFT JOIN business_domain bd ON bd.id = l.business_domain_id
+                """;
     }
 
     private long countAuditLogs(AuditQuery query) {
@@ -185,12 +218,8 @@ public class AuditLogService {
     }
 
     private long countLoginLogs(LoginQuery query) {
-        Long total = jdbcTemplate.queryForObject("""
-                        SELECT COUNT(*)
-                        FROM login_log l
-                        LEFT JOIN user_account ua ON ua.id = l.subject_id
-                        %s
-                        """.formatted(query.whereClause()),
+        Long total = jdbcTemplate.queryForObject(
+                loginLogCountSql() + query.whereClause(),
                 Long.class,
                 query.args().toArray());
         return total == null ? 0L : total;
@@ -260,36 +289,6 @@ public class AuditLogService {
         return new AuditQuery(whereClause(conditions), List.copyOf(args));
     }
 
-    private LoginQuery buildDomainLoginQuery(Long domainId, String operator, String action, LocalDateTime startTime, LocalDateTime endTime) {
-        List<String> conditions = new ArrayList<>();
-        List<Object> args = new ArrayList<>();
-        if (domainId != null) {
-            conditions.add("l.business_domain_id = ?");
-            args.add(domainId);
-        }
-        if (StringUtils.hasText(operator)) {
-            String like = "%" + operator.trim() + "%";
-            conditions.add("(ua.username LIKE ? OR l.login_name LIKE ? OR l.portal_type LIKE ? OR CAST(l.subject_id AS CHAR) LIKE ?)");
-            args.add(like);
-            args.add(like);
-            args.add(like);
-            args.add(like);
-        }
-        if (StringUtils.hasText(action)) {
-            conditions.add("l.result LIKE ?");
-            args.add("%" + action.trim() + "%");
-        }
-        if (startTime != null) {
-            conditions.add("l.created_at >= ?");
-            args.add(startTime);
-        }
-        if (endTime != null) {
-            conditions.add("l.created_at <= ?");
-            args.add(endTime);
-        }
-        return new LoginQuery(whereClause(conditions), List.copyOf(args));
-    }
-
     private LoginQuery buildPlatformLoginQuery(
             Long subjectId,
             String portalType,
@@ -299,24 +298,41 @@ public class AuditLogService {
             String keyword,
             String ip,
             String username,
-            String nickname) {
+            String nickname,
+            Long businessDomainId,
+            String clientCode,
+            String eventType) {
         List<String> conditions = new ArrayList<>();
         List<Object> args = new ArrayList<>();
         if (subjectId != null) {
             conditions.add("l.subject_id = ?");
             args.add(subjectId);
         }
+        if (businessDomainId != null) {
+            conditions.add("l.business_domain_id = ?");
+            args.add(businessDomainId);
+        }
         if (StringUtils.hasText(portalType)) {
             conditions.add("l.portal_type = ?");
-            args.add(portalType.trim());
+            args.add(portalType.trim().toLowerCase());
+        }
+        if (StringUtils.hasText(clientCode)) {
+            conditions.add("l.client_code = ?");
+            args.add(clientCode.trim());
+        }
+        if (StringUtils.hasText(eventType)) {
+            conditions.add("l.event_type = ?");
+            args.add(eventType.trim().toUpperCase());
         }
         if (StringUtils.hasText(result)) {
             conditions.add("l.result = ?");
-            args.add(result.trim());
+            args.add(result.trim().toLowerCase());
         }
         if (StringUtils.hasText(keyword)) {
             String like = "%" + keyword.trim() + "%";
-            conditions.add("(ua.username LIKE ? OR ua.mobile LIKE ? OR ua.email LIKE ? OR l.login_name LIKE ?)");
+            conditions.add("(ua.username LIKE ? OR ua.mobile LIKE ? OR ua.email LIKE ? OR ca.login_name LIKE ? OR ca.display_name LIKE ? OR l.login_name LIKE ?)");
+            args.add(like);
+            args.add(like);
             args.add(like);
             args.add(like);
             args.add(like);
@@ -327,12 +343,16 @@ public class AuditLogService {
             args.add("%" + ip.trim() + "%");
         }
         if (StringUtils.hasText(username)) {
-            conditions.add("ua.username LIKE ?");
-            args.add("%" + username.trim() + "%");
+            conditions.add("(ua.username LIKE ? OR l.login_name LIKE ?)");
+            String like = "%" + username.trim() + "%";
+            args.add(like);
+            args.add(like);
         }
         if (StringUtils.hasText(nickname)) {
-            conditions.add("ua.nickname LIKE ?");
-            args.add("%" + nickname.trim() + "%");
+            String like = "%" + nickname.trim() + "%";
+            conditions.add("(ua.nickname LIKE ? OR ca.display_name LIKE ?)");
+            args.add(like);
+            args.add(like);
         }
         if (startTime != null) {
             conditions.add("l.created_at >= ?");
@@ -393,8 +413,11 @@ public class AuditLogService {
                 rs.getObject("subject_id", Long.class),
                 rs.getString("operator_name"),
                 rs.getObject("business_domain_id", Long.class),
+                rs.getString("domain_name"),
                 rs.getString("login_name"),
                 rs.getString("portal_type"),
+                rs.getString("client_code"),
+                rs.getString("event_type"),
                 rs.getString("ip"),
                 rs.getString("user_agent"),
                 rs.getString("result"),

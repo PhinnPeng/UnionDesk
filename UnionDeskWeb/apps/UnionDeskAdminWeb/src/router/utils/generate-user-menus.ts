@@ -3,7 +3,7 @@ import type { AppRouteRecordRaw } from "#src/router/types";
 import type { AppScope } from "#src/router/extra-info/app-scope";
 
 import { appScopes, isPlatformRoutePath } from "#src/router/extra-info/app-scope";
-import { IconPlaceholder, parseIconValue, ReactIconRenderer } from "#src/icons/render-icon";
+import { resolveMenuIcon } from "#src/icons/resolve-menu-icon";
 import { isString } from "#src/utils/is";
 
 import { createElement } from "react";
@@ -41,7 +41,11 @@ export function generateUserMenus(userRoutes: AppRouteRecordRaw[], scope: AppSco
 		const externalLink = item?.handle?.externalLink;
 		const iconName = isString(item?.handle?.icon) ? item.handle.icon.trim() : undefined;
 
-		const menuKey = getUniqueMenuKey(acc, item.path!, label, visibleChildren.length > 0);
+		const routeMenuKey = item.handle?.menuKey ?? item.path;
+		if (!routeMenuKey) {
+			return visibleChildren.length > 0 ? [...acc, ...visibleChildren] : acc;
+		}
+		const menuKey = getUniqueMenuKey(acc, routeMenuKey, label, visibleChildren.length > 0);
 		const menuItem: MenuItemType = {
 			key: menuKey,
 			label: externalLink
@@ -63,12 +67,7 @@ export function generateUserMenus(userRoutes: AppRouteRecordRaw[], scope: AppSco
 				),
 		};
 
-		if (iconName && isString(iconName) && parseIconValue(iconName)) {
-			menuItem.icon = createElement(ReactIconRenderer, { iconValue: iconName });
-		}
-		else {
-			menuItem.icon = createElement(IconPlaceholder);
-		}
+		menuItem.icon = resolveMenuIcon(iconName);
 
 		if (visibleChildren.length > 0) {
 			menuItem.children = visibleChildren;

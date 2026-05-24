@@ -72,6 +72,7 @@
 - **不要擅自做主**：如果发现别的模块有隐患或可以优化，允许并在回复中报告给用户，但在得到用户明确的指令授权前，**绝对不能私自修改**。
 
 ## 编码规范
+- **前端页面布局（LayoutContent）**：无特殊说明时，业务页面必须走主应用布局（`ContainerLayout` → `LayoutContent` → 页面 `Outlet`），不得在路由层将页面组件直接挂到根级导致整页独占（无侧栏、顶栏、页签）。页面内容区使用 `BasicContent` 包裹；参考 [`personal-center.ts`](UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/routes/core/personal-center.ts)、[`platform-pages.ts`](UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/routes/core/platform-pages.ts) 的 `ContainerLayout` + `children` 写法。仅登录、异常页等明确要求的场景可例外。
 - 所有前端表单布局必须使用 Ant Design 的 `Row`/`Col` Grid 组件或 ProForm 的 `grid`/`colProps` 属性进行布局，禁止使用其他方式
 - 项目内容使用UTF-8的编码
 - 项目注释、文档、其他描述性的内容均使用中文

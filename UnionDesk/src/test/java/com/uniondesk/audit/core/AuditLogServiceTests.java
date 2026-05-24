@@ -113,7 +113,8 @@ class AuditLogServiceTests {
                 argThat(sql -> sql != null
                         && sql.contains("FROM login_log l")
                         && sql.contains("l.business_domain_id = ?")
-                        && sql.contains("l.result LIKE ?")
+                        && sql.contains("l.result = ?")
+                        && sql.contains("l.event_type = ?")
                         && sql.contains("l.created_at <= ?")
                         && sql.contains("LIMIT ? OFFSET ?")),
                 any(RowMapper.class),
@@ -123,11 +124,14 @@ class AuditLogServiceTests {
                         2L,
                         "admin",
                         10L,
+                        "Demo Domain",
                         "admin",
-                        "admin",
+                        "staff",
+                        "ud-admin-web",
+                        "LOGIN",
                         "127.0.0.1",
                         "JUnit",
-                        "SUCCESS",
+                        "success",
                         null,
                         LocalDateTime.parse("2026-05-03T08:30:00"))));
 
@@ -142,7 +146,7 @@ class AuditLogServiceTests {
 
         assertThat(page.total()).isEqualTo(3L);
         assertThat(page.list()).hasSize(1);
-        assertThat(page.list().get(0).result()).isEqualTo("SUCCESS");
+        assertThat(page.list().get(0).result()).isEqualTo("success");
 
         ArgumentCaptor<Object[]> countArgs = ArgumentCaptor.forClass(Object[].class);
         verify(jdbcTemplate).queryForObject(
@@ -151,11 +155,14 @@ class AuditLogServiceTests {
                 countArgs.capture());
         assertThat(countArgs.getValue()).containsExactly(
                 10L,
+                "LOGIN",
+                "success",
                 "%admin%",
                 "%admin%",
                 "%admin%",
                 "%admin%",
-                "%SUCCESS%",
+                "%admin%",
+                "%admin%",
                 LocalDateTime.parse("2026-05-03T09:00:00"));
 
         ArgumentCaptor<Object[]> queryArgs = ArgumentCaptor.forClass(Object[].class);

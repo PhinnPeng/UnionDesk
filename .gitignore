@@ -20,3 +20,4 @@ dist/
 UnionDeskWeb/apps/UnionDeskAdminWeb/.env
 UnionDeskWeb/apps/UnionDeskAdminWeb/.env.*
 UnionDeskWeb/apps/UnionDeskAdminWeb/.gitconfig
+.openteams/

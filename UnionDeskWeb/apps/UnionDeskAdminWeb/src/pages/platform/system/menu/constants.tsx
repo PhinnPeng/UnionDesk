@@ -2,7 +2,7 @@ import type { MenuItemType } from "#src/api/system/menu";
 import type { ProColumns } from "@ant-design/pro-components";
 import type { TFunction } from "i18next";
 
-import { parseIconValue, ReactIconRenderer } from "#src/icons/render-icon";
+import { resolveMenuIcon } from "#src/icons/resolve-menu-icon";
 import { Tag } from "antd";
 
 /**
@@ -45,6 +45,7 @@ export function getConstantColumns(t: TFunction<"translation", undefined>): ProC
 			title: t("common.index"),
 			valueType: "index",
 			width: 80,
+			search: false,
 		},
 		{
 			title: t("system.menu.name"),
@@ -64,7 +65,13 @@ export function getConstantColumns(t: TFunction<"translation", undefined>): ProC
 		{
 			title: t("system.menu.menuType"),
 			dataIndex: "nodeType",
+			valueType: "select",
 			width: 110,
+			valueEnum: {
+				catalog: { text: t("system.menu.catalog") },
+				menu: { text: t("system.menu.menu") },
+				button: { text: t("system.menu.button") },
+			},
 			render: (_, record) => <MenuTypeTag type={record.nodeType} t={t} />,
 		},
 		{
@@ -86,12 +93,14 @@ export function getConstantColumns(t: TFunction<"translation", undefined>): ProC
 			dataIndex: "permissionCode",
 			width: 180,
 			ellipsis: true,
+			search: false,
 		},
 		{
 			title: t("system.menu.menuOrder"),
 			dataIndex: "orderNo",
 			valueType: "digit",
 			width: 90,
+			search: false,
 		},
 		{
 			title: t("system.menu.menuIcon"),
@@ -103,16 +112,18 @@ export function getConstantColumns(t: TFunction<"translation", undefined>): ProC
 				if (!iconName) {
 					return "-";
 				}
-				if (!parseIconValue(iconName)) {
-					return <span title={iconName}>-</span>;
-				}
-				return <span title={iconName}><ReactIconRenderer iconValue={iconName} style={{ fontSize: 18 }} /></span>;
+				return (
+					<span title={iconName} className="inline-flex items-center">
+						{resolveMenuIcon(iconName, { fontSize: 18 })}
+					</span>
+				);
 			},
 		},
 		{
 			title: t("system.menu.scope"),
 			dataIndex: "scope",
 			width: 110,
+			search: false,
 			render: (_, record) => {
 				if (record.scope === "platform") {
 					return <Tag color="blue">{t("system.menu.platformScope")}</Tag>;
@@ -126,7 +137,12 @@ export function getConstantColumns(t: TFunction<"translation", undefined>): ProC
 		{
 			title: t("system.menu.hideInMenu"),
 			dataIndex: "hidden",
+			valueType: "select",
 			width: 110,
+			valueEnum: {
+				true: { text: t("common.yes") },
+				false: { text: t("common.no") },
+			},
 			render: (_, record) => {
 				const hiddenLabel = record.hidden ? t("common.yes") : t("common.no");
 				return <Tag color={record.hidden ? "orange" : "green"}>{hiddenLabel}</Tag>;

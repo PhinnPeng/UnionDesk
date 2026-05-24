@@ -24,12 +24,20 @@ const itemRender: BreadcrumbProps["itemRender"] = (route, params, routes) => {
 		);
 };
 
+function resolveBreadcrumbTitle(title: string, t: (key: string) => string) {
+	if (title.includes(".") && /^[\w.-]+$/.test(title)) {
+		return t(title);
+	}
+	return title;
+}
+
 export function buildBreadcrumbItems(matches: BreadcrumbMatch[], t: (key: string) => string): NonNullable<BreadcrumbProps["items"]> {
 	return matches
 		.filter(match => match.handle && !match.handle.hideInBreadcrumb && !match.pathname.endsWith("/"))
 		.map((match) => {
+			const rawTitle = match.handle?.title;
 			return {
-				title: isString(match.handle?.title) ? t(match.handle.title) : match.handle?.title,
+				title: isString(rawTitle) ? resolveBreadcrumbTitle(rawTitle, t) : rawTitle,
 				path: match.pathname,
 			};
 		});

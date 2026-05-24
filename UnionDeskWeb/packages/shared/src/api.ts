@@ -54,6 +54,10 @@ import type {
   P0VisibilityPolicyCode
 } from "./types";
 import {
+  normalizeAdminDomain,
+  normalizeAdminDomainsPageResult,
+} from "./domain/normalize-admin-domain";
+import {
   clearAuthSession,
   loadAuthSession,
   loadAccessToken,
@@ -79,6 +83,21 @@ type ApiEnvelope<T> = {
   message?: unknown;
   data?: T;
 };
+
+/** 区分统一响应包装与业务 DTO（如 DomainView 的 code 短码字段） */
+function isApiEnvelopePayload(payload: unknown): payload is ApiEnvelope<unknown> {
+	if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+		return false;
+	}
+	const record = payload as Record<string, unknown>;
+	if ("success" in record) {
+		return true;
+	}
+	if ("data" in record && ("message" in record || "success" in record)) {
+		return true;
+	}
+	return typeof record.code === "number" && ("message" in record || "data" in record);
+}
 type RetriableRequestConfig = {
   __retried?: boolean;
   method?: string;
@@ -87,6 +106,9 @@ type LoginOptions = {
   persistMode?: AuthPersistMode;
 };
 const CLIENT_CODE_HEADER = "X-UD-Client-Code";
+const API_ERROR_CODE_MESSAGES: Record<string, string> = {
+  "40102": "客户端标识缺失，请重新登录后再试",
+};
 let runtimeClientCode: ClientCode | null = null;
 
 export function setClientCode(clientCode: ClientCode): void {
@@ -98,7 +120,17 @@ export function getClientCode(): ClientCode | null {
 }
 
 function resolveClientCode(): ClientCode | null {
-  return runtimeClientCode ?? loadAuthSession()?.clientCode ?? null;
+  const resolved = runtimeClientCode ?? loadAuthSession()?.clientCode ?? null;
+  if (resolved) {
+    return resolved;
+  }
+  if (typeof window !== "undefined") {
+    const { hostname, port } = window.location;
+    if ((hostname === "localhost" || hostname === "127.0.0.1") && (port === "3333" || port === "")) {
+      return "ud-admin-web";
+    }
+  }
+  return null;
 }
 
 api.interceptors.request.use((config) => {
@@ -117,8 +149,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     const payload = response.data as ApiEnvelope<unknown> | unknown;
-    if (payload && typeof payload === "object" && "code" in payload) {
-      const code = (payload as ApiEnvelope<unknown>).code;
+    if (isApiEnvelopePayload(payload)) {
+      const code = payload.code;
       const isErrorCode =
         (typeof code === "number" && code !== 0) ||
         (typeof code === "string" &&
@@ -127,13 +159,21 @@ api.interceptors.response.use(
           code.trim().toUpperCase() !== "SUCCESS" &&
           code.trim().toUpperCase() !== "OK");
       if (isErrorCode) {
-        const message = (payload as ApiEnvelope<unknown>).message;
-        return Promise.reject(new Error(typeof message === "string" ? message : "Request failed"));
+        const codeText = String(payload.code ?? "").trim();
+        const message = payload.message;
+        const resolved = API_ERROR_CODE_MESSAGES[codeText]
+          ?? (typeof message === "string" && !message.includes("?") ? message : undefined)
+          ?? "Request failed";
+        return Promise.reject(new Error(resolved));
       }
     }
-    if (payload && typeof payload === "object" && "success" in payload && (payload as ApiEnvelope<unknown>).success === false) {
+    if (isApiEnvelopePayload(payload) && payload.success === false) {
+      const code = String((payload as ApiEnvelope<unknown>).code ?? "").trim();
       const message = (payload as ApiEnvelope<unknown>).message;
-      return Promise.reject(new Error(typeof message === "string" ? message : "Request failed"));
+      const resolved = API_ERROR_CODE_MESSAGES[code]
+        ?? (typeof message === "string" && !message.includes("?") ? message : undefined)
+        ?? "Request failed";
+      return Promise.reject(new Error(resolved));
     }
     return response;
   },
@@ -201,7 +241,14 @@ function toError(error: unknown): Error {
 }
 
 export function toErrorMessage(error: unknown): string {
-  return toError(error).message;
+  const message = toError(error).message;
+  if (/^40102$/.test(message.trim())) {
+    return API_ERROR_CODE_MESSAGES["40102"]!;
+  }
+  if (message.includes("????")) {
+    return API_ERROR_CODE_MESSAGES["40102"] ?? "请求失败，请重新登录后再试";
+  }
+  return message;
 }
 
 function unwrapApiResponse<T>(payload: T | { success?: boolean; message?: string; data?: T }): T {
@@ -401,10 +448,11 @@ export async function revokeUserSessions(userId: number): Promise<void> {
 
 export async function fetchLoginLogs(limit = 100): Promise<LoginLogView[]> {
   try {
-    const response = await api.get<LoginLogView[]>("/auth/login-logs", {
-      params: { limit }
+    const response = await api.get<{ total: number; list: LoginLogView[] }>("/admin/login-logs", {
+      params: { page: 1, page_size: limit, event_type: "LOGIN" }
     });
-    return unwrapApiResponse(response.data);
+    const page = unwrapApiResponse(response.data);
+    return page.list ?? [];
   } catch (error) {
     throw toError(error);
   }
@@ -742,12 +790,33 @@ export async function fetchAdminDomainsPage(params: {
 }): Promise<P0PageResult<AdminDomain>> {
   try {
     const response = await api.get<P0PageResult<AdminDomain>>("/admin/domains", { params });
-    return unwrapApiResponse(response.data);
+    return normalizeAdminDomainsPageResult(unwrapApiResponse(response.data));
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
       const legacy = await fetchDomains();
       const list = legacy.map(legacyDomainToAdmin);
       return { total: list.length, list };
+    }
+    throw toError(error);
+  }
+}
+
+/** 业务域详情：`GET /api/v1/admin/domains/{domain_id}` */
+export async function fetchAdminDomain(domainId: string): Promise<AdminDomain> {
+  try {
+    const response = await api.get<AdminDomain>(`/admin/domains/${encodeURIComponent(domainId)}`);
+    const row = normalizeAdminDomain(unwrapApiResponse(response.data));
+    if (!row) {
+      throw new Error("业务域数据格式无效");
+    }
+    return row;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      const legacy = await fetchDomains();
+      const matched = legacy.find(item => String(item.id) === domainId);
+      if (matched) {
+        return legacyDomainToAdmin(matched);
+      }
     }
     throw toError(error);
   }
@@ -917,7 +986,7 @@ export async function presignP0Attachment(payload: P0AttachmentPresignRequest): 
   }
 }
 
-/** P0：`POST /api/v1/attachments/upload`（multipart） */
+/** P0：`POST /api/v1/attachments/upload`（multipart，服务端代理写入 MinIO） */
 export async function uploadP0AttachmentLocal(
   form: FormData
 ): Promise<P0AttachmentLocalUploadResponse> {

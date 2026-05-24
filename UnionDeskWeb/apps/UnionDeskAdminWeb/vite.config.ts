@@ -35,7 +35,8 @@ export default defineConfig({
 	plugins: [
 		vitePluginFakeServer({
 			basename: "/api",
-			enableProd: true,
+			// 开发环境走真实后端（requestBackendJson 直连 8080）；避免 mock 与代理干扰排查
+			enableProd: !isDev,
 			timeout: 1000,
 		}),
 		// https://github.com/pd4d10/vite-plugin-svgr#options

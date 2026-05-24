@@ -13,7 +13,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.uniondesk.auth.core.AuthService;
 import com.uniondesk.auth.core.AuthCaptchaService;
 import com.uniondesk.auth.core.AuthenticationFailedException;
-import com.uniondesk.auth.core.LoginAuditService.LoginLog;
 import com.uniondesk.auth.core.LoginConfigService.LoginConfig;
 import com.uniondesk.auth.core.LoginSessionService.OnlineSession;
 import com.uniondesk.auth.core.UserContext;
@@ -418,32 +417,6 @@ class AuthControllerTests {
                         .contentType("application/json")
                         .content("{\"password\":\"admin123\"}"))
                 .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void listLoginLogsReturnsRowsForAdmin() throws Exception {
-        AuthService authService = mock(AuthService.class);
-        MockMvc mockMvc = mockMvc(authService);
-        UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-123", "ud-admin-web"));
-        when(authService.listLoginLogs(10)).thenReturn(List.of(new LoginLog(
-                1L,
-                "sid-1",
-                1L,
-                "customer",
-                "c***r",
-                "USERNAME",
-                "LOGIN",
-                "SUCCESS",
-                null,
-                "127.0.0.1",
-                "JUnit",
-                LocalDateTime.parse("2026-04-21T08:00:00"))));
-
-        mockMvc.perform(get("/api/v1/auth/login-logs").param("limit", "10"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].sid").value("sid-1"))
-                .andExpect(jsonPath("$[0].eventType").value("LOGIN"))
-                .andExpect(jsonPath("$[0].result").value("SUCCESS"));
     }
 
     private MockMvc mockMvc(AuthService authService) {

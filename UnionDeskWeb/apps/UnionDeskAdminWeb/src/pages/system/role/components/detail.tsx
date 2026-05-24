@@ -90,6 +90,9 @@ export function Detail({ title, open, onCloseChange, detailData, treeData, refre
 				menus: form.getFieldValue("menus") ?? [],
 			});
 		}
+		catch (error) {
+			message.error(error instanceof Error ? error.message : "请求失败");
+		}
 		finally {
 			setSubmitting(false);
 		}

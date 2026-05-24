@@ -13,6 +13,7 @@ public final class DomainDtos {
             long id,
             String code,
             String name,
+            String description,
             String logo,
             List<String> visibility_policy_codes,
             String registration_policy,
@@ -36,6 +37,7 @@ public final class DomainDtos {
     public record CreateDomainRequest(
             @NotBlank String code,
             @NotBlank String name,
+            String description,
             String logo,
             List<String> visibility_policy_codes,
             String registration_policy) {
@@ -44,6 +46,7 @@ public final class DomainDtos {
     public record UpdateDomainRequest(
             String code,
             String name,
+            String description,
             String logo,
             List<String> visibility_policy_codes,
             String registration_policy,

@@ -1,3 +1,5 @@
+import { resolveBackHomePath } from "#src/router/extra-info/app-scope";
+
 import { AppstoreOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 
 import { Button, Result, Typography } from "antd";
@@ -25,7 +27,7 @@ export default function UnknownComponent() {
 						icon={<ArrowLeftOutlined />}
 						type="primary"
 						onClick={() => {
-							navigate(import.meta.env.VITE_BASE_HOME_PATH);
+							navigate(resolveBackHomePath());
 						}}
 					>
 						{t("common.backHome")}

@@ -51,6 +51,7 @@ export function fetchLogin(data: LoginInfo): Promise<LoginResponse> {
 	return requestBackendJson<LoginResponse>("v1/auth/login", {
 		method: "POST",
 		json: data,
+		silentError: true,
 	});
 }
 

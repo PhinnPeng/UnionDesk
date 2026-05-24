@@ -5,8 +5,10 @@ import { useCurrentRoute } from "#src/hooks/use-current-route";
 import { hideLoading } from "#src/plugins/hide-loading";
 import { setupLoading } from "#src/plugins/loading";
 import { exception403Path, exception404Path, exception500Path, loginPath } from "#src/router/extra-info";
-import { appScopes, getAppHomePath } from "#src/router/extra-info/app-scope";
-import { accessRoutes, whiteRouteNames } from "#src/router/routes";
+import { appScopes, getAppHomePath, resolveBackHomePath } from "#src/router/extra-info/app-scope";
+import { accessRoutes, externalRoutes, whiteRouteNames } from "#src/router/routes";
+import { coreRoutes } from "#src/router/routes/core";
+import { ascending } from "#src/router/utils/ascending";
 import { goLogin } from "#src/utils/request/go-login";
 import { generateRoutesFromBackend } from "#src/router/utils/generate-routes-from-backend";
 import { generateRoutesByFrontend } from "#src/router/utils/generate-routes-from-frontend";
@@ -15,7 +17,9 @@ import { useAuthStore } from "#src/store/auth";
 import { usePreferencesStore } from "#src/store/preferences";
 import { useUserStore } from "#src/store/user";
 
-import { useEffect } from "react";
+import { isUnauthorizedHttpError } from "#src/utils/http-request-error";
+
+import { useEffect, useRef } from "react";
 import { matchRoutes, Navigate, useLocation, useNavigate } from "react-router";
 
 import { removeDuplicateRoutes } from "./utils";
@@ -27,23 +31,9 @@ interface AuthGuardProps {
 	children?: React.ReactNode
 }
 
-type UnauthorizedReason = {
-	response?: {
-		status?: number
-	}
-};
-
-function isUnauthorizedReason(reason: unknown) {
-	if (typeof reason !== "object" || reason === null) {
-		return false;
-	}
-
-	const response = "response" in reason ? (reason as UnauthorizedReason).response : undefined;
-	return response?.status === 401;
-}
-
 export function AuthGuard({ children }: AuthGuardProps) {
 	const navigate = useNavigate();
+	const accessLoadInFlightRef = useRef(false);
 	const currentRoute = useCurrentRoute();
 	const { pathname, search } = useLocation();
 	const isLogin = useAuthStore(state => Boolean(state.token));
@@ -59,6 +49,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
 	useEffect(() => {
 		async function loadAccessData() {
+			if (accessLoadInFlightRef.current) {
+				return;
+			}
+			accessLoadInFlightRef.current = true;
 			setupLoading();
 
 			const routes: AppRouteRecordRaw[] = [];
@@ -91,15 +85,21 @@ export function AuthGuard({ children }: AuthGuardProps) {
 			}
 
 			const uniqueRoutes = removeDuplicateRoutes(routes);
-			setAccessStore(backendMenus, uniqueRoutes);
 
 			if (userInfoError) {
-				if (isUnauthorizedReason(userInfoError)) {
+				hideLoading();
+				if (isUnauthorizedHttpError(userInfoError)) {
 					goLogin();
 					return;
 				}
-				return navigate(exception500Path);
+				const fallbackRoutes = ascending([...coreRoutes, ...externalRoutes]);
+				setAccessStore([], fallbackRoutes);
+				navigate(exception500Path, { replace: true });
+				return;
 			}
+
+			setAccessStore(backendMenus, uniqueRoutes);
+			hideLoading();
 
 			navigate(`${pathname}${search}`, {
 				replace: true,
@@ -108,7 +108,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
 		}
 
 		if (!whiteRouteNames.includes(pathname) && isLogin && !isAccessChecked) {
-			void loadAccessData();
+			void loadAccessData().finally(() => {
+				accessLoadInFlightRef.current = false;
+			});
 		}
 	}, [
 		pathname,
@@ -140,6 +142,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
 	if (pathname === loginPath) {
 		hideLoading();
+		if (isLogin) {
+			return <Navigate to={resolveBackHomePath()} replace />;
+		}
 		return children;
 	}
 
@@ -156,7 +161,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
 	if (!isAuthorized) {
 		hideLoading();
-		return <Navigate to={loginPath} replace />;
+		goLogin();
+		return null;
 	}
 
 	hideLoading();

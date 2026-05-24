@@ -17,6 +17,7 @@ export interface PlatformAuditLogView {
 	result?: string | null
 	occurredAt?: string | null
 	requestId?: string | null
+	ip?: string | null
 }
 
 export interface LoginLogView {
@@ -24,8 +25,11 @@ export interface LoginLogView {
 	subjectId?: number | null
 	operatorName?: string | null
 	businessDomainId?: number | null
+	domainName?: string | null
 	loginName?: string | null
 	portalType?: string | null
+	clientCode?: string | null
+	eventType?: string | null
 	ip?: string | null
 	userAgent?: string | null
 	result?: string | null
@@ -41,6 +45,11 @@ export interface PlatformAuditLogQuery {
 	action?: string
 	startTime?: string | null
 	endTime?: string | null
+	module?: string | null
+	keyword?: string | null
+	ip?: string | null
+	username?: string | null
+	nickname?: string | null
 }
 
 export interface LoginLogQuery {
@@ -48,9 +57,16 @@ export interface LoginLogQuery {
 	page_size?: number
 	subject_id?: number | string | null
 	portal_type?: string
+	client_code?: string
+	event_type?: string
+	business_domain_id?: number | string | null
 	result?: string
 	startTime?: string | null
 	endTime?: string | null
+	keyword?: string | null
+	ip?: string | null
+	username?: string | null
+	nickname?: string | null
 }
 
 function buildQuery(params: Record<string, unknown>) {

@@ -2,7 +2,6 @@ package com.uniondesk.auth.core;
 
 import com.uniondesk.auth.core.LoginAccountService.LoginAccount;
 import com.uniondesk.auth.core.AuthClientService.AuthClient;
-import com.uniondesk.auth.core.LoginAuditService.LoginLog;
 import com.uniondesk.auth.core.LoginConfigService.LoginConfig;
 import com.uniondesk.auth.core.LoginSessionService.OnlineSession;
 import com.uniondesk.auth.web.AuthDtos;
@@ -106,9 +105,13 @@ public class AuthService {
             }
             authCaptchaService.consumeToken(request.captchaToken());
         }
+        String portalType = portalTypeForClient(authClient);
         if (!isIdentifierTypeEnabled(config, identifierType) || !config.passwordLoginEnabled()) {
             loginAuditService.record(loginAuditService.loginFailure(
                     null,
+                    null,
+                    portalType,
+                    clientCode,
                     null,
                     null,
                     identifierType.name(),
@@ -124,16 +127,24 @@ public class AuthService {
         }
 
         LoginAccount account = loginAccountService.findByIdentifier(request.username(), identifierType, "staff")
-                .orElseThrow(() -> failLogin(null, null, identifierType, request.username(), "account_not_found", clientIp, userAgent));
+                .orElseThrow(() -> failLogin(
+                        null, null, identifierType, request.username(), "account_not_found",
+                        clientIp, userAgent, clientCode, portalType, null, null));
 
         if (account.status() != 1) {
-            throw failLogin(account.id(), account.username(), identifierType, request.username(), "account_disabled", clientIp, userAgent);
+            throw failLogin(
+                    account.id(), account.username(), identifierType, request.username(), "account_disabled",
+                    clientIp, userAgent, clientCode, portalType, null, null);
         }
         if ("offboarded".equalsIgnoreCase(account.employmentStatus())) {
-            throw failLogin(account.id(), account.username(), identifierType, request.username(), "account_offboarded", clientIp, userAgent);
+            throw failLogin(
+                    account.id(), account.username(), identifierType, request.username(), "account_offboarded",
+                    clientIp, userAgent, clientCode, portalType, null, null);
         }
         if (!passwordEncoder.matches(request.password(), account.passwordHash())) {
-            throw failLogin(account.id(), account.username(), identifierType, request.username(), "password_mismatch", clientIp, userAgent);
+            throw failLogin(
+                    account.id(), account.username(), identifierType, request.username(), "password_mismatch",
+                    clientIp, userAgent, clientCode, portalType, null, null);
         }
         List<String> roles = iamService.listUserRoleCodesByClient(account.id(), authClient.clientCode());
         String effectiveRole = roles.isEmpty() ? "customer" : roles.get(0);
@@ -161,18 +172,20 @@ public class AuthService {
                 clientIp,
                 userAgent));
         String accessToken = jwtTokenService.issueAccessToken(userContext);
+        String effectivePortalType = determinePortalType(request.portalType(), effectiveRole);
         loginAuditService.record(loginAuditService.loginSuccess(
                 sid,
-                account.id(),
+                null,
+                effectivePortalType,
+                authClient.clientCode(),
+                defaultBusinessDomainId,
                 account.username(),
                 identifierType.name(),
                 request.username(),
                 clientIp,
                 userAgent));
-        
-        // 纭畾 portal_type 鍜?subject_id
-        String portalType = determinePortalType(request.portalType(), effectiveRole);
-        String subjectId = String.valueOf(account.id()); // TODO: 浠?identity_subject 鑾峰彇鐪熷疄 subject_id
+
+        String subjectId = String.valueOf(account.id()); // TODO: 从 identity_subject 获取真实 subject_id
         
         return new AuthDtos.LoginResponse(
                 accessToken,
@@ -182,7 +195,7 @@ public class AuthService {
                 authClient.clientCode(),
                 "Bearer",
                 jwtTokenService.accessTokenTtl().toSeconds(),
-                portalType,
+                effectivePortalType,
                 subjectId,
                 new LoginUserView(account.id(), account.username(), account.mobile(), account.email(), responseRoles),
                 accessibleDomains,
@@ -207,13 +220,20 @@ public class AuthService {
             String clientIp,
             String userAgent,
             LoginConfig config) {
+        String portalType = portalTypeForClient(authClient);
         LoginAccount account = loginAccountService.findByIdentifier(request.username(), identifierType, "customer")
-                .orElseThrow(() -> failLogin(null, null, identifierType, request.username(), "account_not_found", clientIp, userAgent));
+                .orElseThrow(() -> failLogin(
+                        null, null, identifierType, request.username(), "account_not_found",
+                        clientIp, userAgent, authClient.clientCode(), portalType, null, null));
         if (account.status() != 1) {
-            throw failLogin(account.id(), account.username(), identifierType, request.username(), "account_disabled", clientIp, userAgent);
+            throw failLogin(
+                    account.id(), account.username(), identifierType, request.username(), "account_disabled",
+                    clientIp, userAgent, authClient.clientCode(), portalType, null, null);
         }
         if (!passwordEncoder.matches(request.password(), account.passwordHash())) {
-            throw failLogin(account.id(), account.username(), identifierType, request.username(), "password_mismatch", clientIp, userAgent);
+            throw failLogin(
+                    account.id(), account.username(), identifierType, request.username(), "password_mismatch",
+                    clientIp, userAgent, authClient.clientCode(), portalType, null, null);
         }
 
         List<String> roles = iamService.listUserRoleCodesByClient(account.id(), authClient.clientCode());
@@ -241,9 +261,14 @@ public class AuthService {
                 clientIp,
                 userAgent));
         String accessToken = jwtTokenService.issueAccessToken(userContext);
+        Long subjectId = loginAuditService.resolveCustomerSubjectId(account.id());
+        String effectivePortalType = determinePortalType(request.portalType(), effectiveRole);
         loginAuditService.record(loginAuditService.loginSuccess(
                 sid,
-                account.id(),
+                subjectId,
+                effectivePortalType,
+                authClient.clientCode(),
+                defaultBusinessDomainId,
                 account.username(),
                 identifierType.name(),
                 request.username(),
@@ -257,8 +282,8 @@ public class AuthService {
                 authClient.clientCode(),
                 "Bearer",
                 jwtTokenService.accessTokenTtl().toSeconds(),
-                determinePortalType(request.portalType(), effectiveRole),
-                String.valueOf(account.id()),
+                effectivePortalType,
+                subjectId == null ? String.valueOf(account.id()) : String.valueOf(subjectId),
                 new LoginUserView(account.id(), account.username(), account.mobile(), account.email(), responseRoles),
                 accessibleDomains,
                 defaultBusinessDomainId);
@@ -617,12 +642,15 @@ public class AuthService {
         loginSessionService.revokeSession(context.sessionId(), "user_logout");
         loginAuditService.record(loginAuditService.sessionEvent(
                 context.sessionId(),
-                context.userId(),
+                null,
+                portalTypeForClientCode(context.clientCode()),
+                context.clientCode(),
+                context.businessDomainId(),
                 null,
                 "USERNAME",
                 null,
                 "LOGOUT",
-                "SUCCESS",
+                "success",
                 "user_logout",
                 clientIp,
                 userAgent));
@@ -638,11 +666,14 @@ public class AuthService {
             loginAuditService.record(loginAuditService.sessionEvent(
                     sid,
                     null,
+                    "staff",
+                    "ud-admin-web",
+                    null,
                     null,
                     "USERNAME",
                     null,
                     "FORCE_LOGOUT",
-                    "SUCCESS",
+                    "success",
                     reason,
                     clientIp,
                     userAgent));
@@ -655,12 +686,15 @@ public class AuthService {
         if (updated > 0) {
             loginAuditService.record(loginAuditService.sessionEvent(
                     null,
-                    userId,
+                    null,
+                    "staff",
+                    "ud-admin-web",
+                    null,
                     null,
                     "USERNAME",
                     null,
                     "FORCE_LOGOUT",
-                    "SUCCESS",
+                    "success",
                     reason,
                     clientIp,
                     userAgent));
@@ -676,10 +710,6 @@ public class AuthService {
         return loginConfigService.updateConfig(command);
     }
 
-    public List<LoginLog> listLoginLogs(int limit) {
-        return loginAuditService.listRecentLogs(limit);
-    }
-
     private AuthenticationFailedException failLogin(
             Long userId,
             String username,
@@ -687,10 +717,17 @@ public class AuthService {
             String identifier,
             String reason,
             String clientIp,
-            String userAgent) {
+            String userAgent,
+            String clientCode,
+            String portalType,
+            Long businessDomainId,
+            Long subjectId) {
         loginAuditService.record(loginAuditService.loginFailure(
                 null,
-                userId,
+                subjectId,
+                portalType,
+                clientCode,
+                businessDomainId,
                 username,
                 identifierType.name(),
                 identifier,
@@ -698,6 +735,14 @@ public class AuthService {
                 clientIp,
                 userAgent));
         return new AuthenticationFailedException("invalid credentials");
+    }
+
+    private String portalTypeForClient(AuthClient authClient) {
+        return "customer".equalsIgnoreCase(authClient.allowedAccountType()) ? "customer" : "staff";
+    }
+
+    private String portalTypeForClientCode(String clientCode) {
+        return "ud-customer-web".equalsIgnoreCase(clientCode) ? "customer" : "staff";
     }
 
     private boolean isIdentifierTypeEnabled(LoginConfig config, LoginIdentifierType type) {

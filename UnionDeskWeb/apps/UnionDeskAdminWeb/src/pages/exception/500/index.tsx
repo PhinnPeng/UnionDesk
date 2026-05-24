@@ -1,3 +1,5 @@
+import { resolveBackHomePath } from "#src/router/extra-info/app-scope";
+
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { Button, Result } from "antd";
 import { useTranslation } from "react-i18next";
@@ -17,7 +19,7 @@ export default function Exception500() {
 					icon={<ArrowLeftOutlined />}
 					type="primary"
 					onClick={() => {
-						navigate(import.meta.env.VITE_BASE_HOME_PATH);
+						navigate(resolveBackHomePath());
 					}}
 				>
 					{t("common.backHome")}

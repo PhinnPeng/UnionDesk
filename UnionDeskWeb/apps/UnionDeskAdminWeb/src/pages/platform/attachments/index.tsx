@@ -2,7 +2,9 @@ import type { AdminDomain } from "@uniondesk/shared";
 
 import { BasicContent } from "#src/components/basic-content";
 
-import { fetchAdminDomainsPage, presignP0Attachment, toErrorMessage, uploadP0AttachmentLocal } from "@uniondesk/shared";
+import { uploadAttachment } from "#src/api/platform/attachment";
+
+import { fetchAdminDomainsPage, toErrorMessage } from "@uniondesk/shared";
 import { App, Alert, Button, Card, Select, Space, Typography, Upload } from "antd";
 import { useCallback, useEffect, useState } from "react";
 
@@ -32,8 +34,8 @@ export default function PlatformAttachments() {
 					type="info"
 					showIcon
 					className="mb-4"
-					message="对象存储 / 本地上传"
-					description="预签名：`POST /api/v1/attachments/presign`；本地上传：`POST /api/v1/attachments/upload`（multipart）。后端未发布时操作会失败并提示错误信息。"
+					message="对象存储（服务端代理上传）"
+					description="文件经 `POST /api/v1/attachments/upload` 提交到后端，由后端写入 MinIO。需本地 `docker compose` 启动 minio 服务。"
 				/>
 				<Space direction="vertical" size="middle" className="w-full">
 					<div>
@@ -54,25 +56,10 @@ export default function PlatformAttachments() {
 								return Upload.LIST_IGNORE;
 							}
 							try {
-								const fd = new FormData();
-								fd.append("file", file);
-								fd.append("target_type", "ticket");
-								fd.append("domain_id", domainId);
-								const res = await uploadP0AttachmentLocal(fd);
-								message.success(`本地上传成功，attachment_id=${res.attachment_id}`);
-							} catch {
-								try {
-									const pre = await presignP0Attachment({
-										file_name: file.name,
-										mime_type: file.type || "application/octet-stream",
-										file_size: file.size,
-										target_type: "ticket",
-										domain_id: domainId,
-									});
-									message.info(`已获取预签名上传地址（请使用 PUT 上传至对象存储），attachment_id=${pre.attachment_id}`);
-								} catch (e2) {
-									message.error(toErrorMessage(e2));
-								}
+								const res = await uploadAttachment(Number(domainId), file, "ticket");
+								message.success(`上传成功，attachment_id=${res.attachment_id}`);
+							} catch (e) {
+								message.error(toErrorMessage(e));
 							}
 							return Upload.LIST_IGNORE;
 						}}
@@ -80,7 +67,7 @@ export default function PlatformAttachments() {
 						<Button type="primary">选择文件并尝试上传</Button>
 					</Upload>
 					<Typography.Paragraph type="secondary" className="!mb-0 !text-sm">
-						先尝试本地上传；失败时自动再尝试预签名路径，便于联调 MinIO 未就绪场景。
+						上传完成后可在 MinIO 控制台 bucket `uniondesk-attachments` 中查看对象。
 					</Typography.Paragraph>
 				</Space>
 			</Card>

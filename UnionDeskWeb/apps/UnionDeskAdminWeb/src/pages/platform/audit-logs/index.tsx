@@ -1,4 +1,5 @@
 import { BasicContent } from "#src/components/basic-content";
+import { TableSearchForm } from "#src/components/table-search-form";
 import { fetchBusinessDomains } from "#src/api/platform/domain";
 import { fetchLoginLogsPage, fetchPlatformAuditLogs } from "#src/api/platform/audit";
 
@@ -223,41 +224,28 @@ export default function PlatformAuditLogs() {
 
 					{activeTab === "audit" ? (
 						<>
-							<Form
+							<TableSearchForm
 								form={auditForm}
-								layout="inline"
-								className="mb-4 gap-3"
+								className="mb-4"
 								initialValues={{ domainId: undefined }}
-								onFinish={() => loadAuditLogs()}
+								onFinish={() => void loadAuditLogs()}
+								onReset={() => {
+									void loadAuditLogs();
+								}}
 							>
 								<Form.Item name="domainId" label="业务域">
-									<Select allowClear className="min-w-48" options={domainOptions} placeholder="全部业务域" />
+									<Select allowClear options={domainOptions} placeholder="全部业务域" />
 								</Form.Item>
 								<Form.Item name="operator" label="操作者">
-									<Input allowClear placeholder="姓名 / ID" className="w-40" />
+									<Input allowClear placeholder="姓名 / ID" />
 								</Form.Item>
 								<Form.Item name="action" label="动作">
-									<Input allowClear placeholder="如 ticket.reply" className="w-44" />
+									<Input allowClear placeholder="如 ticket.reply" />
 								</Form.Item>
 								<Form.Item name="timeRange" label="时间范围">
-									<RangePicker showTime className="w-[360px]" />
+									<RangePicker showTime className="w-full" />
 								</Form.Item>
-								<Form.Item>
-									<Space>
-										<button type="submit" className="rounded-md bg-sky-600 px-4 py-1.5 text-white transition-colors hover:bg-sky-500">查询</button>
-										<button
-											type="button"
-											className="rounded-md border border-slate-300 px-4 py-1.5 text-slate-700 transition-colors hover:border-slate-400"
-											onClick={() => {
-												auditForm.resetFields();
-												void loadAuditLogs();
-											}}
-										>
-											重置
-										</button>
-									</Space>
-								</Form.Item>
-							</Form>
+							</TableSearchForm>
 
 							<Table<PlatformAuditLogView>
 								rowKey="id"
@@ -276,19 +264,20 @@ export default function PlatformAuditLogs() {
 						</>
 					) : (
 						<>
-							<Form
+							<TableSearchForm
 								form={loginForm}
-								layout="inline"
-								className="mb-4 gap-3"
-								onFinish={() => loadLoginLogs()}
+								className="mb-4"
+								onFinish={() => void loadLoginLogs()}
+								onReset={() => {
+									void loadLoginLogs();
+								}}
 							>
 								<Form.Item name="subjectId" label="主体ID">
-									<Input allowClear placeholder="登录主体 ID" className="w-40" />
+									<Input allowClear placeholder="登录主体 ID" />
 								</Form.Item>
 								<Form.Item name="portalType" label="门户">
 									<Select
 										allowClear
-										className="min-w-36"
 										placeholder="全部门户"
 										options={[
 											{ label: "admin", value: "admin" },
@@ -299,7 +288,6 @@ export default function PlatformAuditLogs() {
 								<Form.Item name="result" label="结果">
 									<Select
 										allowClear
-										className="min-w-36"
 										placeholder="全部结果"
 										options={[
 											{ label: "success", value: "success" },
@@ -308,24 +296,9 @@ export default function PlatformAuditLogs() {
 									/>
 								</Form.Item>
 								<Form.Item name="timeRange" label="时间范围">
-									<RangePicker showTime className="w-[360px]" />
+									<RangePicker showTime className="w-full" />
 								</Form.Item>
-								<Form.Item>
-									<Space>
-										<button type="submit" className="rounded-md bg-sky-600 px-4 py-1.5 text-white transition-colors hover:bg-sky-500">查询</button>
-										<button
-											type="button"
-											className="rounded-md border border-slate-300 px-4 py-1.5 text-slate-700 transition-colors hover:border-slate-400"
-											onClick={() => {
-												loginForm.resetFields();
-												void loadLoginLogs();
-											}}
-										>
-											重置
-										</button>
-									</Space>
-								</Form.Item>
-							</Form>
+							</TableSearchForm>
 
 							<Table<LoginLogView>
 								rowKey="id"

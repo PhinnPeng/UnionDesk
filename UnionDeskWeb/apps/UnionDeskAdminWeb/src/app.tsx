@@ -12,6 +12,8 @@ import { Suspense, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { RouterProvider } from "react-router/dom";
 
+import { syncAuthStoreToSharedApi } from "#src/api/sync-shared-session";
+
 import { router } from "./router";
 import { customAntdDarkTheme, customAntdLightTheme } from "./styles/theme/antd/antd-theme";
 import "dayjs/locale/zh-cn";
@@ -34,6 +36,10 @@ export default function App() {
 	} = usePreferences();
 
 	useScrollToHash();
+
+	useEffect(() => {
+		syncAuthStoreToSharedApi();
+	}, []);
 
 	/**
 	 * ant design internationalization

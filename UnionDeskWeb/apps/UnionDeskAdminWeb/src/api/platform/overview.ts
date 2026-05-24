@@ -1,6 +1,8 @@
-import type { IamUser, LoginLogView } from "@uniondesk/shared";
+import type { IamUser } from "@uniondesk/shared";
 
 import { requestBackendJson } from "#src/api/backend";
+import type { LoginLogView, PageResult } from "#src/api/platform/audit";
+import { fetchLoginLogsPage } from "#src/api/platform/audit";
 
 import { fetchBusinessDomains } from "./domain";
 import { fetchPlatformOffboardPoolUsers, fetchPlatformUsers } from "./iam";
@@ -17,7 +19,11 @@ export interface PlatformOverview {
 }
 
 function fetchPlatformLoginLogs(limit = 5): Promise<LoginLogView[]> {
-	return requestBackendJson<LoginLogView[]>(`v1/auth/login-logs?limit=${limit}`);
+	return fetchLoginLogsPage({
+		page: 1,
+		page_size: limit,
+		event_type: "LOGIN",
+	}).then((page: PageResult<LoginLogView>) => page.list);
 }
 
 function countActiveUsers(users: IamUser[]): number {

@@ -1,92 +1,40 @@
-import type { AdminDomain, P0DomainCustomer, P0InvitationCode } from "@uniondesk/shared";
+import type { AdminDomain } from "@uniondesk/shared";
+import { fetchAdminDomainsPage, toErrorMessage } from "@uniondesk/shared";
 
 import { BasicContent } from "#src/components/basic-content";
 
-import { fetchAdminDomainsPage, fetchP0DomainCustomersPage, fetchP0InvitationCodes, toErrorMessage } from "@uniondesk/shared";
-import { App, Alert, Select, Space, Table, Tabs, Tag } from "antd";
-import type { TableColumnsType } from "antd";
+import { App, Alert, Select, Space } from "antd";
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
+
+import { DomainOnboardingPanel } from "./onboarding-panel";
 
 export default function PlatformDomainOnboarding() {
 	const { message } = App.useApp();
+	const [searchParams] = useSearchParams();
+	const presetDomainId = searchParams.get("domainId")?.trim() || undefined;
 	const [domains, setDomains] = useState<AdminDomain[]>([]);
-	const [domainId, setDomainId] = useState<string | undefined>();
-	const [invites, setInvites] = useState<P0InvitationCode[]>([]);
-	const [customers, setCustomers] = useState<P0DomainCustomer[]>([]);
-	const [loadingInv, setLoadingInv] = useState(false);
-	const [loadingCus, setLoadingCus] = useState(false);
+	const [domainId, setDomainId] = useState<string | undefined>(presetDomainId);
 
 	const loadDomains = useCallback(async () => {
 		try {
 			const page = await fetchAdminDomainsPage({ page: 1, page_size: 100 });
 			setDomains(page.list);
-			setDomainId(prev => prev ?? page.list[0]?.id);
-		} catch (e) {
-			message.error(toErrorMessage(e));
+			setDomainId((prev) => {
+				if (presetDomainId && page.list.some(item => item.id === presetDomainId)) {
+					return presetDomainId;
+				}
+				return prev ?? page.list[0]?.id;
+			});
 		}
-	}, [message]);
-
-	const loadInvites = useCallback(async () => {
-		if (!domainId) {
-			setInvites([]);
-			return;
+		catch (error) {
+			message.error(toErrorMessage(error));
 		}
-		setLoadingInv(true);
-		try {
-			const page = await fetchP0InvitationCodes(domainId);
-			setInvites(page.list);
-		} catch (e) {
-			message.error(toErrorMessage(e));
-		} finally {
-			setLoadingInv(false);
-		}
-	}, [domainId, message]);
-
-	const loadCustomers = useCallback(async () => {
-		if (!domainId) {
-			setCustomers([]);
-			return;
-		}
-		setLoadingCus(true);
-		try {
-			const page = await fetchP0DomainCustomersPage({ domainId, page: 1, page_size: 100 });
-			setCustomers(page.list);
-		} catch (e) {
-			message.error(toErrorMessage(e));
-		} finally {
-			setLoadingCus(false);
-		}
-	}, [domainId, message]);
+	}, [message, presetDomainId]);
 
 	useEffect(() => {
 		void loadDomains();
 	}, [loadDomains]);
-
-	useEffect(() => {
-		void loadInvites();
-		void loadCustomers();
-	}, [loadCustomers, loadInvites]);
-
-	const invColumns: TableColumnsType<P0InvitationCode> = [
-		{ title: "邀请码", dataIndex: "code", width: 160 },
-		{ title: "渠道", dataIndex: "channel", render: v => v ?? "-" },
-		{ title: "过期时间", dataIndex: "expires_at", render: v => v ?? "-" },
-		{ title: "用量", key: "uses", render: (_, r) => `${r.used_count ?? 0}/${r.max_uses ?? "∞"}` },
-		{ title: "状态", dataIndex: "status", width: 100, render: s => <Tag>{s ?? "-"}</Tag> },
-	];
-
-	const cusColumns: TableColumnsType<P0DomainCustomer> = [
-		{ title: "展示名", dataIndex: "display_name" },
-		{ title: "手机", dataIndex: "phone", width: 140, render: v => v ?? "-" },
-		{
-			title: "状态",
-			dataIndex: "status",
-			width: 120,
-			render: s => <Tag>{s}</Tag>,
-		},
-		{ title: "来源", dataIndex: "source", width: 120, render: v => v ?? "-" },
-		{ title: "创建时间", dataIndex: "created_at", width: 180 },
-	];
 
 	return (
 		<BasicContent className="h-full bg-colorBgLayout">
@@ -95,47 +43,18 @@ export default function PlatformDomainOnboarding() {
 					type="info"
 					showIcon
 					message="客户入域（P0）"
-					description="邀请码：`GET /admin/domains/{id}/invitation-codes`；域客户：`GET /admin/domains/{id}/customers`。后端未发布时表格为空。"
+					description="邀请码与域客户列表；后端未发布时表格为空。"
 				/>
 				<Space wrap>
 					<span>业务域</span>
 					<Select
 						className="min-w-56"
 						value={domainId}
-						options={domains.map(d => ({ value: d.id, label: `${d.name} (${d.code})` }))}
-						onChange={v => setDomainId(v)}
+						options={domains.map(domain => ({ value: domain.id, label: `${domain.name} (${domain.code})` }))}
+						onChange={value => setDomainId(value)}
 					/>
 				</Space>
-				<Tabs
-					items={[
-						{
-							key: "inv",
-							label: "邀请码",
-							children: (
-								<Table<P0InvitationCode>
-									rowKey="id"
-									loading={loadingInv}
-									columns={invColumns}
-									dataSource={invites}
-									pagination={false}
-								/>
-							),
-						},
-						{
-							key: "cus",
-							label: "域客户",
-							children: (
-								<Table<P0DomainCustomer>
-									rowKey="id"
-									loading={loadingCus}
-									columns={cusColumns}
-									dataSource={customers}
-									pagination={false}
-								/>
-							),
-						},
-					]}
-				/>
+				{domainId ? <DomainOnboardingPanel domainId={domainId} /> : null}
 			</Space>
 		</BasicContent>
 	);

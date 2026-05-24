@@ -5,7 +5,7 @@ import { fetchCreateMenu, fetchUpdateMenu } from "#src/api/system/menu";
 import { fetchAdminPermissionCodes } from "#src/api/platform/iam";
 import { handleTree } from "#src/utils/tree";
 
-import { Alert, Col, Form } from "antd";
+import { Alert, Cascader, Col, Form } from "antd";
 import {
 	ModalForm,
 	ProForm,
@@ -19,12 +19,18 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { componentRegistry, registeredComponentKeys } from "./component-registry";
+import { platformComRegistry, registeredPlatformComKeys } from "./platform-com-registry";
+import {
+	buildPlatformComCascaderOptions,
+	componentKeyToCascaderValue,
+	joinComponentKey,
+} from "./platform-com-registry-utils";
 import { IconPicker } from "./icon-picker";
 import { PERMISSION_CODE_LABELS } from "./permission-code-labels";
 
 type MenuFormValues = Partial<MenuItemType> & {
 	parentId?: number[] | number | null
+	componentKey?: string | string[] | null
 	hidden?: boolean
 	implementationType?: "component" | "external" | "iframe"
 };
@@ -99,7 +105,10 @@ function normalizeParentId(parentId?: number[] | number | null) {
 	return null;
 }
 
-function normalizeComponentKey(componentKey?: string | null) {
+function normalizeComponentKey(componentKey?: string | string[] | null) {
+	if (Array.isArray(componentKey)) {
+		return joinComponentKey(componentKey);
+	}
 	return componentKey?.trim().replace(/^\.\//, "") || null;
 }
 
@@ -127,12 +136,8 @@ export function Detail({
 		return matchedParent?.scope || defaultScope;
 	};
 
-	const componentOptions = useMemo(() => {
-		return componentRegistry.map(item => ({
-			label: item.label,
-			value: item.value,
-			searchText: `${item.label} ${item.value}`,
-		}));
+	const componentCascaderOptions = useMemo(() => {
+		return buildPlatformComCascaderOptions(platformComRegistry);
 	}, []);
 
 
@@ -168,7 +173,7 @@ export function Detail({
 				nodeType: detailData.nodeType ?? "menu",
 				parentId: getParentPath(flatParentMenus, detailData.parentId as number | null | undefined),
 				scope: resolveScopeValue(detailData.parentId as number | null | undefined, detailData.scope),
-				componentKey: normalizeComponentKey(detailData.componentKey),
+				componentKey: componentKeyToCascaderValue(normalizeComponentKey(detailData.componentKey)),
 				hidden: detailData.hidden ?? false,
 				status: detailData.status ?? 1,
 				orderNo: detailData.orderNo ?? 0,
@@ -213,7 +218,7 @@ export function Detail({
 		<ModalForm<MenuFormValues>
 			title={title}
 			open={open}
-			labelAlign="left"
+			labelAlign="right"
 			layout="horizontal"
 			onOpenChange={(visible) => {
 				if (visible === false) {
@@ -313,8 +318,8 @@ export function Detail({
 							{dependencyShowRoutePath && (
 								<ProFormText
 									allowClear
-									labelCol={{ span: 8 }}
-									colProps={{ span: 12 }}
+									labelCol={{ span: 4 }}
+									colProps={{ span: 24 }}
 									name="routePath"
 									label={routePathLabel}
 									tooltip={routePathTooltip}
@@ -323,19 +328,28 @@ export function Detail({
 
 							{/* 组件路径 */}
 							{dependencyShowComponentKey && (
-								<ProFormSelect
-									name="componentKey"
-									label={t("system.menu.componentUrl")}
-									tooltip={t("system.menu.componentUrlTooltip")}
-									labelCol={{ span: 8 }}
-									colProps={{ span: 12 }}
-									fieldProps={{
-										showSearch: true,
-										optionFilterProp: "searchText",
-										options: componentOptions,
-									}}
-									placeholder={t("system.menu.componentUrl")}
-								/>
+								<Col span={24}>
+									<ProForm.Item
+										name="componentKey"
+										label={t("system.menu.componentUrl")}
+										tooltip={t("system.menu.componentUrlTooltip")}
+										labelCol={{ span: 4 }}
+										wrapperCol={{ span: 20 }}
+									>
+										<Cascader
+											options={componentCascaderOptions}
+											changeOnSelect={false}
+											expandTrigger="hover"
+											displayRender={labels => labels.join(" / ")}
+											placeholder={t("system.menu.componentUrl")}
+											showSearch={{
+												filter: (input, path) => path.some(option =>
+													(option.label as string)?.toLowerCase().includes(input.toLowerCase()),
+												),
+											}}
+										/>
+									</ProForm.Item>
+								</Col>
 							)}
 
 							{/* 权限码 */}
@@ -413,7 +427,7 @@ export function Detail({
 								tooltip={t("system.menu.menuOrderTooltip")}
 							/>
 
-							{currentNodeType === "menu" && normalizedComponentKey && !registeredComponentKeys.has(normalizedComponentKey) ? (
+							{currentNodeType === "menu" && normalizedComponentKey && !registeredPlatformComKeys.has(normalizedComponentKey) ? (
 								<Alert
 									className="mt-2"
 									type="warning"

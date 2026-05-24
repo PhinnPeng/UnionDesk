@@ -1,4 +1,5 @@
 import logo from "#src/assets/svg/logo.svg?url";
+import { resolveBackHomePath } from "#src/router/extra-info/app-scope";
 
 import { Typography } from "antd";
 import { clsx } from "clsx";
@@ -24,7 +25,7 @@ export function Logo({ sidebarCollapsed, className }: LogoProps) {
 		<div
 			style={{ height: headerHeight }}
 			className={clsx("flex items-center justify-center gap-2 cursor-pointer", className)}
-			onClick={() => navigate(import.meta.env.VITE_BASE_HOME_PATH)}
+			onClick={() => navigate(resolveBackHomePath())}
 		>
 			<img
 				src={logo}

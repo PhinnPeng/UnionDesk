@@ -6,6 +6,31 @@ type ApiEnvelope<T> = {
 	result?: T
 };
 
+function isApiStatusCode(code: unknown) {
+	if (typeof code === "number") {
+		return true;
+	}
+	if (typeof code === "string") {
+		const normalized = code.trim();
+		return normalized.length > 0 && /^\d+$/.test(normalized);
+	}
+	return false;
+}
+
+/** 区分统一响应包装与业务实体（如 RoleView 的 code 字段为角色编码，不是 API 状态码） */
+function isApiEnvelope(payload: object): payload is ApiEnvelope<unknown> {
+	if (typeof (payload as ApiEnvelope<unknown>).success === "boolean") {
+		return true;
+	}
+	if ("data" in payload || "result" in payload) {
+		return true;
+	}
+	if ("message" in payload && isApiStatusCode((payload as ApiEnvelope<unknown>).code)) {
+		return true;
+	}
+	return false;
+}
+
 function isFailureEnvelope(envelope: ApiEnvelope<unknown>) {
 	if (envelope.success === false) {
 		return true;
@@ -24,10 +49,9 @@ function isFailureEnvelope(envelope: ApiEnvelope<unknown>) {
 }
 
 export function parseApiResponse<T>(payload: unknown): T {
-	if (payload && typeof payload === "object") {
+	if (payload && typeof payload === "object" && !Array.isArray(payload)) {
 		const envelope = payload as ApiEnvelope<T>;
-		const hasEnvelopeShape = "success" in envelope || "code" in envelope || "data" in envelope || "result" in envelope;
-		if (hasEnvelopeShape) {
+		if (isApiEnvelope(envelope)) {
 			if (isFailureEnvelope(envelope)) {
 				throw new Error(envelope.message?.trim() || "请求失败");
 			}

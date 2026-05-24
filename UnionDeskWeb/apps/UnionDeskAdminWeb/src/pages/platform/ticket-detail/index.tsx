@@ -1,14 +1,13 @@
 import type { BusinessDomainView } from "@uniondesk/shared";
 
 import { fetchBusinessDomains } from "#src/api/platform/domain";
+import { uploadAttachment } from "#src/api/platform/attachment";
 import {
 	claimAdminTicket,
 	fetchTicketDetail,
 	mergeAdminTicket,
-	presignAttachment,
 	replyAdminTicket,
 	updateAdminTicketStatus,
-	uploadAttachmentLocal,
 	assignAdminTicket,
 	type TicketDetailResult,
 } from "#src/api/platform/ticket";
@@ -31,37 +30,7 @@ const replyPresets: ReplyPreset[] = [
 ];
 
 async function uploadTicketAttachment(domainId: number, file: File) {
-	try {
-		const formData = new FormData();
-		formData.append("file", file);
-		formData.append("target_type", "ticket");
-		formData.append("domain_id", String(domainId));
-		return await uploadAttachmentLocal(formData);
-	}
-	catch {
-		const presign = await presignAttachment({
-			file_name: file.name,
-			mime_type: file.type || "application/octet-stream",
-			file_size: file.size,
-			target_type: "ticket",
-			domain_id: domainId,
-		});
-		const response = await fetch(presign.upload_url, {
-			method: "PUT",
-			body: file,
-			headers: {
-				"Content-Type": file.type || "application/octet-stream",
-			},
-		});
-		if (!response.ok) {
-			throw new Error("附件上传失败");
-		}
-		return {
-			attachment_id: presign.attachment_id,
-			download_url: presign.upload_url,
-			storage_type: "presign",
-		};
-	}
+	return uploadAttachment(domainId, file, "ticket");
 }
 
 function getSlaLabel(ticket: TicketDetailResult["ticket"]) {

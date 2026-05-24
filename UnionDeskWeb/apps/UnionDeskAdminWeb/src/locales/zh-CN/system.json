@@ -36,7 +36,7 @@
 		"componentUrl": "组件路径",
 		"permissionCode": "权限码",
 		"keepAlive": "缓存页面",
-		"hideInMenu": "菜单中隐藏",
+		"hideInMenu": "是否隐藏",
 		"currentActiveMenu": "激活路径",
 		"iframeLink": "Iframe 链接",
 		"externalLinkUrl": "外链地址",

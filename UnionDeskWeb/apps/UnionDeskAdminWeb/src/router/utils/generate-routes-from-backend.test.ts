@@ -143,11 +143,64 @@ describe("generateRoutesFromBackend", () => {
 
 		const organizationMatches = matchRoutes(routes, "/platform/dept") ?? [];
 		const organizationRoute = organizationMatches.at(-1)?.route;
+		const organizationCatalogRoute = organizationMatches.find(
+			match => match.route.handle?.title === "组织管理",
+		)?.route;
 
+		expect(organizationCatalogRoute?.handle?.title).toBe("组织管理");
+		expect(organizationMatches.length).toBeGreaterThanOrEqual(2);
 		expect(matchRoutes(routes, "/platform/user")?.at(-1)?.route?.handle?.auth).toBe("platform.user.read");
 		expect(organizationRoute?.handle?.auth).toBe("platform.organization.read");
 		expect(matchRoutes(routes, "/platform/offboard-pool")?.at(-1)?.route?.handle?.auth).toBe("platform.user.offboard_pool.read");
 		for (const pathname of ["/platform/user", "/platform/dept", "/platform/offboard-pool", "/platform/org-config", "/platform/role", "/platform/menu"]) {
+			const matches = matchRoutes(routes, pathname) ?? [];
+			const leafRoute = matches.at(-1)?.route;
+
+			expect(matches.length, pathname).toBeGreaterThan(0);
+			expect(leafRoute?.path ?? leafRoute?.index, pathname).not.toBe("*");
+		}
+	});
+
+	it("registers backend permission menu with absolute child routes without route nesting errors", async () => {
+		const snapshotMenus: PermissionSnapshotMenu[] = [
+			{
+				id: 48,
+				code: "ADM0000000048",
+				parentId: null,
+				name: "权限管理",
+				path: "/platform/permission",
+				component: "./platform/permission",
+				scope: "platform",
+				children: [
+					{
+						id: 7,
+						code: "MENU_ROLE",
+						parentId: 48,
+						name: "角色管理",
+						path: "/platform/role",
+						component: "./system/role",
+						scope: "platform",
+					},
+					{
+						id: 8,
+						code: "MENU_MENU",
+						parentId: 48,
+						name: "菜单管理",
+						path: "/platform/menu",
+						component: "./platform/system/menu",
+						scope: "platform",
+					},
+				],
+			},
+		];
+
+		const backendRoutes = buildBackendRoutesFromSnapshot(snapshotMenus);
+		const routes = removeDuplicateRoutes(await generateRoutesFromBackend(backendRoutes));
+
+		expect(backendRoutes[0]?.path).toBeUndefined();
+		expect(backendRoutes[0]?.handle?.menuKey).toBe("/platform/permission");
+
+		for (const pathname of ["/platform/permission", "/platform/role", "/platform/menu"]) {
 			const matches = matchRoutes(routes, pathname) ?? [];
 			const leafRoute = matches.at(-1)?.route;
 

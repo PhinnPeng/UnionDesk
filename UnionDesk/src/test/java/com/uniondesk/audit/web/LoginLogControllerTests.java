@@ -35,11 +35,14 @@ class LoginLogControllerTests {
                         2L,
                         "admin",
                         10L,
+                        "Demo Domain",
                         "admin",
-                        "admin",
+                        "staff",
+                        "ud-admin-web",
+                        "LOGIN",
                         "127.0.0.1",
                         "JUnit",
-                        "SUCCESS",
+                        "success",
                         null,
                         LocalDateTime.parse("2026-05-03T08:30:00")))));
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new LoginLogController(auditLogService)).build();
@@ -49,7 +52,7 @@ class LoginLogControllerTests {
                         .param("action", "SUCCESS"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(1))
-                .andExpect(jsonPath("$.list[0].result").value("SUCCESS"))
+                .andExpect(jsonPath("$.list[0].result").value("success"))
                 .andExpect(jsonPath("$.list[0].loginName").value("admin"));
 
         verify(auditLogService).listDomainLoginLogs(eq(10L), eq(1), eq(20), eq("admin"), eq("SUCCESS"), any(), any());

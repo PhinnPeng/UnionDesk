@@ -3,11 +3,15 @@ import { isValidElement } from "react";
 import { useTranslation } from "react-i18next";
 import { useMatches } from "react-router";
 
+import { resolveSafeIframeSrc } from "#src/utils/safe-iframe-url";
+
+import { Alert } from "antd";
+
 export function Iframe() {
 	const matches = useMatches();
 	const { t } = useTranslation();
 	const currentRoute = matches[matches.length - 1];
-	const iframeLink = currentRoute.handle?.iframeLink;
+	const iframeLink = resolveSafeIframeSrc(currentRoute.handle?.iframeLink);
 	const routeTitle = currentRoute.handle?.title;
 
 	let title: string;
@@ -26,16 +30,26 @@ export function Iframe() {
 	/**
 	 * use this tool https://iframegenerator.top/ to generate the iframe code
 	 */
-	return iframeLink
-		? (
-			<iframe
-				src={iframeLink}
-				title={title}
-				width="100%"
-				height="100%"
-				loading="lazy"
-				className="p-4 rounded-sm"
+	if (!iframeLink) {
+		return (
+			<Alert
+				className="m-4"
+				type="warning"
+				showIcon
+				message="无法加载内嵌页面"
+				description="iframe 链接无效，或不允许嵌入当前站点（请使用 https 外部地址）。"
 			/>
-		)
-		: null;
+		);
+	}
+
+	return (
+		<iframe
+			src={iframeLink}
+			title={title}
+			width="100%"
+			height="100%"
+			loading="lazy"
+			className="p-4 rounded-sm"
+		/>
+	);
 }

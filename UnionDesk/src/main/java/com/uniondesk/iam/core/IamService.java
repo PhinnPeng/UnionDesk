@@ -960,7 +960,10 @@ public class IamService {
         jdbcTemplate.update("DELETE FROM user_domain_role WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM user_global_role WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM user_organization WHERE user_id = ?", userId);
-        jdbcTemplate.update("DELETE FROM auth_login_log WHERE user_id = ?", userId);
+        jdbcTemplate.update("""
+                DELETE FROM login_log
+                WHERE login_name = (SELECT username FROM user_account WHERE id = ? LIMIT 1)
+                """, userId);
         jdbcTemplate.update("DELETE FROM auth_login_session WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM user_account WHERE id = ?", userId);
     }

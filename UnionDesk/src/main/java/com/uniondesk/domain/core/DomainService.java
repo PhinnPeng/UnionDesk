@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.dao.DuplicateKeyException;
@@ -28,10 +29,15 @@ public class DomainService {
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
+    private final DomainBootstrapService domainBootstrapService;
 
-    public DomainService(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+    public DomainService(
+            JdbcTemplate jdbcTemplate,
+            ObjectMapper objectMapper,
+            DomainBootstrapService domainBootstrapService) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
+        this.domainBootstrapService = domainBootstrapService;
     }
 
     public PageResult<DomainDtos.DomainView> listAdminDomains(
@@ -49,6 +55,7 @@ public class DomainService {
                                     d.id,
                                     d.code,
                                     d.name,
+                                    d.description,
                                     d.logo,
                                     d.visibility_policy_codes,
                                     d.registration_policy,
@@ -101,6 +108,7 @@ public class DomainService {
                                 d.id,
                                 d.code,
                                 d.name,
+                                d.description,
                                 d.logo,
                                 d.visibility_policy_codes,
                                 d.registration_policy,
@@ -134,13 +142,14 @@ public class DomainService {
         String legacyVisibilityPolicy = visibilityPolicyCodes.isEmpty() ? "public" : visibilityPolicyCodes.getFirst();
         jdbcTemplate.update("""
                         INSERT INTO business_domain (
-                            code, name, visibility_policy, status, created_at, updated_at, 
+                            code, name, description, visibility_policy, status, created_at, updated_at,
                             registration_policy, visibility_policy_codes, logo, deleted_at, created_by
                         )
-                        VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3), ?, ?, ?, NULL, ?)
+                        VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3), ?, ?, ?, NULL, ?)
                         """,
                 request.code().trim(),
                 request.name().trim(),
+                normalizeDescription(request.description()),
                 legacyVisibilityPolicy,
                 registrationPolicy,
                 toJson(visibilityPolicyCodes),
@@ -152,8 +161,14 @@ public class DomainService {
             throw new IllegalStateException("business domain create failed");
         }
 
-        recordAudit(id, context, "domain:" + request.code(), "domain.create",
-                Map.of("code", request.code(), "name", request.name()), "success");
+        DomainBootstrapService.BootstrapResult bootstrap = domainBootstrapService.bootstrapNewDomain(id, context.userId());
+        Map<String, Object> auditPayload = new HashMap<>();
+        auditPayload.put("code", request.code());
+        auditPayload.put("name", request.name());
+        auditPayload.put("creator_user_id", context.userId());
+        auditPayload.put("staff_account_id", bootstrap.staffAccountId());
+        auditPayload.put("granted_role", bootstrap.grantedRole());
+        recordAudit(id, context, "domain:" + request.code(), "domain.create", auditPayload, "success");
 
         return new DomainDtos.DomainCreateResponse(id, request.code().trim());
     }
@@ -165,6 +180,7 @@ public class DomainService {
         String code = StringUtils.hasText(request.code()) ? request.code().trim() : existing.code();
         String name = StringUtils.hasText(request.name()) ? request.name().trim() : existing.name();
         String logo = request.logo() == null ? existing.logo() : request.logo();
+        String description = request.description() == null ? existing.description() : normalizeDescription(request.description());
         List<String> visibilityPolicyCodes = request.visibility_policy_codes() == null
                 ? existing.visibility_policy_codes()
                 : normalizeVisibilityPolicyCodes(request.visibility_policy_codes());
@@ -176,13 +192,14 @@ public class DomainService {
 
         jdbcTemplate.update("""
                         UPDATE business_domain
-                        SET code = ?, name = ?, logo = ?, visibility_policy = ?, visibility_policy_codes = ?,
+                        SET code = ?, name = ?, description = ?, logo = ?, visibility_policy = ?, visibility_policy_codes = ?,
                             registration_policy = ?, status = ?, updated_at = CURRENT_TIMESTAMP(3), updated_by = ?
                         WHERE id = ?
                           AND deleted_at IS NULL
                         """,
                 code,
                 name,
+                description,
                 logo,
                 legacyVisibilityPolicy,
                 toJson(visibilityPolicyCodes),
@@ -360,6 +377,7 @@ public class DomainService {
                 rs.getLong("id"),
                 rs.getString("code"),
                 rs.getString("name"),
+                rs.getString("description"),
                 rs.getString("logo"),
                 readVisibilityPolicyCodes(rs.getString("visibility_policy_codes")),
                 rs.getString("registration_policy"),
@@ -413,6 +431,14 @@ public class DomainService {
 
     private String normalizeRegistrationPolicy(String registrationPolicy) {
         return StringUtils.hasText(registrationPolicy) ? registrationPolicy.trim() : "open";
+    }
+
+    private String normalizeDescription(String description) {
+        if (!StringUtils.hasText(description)) {
+            return null;
+        }
+        String trimmed = description.trim();
+        return trimmed.length() > 512 ? trimmed.substring(0, 512) : trimmed;
     }
 
     private Integer resolveStatus(String status) {
