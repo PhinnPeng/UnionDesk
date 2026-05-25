@@ -57,3 +57,4 @@ docs/
 - 逻辑字段变更：L3 → L4 同步 → L5 登记 → L7 Flyway。
 - 与代码出现偏差：登记 `qa/implementation-traceability.md`（待建），**不以 Flyway 脚本反写需求**。
 - 历史文档：仓库根目录 `doc/` 为只读参考，**以 `docs/` 为准**。
+- **迭代任务源**：L6 为 [`product/backlog-stories.md`](product/backlog-stories.md)；[`checklist/`](checklist/) 仅为 PRD/模块修订清单，**不**替代 Backlog。

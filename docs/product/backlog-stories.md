@@ -2,7 +2,7 @@
 
 | 文档版本 | 日期 | 说明 |
 |:---|:---|:---|
-| 1.2 | 2026-05-24 | S0 收口；S1 平台端；FR-03 403 中文；S2+ 占位 |
+| 1.3 | 2026-05-24 | S0 含 US-S0-07 基线快照；S1 平台端 |
 
 > Epic 见 [`backlog-epics.md`](./backlog-epics.md)。DB 增量见 [`../architecture/database-increment-plan.md`](../architecture/database-increment-plan.md)。  
 > **迭代任务源**：本文档（AGENTS.md 约定）。
@@ -79,6 +79,21 @@
   2. 每项有 MVP 默认方案与降级路径
 - **DB 增量**: 无
 
+### US-S0-07 数据库基线快照与迁移备份
+
+- **Epic**: E0 | **Sprint**: S0 | **SP**: 2 | **状态**: Done
+- **角色**: 开发 / DBA
+- **故事**: 作为维护者，我希望以联调库当前状态为权威基线并保留迁移前备份，以便迁移出问题时可恢复，且不必重排 Flyway 历史。
+- **AC**:
+  1. **迁移前备份**：文档化并在执行联调库 Flyway/DDL 前运行备份；产出路径 `UnionDesk/backups/uniondesk_YYYYMMDD_HHmmss.sql`，且目录已加入 `.gitignore`。
+  2. **参考快照**：从联调库导出 schema + 稳定种子至 **非 Flyway 路径** `docs/architecture/reference-schema/uniondesk_baseline_YYYYMMDD.sql`；文件头注明来源库、Flyway 版本、volatile 表排除说明。
+  3. **版本对齐**：联调库 `flyway_schema_history` 最大 version **≥ `202605250001`**，且与 `current/` 脚本一致（无 orphan / missing）。
+  4. **drift 登记**：[`database-increment-plan.md`](../architecture/database-increment-plan.md) §2 与快照一致；若有 drift 写入备注。
+  5. **明确不做**：不 `flyway:clean` 联调库；不移动 `current/` → `archive/`；不修改已执行迁移的版本号或内容。
+- **DB 增量**: 无（只读导出 + 文档）
+- **规则**: 备份文件、含凭据脚本 **禁止 commit**
+- **备注**: 全库备份 `UnionDesk/backups/uniondesk_*.sql`（不入 Git）；参考快照 [`reference-schema/uniondesk_baseline_20260525.sql`](../architecture/reference-schema/uniondesk_baseline_20260525.sql)；脚本 `backup-db` / `export-baseline-reference`（`.ps1` + `.sh`）
+
 ---
 
 ## Sprint 1 — 员工平台端（E1，`/platform/`）
@@ -112,12 +127,12 @@
 
 ### US-S1-02 创建业务域与 bootstrap
 
-- **Epic**: E1 | **Sprint**: S1 | **SP**: 5 | **状态**: Done
+- **Epic**: E1 | **Sprint**: S1 | **SP**: 5 | **状态**: Partial
 - **AC**:
   1. `POST /api/v1/admin/domains` 创建域
   2. 创建者获得域内 super_admin（DomainBootstrapService）
   3. 管理端列表/详情可访问
-- **备注**: DomainService、domains 页面
+- **备注**: 核心路径可用；创建/编辑仍用 `registration_policy` 单字段，双字段见 US-S1-03（联调库已 V202605250001，Git HEAD 代码未对齐）
 
 ### US-S1-03 入域双配置 CRUD
 

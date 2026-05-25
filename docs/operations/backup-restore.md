@@ -10,6 +10,34 @@
 - P0 阶段提供备份脚本，支持定时执行。
 - 备份文件需异地存储，与生产环境物理隔离。
 
+#### 1.1.1 开发 / 联调：Flyway 或 DDL 试跑前备份（US-S0-07）
+
+在**联调库**（`127.0.0.1:30306/uniondesk`）上执行下列操作 **之前**，须先全库备份：
+
+- `flyway:migrate` / `flyway:validate` 试跑
+- 手工 DDL 或数据修复
+- 导出基线参考快照（若与 migrate 同日，**先备份再导出**）
+
+```powershell
+New-Item -ItemType Directory -Force -Path UnionDesk/backups
+$ts = Get-Date -Format "yyyyMMdd_HHmmss"
+# 密码勿写入仓库；可用环境变量 UNIONDESK_DB_PASSWORD 或交互 -p
+mysqldump -h 127.0.0.1 -P 30306 -u uniondesk_app -p `
+  --single-transaction --routines --triggers `
+  uniondesk > "UnionDesk/backups/uniondesk_$ts.sql"
+```
+
+恢复（仅开发/联调，会覆盖当前库数据）：
+
+```powershell
+mysql -h 127.0.0.1 -P 30306 -u uniondesk_app -p uniondesk `
+  < UnionDesk/backups/uniondesk_YYYYMMDD_HHmmss.sql
+```
+
+> **说明**：自动化脚本见 `UnionDesk/scripts/backup-db.ps1`（Windows）、`backup-db.sh`（Unix）；无 `mysqldump` 时使用 JDBC `DbBackup.java`。
+
+详见 [`backlog-stories.md`](../product/backlog-stories.md) US-S0-07、[`database-increment-plan.md`](../architecture/database-increment-plan.md) §1.2。
+
 ### 1.2 文件备份
 
 - 本地存储根目录 `storage.local_root` 必须纳入备份范围。

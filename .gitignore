@@ -21,3 +21,13 @@ UnionDeskWeb/apps/UnionDeskAdminWeb/.env
 UnionDeskWeb/apps/UnionDeskAdminWeb/.env.*
 UnionDeskWeb/apps/UnionDeskAdminWeb/.gitconfig
 .openteams/
+
+# Database full backups (US-S0-07; may contain sensitive data)
+UnionDesk/backups/
+*.sql.bak
+UnionDesk/cp.txt
+UnionDesk/classpath.txt
+UnionDesk/target/backup-classes/
+
+# S0 closure tracker (local only)
+.codex-tmp/

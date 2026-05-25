@@ -39,7 +39,7 @@
 
 | Epic | 名称 | Sprint | 状态 | 目标 |
 |:---|:---|:---|:---|:---|
-| **E0** | 项目奠基与工程骨架 | **S0** | 收口 | Backlog、联调说明、increment-plan、管理端盘点（平台端）、ADR；**零业务功能** |
+| **E0** | 项目奠基与工程骨架 | **S0** | 收口 | Backlog、联调说明、increment-plan、管理端盘点（平台端）、ADR、**基线快照与迁移备份**；**零业务功能** |
 | **E1** | 员工平台端完善 | **S1** | Committed | **`/platform/*`**：登录、动态菜单、业务域、组织、全局用户/IAM、审计等（PRD §3.4） |
 | **E2** | 员工业务域端完善 | **S2** | 规划 | **根级非 `/platform/`** 模块 + 域内配置（PRD §3.3）；business 菜单成品化 |
 | **E3** | 工单最小闭环 | S3+ | 占位 | 客户提单 → 客服处理 → 客户查单；含预置反馈/建议类型（PRD §3.1–3.2） |
@@ -83,7 +83,7 @@
 
 | 步 | Sprint | Committed | 说明 |
 |:---|:---|:---|:---|
-| **当前** | **S0** | **E0** | 按 sprint-0-plan、US-S0-01～06 执行；**不重写** |
+| **当前** | **S0** | **E0** | 按 sprint-0-plan、US-S0-01～**07** 执行；**不重写** |
 | **第 2 步** | **S1** | **E1** + **E6** 部分 | 约 13 SP；完善 **`/platform/`**；见 sprint-0-plan §7 |
 | **第 3 步** | **S2** | **E2** | 业务域端；**非**当前两步承诺 |
 | 下轮 | S3+ | **E3**… | 工单、SLA、咨询 |
@@ -118,9 +118,9 @@ flowchart TB
 
 ### 6.1 E0（与 sprint-0-plan 一致，不重写）
 
-**做**：Backlog、implementation-inventory（平台端 §1～§5）、sprint-0-plan、increment-plan 骨架、ADR、L3/L4/L5 口径对齐。
+**做**：Backlog、implementation-inventory（平台端 §1～§5）、sprint-0-plan、increment-plan 骨架、ADR、L3/L4/L5 口径对齐、**US-S0-07 基线参考快照与迁移前备份流程**。
 
-**不做**：docker-compose 部署、Flyway rebaseline、新业务 API/UI、CustomerWeb 真实联调。
+**不做**：docker-compose 部署、Flyway **squash** rebaseline、新业务 API/UI、CustomerWeb 真实联调。
 
 ### 6.2 E1 — 员工平台端（`/platform/`）
 

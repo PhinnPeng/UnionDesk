@@ -8,7 +8,7 @@
 
 ## 1. 设计目标
 
-> **文档定位（L4）**：逻辑实体、命名与隔离约定；与 [`product/foundation-rules.md`](../product/foundation-rules.md)（L3）同步。  
+> **文档定位（L4）**：本文档为**逻辑数据模型**（L4），描述逻辑实体、命名与隔离约定；**非** Flyway 导出快照。与 [`product/foundation-rules.md`](../product/foundation-rules.md)（L3）同步。  
 > **与 PRD**：[`product/prd.md`](../product/prd.md) §5 为概念简表；物理变更按 Sprint 登记 [`database-increment-plan.md`](./database-increment-plan.md)（L5），DDL 见 Flyway（L7）。  
 > 下文表结构描述**以 Flyway 已落库为准**（含过渡期 `user_account` 等）；与 L3 目标态不一致时，以 L3 + Backlog 为准并登记偏差。
 
