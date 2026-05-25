@@ -98,6 +98,29 @@
 
 ## Sprint 1 — 员工平台端（E1，`/platform/`）
 
+> **Sprint 执行计划**：[`sprint-1-plan.md`](./sprint-1-plan.md)（Committed 顺序、P0 工程、DoD）。
+
+### S1-00 联调工程（P0，非功能 Story）
+
+> 不计入 E1 业务 SP 合计；验收见 sprint-1-plan §4～§5。评审通过后先于 US-S1-03 编码。
+
+#### S1-00a JRebel Maven 热更新
+
+- **Sprint**: S1 | **SP**: 1 | **状态**: Todo
+- **AC**:
+  1. `UnionDesk/pom.xml` 含 `jrebel-maven-plugin` 1.2.1，`process-resources` 生成 `rebel.xml`
+  2. 文档化无 IDEA 启动：`mvnw jrebel:generate` / `spring-boot:run` + JRebel agentpath
+  3. 修改 `@RestController` 后联调可热更（Flyway/DDL 变更除外）
+- **DB 增量**: 无
+
+#### S1-00b 消除 Security 默认密码日志
+
+- **Sprint**: S1 | **SP**: 0.5 | **状态**: Todo
+- **AC**:
+  1. 启动日志无 `Using generated security password`
+  2. JWT 登录、403 中文行为不变；`JwtAuthenticationFilterTests` 通过
+- **DB 增量**: 无
+
 ### Sprint 1 范围说明
 
 - **S1 Epic E1 = 员工平台管理端**（PRD §3.4）：路由以 **`/platform/`** 为前缀；菜单 `iam_admin_menu.scope = platform`；典型角色 `platform_admin`。

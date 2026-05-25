@@ -114,4 +114,6 @@ pnpm -C apps/UnionDeskAdminWeb dev
 
 ## 7. 下一步（S1）
 
-从 `[backlog-stories.md](./backlog-stories.md)` 选取 Partial/Todo：优先 **US-S1-05**、**US-S1-07**、**US-S1-08**（合计约 13 SP 内）。
+S1 权威执行计划见 **[`sprint-1-plan.md`](./sprint-1-plan.md)**。
+
+Committed 顺序：**S1-00a/00b（联调工程 P0）** → **US-S1-03（双字段）** → US-S1-07 / US-S1-08 / US-S1-05（合计约 13 SP 内）。Story 明细与 AC 仍以 [`backlog-stories.md`](./backlog-stories.md) 为准。

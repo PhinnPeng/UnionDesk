@@ -41,6 +41,7 @@ docs/
 │   ├── backlog-epics.md
 │   ├── backlog-stories.md            # L6 迭代任务源
 │   ├── sprint-0-plan.md
+│   ├── sprint-1-plan.md              # S1 执行计划（Committed 顺序、P0 工程）
 │   └── implementation-inventory.md
 ├── architecture/
 │   ├── data-model.md

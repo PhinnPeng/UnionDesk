@@ -4,7 +4,7 @@
 |:---|:---|:---|
 | 1.2 | 2026-05-24 | 管理端双端；FR-03 403 中文；S1 平台端范围 §8.0 |
 
-> 权威链见 [`../README.md`](../README.md)。User Story 明细见 [`backlog-stories.md`](./backlog-stories.md)。S0 执行见 [`sprint-0-plan.md`](./sprint-0-plan.md)。
+> 权威链见 [`../README.md`](../README.md)。User Story 明细见 [`backlog-stories.md`](./backlog-stories.md)。S0 执行见 [`sprint-0-plan.md`](./sprint-0-plan.md)；**S1 执行见 [`sprint-1-plan.md`](./sprint-1-plan.md)**。
 
 ---
 
