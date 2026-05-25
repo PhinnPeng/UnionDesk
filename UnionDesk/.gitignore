@@ -1,4 +1,8 @@
 target/
+config/jrebel.local.properties
+scripts/*.class
+target/cp.txt
+target/backup-classes/
 .idea/
 *.iml
 logs/

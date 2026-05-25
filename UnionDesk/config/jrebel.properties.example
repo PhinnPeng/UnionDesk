@@ -1,0 +1,8 @@
+# JRebel 许可证服务器（Team URL）激活示例
+# 复制为 jrebel.local.properties 并填入真实值；jrebel.local.properties 已 gitignore，勿提交。
+#
+# 官方文档：https://manuals.jrebel.com/license-server/configuration/client-configuration.html
+# 支持通过 rebel.license.url + rebel.license.email 订阅/团队 URL 激活（Rebel Licenses On-Premise）。
+
+rebel.license.url=http://your-license-server:8088/your-team-uuid
+rebel.license.email=your-email@example.com

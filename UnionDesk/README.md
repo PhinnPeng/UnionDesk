@@ -69,6 +69,41 @@ docker compose up -d
 .\mvnw.cmd spring-boot:run
 ```
 
+### JRebel 热更新（开发联调，可选）
+
+> **Maven 插件**与 **JRebel Agent** 是两套组件：插件只负责生成 `rebel.xml`；运行时热更依赖本机安装的 Agent。
+
+| 组件 | 推荐版本 | 说明 |
+|:---|:---|:---|
+| `jrebel-maven-plugin` | **1.2.1**（Maven Central 当前最新，2024-11-12） | 已写入 `pom.xml`，`process-resources` 自动生成 `target/classes/rebel.xml` |
+| JRebel Agent | **2026.2.1+**（[下载](https://www.jrebel.com/products/jrebel/download)） | 解压后设置 `JREBEL_HOME` 指向安装根目录 |
+
+**许可证：支持 Team URL（订阅/许可证服务器）激活**
+
+JRebel 可通过 Rebel Licenses On-Premise 的团队 URL 激活，在 `jrebel.properties` 中配置：
+
+```properties
+rebel.license.url=http://<license-server>:<port>/<team-uuid>
+rebel.license.email=<your-email>
+```
+
+1. 复制 `config/jrebel.properties.example` → `config/jrebel.local.properties`（已 gitignore，勿提交）
+2. 填入团队激活 URL 与邮箱
+3. 设置 `JREBEL_HOME` 后执行：
+
+```powershell
+# 方式 A：脚本（推荐）
+.\scripts\run-with-jrebel.ps1
+
+# 方式 B：手动
+.\mvnw.cmd process-resources
+$env:JREBEL_HOME = "C:\path\to\jrebel"
+.\mvnw.cmd spring-boot:run `
+  "-Dspring-boot.run.jvmArguments=-agentpath:$env:JREBEL_HOME\lib\jrebel64.dll -Drebel.properties=$PWD\config\jrebel.local.properties"
+```
+
+**边界**：修改 Flyway SQL、实体映射或 Spring Bean 结构变更仍须重启；`rebel.xml` 位于 `target/`，不入 Git。
+
 ### 执行测试
 
 ```powershell
@@ -103,6 +138,10 @@ docker compose up -d
 
 - 默认：控制台 + 本地滚动文件 `logs/uniondesk-backend.log`
 - 后续：接入 ELK 时切换到集中式采集
+
+## 运维脚本
+
+数据库备份、Flyway 核查、JRebel 启动等见 [`scripts/README.md`](scripts/README.md)。
 
 ## 当前说明
 
