@@ -2,7 +2,7 @@
 
 | 文档版本 | 日期 | 说明 |
 |:---|:---|:---|
-| 1.2 | 2026-05-24 | 管理端双端（`/platform/` vs 根级）；E3+ 顺延；S0/S1 承诺不变 |
+| 1.2 | 2026-05-24 | 管理端双端；FR-03 403 中文；S1 平台端范围 §8.0 |
 
 > 权威链见 [`../README.md`](../README.md)。User Story 明细见 [`backlog-stories.md`](./backlog-stories.md)。S0 执行见 [`sprint-0-plan.md`](./sprint-0-plan.md)。
 
@@ -152,9 +152,15 @@ flowchart TB
 
 ## 8. E1 平台端 S1 验收摘要
 
+### 8.0 S1 与双控制台边界
+
+- **S1 主验收面 = `/platform/` 平台管理端**（Epic E1）；**不**以 business scope（根级非 `/platform/`）页面成品化作为 S1 完成条件。
+- **业务域管理端**菜单与域内配置 UI 归 **S2 / Epic E2**（inventory §7）。
+- **US-S1-04/05/06** 为跨端 API 或 CustomerWeb，保留在 S1 Story 列表中，**不**用于判定「业务域管理端已完善」。
+
 1. 平台管理员登录后，动态菜单与 `iam_admin_menu`（**`/platform/`** 模块）一致。
 2. 业务域列表/详情/创建可用；入域双配置可 CRUD（与 Git/联调库一致）。
-3. 用户、组织、IAM（角色/权限/菜单）主路径可演示。
+3. 用户、组织、IAM（角色/权限/菜单）**平台侧**主路径可演示（如 `/platform/user`、`/platform/system/menu`；**非** `/system/*` 骨架成品化）。
 4. 登录日志、操作日志只读可查。
 5. 跨域 API 拒绝（FR-02）有 Story 覆盖。
 

@@ -2,7 +2,7 @@
 
 | 文档版本 | 日期 | 说明 |
 |:---|:---|:---|
-| 1.2 | 2026-05-24 | S0 收口；S1 Committed；S2+ 占位（E2 业务域端 / E3 工单）；状态与 Git HEAD 对齐 |
+| 1.2 | 2026-05-24 | S0 收口；S1 平台端；FR-03 403 中文；S2+ 占位 |
 
 > Epic 见 [`backlog-epics.md`](./backlog-epics.md)。DB 增量见 [`../architecture/database-increment-plan.md`](../architecture/database-increment-plan.md)。  
 > **迭代任务源**：本文档（AGENTS.md 约定）。
@@ -81,7 +81,22 @@
 
 ---
 
-## Sprint 1 — 管理端 Walking Skeleton（E1）
+## Sprint 1 — 员工平台端（E1，`/platform/`）
+
+### Sprint 1 范围说明
+
+- **S1 Epic E1 = 员工平台管理端**（PRD §3.4）：路由以 **`/platform/`** 为前缀；菜单 `iam_admin_menu.scope = platform`；典型角色 `platform_admin`。
+- **业务域管理端**（PRD §3.3，根级非 `/platform/`，`scope = business`）**不在 S1 Committed**，归 **S2 / Epic E2**（见 [`backlog-epics.md`](./backlog-epics.md)）。
+- 同一 `UnionDeskAdminWeb` 内可存在双 scope 菜单，但 **S1 UI 收口对象 = 平台端**；`/system/*` 等 business 骨架页成品化不计入 S1 完成度。
+- **FR-03**（[`foundation-rules.md`](./foundation-rules.md) §5.1）：无按钮权限 → 按钮不可见；若仍调用 API → **403 + 中文**。
+
+| Story | 交付面 | 标注 |
+|:---|:---|:---|
+| US-S1-01～03、07、09 | 平台端 `/platform/*` | S1 主路径 |
+| US-S1-04 | 后端 API | 跨端/API |
+| US-S1-05 | CustomerWeb | 跨端/客户端 |
+| US-S1-06 | API + 平台域上下文 | 跨端/API，平台侧触发 |
+| US-S1-08 | 后端鉴权 | 横切 |
 
 ### US-S1-01 平台登录与动态菜单
 
@@ -91,9 +106,9 @@
 - **AC**:
   1. 登录成功进入 `/platform/home`
   2. 菜单来自 `iam_admin_menu`，与 Flyway 种子一致（V202605220001 五模块）
-  3. 无权限菜单不可见（FR-03 部分）
-- **规则**: FR-01、FR-03
-- **备注**: Auth + generateRoutesFromBackend 已有
+  3. 无权限菜单不可见（FR-03：菜单可见性部分）
+- **规则**: FR-03（菜单）；API 403 + 中文见 FR-01 / FR-03
+- **备注**: Auth + generateRoutesFromBackend 已有；本 Story 不单独验收按钮级 FR-03
 
 ### US-S1-02 创建业务域与 bootstrap
 
@@ -149,7 +164,7 @@
 - **AC**:
   1. 角色/权限/菜单管理页可演示
   2. 未授权 API 403 + 中文（FR-01）
-  3. 未授权按钮不可见（FR-03）
+  3. 未授权按钮不可见（FR-03）；若仍调用对应 API → 403 + 中文
 - **规则**: FR-01、FR-03
 
 ### US-S1-08 跨域访问拒绝
