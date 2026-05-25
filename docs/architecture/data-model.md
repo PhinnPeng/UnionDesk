@@ -82,7 +82,7 @@
 
 ### 3.5 反馈、通知与审计
 
-- `feedback`：反馈/建议生命周期。
+- `feedback`：反馈/建议生命周期（**MVP 不使用**；反馈/建议经 `ticket` + `ticket_type` 预置交付，见 [`backlog-epics.md`](../product/backlog-epics.md) §1.3）。
 - `notification_template`：通知模板，支持全局或业务域级配置。
 - `operation_log`：管理操作审计日志。
 

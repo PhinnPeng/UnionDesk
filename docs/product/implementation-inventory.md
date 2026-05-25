@@ -2,9 +2,18 @@
 
 | 文档版本 | 日期 | 说明 |
 |:---|:---|:---|
-| 1.0 | 2026-05-24 | Sprint 0：覆盖首页、组织、业务域、IAM、日志审计 5 大模块 |
+| 1.1 | 2026-05-24 | §1～§5 平台端（`/platform/`）；§7 业务域端占位 |
 
 > 状态说明：**Done** = 前后端均可正常使用（含基本校验与权限）；**Partial** = 核心路径可用但缺边界 case / 依赖 demo 数据 / 缺独立页面；**Todo** = 未实现或为占位。
+
+**路由分端**（与 [`backlog-epics.md`](./backlog-epics.md) §1.2 一致）：
+
+| 端 | 判定 |
+|:---|:---|
+| **平台端** | `route_path` 以 **`/platform/`** 为前缀；页面多在 `pages/platform/*` |
+| **业务域端** | **非** `/platform/` 前缀的根级模块；`iam_admin_menu.scope=business`（如 `/home`、`/system/*` 等，以后台菜单为准） |
+
+**范围**：本章 §1～§5 仅盘点 **平台端**（PRD §3.4）。业务域端见 **§7**（S2 / Epic E2 前补全）。
 
 ---
 
@@ -176,3 +185,19 @@
 | Sprint 0 计划 | [`sprint-0-plan.md`](./sprint-0-plan.md) |
 | 数据库增量计划 | [`../architecture/database-increment-plan.md`](../architecture/database-increment-plan.md) |
 | 数据模型 | [`../architecture/data-model.md`](../architecture/data-model.md) |
+
+---
+
+## 7. 业务域端（根级非 `/platform/`，Epic E2 — 待补盘点）
+
+> **S0/S1 不承诺本表逐行验收。** S2 启动 E2 前，按 `iam_admin_menu.scope=business` 与路由前缀规则补全 Done/Partial/Todo。
+
+| 项 | 前端线索 | 后端 | 状态 | 备注 |
+|:---|:---|:---|:---|:---|
+| 业务域首页/入口 | `/home` 等 | — | **Todo** | 与平台 `/platform/home` 分离 |
+| 系统用户/角色/菜单/部门 | `pages/system/user` 等 | IAM 域级 API | **Partial** | data-model §5：当前多为骨架页 |
+| 域内成员管理 UI | 域详情 Tab 或根级模块 | `DomainMemberController` | **Partial** | API 就绪，平台端详情未挂 Tab |
+| 域客户管理 UI | 同上 | `DomainCustomerController` | **Partial** | 同上 |
+| 域角色管理 UI | 同上 | `DomainRoleController` | **Partial** | 同上 |
+| 工单类型设计 | — | `ticket_type` | **Todo** | 含反馈/建议预置类型 + 启用/停用 |
+| 域 SLA / 通知模板 | — | — | **Todo** | PRD §3.3.1 |
