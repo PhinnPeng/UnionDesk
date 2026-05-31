@@ -2,6 +2,8 @@ package com.uniondesk.common.web;
 
 import com.uniondesk.auth.core.AuthenticationFailedException;
 import com.uniondesk.auth.core.AuthCaptchaException;
+import com.uniondesk.domain.core.DomainBusinessException;
+import com.uniondesk.domain.core.DomainErrorCodes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -28,6 +30,13 @@ public class ApiExceptionHandler {
     @ExceptionHandler(AuthCaptchaException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthCaptcha(AuthCaptchaException ex) {
         return toResponse(ErrorCodes.AUTH_CAPTCHA_FAILED);
+    }
+
+    @ExceptionHandler(DomainBusinessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDomainBusiness(DomainBusinessException ex) {
+        DomainErrorCodes errorCode = ex.errorCode();
+        return ResponseEntity.status(errorCode.status())
+                .body(ApiResponse.error(String.valueOf(errorCode.code()), errorCode.message()));
     }
 
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})

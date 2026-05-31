@@ -9,6 +9,8 @@ import com.uniondesk.common.demo.DemoDataService;
 import com.uniondesk.common.demo.DemoDtos.BusinessDomainView;
 import com.uniondesk.common.demo.DemoDtos.LoginUserView;
 import com.uniondesk.domain.core.DomainService;
+import com.uniondesk.domain.core.DomainAccessPolicy;
+import com.uniondesk.domain.core.DomainErrorCodes;
 import com.uniondesk.domain.core.InvitationCodeService;
 import com.uniondesk.domain.web.DomainDtos;
 import com.uniondesk.iam.core.IamService;
@@ -113,7 +115,7 @@ public class AuthService {
                     portalType,
                     clientCode,
                     null,
-                    null,
+                    request.username(),
                     identifierType.name(),
                     request.username(),
                     "login_disabled",
@@ -310,15 +312,16 @@ public class AuthService {
         long accountId = createCustomerAccount(subjectId, loginName, displayName, phone, request.email(), request.password());
         if (request.domainId() != null) {
             DomainDtos.DomainView domain = domainService.getDomain(request.domainId());
-            if ("admin_only".equalsIgnoreCase(domain.registration_policy())) {
-                throw new IllegalArgumentException("registration is not allowed");
-            }
+            boolean registrationAllowed = DomainAccessPolicy.isAllowed(domain.registration_enabled());
+            boolean invitationAllowed = DomainAccessPolicy.isAllowed(domain.invitation_enabled());
             boolean hasInvitation = StringUtils.hasText(request.invitationCode());
-            if ("invitation_only".equalsIgnoreCase(domain.registration_policy()) && !hasInvitation) {
-                throw new IllegalArgumentException("invitation code required");
-            }
             if (hasInvitation) {
+                if (!invitationAllowed) {
+                    throw DomainErrorCodes.INVITATION_DISALLOWED.toException();
+                }
                 invitationCodeService.validateAndUse(request.domainId(), request.invitationCode());
+            } else if (!registrationAllowed) {
+                throw DomainErrorCodes.REGISTRATION_DISALLOWED.toException();
             }
             insertDomainCustomer(accountId, request.domainId(), hasInvitation ? "invitation" : "self_register", "active");
         }
@@ -728,7 +731,7 @@ public class AuthService {
                 portalType,
                 clientCode,
                 businessDomainId,
-                username,
+                username != null ? username : identifier,
                 identifierType.name(),
                 identifier,
                 reason,

@@ -76,6 +76,42 @@ class DomainCustomerControllerTests {
         verify(domainCustomerService).updateCustomerStatus(eq(10L), eq(1L), any());
     }
 
+    @Test
+    void addCustomerManualReturnsView() throws Exception {
+        MockMvc mockMvc = mockMvc();
+        when(domainCustomerService.addCustomerManual(anyLong(), any())).thenReturn(customerView(3L, "active"));
+
+        mockMvc.perform(post("/api/v1/admin/domains/10/customers/manual")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "displayName": "演示客户",
+                                  "loginName": "demo_user",
+                                  "phone": "13900001111",
+                                  "email": "demo@example.com"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("active"));
+    }
+
+    @Test
+    void addCustomersFromStaffReturnsBatchResult() throws Exception {
+        MockMvc mockMvc = mockMvc();
+        when(domainCustomerService.addCustomersFromStaff(anyLong(), any())).thenReturn(
+                new DomainCustomerDtos.BatchCreateDomainCustomersResult(1, 0, List.of(customerView(4L, "active"))));
+
+        mockMvc.perform(post("/api/v1/admin/domains/10/customers/from-staff")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "staffAccountIds": [1001]
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.added").value(1));
+    }
+
     private MockMvc mockMvc() {
         return MockMvcBuilders.standaloneSetup(new DomainCustomerController(domainCustomerService)).build();
     }

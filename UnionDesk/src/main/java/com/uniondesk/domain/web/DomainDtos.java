@@ -16,7 +16,8 @@ public final class DomainDtos {
             String description,
             String logo,
             List<String> visibility_policy_codes,
-            String registration_policy,
+            String registration_enabled,
+            String invitation_enabled,
             int status,
             LocalDateTime created_at,
             LocalDateTime updated_at,
@@ -40,7 +41,8 @@ public final class DomainDtos {
             String description,
             String logo,
             List<String> visibility_policy_codes,
-            String registration_policy) {
+            String registration_enabled,
+            String invitation_enabled) {
     }
 
     public record UpdateDomainRequest(
@@ -49,7 +51,8 @@ public final class DomainDtos {
             String description,
             String logo,
             List<String> visibility_policy_codes,
-            String registration_policy,
+            String registration_enabled,
+            String invitation_enabled,
             Integer status) {
     }
 

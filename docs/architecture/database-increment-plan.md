@@ -65,6 +65,9 @@
 | V202605230001~002 | 登录日志统一 | login_log 统一 | Done |
 | V202605240001 | 业务域描述 | business_domain.description | Done |
 | V202605250001 | 入域双字段 | registration_enabled / invitation_enabled；DROP registration_policy | Done |
+| V202605330001 | 域 admin 权限重命名 | platform.domain.list.read / create / control.read | Done |
+| V202605330002 | US-S1-06 客户管理 | platform.domain.customer.* 三码 + 客户管理菜单 catalog/buttons | Done |
+| V202605330003 | US-S1-06 客户管理 | 已有业务域详情菜单授权的角色补齐客户管理菜单与 API 权限 | Done |
 
 ### 2.1 基线参考快照（US-S0-07）
 
@@ -80,16 +83,26 @@
 
 | Story ID | 表/列变更（计划） | Flyway 版本 | 状态 |
 |:---|:---|:---|:---|
-| US-S1-05 | （无表变更，前端接 API） | — | Todo |
-| US-S1-07 | iam 权限/菜单补全（若需） | TBD | Partial |
-| US-S1-08 | （无表变更，API 层） | — | Todo |
+| US-S1-05 | （无表变更，前端接 API） | — | Todo（S1 暂缓，2026-05-26） |
+| US-S1-07 | iam 资源/权限码目录 JWT 路径 + 域用户 PUT/DELETE 路径 | 202605310001 | Done |
+| US-S1-07 | 权限管理菜单改为 catalog（移除 /platform/permission） | 202605310002 | Done |
+| US-S1-02 | super_admin 所有人语义；历史域 permission_item / iam_role_binding 补齐 | 202605320001 | Done |
+| US-S1-08 | （无表变更，API 层） | — | Todo（S1 暂缓，2026-05-26） |
 | **S1 末** | **rebaseline 评估** | TBD | 待定 |
 
-### Sprint 2（E2 工单）
+### Sprint 2（E2 + 平台域详情 + UX）
 
 | Story ID | 表/列变更（计划） | Flyway 版本 | 状态 |
 |:---|:---|:---|:---|
-| US-S2-01 | ticket / ticket_type 等（按 Story 细化） | TBD | Todo |
+| US-S2-UX-01 | 无 | — | Todo |
+| US-S2-01 | 无表变更；权限 `platform.domain.control.deleted`；软删确认 `updated_at`/`updated_by`（无 `deleted` 列） | TBD | Todo |
+| US-S2-02 | 权限 `platform.domain.roles.*`（只读）；菜单「角色管理」 | TBD | Todo |
+| US-S2-03 | 无表；`domain.member.status` API；成员按钮权限码 | TBD | Todo |
+| US-S2-04 | 无（除非客户编辑扩列） | — | Todo |
+| US-S2-05 | `blocked_word` 扩展；权限 `platform.blocked_word.*`、`platform.domain.blocked_word.*` | TBD | Todo |
+| US-S2-06 | 权限 `platform.audit-logs.read`（若缺则 Flyway） | TBD | Todo |
+| US-S2-E2-00 | `iam_admin_menu` business 菜单（按需） | TBD | Todo |
+| US-S2-E2-01 | `ticket_type` 等（Stretch） | TBD | 延后 |
 
 ---
 

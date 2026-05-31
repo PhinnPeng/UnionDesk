@@ -10,7 +10,7 @@ import org.springframework.util.StringUtils;
 public class DomainBootstrapService {
 
     private static final List<PresetRole> PRESET_ROLES = List.of(
-            new PresetRole("super_admin", "业务域超级管理员"),
+            new PresetRole("super_admin", "业务域所有人"),
             new PresetRole("domain_admin", "业务域管理员"),
             new PresetRole("agent", "客服"));
 
@@ -22,6 +22,7 @@ public class DomainBootstrapService {
 
     public BootstrapResult bootstrapNewDomain(long domainId, long creatorUserId) {
         seedPresetRoles(domainId);
+        seedSuperAdminAllPermissionItems(domainId);
         long staffAccountId = resolveStaffAccountId(creatorUserId);
         grantCreatorSuperAdmin(domainId, creatorUserId, staffAccountId);
         return new BootstrapResult(staffAccountId, "super_admin");
@@ -135,6 +136,54 @@ public class DomainBootstrapService {
                         VALUES (?, ?, ?, CURRENT_TIMESTAMP(3))
                         ON DUPLICATE KEY UPDATE created_at = created_at
                         """,
+                creatorUserId,
+                legacySuperAdminRoleId,
+                domainId);
+        syncCreatorDomainSuperAdminBinding(domainId, creatorUserId, legacySuperAdminRoleId);
+    }
+
+    void seedSuperAdminAllPermissionItems(long domainId) {
+        long superAdminRoleId = requireDomainRoleId(domainId, "super_admin");
+        jdbcTemplate.update("""
+                        INSERT INTO domain_role_permission (domain_role_id, permission_item_id, created_at)
+                        SELECT ?, pi.id, CURRENT_TIMESTAMP(3)
+                        FROM permission_item pi
+                        WHERE NOT EXISTS (
+                            SELECT 1
+                            FROM domain_role_permission drp
+                            WHERE drp.domain_role_id = ?
+                              AND drp.permission_item_id = pi.id
+                        )
+                        """,
+                superAdminRoleId,
+                superAdminRoleId);
+    }
+
+    void syncCreatorDomainSuperAdminBinding(long domainId, long creatorUserId, int legacySuperAdminRoleId) {
+        jdbcTemplate.update("""
+                        INSERT INTO iam_role_binding (
+                            user_id,
+                            role_id,
+                            binding_scope,
+                            business_domain_id,
+                            status,
+                            created_at,
+                            updated_at
+                        )
+                        SELECT ?, ?, 'domain', ?, 1, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
+                        FROM DUAL
+                        WHERE NOT EXISTS (
+                            SELECT 1
+                            FROM iam_role_binding
+                            WHERE user_id = ?
+                              AND role_id = ?
+                              AND binding_scope = 'domain'
+                              AND business_domain_id = ?
+                        )
+                        """,
+                creatorUserId,
+                legacySuperAdminRoleId,
+                domainId,
                 creatorUserId,
                 legacySuperAdminRoleId,
                 domainId);

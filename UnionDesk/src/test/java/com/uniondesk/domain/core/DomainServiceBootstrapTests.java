@@ -48,7 +48,8 @@ class DomainServiceBootstrapTests {
                 "integration test",
                 "/default-domain-logo.svg",
                 List.of("public"),
-                "open"));
+                "allowed",
+                "allowed"));
 
         long domainId = created.id();
         assertNotNull(domainId);
@@ -93,6 +94,39 @@ class DomainServiceBootstrapTests {
                 Integer.class,
                 domainId);
         assertEquals(1, legacyBindingCount);
+
+        Integer permissionItemCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM permission_item",
+                Integer.class);
+        Integer superAdminPermissionCount = jdbcTemplate.queryForObject("""
+                        SELECT COUNT(*)
+                        FROM domain_role_permission drp
+                        JOIN domain_role dr ON dr.id = drp.domain_role_id
+                        WHERE dr.business_domain_id = ?
+                          AND dr.code = 'super_admin'
+                        """,
+                Integer.class,
+                domainId);
+        assertEquals(permissionItemCount, superAdminPermissionCount);
+
+        Integer iamBindingCount = jdbcTemplate.queryForObject("""
+                        SELECT COUNT(*)
+                        FROM iam_role_binding irb
+                        JOIN role r ON r.id = irb.role_id
+                        WHERE irb.user_id = 2
+                          AND irb.business_domain_id = ?
+                          AND irb.binding_scope = 'domain'
+                          AND r.code = 'super_admin'
+                        """,
+                Integer.class,
+                domainId);
+        assertEquals(1, iamBindingCount);
+
+        String ownerRoleName = jdbcTemplate.queryForObject(
+                "SELECT name FROM domain_role WHERE business_domain_id = ? AND code = 'super_admin' LIMIT 1",
+                String.class,
+                domainId);
+        assertEquals("业务域所有人", ownerRoleName);
 
         String source = jdbcTemplate.queryForObject(
                 "SELECT source FROM domain_member WHERE id = ?",

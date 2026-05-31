@@ -177,7 +177,65 @@ public class AdminMenuService {
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparingInt(GrantedPermission::orderNo).thenComparingLong(GrantedPermission::id))
                 .toList();
-        return new PermissionSnapshotData(menuNodes, actionNodes);
+        List<GrantedPermission> mergedActions = mergeRolePermissionActions(normalizedRoleCodes, actionNodes);
+        return new PermissionSnapshotData(menuNodes, mergedActions);
+    }
+
+    /**
+     * 将 iam_role_permission 中的权限码并入 snapshot actions，避免仅分配 API 权限、未勾选菜单按钮时前端 AuthGuarded 无码。
+     */
+    private List<GrantedPermission> mergeRolePermissionActions(
+            List<String> roleCodes,
+            List<GrantedPermission> menuButtonActions) {
+        Set<String> existingCodes = new LinkedHashSet<>();
+        for (GrantedPermission action : menuButtonActions) {
+            existingCodes.add(action.permissionCode());
+        }
+        List<GrantedPermission> merged = new ArrayList<>(menuButtonActions);
+        long syntheticId = -1L;
+        for (RolePermissionRow row : loadRolePermissionRows(roleCodes)) {
+            if (!StringUtils.hasText(row.code()) || existingCodes.contains(row.code())) {
+                continue;
+            }
+            Optional<PermissionDefinition> definition = AdminPermissionCatalog.findByCode(row.code());
+            if (definition.isEmpty()) {
+                continue;
+            }
+            PermissionDefinition def = definition.get();
+            merged.add(new GrantedPermission(
+                    syntheticId--,
+                    StringUtils.hasText(row.name()) ? row.name() : row.code(),
+                    def.code(),
+                    def.httpMethod(),
+                    def.pathPattern(),
+                    null,
+                    0,
+                    false));
+            existingCodes.add(row.code());
+        }
+        return merged;
+    }
+
+    private List<RolePermissionRow> loadRolePermissionRows(List<String> roleCodes) {
+        if (roleCodes.isEmpty()) {
+            return List.of();
+        }
+        String placeholders = String.join(",", roleCodes.stream().map(code -> "?").toList());
+        return jdbcTemplate.query("""
+                        SELECT DISTINCT p.code, p.name, p.http_method, p.path_pattern
+                        FROM iam_role_permission rp
+                        JOIN role r ON r.id = rp.role_id
+                        JOIN iam_permission p ON p.id = rp.permission_id
+                        WHERE r.code IN (%s)
+                          AND p.status = 1
+                        ORDER BY p.code
+                        """.formatted(placeholders),
+                (rs, rowNum) -> new RolePermissionRow(
+                        rs.getString("code"),
+                        rs.getString("name"),
+                        rs.getString("http_method"),
+                        rs.getString("path_pattern")),
+                roleCodes.toArray());
     }
 
     @Transactional
@@ -1044,6 +1102,13 @@ public class AdminMenuService {
     public record PermissionSnapshotData(
             List<AdminMenuNode> menus,
             List<GrantedPermission> actions) {
+    }
+
+    private record RolePermissionRow(
+            String code,
+            String name,
+            String httpMethod,
+            String pathPattern) {
     }
 
     private record ValidatedNode(

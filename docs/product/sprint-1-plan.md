@@ -2,8 +2,9 @@
 
 | 文档版本 | 日期 | 周期 | 说明 |
 |:---|:---|:---|:---|
-| 1.0 | 2026-05-25 | 2 周（建议） | E1：平台端 `/platform/` Walking Skeleton + 联调工程 P0 |
+| 1.2 | 2026-05-26 | 2 周（建议） | **S1 已签 off**（L6 承诺内 Story Done；04/05/08 暂缓） |
 
+> **状态**：**Sprint 1 已关闭**（签 off 见 §11）。下一迭代见 [`sprint-2-plan.md`](./sprint-2-plan.md)（**待负责人更新** Committed）。  
 > Committed Story 见 [`backlog-stories.md`](./backlog-stories.md) Sprint 1 章节；Epic 见 [`backlog-epics.md`](./backlog-epics.md) E1。  
 > 联调环境继承 [`sprint-0-plan.md`](./sprint-0-plan.md) §3；Flyway 基线 **`202605250001`**。
 
@@ -12,8 +13,8 @@
 ## 1. Sprint 目标
 
 1. **P0 联调工程**：JRebel Maven 热更新（无 IDEA）、消除 Spring Security 默认密码启动日志
-2. **三态对齐**：联调库已双字段（`registration_enabled` / `invitation_enabled`），Git HEAD 代码仍 `registration_policy` → **US-S1-03 为首轮业务**
-3. **平台端收口**：IAM 按钮/403（US-S1-07）、跨域拒绝（US-S1-08）、CustomerWeb 接真实 API（US-S1-05）
+2. **三态对齐**：文档 / 联调库 / Git HEAD 均已双字段（`registration_enabled` / `invitation_enabled`）；**US-S1-03 Done**
+3. **平台端收口**：IAM（US-S1-07 Done）、域与客户（US-S1-02/06 Done）、日志（US-S1-09 Done）；**US-S1-04 / US-S1-08 / US-S1-05** 仍 **S1 暂缓**
 4. **不擅自展开** S2+ Epic（E2 业务域端、E3 工单闭环等，见 backlog §Sprint 2）
 
 ---
@@ -22,18 +23,16 @@
 
 | 顺序 | ID | 标题 | SP | 类型 | 状态 |
 |:---|:---|:---|:---|:---|:---|
-| 0a | S1-00a | JRebel Maven 热更新 | 1 | 工程 P0 | Todo |
-| 0b | S1-00b | 消除 Security 默认密码日志 | 0.5 | 工程 P0 | Todo |
-| 1 | US-S1-03 | 入域双配置 CRUD | 3 | 业务 | Partial |
-| 2 | US-S1-07 | IAM 角色/权限/按钮 | 5 | 业务 | Partial |
-| 3 | US-S1-08 | 跨域访问拒绝 | 3 | 业务 | Todo |
-| 4 | US-S1-05 | CustomerWeb 接真实注册/入域 API | 5 | 业务 | Todo |
+| 0a | S1-00a | JRebel Maven 热更新 | 1 | 工程 P0 | Done |
+| 0b | S1-00b | 消除 Security 默认密码日志 | 0.5 | 工程 P0 | Done |
+| 1 | US-S1-03 | 入域双配置 CRUD | 3 | 业务 | Done |
+| 2 | US-S1-07 | IAM 角色/权限/按钮 | 5 | 业务 | Done |
 
 **说明**：
 
+- **US-S1-04**（客户注册 API，3 SP）、**US-S1-08**（跨域访问拒绝，3 SP）、**US-S1-05**（CustomerWeb，5 SP）：**S1 暂缓**（US-S1-04 决策 2026-05-30；其余 2026-05-26），不占用 Committed 顺序与签 off 前提；Story 仍保留于 backlog，后续 Sprint 再排（US-S1-04/05 建议归 E3）。
 - **0a/0b 最高优先**：后续 S1 编码均受益；评审通过后先落地再进业务 Story。
-- US-S1-01/02/04/06/09 为 Partial，随主路径联调验收，**不单独占 Committed 顺序**；详见 backlog 各 Story AC。
-- US-S1-05 依赖 US-S1-03/04 双字段 API 对齐后排期。
+- US-S1-01/02/06/09 随主路径联调验收，**不单独占 Committed 顺序**；截至 2026-05-26 均已 **Done**（详见 backlog）。
 
 ```mermaid
 flowchart TB
@@ -41,38 +40,34 @@ flowchart TB
     JRebel[S1-00a JRebel]
     SecNoise[S1-00b Security 日志]
   end
-  subgraph biz [S1 业务]
+  subgraph biz [S1 业务 Committed]
     S103[US-S1-03 双字段]
     S107[US-S1-07 IAM]
+  end
+  subgraph deferred [S1 暂缓]
+    S104[US-S1-04 注册 API]
     S108[US-S1-08 跨域]
     S105[US-S1-05 CustomerWeb]
   end
   p0 --> S103
   S103 --> S107
-  S103 --> S108
-  S103 --> S105
 ```
 
 ---
 
 ## 3. 三态提醒（US-S1-03 前置）
 
-| 态 | 现状 |
+| 态 | 现状（2026-05-26） |
 |:---|:---|
 | **文档**（L3/L5/L6） | `registration_enabled` / `invitation_enabled` |
-| **联调库** | Flyway `V202605250001` 已执行，无 `registration_policy` 列 |
-| **Git HEAD 代码** | `DomainService` / DTO / 管理端 UI 仍 `registration_policy` |
-
-本地可能存在的未入库草稿（**US-S1-03 编码时一并纳入 PR**）：
-
-- `UnionDesk/.../DomainAccessPolicy.java`、`DomainAccessPolicyTests.java`
-- `UnionDesk/.../V202605250001__business_domain_access_policy.sql`（若与 `current/` 已有脚本重复则只保留一处）
+| **联调库** | Flyway max **`202605330003`**；`business_domain` 双字段列存在，无 `registration_policy` |
+| **Git HEAD 代码** | domain / AdminWeb `domains/` **无** `registration_policy` 残留 |
 
 ---
 
 ## 4. P0 工程：S1-00a JRebel Maven 热更新
 
-> **状态**：待实现（评审通过后编码）。不依赖 IntelliJ JRebel 插件。
+> **状态**：Done（2026-05-25 确认；commit `3ebfc60`）。
 
 ### 4.1 目标
 
@@ -129,9 +124,9 @@ cd UnionDesk
 
 ### 4.3 验收
 
-- [ ] `target/classes/rebel.xml` 存在，classpath 指向 `target/classes` 与 `src/main/resources`
-- [ ] 修改任意 `@RestController` 方法后 **不重启进程** 即可在联调中生效
-- [ ] JRebel 控制台无报错
+- [x] `target/classes/rebel.xml` 存在，classpath 指向 `target/classes` 与 `src/main/resources`
+- [x] 修改任意 `@RestController` 方法后 **不重启进程** 即可在联调中生效
+- [x] JRebel 控制台无报错
 
 ### 4.4 边界
 
@@ -143,7 +138,7 @@ cd UnionDesk
 
 ## 5. P0 工程：S1-00b 消除 Security 默认密码日志
 
-> **状态**：待实现（评审通过后编码）。
+> **状态**：Done（`application.yml` exclude `UserDetailsServiceAutoConfiguration`）。
 
 ### 5.1 现象
 
@@ -174,9 +169,9 @@ spring:
 
 ### 5.4 验收
 
-- [ ] 启动日志 **不再** 出现 `Using generated security password`
-- [ ] `/api/v1/auth/login`、JWT 过滤器、403 中文响应 **行为不变**
-- [ ] [`JwtAuthenticationFilterTests`](../../UnionDesk/src/test/java/com/uniondesk/auth/core/JwtAuthenticationFilterTests.java) 通过
+- [x] 启动日志 **不再** 出现 `Using generated security password`
+- [x] `/api/v1/auth/login`、JWT 过滤器、403 中文响应 **行为不变**
+- [x] [`JwtAuthenticationFilterTests`](../../UnionDesk/src/test/java/com/uniondesk/auth/core/JwtAuthenticationFilterTests.java) 通过
 
 ### 5.5 不做
 
@@ -208,6 +203,7 @@ pnpm -C apps/UnionDeskAdminWeb dev
 |:---|:---|
 | 后端 health | `GET http://127.0.0.1:8080/actuator/health` → `{"status":"UP"}` |
 | AdminWeb | Vite 本地端口，登录页可访问 |
+| 登录默认首页 | 具备 `platformAccess` 的账号登录后进入 `/platform/home`，**非** `/system/menu`（`resolve-home-path.ts`） |
 | Flyway | 启动日志 schema 版本 ≥ `202605250001` |
 
 ### 6.3 后端变更后
@@ -229,12 +225,12 @@ pnpm -C apps/UnionDeskAdminWeb dev
 
 ## 8. Definition of Done
 
-- [ ] S1-00a / S1-00b 验收通过（§4.3、§5.4）
-- [ ] Committed Story（§2 表）AC 满足，backlog 状态更新
-- [ ] 双字段三态对齐：API / UI / 库表无 `registration_policy` 残留
-- [ ] 无擅自展开 S2+ Story
-- [ ] Flyway 新版本已在 increment-plan §2 登记
-- [ ] 与代码偏差登记 `qa/implementation-traceability.md`（待建）
+- [x] S1-00a / S1-00b 验收通过（§4.3、§5.4）
+- [x] Committed Story（§2 表）AC 满足，backlog 状态已更新（US-S1-03/07 Done；04/05/08 暂缓）
+- [x] 双字段三态对齐：API / UI / 库表无 `registration_policy` 残留（联调库 2026-05-26 复验）
+- [x] 无擅自展开 S2+ Story（E2/E3 未 Committed）
+- [x] Flyway 新版本已在 increment-plan §2 登记（至 V202605330003）
+- [x] 与代码偏差已登记 [`qa/implementation-traceability.md`](../qa/implementation-traceability.md)
 
 ---
 
@@ -245,7 +241,7 @@ pnpm -C apps/UnionDeskAdminWeb dev
 | JRebel license / Agent 路径因机器而异 | 文档写占位路径；各开发自备 license |
 | JRebel vs Flyway | 改 `db/migration/*.sql` 或 schema 映射时仍须重启 + migrate |
 | exclude `UserDetailsServiceAutoConfiguration` | 若未来 Security 集成测试依赖默认用户，改测试配置 |
-| CustomerWeb demo 与 API 不一致 | US-S1-05 排在 US-S1-03 之后 |
+| CustomerWeb / 注册 API 与联调不一致 | US-S1-04 / US-S1-05 S1 暂缓，后续 E3 再排 |
 | 菜单迁移过多 | S1 末 rebaseline（同 sprint-0-plan §4） |
 
 ---
@@ -258,3 +254,17 @@ pnpm -C apps/UnionDeskAdminWeb dev
 2. `application.yml` — exclude `UserDetailsServiceAutoConfiguration`
 3. `UnionDesk/README.md` — JRebel 启动步骤
 4. US-S1-03 及 §2 表后续业务 Story
+
+---
+
+## 11. 签 off（权威记录）
+
+| 项 | 内容 |
+|:---|:---|
+| **结论** | **Sprint 1 通过**（L6 承诺范围内 Story 均已 Done） |
+| **签 off 日期** | 2026-05-26 |
+| **负责人** | 待填写 |
+| **暂缓（不纳入 S1）** | US-S1-04、US-S1-05、US-S1-08 |
+| **偏差登记** | [`qa/implementation-traceability.md`](../qa/implementation-traceability.md) |
+
+> 临时勾选见 [`.codex-tmp/S1-closure-tracker.md`](../../.codex-tmp/S1-closure-tracker.md)（不入 Git）；**以本节与 L6 backlog 为准**。

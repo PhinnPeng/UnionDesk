@@ -55,7 +55,7 @@
 
 - `user_account`：用户主表，当前需要保留登录名、手机号、邮箱、昵称、头像、状态、最近登录信息和离职信息。
 - `platform_organization`：平台内部组织树，和 `business_domain` 分开维护，用于承接平台部门、负责人和组织排序。
-- `role`：角色定义表，当前角色包含 `customer`、`agent`、`domain_admin`、`super_admin`、`platform_admin`、`security_auditor`；目标态中 `platform_admin` 为平台级最高权限，`super_admin` 作为业务域最高角色使用。
+- `role`：角色定义表，当前角色包含 `customer`、`agent`、`domain_admin`、`super_admin`、`platform_admin`、`security_auditor`；目标态中 `platform_admin` 为平台级最高权限，`super_admin` 作为业务域最高角色使用（产品称「所有人」，每域唯一；**不单独设 `owner_id` 列**，由 `domain_member_role` + `super_admin` 表达）。
 - `user_global_role`：全局角色绑定表。
 - `user_domain_role`：业务域角色绑定表。
 - `customer_business_domain_access`：客户业务域可见/申请关系表。

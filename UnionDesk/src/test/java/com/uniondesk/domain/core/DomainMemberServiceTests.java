@@ -86,6 +86,26 @@ class DomainMemberServiceTests {
 
         assertThatThrownBy(() -> domainMemberService.guardLastDomainSuperAdmin(1L, 11L))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("业务域超级管理员");
+                .hasMessageContaining("业务域所有人");
+    }
+
+    @Test
+    void guardSingleDomainOwnerRejectsSecondHolder() {
+        when(jdbcTemplate.queryForObject(eq("""
+                        SELECT COUNT(DISTINCT dm.id)
+                        FROM domain_member dm
+                        JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+                        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+                        WHERE dr.business_domain_id = ?
+                          AND dr.code = 'super_admin'
+                          AND dm.status = 'active'
+                          AND dm.deleted_at IS NULL
+                          AND dm.id <> ?
+                        """), eq(Integer.class), eq(1L), eq(12L)))
+                .thenReturn(1);
+
+        assertThatThrownBy(() -> domainMemberService.guardSingleDomainOwner(1L, 12L, List.of("super_admin")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("该业务域已存在所有人，请先转让后再授权");
     }
 }

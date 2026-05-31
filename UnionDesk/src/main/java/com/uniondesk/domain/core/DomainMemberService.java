@@ -88,6 +88,8 @@ public class DomainMemberService {
                 staffAccountId,
                 domainId);
         long memberId = requireMemberId(domainId, staffAccountId);
+        List<String> newRoleCodes = loadRoleCodesByIds(domainId, normalizeIds(request.role_ids()));
+        guardSingleDomainOwner(domainId, memberId, newRoleCodes);
         replaceMemberRoles(domainId, memberId, request.role_ids());
         return getMember(domainId, memberId);
     }
@@ -104,6 +106,7 @@ public class DomainMemberService {
         if (currentRoleCodes.contains("super_admin") && !newRoleCodes.contains("super_admin")) {
             guardLastDomainSuperAdmin(domainId, memberId);
         }
+        guardSingleDomainOwner(domainId, memberId, newRoleCodes);
         replaceMemberRoles(domainId, memberId, newRoleIds);
         return getMember(domainId, memberId);
     }
@@ -176,7 +179,30 @@ public class DomainMemberService {
                 domainId,
                 memberId);
         if (otherCount == null || otherCount == 0) {
-            throw new IllegalStateException("请先指定另一位业务域超级管理员");
+            throw new IllegalStateException("请先指定另一位业务域所有人");
+        }
+    }
+
+    void guardSingleDomainOwner(long domainId, long memberId, List<String> newRoleCodes) {
+        if (!newRoleCodes.contains("super_admin")) {
+            return;
+        }
+        Integer otherCount = jdbcTemplate.queryForObject("""
+                        SELECT COUNT(DISTINCT dm.id)
+                        FROM domain_member dm
+                        JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+                        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+                        WHERE dr.business_domain_id = ?
+                          AND dr.code = 'super_admin'
+                          AND dm.status = 'active'
+                          AND dm.deleted_at IS NULL
+                          AND dm.id <> ?
+                        """,
+                Integer.class,
+                domainId,
+                memberId);
+        if (otherCount != null && otherCount > 0) {
+            throw new IllegalStateException("该业务域已存在所有人，请先转让后再授权");
         }
     }
 

@@ -58,7 +58,8 @@ public class DomainService {
                                     d.description,
                                     d.logo,
                                     d.visibility_policy_codes,
-                                    d.registration_policy,
+                                    d.registration_enabled,
+                                    d.invitation_enabled,
                                     d.status,
                                     d.created_at,
                                     d.updated_at,
@@ -111,7 +112,8 @@ public class DomainService {
                                 d.description,
                                 d.logo,
                                 d.visibility_policy_codes,
-                                d.registration_policy,
+                                d.registration_enabled,
+                                d.invitation_enabled,
                                 d.status,
                                 d.created_at,
                                 d.updated_at,
@@ -138,20 +140,22 @@ public class DomainService {
     public DomainDtos.DomainCreateResponse createDomain(DomainDtos.CreateDomainRequest request) {
         UserContext context = UserContextHolder.requireCurrent();
         List<String> visibilityPolicyCodes = normalizeVisibilityPolicyCodes(request.visibility_policy_codes());
-        String registrationPolicy = normalizeRegistrationPolicy(request.registration_policy());
+        String registrationEnabled = DomainAccessPolicy.normalize(request.registration_enabled());
+        String invitationEnabled = DomainAccessPolicy.normalize(request.invitation_enabled());
         String legacyVisibilityPolicy = visibilityPolicyCodes.isEmpty() ? "public" : visibilityPolicyCodes.getFirst();
         jdbcTemplate.update("""
                         INSERT INTO business_domain (
                             code, name, description, visibility_policy, status, created_at, updated_at,
-                            registration_policy, visibility_policy_codes, logo, deleted_at, created_by
+                            registration_enabled, invitation_enabled, visibility_policy_codes, logo, deleted_at, created_by
                         )
-                        VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3), ?, ?, ?, NULL, ?)
+                        VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3), ?, ?, ?, ?, NULL, ?)
                         """,
                 request.code().trim(),
                 request.name().trim(),
                 normalizeDescription(request.description()),
                 legacyVisibilityPolicy,
-                registrationPolicy,
+                registrationEnabled,
+                invitationEnabled,
                 toJson(visibilityPolicyCodes),
                 request.logo(),
                 context.userId());
@@ -184,16 +188,19 @@ public class DomainService {
         List<String> visibilityPolicyCodes = request.visibility_policy_codes() == null
                 ? existing.visibility_policy_codes()
                 : normalizeVisibilityPolicyCodes(request.visibility_policy_codes());
-        String registrationPolicy = request.registration_policy() == null
-                ? existing.registration_policy()
-                : normalizeRegistrationPolicy(request.registration_policy());
+        String registrationEnabled = request.registration_enabled() == null
+                ? existing.registration_enabled()
+                : DomainAccessPolicy.normalize(request.registration_enabled());
+        String invitationEnabled = request.invitation_enabled() == null
+                ? existing.invitation_enabled()
+                : DomainAccessPolicy.normalize(request.invitation_enabled());
         int status = request.status() == null ? existing.status() : request.status();
         String legacyVisibilityPolicy = visibilityPolicyCodes.isEmpty() ? "public" : visibilityPolicyCodes.getFirst();
 
         jdbcTemplate.update("""
                         UPDATE business_domain
                         SET code = ?, name = ?, description = ?, logo = ?, visibility_policy = ?, visibility_policy_codes = ?,
-                            registration_policy = ?, status = ?, updated_at = CURRENT_TIMESTAMP(3), updated_by = ?
+                            registration_enabled = ?, invitation_enabled = ?, status = ?, updated_at = CURRENT_TIMESTAMP(3), updated_by = ?
                         WHERE id = ?
                           AND deleted_at IS NULL
                         """,
@@ -203,7 +210,8 @@ public class DomainService {
                 logo,
                 legacyVisibilityPolicy,
                 toJson(visibilityPolicyCodes),
-                registrationPolicy,
+                registrationEnabled,
+                invitationEnabled,
                 status,
                 context.userId(),
                 id);
@@ -380,7 +388,8 @@ public class DomainService {
                 rs.getString("description"),
                 rs.getString("logo"),
                 readVisibilityPolicyCodes(rs.getString("visibility_policy_codes")),
-                rs.getString("registration_policy"),
+                DomainAccessPolicy.normalize(rs.getString("registration_enabled")),
+                DomainAccessPolicy.normalize(rs.getString("invitation_enabled")),
                 rs.getInt("status"),
                 toLocalDateTime(rs.getTimestamp("created_at")),
                 toLocalDateTime(rs.getTimestamp("updated_at")),
@@ -427,10 +436,6 @@ public class DomainService {
                 .distinct()
                 .toList();
         return normalized.isEmpty() ? DEFAULT_VISIBILITY_POLICY_CODES : normalized;
-    }
-
-    private String normalizeRegistrationPolicy(String registrationPolicy) {
-        return StringUtils.hasText(registrationPolicy) ? registrationPolicy.trim() : "open";
     }
 
     private String normalizeDescription(String description) {

@@ -60,8 +60,8 @@ public class InvitationCodeService {
             long domainId,
             InvitationCodeDtos.CreateInvitationCodeRequest request) {
         DomainDtos.DomainView domain = loadDomain(domainId);
-        if ("admin_only".equalsIgnoreCase(domain.registration_policy())) {
-            throw new IllegalArgumentException("invitation code is not allowed for admin_only");
+        if (!DomainAccessPolicy.isAllowed(domain.invitation_enabled())) {
+            throw DomainErrorCodes.INVITATION_DISALLOWED.toException();
         }
         String code = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         jdbcTemplate.update("""

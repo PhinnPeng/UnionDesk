@@ -25,7 +25,7 @@
 
 **协作约定：**
 
-- **迭代任务源**：[`product/backlog-stories.md`](product/backlog-stories.md)（当前承诺：**S0 收口** → **S1**）。
+- **迭代任务源**：[`product/backlog-stories.md`](product/backlog-stories.md)（当前承诺：**S2**，Committed 见 [`sprint-2-plan.md`](product/sprint-2-plan.md) §2，约 22 SP；S1 已签 off 2026-05-26）。
 - **数据库**：按 Sprint 增量；Flyway/DDL 为 L7，不作为 L3 规则来源。
 - **Agent 读文档顺序**：vision → prd → foundation-rules → backlog → 架构子文档。
 
@@ -41,7 +41,8 @@ docs/
 │   ├── backlog-epics.md
 │   ├── backlog-stories.md            # L6 迭代任务源
 │   ├── sprint-0-plan.md
-│   ├── sprint-1-plan.md              # S1 执行计划（Committed 顺序、P0 工程）
+│   ├── sprint-1-plan.md              # S1 执行计划（已签 off，2026-05-26）
+│   ├── sprint-2-plan.md              # S2 执行计划（E2 + 平台域超额 + UX-01）
 │   └── implementation-inventory.md
 ├── architecture/
 │   ├── data-model.md
@@ -56,6 +57,6 @@ docs/
 
 - 需求边界变化：L1 vision（仅战略级）→ L2 prd → L3 foundation → L6 backlog。
 - 逻辑字段变更：L3 → L4 同步 → L5 登记 → L7 Flyway。
-- 与代码出现偏差：登记 `qa/implementation-traceability.md`（待建），**不以 Flyway 脚本反写需求**。
+- 与代码出现偏差：登记 [`qa/implementation-traceability.md`](qa/implementation-traceability.md)，**不以 Flyway 脚本反写需求**。
 - 历史文档：仓库根目录 `doc/` 为只读参考，**以 `docs/` 为准**。
 - **迭代任务源**：L6 为 [`product/backlog-stories.md`](product/backlog-stories.md)；[`checklist/`](checklist/) 仅为 PRD/模块修订清单，**不**替代 Backlog。

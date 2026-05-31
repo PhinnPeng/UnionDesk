@@ -25,7 +25,7 @@ class DomainCustomerServiceTests {
     void customerStatusTransitionsThroughPendingActiveDisabledActive() {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         DomainService domainService = mock(DomainService.class);
-        when(domainService.getDomain(10L)).thenReturn(domainView("open"));
+        when(domainService.getDomain(10L)).thenReturn(domainView("allowed", "allowed"));
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), any(Object[].class))).thenReturn(0);
         when(jdbcTemplate.queryForObject(anyString(), eq(Long.class), any(Object[].class))).thenReturn(1L, 1L, 1L, 1L);
         when(jdbcTemplate.queryForObject(anyString(), any(org.springframework.jdbc.core.RowMapper.class), any(Object[].class)))
@@ -35,7 +35,7 @@ class DomainCustomerServiceTests {
                 .thenReturn(customerView(1L, "active"));
         when(jdbcTemplate.update(anyString(), any(Object[].class))).thenReturn(1);
 
-        DomainCustomerService service = new DomainCustomerService(jdbcTemplate, domainService, CLOCK);
+        DomainCustomerService service = new DomainCustomerService(jdbcTemplate, domainService, CLOCK, mock(org.springframework.security.crypto.password.PasswordEncoder.class));
 
         DomainCustomerDtos.DomainCustomerView active = service.updateCustomerStatus(10L, 1L, new DomainCustomerDtos.UpdateDomainCustomerStatusRequest("active"));
         DomainCustomerDtos.DomainCustomerView disabled = service.updateCustomerStatus(10L, 1L, new DomainCustomerDtos.UpdateDomainCustomerStatusRequest("disabled"));
@@ -46,7 +46,7 @@ class DomainCustomerServiceTests {
         assertEquals("active", reactivated.status());
     }
 
-    private DomainDtos.DomainView domainView(String registrationPolicy) {
+    private DomainDtos.DomainView domainView(String registrationEnabled, String invitationEnabled) {
         LocalDateTime now = LocalDateTime.parse("2026-05-03T12:00:00");
         return new DomainDtos.DomainView(
                 10L,
@@ -55,7 +55,8 @@ class DomainCustomerServiceTests {
                 null,
                 "logo.png",
                 List.of("public"),
-                registrationPolicy,
+                registrationEnabled,
+                invitationEnabled,
                 1,
                 now,
                 now,

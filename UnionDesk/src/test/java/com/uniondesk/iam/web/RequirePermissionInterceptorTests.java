@@ -51,6 +51,25 @@ class RequirePermissionInterceptorTests {
         assertThat(allowed).isTrue();
     }
 
+    @Test
+    void rejectsAnnotatedHandlerWhenCurrentUserLacksRequiredPermission() throws Exception {
+        UserContext context = new UserContext(8L, "platform_admin", null, "sid-8", "ud-admin-web");
+        UserContextHolder.set(context);
+        when(iamService.hasAnyPermission(context, List.of(PermissionCodes.PLATFORM_ROLE_READ))).thenReturn(false);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> interceptor.preHandle(
+                        mock(HttpServletRequest.class),
+                        mock(HttpServletResponse.class),
+                        handlerMethod("listRoles")))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                .satisfies(ex -> {
+                    org.springframework.web.server.ResponseStatusException responseStatusException =
+                            (org.springframework.web.server.ResponseStatusException) ex;
+                    assertThat(responseStatusException.getStatusCode().value()).isEqualTo(403);
+                    assertThat(responseStatusException.getReason()).isEqualTo("无操作权限");
+                });
+    }
+
     private static HandlerMethod handlerMethod(String methodName) throws NoSuchMethodException {
         Method method = DemoController.class.getDeclaredMethod(methodName);
         return new HandlerMethod(new DemoController(), method);
@@ -60,6 +79,10 @@ class RequirePermissionInterceptorTests {
 
         @RequirePermission(PermissionCodes.DOMAIN_USER_CREATE)
         void createDomainUser() {
+        }
+
+        @RequirePermission(PermissionCodes.PLATFORM_ROLE_READ)
+        void listRoles() {
         }
 
         void open() {

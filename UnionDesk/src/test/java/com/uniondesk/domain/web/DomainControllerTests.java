@@ -47,7 +47,8 @@ class DomainControllerTests {
         mockMvc.perform(get("/api/v1/domains/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("default"))
-                .andExpect(jsonPath("$.registration_policy").value("open"));
+                .andExpect(jsonPath("$.registration_enabled").value("allowed"))
+                .andExpect(jsonPath("$.invitation_enabled").value("allowed"));
     }
 
     @Test
@@ -63,7 +64,8 @@ class DomainControllerTests {
                                   "name": "New Domain",
                                   "logo": "logo.png",
                                   "visibility_policy_codes": ["public"],
-                                  "registration_policy": "open"
+                                  "registration_enabled": "allowed",
+                                  "invitation_enabled": "allowed"
                                 }
                                 """))
                 .andExpect(status().isCreated())
@@ -112,7 +114,8 @@ class DomainControllerTests {
                 null,
                 "logo.png",
                 List.of("public"),
-                "open",
+                "allowed",
+                "allowed",
                 1,
                 now,
                 now,

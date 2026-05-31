@@ -2,7 +2,7 @@
 
 | 文档版本 | 日期 | 说明 |
 |:---|:---|:---|
-| 1.1 | 2026-05-24 | §1～§5 平台端（`/platform/`）；§7 业务域端占位 |
+| 1.2 | 2026-05-26 | S2 Story 交叉引用（§3 平台域详情、§7 E2-00） |
 
 > 状态说明：**Done** = 前后端均可正常使用（含基本校验与权限）；**Partial** = 核心路径可用但缺边界 case / 依赖 demo 数据 / 缺独立页面；**Todo** = 未实现或为占位。
 
@@ -44,19 +44,21 @@
 
 | 项 | 前端 | 后端 | 状态 | 备注 |
 |:---|:---|:---|:---|:---|
-| 业务域列表 | `pages/platform/domains/index.tsx` | `DomainController` | **Done** | 卡片展示 + 分页、关键词搜索、创建日期筛选；新建/编辑抽屉；删除需 step-up 二次认证 |
-| 业务域创建 | `pages/platform/domains/components/domain-create-drawer.tsx` | `POST /api/v1/admin/domains` | **Partial** | 含 code/name/description/visibility_policy；当前 UI/API 仍使用 `registration_policy` 单下拉，非 `registration_enabled` / `invitation_enabled` 双开关（见 US-S1-03） |
-| 业务域编辑 | `pages/platform/domains/components/domain-edit-drawer.tsx` | `PUT /api/v1/admin/domains/{id}` | **Partial** | 同创建，`registration_policy` 单字段 |
-| 业务域详情 | `pages/platform/domains/detail/index.tsx` | `GET /api/v1/admin/domains/{id}` | **Done** | 含 basic-info-tab + config-tab（KV 配置） + overview-tab 三个 Tab |
+| 业务域列表 | `pages/platform/domains/index.tsx` | `DomainController` | **Done** | 卡片展示 + 分页、关键词搜索、创建日期筛选；新建向导 Modal；删除需 step-up 二次认证 |
+| 业务域创建 | `pages/platform/domains/components/domains-modal.tsx` | `POST /api/v1/admin/domains` | **Done** | 多步向导；Step3 含 `registration_enabled` / `invitation_enabled` 双开关（US-S1-03） |
+| 业务域编辑 | `pages/platform/domains/detail/components/detail-baseinfo.tsx`、`detail-onboarding.tsx` | `PUT /api/v1/admin/domains/{id}` | **Partial** | 基础信息 Tab 可更新；**S2 US-S2-01** 完善回显与删除 UX（输入 code + Step-up） |
+| 业务域详情 | `pages/platform/domains/detail/index.tsx` | `GET /api/v1/admin/domains/{id}` | **Done** | Meta 头 + 左侧 10 Tab（概览/基础/配置/客户入域/工单/角色/屏蔽词/通知/日志/成员）+ 右侧内容区 |
 | 业务域配置 | `pages/platform/domain-config/config-panel.tsx` | `DomainConfigController` | **Done** | KV 键值对配置表单（key/value/valueType/description） |
-| 业务域删除 | `pages/platform/domains/index.tsx`（删除按钮） | `DELETE /api/v1/admin/domains/{id}` | **Done** | 需 step-up 二次认证 |
-| 客户入域（邀请码） | `pages/platform/domain-onboarding/` | `InvitationCodeController` | **Partial** | 前端存在 onboarding 面板，后端提供邀请码 CRUD，但完整入域流程（客户注册 → 入域 → 角色绑定）需客户端配合（见 US-S1-05） |
-| 域成员管理 | — | `DomainMemberController` | **Partial** | 后端 API 就绪（CRUD），前端尚未在详情 Tab 中提供独立成员管理 UI |
-| 域客户管理 | — | `DomainCustomerController` | **Partial** | 后端 API 就绪，前端尚未独立页面 |
-| 域角色管理 | — | `DomainRoleController` | **Partial** | 后端 API 就绪，前端在域详情中无独立角色分配入口 |
-| 入域双配置迁移 | — | `V202605250001` | **Partial** | 迁移脚本存在（ADD `registration_enabled`/`invitation_enabled` + DROP `registration_policy`），但迁移可能仅在联调库执行，HEAD 代码 `DomainDtos` 仍使用 `registration_policy` 字段 |
+| 业务域删除 | `detail-header.tsx`、列表 | `DELETE /api/v1/admin/domains/{id}` | **Partial** | **S2 US-S2-01**：`deleted_at`+`updated_*`；权限 `platform.domain.control.deleted`；无 `deleted` 列 |
+| 客户入域（邀请码） | `pages/platform/domain-onboarding/` | `InvitationCodeController` | **Partial** | 前端存在 onboarding 面板，后端提供邀请码 CRUD；CustomerWeb 接真实 API 见 **US-S1-05（S1 暂缓）** |
+| 域成员管理 | `detail-members.tsx` | `DomainMemberController` | **Partial** | 列表只读；**S2 US-S2-03** 添加/改角色/启停（需 status API） |
+| 域客户管理 | `detail-customers.tsx` | `DomainCustomerController` | **Partial** | S1 主路径 Done；**S2 US-S2-04** 体验与单条编辑 |
+| 域角色管理 | `detail-roles.tsx` | `DomainRoleController` | **Partial** | **S2 US-S2-02**「角色管理」只读；`platform.domain.roles.*` |
+| 域屏蔽词（域内） | `detail-blockwords.tsx` | `BlockedWordService` | **Partial** | **S2 US-S2-05**：`platform.domain.blocked_word.*`；全局 `platform.blocked_word.*` |
+| 域业务日志 | `detail-logs.tsx` | 域级 audit/login API | **Partial** | **S2 US-S2-06**：双 Tab；`platform.audit-logs.read` |
+| 入域双配置迁移 | — | `V202605250001` | **Done** | 脚本已入库；HEAD 后端 DTO/Service 与 AdminWeb 双字段 UI 已对齐（US-S1-03） |
 
-**Flyway 相关**：`V202605200002`（base 建表）、`V202605200003`（audit 字段）、`V202605240001`（description）、`V202605250001`（access policy，⚠️ HEAD 代码 `DomainDtos` 未对齐，见上）。
+**Flyway 相关**：`V202605200002`（base 建表）、`V202605200003`（audit 字段）、`V202605240001`（description）、`V202605250001`（access policy，双字段已对齐）。
 
 ---
 
@@ -112,7 +114,7 @@
 | 当前用户权限快照 | — | `GET /api/v1/iam/me/permission-snapshot` | **Done** | 返回 user + roles + domains + menus + actions |
 | 当前用户菜单资源 | — | `GET /api/v1/iam/me/menu-resources` | **Done** | 前端 `isSendRoutingRequest = true` 启用后端动态路由 |
 | 动态路由注册 | `router/routes/config.ts` | `IamController` / `StaffController` | **Done** | 后端菜单 → 前端动态路由 → `AuthGuarded` 按钮级权限 |
-| 跨域访问拒绝 | — | `US-S1-08`（Todo） | **Todo** | A 域身份访问 B 域数据暂未全面拦截 |
+| 跨域访问拒绝 | — | `US-S1-08`（Todo，**S1 暂缓**） | **Todo** | A 域身份访问 B 域数据暂未全面拦截；2026-05-26 不纳入 S1 Committed |
 
 **Flyway 相关**：菜单迁移 `V202605200004`～`006`（域菜单结构）、`V202605210001`（日志审计菜单）、`V202605220001`（五模块菜单精简）、`V202605220002`（菜单图标与按钮权限回填）。
 
@@ -161,7 +163,7 @@
 |:---|:---|:---|:---|:---|
 | 首页 | 0 | 2 | 0 | 路由可达，数据 Partial（纯 demo） |
 | 组织 | 1 | 0 | 1 | 50%（org-config 占位） |
-| 业务域 | 7 | 6 | 0 | ~55%（创建/编辑/迁移仍为 `registration_policy`） |
+| 业务域 | 9 | 4 | 0 | ~65%（双配置 CRUD Done；成员/客户/角色 Tab 仍为 Partial） |
 | IAM | 17 | 3 | 2 | ~80% |
 | 日志审计 | 11 | 0 | 2 | ~85% |
 | **合计** | **36** | **11** | **5** | **~70%** |
@@ -171,10 +173,12 @@
 | 排名 | 缺口 | 模块 | 状态 | S1 建议 |
 |:---|:---|:---|:---|:---|
 | 1 | 首页仪表盘数据为 demo 模拟 | 首页 | Partial | 接入真实聚合查询 |
-| 2 | 跨域访问拒绝未全面覆盖 | IAM | Todo | US-S1-08 |
-| 3 | 域成员/客户/角色管理前端缺独立 UI | 业务域 | Partial | 评估加入域详情 Tab |
+| 2 | 跨域访问拒绝未全面覆盖 | IAM | Todo（S1 暂缓） | US-S1-08 |
+| 3 | 域成员/客户/角色/日志/屏蔽词 Tab 未成品化 | 业务域 | Partial | **S2 US-S2-02～06** |
 | 4 | 操作日志/登录日志两套前端页面冗余 | 日志审计 | Done（重复） | 收敛为统一入口 |
 | 5 | 审计日志无导出功能 | 日志审计 | Todo | 评估是否需要 |
+| 6 | 登录后默认跳转误落 `/system/menu`（双 scope 平台管理员） | 认证 / 登录页 | **Done** | `resolve-home-path.ts` + `platformAccess` 优先 → `/platform/home`（S1） |
+| 7 | 登录滑块验证交互（按住反馈、终点松手顿挫） | 认证 / 登录页 | Partial | **US-S2-UX-01**（S2 Committed，sprint-2-plan §4） |
 
 ### 6.3 交叉引用
 
@@ -188,16 +192,15 @@
 
 ---
 
-## 7. 业务域端（根级非 `/platform/`，Epic E2 — 待补盘点）
+## 7. 业务域端（根级非 `/platform/`，Epic E2）
 
-> **S0/S1 不承诺本表逐行验收。** S2 启动 E2 前，按 `iam_admin_menu.scope=business` 与路由前缀规则补全 Done/Partial/Todo。
+> **S2 Committed**：**US-S2-E2-00** 最小可达；余量 **US-S2-E2-01（Stretch）**。  
+> 域内成员/客户/角色 **平台侧** 管理见 §3 + **US-S2-02～04**（非 E2 签 off 必要条件）。
 
 | 项 | 前端线索 | 后端 | 状态 | 备注 |
 |:---|:---|:---|:---|:---|
-| 业务域首页/入口 | `/home` 等 | — | **Todo** | 与平台 `/platform/home` 分离 |
-| 系统用户/角色/菜单/部门 | `pages/system/user` 等 | IAM 域级 API | **Partial** | data-model §5：当前多为骨架页 |
-| 域内成员管理 UI | 域详情 Tab 或根级模块 | `DomainMemberController` | **Partial** | API 就绪，平台端详情未挂 Tab |
-| 域客户管理 UI | 同上 | `DomainCustomerController` | **Partial** | 同上 |
-| 域角色管理 UI | 同上 | `DomainRoleController` | **Partial** | 同上 |
-| 工单类型设计 | — | `ticket_type` | **Todo** | 含反馈/建议预置类型 + 启用/停用 |
-| 域 SLA / 通知模板 | — | — | **Todo** | PRD §3.3.1 |
+| 业务域首页/入口 | `/home` 等 | — | **Todo** | **US-S2-E2-00**；与 `/platform/home` 分离 |
+| 系统用户/角色/菜单/部门 | `pages/system/user` 等 | IAM 域级 API | **Partial** | E2-00 至少 1 页非 Empty |
+| 域内成员/客户/角色（business 端） | 根级模块（待扩） | 域 API | **Partial** | 平台侧见 §3 **US-S2-02～04** |
+| 工单类型设计 | — | `ticket_type` | **Todo** | **US-S2-E2-01 Stretch** |
+| 域 SLA / 通知模板 | — | — | **Todo** | PRD §3.3.1，S3+ |

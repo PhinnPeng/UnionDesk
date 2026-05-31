@@ -29,7 +29,7 @@ public class DomainCustomerController {
     }
 
     @GetMapping("/customers")
-    @RequirePermission(PermissionCodes.DOMAIN_CUSTOMER_READ)
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CUSTOMER_READ)
     public PageResult<DomainCustomerDtos.DomainCustomerView> listCustomers(
             @PathVariable long domainId,
             @RequestParam(defaultValue = "1") int page,
@@ -41,15 +41,33 @@ public class DomainCustomerController {
 
     @PostMapping("/customers")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.DOMAIN_CUSTOMER_CREATE)
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CUSTOMER_CREATE)
     public DomainCustomerDtos.DomainCustomerView addCustomer(
             @PathVariable long domainId,
             @Valid @RequestBody DomainCustomerDtos.CreateDomainCustomerRequest request) {
         return domainCustomerService.addCustomer(domainId, request);
     }
 
+    @PostMapping("/customers/manual")
+    @ResponseStatus(HttpStatus.CREATED)
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CUSTOMER_CREATE)
+    public DomainCustomerDtos.DomainCustomerView addCustomerManual(
+            @PathVariable long domainId,
+            @Valid @RequestBody DomainCustomerDtos.CreateDomainCustomerManualRequest request) {
+        return domainCustomerService.addCustomerManual(domainId, request);
+    }
+
+    @PostMapping("/customers/from-staff")
+    @ResponseStatus(HttpStatus.CREATED)
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CUSTOMER_CREATE)
+    public DomainCustomerDtos.BatchCreateDomainCustomersResult addCustomersFromStaff(
+            @PathVariable long domainId,
+            @Valid @RequestBody DomainCustomerDtos.CreateDomainCustomersFromStaffRequest request) {
+        return domainCustomerService.addCustomersFromStaff(domainId, request);
+    }
+
     @RequestMapping(path = "/customers/{customerId}/status", method = {RequestMethod.PUT, RequestMethod.PATCH})
-    @RequirePermission(PermissionCodes.DOMAIN_CUSTOMER_UPDATE_STATUS)
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CUSTOMER_UPDATE)
     public DomainCustomerDtos.DomainCustomerView updateCustomerStatus(
             @PathVariable long domainId,
             @PathVariable long customerId,

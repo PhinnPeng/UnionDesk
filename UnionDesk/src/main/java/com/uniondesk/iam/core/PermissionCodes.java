@@ -6,6 +6,13 @@ public final class PermissionCodes {
     public static final String PLATFORM_MENU_CREATE = "platform.menu.create";
     public static final String PLATFORM_MENU_UPDATE = "platform.menu.update";
     public static final String PLATFORM_MENU_DELETE = "platform.menu.delete";
+    public static final String PLATFORM_ADMIN_PERMISSION_CODES_READ = "platform.admin_permission_codes.read";
+
+    public static final String PLATFORM_IAM_RESOURCE_READ = "platform.iam.resource.read";
+    public static final String PLATFORM_IAM_RESOURCE_CREATE = "platform.iam.resource.create";
+    public static final String PLATFORM_IAM_RESOURCE_UPDATE = "platform.iam.resource.update";
+    public static final String PLATFORM_IAM_ROLE_RESOURCE_READ = "platform.iam.role_resource.read";
+    public static final String PLATFORM_IAM_ROLE_RESOURCE_UPDATE = "platform.iam.role_resource.update";
 
     public static final String PLATFORM_ROLE_READ = "platform.role.read";
     public static final String PLATFORM_ROLE_CREATE = "platform.role.create";
@@ -46,14 +53,21 @@ public final class PermissionCodes {
     public static final String DOMAIN_LOGIN_LOG_READ = "domain.login_log.read";
     /** @deprecated use {@link #DOMAIN_ADMIN_LIST_READ} and {@link #DOMAIN_ADMIN_DETAIL_READ} */
     public static final String DOMAIN_ADMIN_READ = "domain.admin.read";
-    public static final String DOMAIN_ADMIN_LIST_READ = "domain.admin.list.read";
+    public static final String DOMAIN_ADMIN_LIST_READ = "platform.domain.list.read";
     public static final String DOMAIN_ADMIN_DETAIL_READ = "domain.admin.detail.read";
-    public static final String DOMAIN_ADMIN_CREATE = "domain.admin.create";
+    public static final String DOMAIN_ADMIN_CREATE = "platform.domain.create";
+    public static final String PLATFORM_DOMAIN_CONTROL_READ = "platform.domain.control.read";
     public static final String DOMAIN_ADMIN_UPDATE = "domain.admin.update";
     public static final String DOMAIN_ADMIN_DELETE = "domain.admin.delete";
-    public static final String DOMAIN_CUSTOMER_READ = "domain.customer.read";
-    public static final String DOMAIN_CUSTOMER_CREATE = "domain.customer.create";
-    public static final String DOMAIN_CUSTOMER_UPDATE_STATUS = "domain.customer.update_status";
+    public static final String PLATFORM_DOMAIN_CUSTOMER_READ = "platform.domain.customer.read";
+    public static final String PLATFORM_DOMAIN_CUSTOMER_CREATE = "platform.domain.customer.create";
+    public static final String PLATFORM_DOMAIN_CUSTOMER_UPDATE = "platform.domain.customer.update";
+    /** @deprecated use {@link #PLATFORM_DOMAIN_CUSTOMER_READ} */
+    public static final String DOMAIN_CUSTOMER_READ = PLATFORM_DOMAIN_CUSTOMER_READ;
+    /** @deprecated use {@link #PLATFORM_DOMAIN_CUSTOMER_CREATE} */
+    public static final String DOMAIN_CUSTOMER_CREATE = PLATFORM_DOMAIN_CUSTOMER_CREATE;
+    /** @deprecated use {@link #PLATFORM_DOMAIN_CUSTOMER_UPDATE} */
+    public static final String DOMAIN_CUSTOMER_UPDATE_STATUS = PLATFORM_DOMAIN_CUSTOMER_UPDATE;
     public static final String DOMAIN_INVITATION_CODE_READ = "domain.invitation_code.read";
     public static final String DOMAIN_INVITATION_CODE_CREATE = "domain.invitation_code.create";
     public static final String DOMAIN_INVITATION_CODE_DELETE = "domain.invitation_code.delete";

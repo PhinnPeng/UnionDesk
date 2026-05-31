@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.spy;
 
+import com.uniondesk.iam.core.PermissionCodes;
 import java.sql.ResultSet;
 import java.time.Clock;
 import java.util.List;
@@ -38,12 +39,12 @@ class AdminMenuServiceTest {
                     ResultSet rs = mock(ResultSet.class);
                     when(rs.getLong("id")).thenReturn(1L);
                     when(rs.getString("code")).thenReturn("ADM0000000001");
-                    when(rs.getString("node_type")).thenReturn("menu");
+                    when(rs.getString("node_type")).thenReturn("catalog");
                     when(rs.getString("scope")).thenReturn("platform");
                     when(rs.getString("name")).thenReturn("权限管理");
-                    when(rs.getString("route_path")).thenReturn("/platform/permission");
-                    when(rs.getString("component_key")).thenReturn("./platform/permission");
-                    when(rs.getString("permission_code")).thenReturn("platform.role.read");
+                    when(rs.getString("route_path")).thenReturn(null);
+                    when(rs.getString("component_key")).thenReturn(null);
+                    when(rs.getString("permission_code")).thenReturn(null);
                     when(rs.getObject("parent_id", Long.class)).thenReturn(null);
                     when(rs.getInt("order_no")).thenReturn(1);
                     when(rs.getString("icon")).thenReturn("SafetyCertificateOutlined");
@@ -57,7 +58,8 @@ class AdminMenuServiceTest {
 
         assertThat(nodes).singleElement().satisfies(node -> {
             assertThat(node.scope()).isEqualTo("platform");
-            assertThat(node.routePath()).isEqualTo("/platform/permission");
+            assertThat(node.nodeType()).isEqualTo("catalog");
+            assertThat(node.routePath()).isNull();
         });
     }
 
@@ -65,6 +67,7 @@ class AdminMenuServiceTest {
     void loadPermissionSnapshotPreservesScopeFromRows() throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuService service = new AdminMenuService(jdbcTemplate, Clock.systemUTC());
+        stubEmptyRolePermissionQuery(jdbcTemplate);
         when(jdbcTemplate.query(
                 org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("FROM iam_admin_role_menu_relation") && sql.contains("JOIN iam_admin_menu m")),
                 org.mockito.ArgumentMatchers.<RowMapper<AdminMenuService.AdminMenuNode>>any(),
@@ -101,6 +104,7 @@ class AdminMenuServiceTest {
     void loadPermissionSnapshotFiltersCatalogNodesAndKeepsHiddenFlag() throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuService service = new AdminMenuService(jdbcTemplate, Clock.systemUTC());
+        stubEmptyRolePermissionQuery(jdbcTemplate);
         when(jdbcTemplate.query(
                 org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("FROM iam_admin_role_menu_relation") && sql.contains("JOIN iam_admin_menu m")),
                 org.mockito.ArgumentMatchers.<RowMapper<AdminMenuService.AdminMenuNode>>any(),
@@ -479,5 +483,42 @@ class AdminMenuServiceTest {
 
         verify(jdbcTemplate).update("DELETE FROM iam_admin_role_menu_relation WHERE menu_id = ?", 11L);
         verify(jdbcTemplate).update("DELETE FROM iam_admin_menu WHERE id = ?", 11L);
+    }
+
+    @Test
+    void loadPermissionSnapshotMergesRolePermissionsIntoActions() throws Exception {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        AdminMenuService service = new AdminMenuService(jdbcTemplate, Clock.systemUTC());
+        when(jdbcTemplate.query(
+                org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("FROM iam_admin_role_menu_relation") && sql.contains("JOIN iam_admin_menu m")),
+                org.mockito.ArgumentMatchers.<RowMapper<AdminMenuService.AdminMenuNode>>any(),
+                org.mockito.ArgumentMatchers.<Object[]>any()))
+                .thenReturn(List.of());
+        when(jdbcTemplate.query(
+                org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("FROM iam_role_permission")),
+                org.mockito.ArgumentMatchers.<RowMapper<?>>any(),
+                org.mockito.ArgumentMatchers.<Object[]>any()))
+                .thenAnswer(invocation -> {
+                    RowMapper<?> mapper = invocation.getArgument(1);
+                    ResultSet rs = mock(ResultSet.class);
+                    when(rs.getString("code")).thenReturn(PermissionCodes.PLATFORM_DOMAIN_CUSTOMER_READ);
+                    when(rs.getString("name")).thenReturn("查看客户");
+                    when(rs.getString("http_method")).thenReturn("GET");
+                    when(rs.getString("path_pattern")).thenReturn("/api/v1/admin/domains/*/customers");
+                    return List.of(mapper.mapRow(rs, 0));
+                });
+
+        AdminMenuService.PermissionSnapshotData snapshot = service.loadPermissionSnapshot(List.of("super_admin"));
+
+        assertThat(snapshot.actions()).extracting(AdminMenuService.GrantedPermission::permissionCode)
+                .contains(PermissionCodes.PLATFORM_DOMAIN_CUSTOMER_READ);
+    }
+
+    private static void stubEmptyRolePermissionQuery(JdbcTemplate jdbcTemplate) {
+        when(jdbcTemplate.query(
+                org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("FROM iam_role_permission")),
+                org.mockito.ArgumentMatchers.<RowMapper<?>>any(),
+                org.mockito.ArgumentMatchers.<Object[]>any()))
+                .thenReturn(List.of());
     }
 }

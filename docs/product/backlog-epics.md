@@ -2,9 +2,9 @@
 
 | 文档版本 | 日期 | 说明 |
 |:---|:---|:---|
-| 1.2 | 2026-05-24 | 管理端双端；FR-03 403 中文；S1 平台端范围 §8.0 |
+| 1.3 | 2026-05-26 | S2 范围：E2-00 + 平台域 US-S2-01～06 + UX-01（§6.3） |
 
-> 权威链见 [`../README.md`](../README.md)。User Story 明细见 [`backlog-stories.md`](./backlog-stories.md)。S0 执行见 [`sprint-0-plan.md`](./sprint-0-plan.md)；**S1 执行见 [`sprint-1-plan.md`](./sprint-1-plan.md)**。
+> 权威链见 [`../README.md`](../README.md)。User Story 明细见 [`backlog-stories.md`](./backlog-stories.md)。S0 执行见 [`sprint-0-plan.md`](./sprint-0-plan.md)；**S1 执行见 [`sprint-1-plan.md`](./sprint-1-plan.md)**；**S2 执行见 [`sprint-2-plan.md`](./sprint-2-plan.md)**。
 
 ---
 
@@ -74,7 +74,7 @@
 | §3.4 平台管理后台 | **E1** | `/platform/*` |
 | §3.3 域管理后台 | **E2** | 根级 + 域上下文（非 `/platform/`） |
 | §3.2 员工工单/咨询工作台 | **E3** / **E5** | **不属于 E2**（作业台，非域配置端） |
-| §3.1 客户端 | **E3** 等 | CustomerWeb；US-S1-05 仍属 S1 Story，脚注可标后续归 E3 |
+| §3.1 客户端 | **E3** 等 | CustomerWeb（US-S1-05）；**S1 暂缓**，后续 E3 排期 |
 | §2.x 身份/域/权限 | **E1**、**E2** | 平台 IAM + 域内角色/成员 |
 
 ---
@@ -85,7 +85,7 @@
 |:---|:---|:---|:---|
 | **当前** | **S0** | **E0** | 按 sprint-0-plan、US-S0-01～**07** 执行；**不重写** |
 | **第 2 步** | **S1** | **E1** + **E6** 部分 | 约 13 SP；完善 **`/platform/`**；见 sprint-0-plan §7 |
-| **第 3 步** | **S2** | **E2** | 业务域端；**非**当前两步承诺 |
+| **第 3 步** | **S2** | **E2** + **E6** 部分 | 业务域端为主；可选 **US-S2-UX-01** 滑块体验（见 sprint-2-plan） |
 | 下轮 | S3+ | **E3**… | 工单、SLA、咨询 |
 
 **速率假设（solo + Agent）**：S0 ≈ 7 SP；S1 ≈ 13 SP / 2 周。
@@ -132,6 +132,12 @@ flowchart TB
 
 **做**：PRD §3.3（工单类型设计、域 SLA/通知模板、域内成员/客户/角色 UI）；`iam_admin_menu.scope=business` 与页面成品化；反馈/建议 **ticket_type 预置 + 启用/停用**。
 
+**S2 承诺（2026-05-26）**：
+
+- **E2 主路径**：**US-S2-E2-00** 业务域端最小可达（见 [`sprint-2-plan.md`](./sprint-2-plan.md)）。
+- **S2 超额（仍属平台 `/platform/domains/*`）**：**US-S2-01～06** 在平台侧完善域详情（配置/角色/员工/客户/屏蔽词/日志）；与 E2 并行，不替代 E2 签 off。
+- **Stretch**：US-S2-E2-01 工单类型设计等 PRD §3.3 余量顺延。
+
 **不做**：PRD §3.2 客服作业台（归 E3/E5）；独立 `feedback` 表业务（MVP 不用）。
 
 ### 6.4 E3+ 
@@ -147,6 +153,7 @@ flowchart TB
 | vision 1 域 vs PRD 3 域 | 演示以 vision 单域为准；多域回归见 PRD §4.1 |
 | 环境交付 | 日常联调以 sprint-0-plan §3 已部署环境为准；compose 仅结构参考 |
 | inventory 范围 | §1～§5 = 平台端；§7 = 业务域端（待扩） |
+| S2 范围 | **E2-00** + 平台域详情 **US-S2-01～06**（超额）+ **US-S2-UX-01**（E6，Committed）；见 sprint-2-plan §2 |
 
 ---
 
@@ -156,7 +163,7 @@ flowchart TB
 
 - **S1 主验收面 = `/platform/` 平台管理端**（Epic E1）；**不**以 business scope（根级非 `/platform/`）页面成品化作为 S1 完成条件。
 - **业务域管理端**菜单与域内配置 UI 归 **S2 / Epic E2**（inventory §7）。
-- **US-S1-04/05/06** 为跨端 API 或 CustomerWeb，保留在 S1 Story 列表中，**不**用于判定「业务域管理端已完善」。
+- **US-S1-04/05**（客户注册 API / CustomerWeb）**S1 暂缓**，建议 E3 再排；**US-S1-06** 为跨端 API，保留在 S1 Story 列表中，**不**用于判定「业务域管理端已完善」。
 
 1. 平台管理员登录后，动态菜单与 `iam_admin_menu`（**`/platform/`** 模块）一致。
 2. 业务域列表/详情/创建可用；入域双配置可 CRUD（与 Git/联调库一致）。
