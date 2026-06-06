@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import com.uniondesk.iam.core.IdentityPresentationService;
+import com.uniondesk.iam.core.StaffAccountService;
 
 @Service
 public class DomainMemberService {
@@ -27,19 +28,29 @@ public class DomainMemberService {
     private final JdbcTemplate jdbcTemplate;
     private final DomainService domainService;
     private final IdentityPresentationService identityPresentationService;
+    private final StaffAccountService staffAccountService;
 
     public DomainMemberService(
             JdbcTemplate jdbcTemplate,
             DomainService domainService,
-            IdentityPresentationService identityPresentationService) {
+            IdentityPresentationService identityPresentationService,
+            StaffAccountService staffAccountService) {
         this.jdbcTemplate = jdbcTemplate;
         this.domainService = domainService;
         this.identityPresentationService = identityPresentationService;
+        this.staffAccountService = staffAccountService;
     }
 
-    public PageResult<DomainMemberDtos.DomainMemberView> listMembers(long domainId, int page, int pageSize, String status, String keyword) {
+    public PageResult<DomainMemberDtos.DomainMemberView> listMembers(
+            long domainId,
+            int page,
+            int pageSize,
+            String status,
+            String keyword,
+            LocalDateTime createdFrom,
+            LocalDateTime createdTo) {
         requireDomain(domainId);
-        MemberQuery query = buildMemberQuery(domainId, status, keyword);
+        MemberQuery query = buildMemberQuery(domainId, status, keyword, createdFrom, createdTo);
         List<MemberRow> rows = jdbcTemplate.query("""
                         SELECT
                             dm.id,
@@ -50,6 +61,7 @@ public class DomainMemberService {
                             dm.activated_at,
                             dm.disabled_at,
                             dm.deleted_at,
+                            dm.created_at,
                             sa.username,
                             sa.phone,
                             sa.email
@@ -60,7 +72,7 @@ public class DomainMemberService {
                         LIMIT ? OFFSET ?
                         """.formatted(query.whereClause()),
                 this::mapMemberRow,
-                pagingArgs(query, page, pageSize));
+                pagingArgs(query.args(), page, pageSize));
         Map<Long, List<DomainRoleDtos.DomainRoleView>> rolesByMemberId = loadRolesByMemberIds(rows.stream()
                 .map(MemberRow::id)
                 .toList());
@@ -97,6 +109,97 @@ public class DomainMemberService {
         List<String> newRoleCodes = loadRoleCodesByIds(domainId, normalizeIds(request.role_ids()));
         guardSingleDomainOwner(domainId, memberId, newRoleCodes);
         replaceMemberRoles(domainId, memberId, request.role_ids());
+        return getMember(domainId, memberId);
+    }
+
+    public PageResult<DomainMemberDtos.StaffCandidateView> listStaffCandidates(
+            long domainId,
+            int page,
+            int pageSize,
+            String keyword) {
+        requireDomain(domainId);
+        StaffCandidateQuery query = buildStaffCandidateQuery(domainId, keyword);
+        List<StaffCandidateRow> rows = jdbcTemplate.query("""
+                        SELECT
+                            sa.id,
+                            sa.username,
+                            sa.real_name,
+                            sa.nickname,
+                            sa.phone,
+                            sa.email,
+                            sa.status
+                        FROM staff_account sa
+                        %s
+                        ORDER BY sa.id DESC
+                        LIMIT ? OFFSET ?
+                        """.formatted(query.whereClause()),
+                this::mapStaffCandidateRow,
+                pagingArgs(query.args(), page, pageSize));
+        return new PageResult<>(countStaffCandidates(query), rows.stream().map(this::toStaffCandidateView).toList());
+    }
+
+    @Transactional
+    public DomainMemberDtos.DomainMemberView createMemberWithStaff(
+            long domainId,
+            DomainMemberDtos.CreateMemberWithStaffRequest request) {
+        requireDomain(domainId);
+        List<Long> roleIds = normalizeIds(request.role_ids());
+        if (roleIds.isEmpty()) {
+            throw new IllegalArgumentException("角色不能为空");
+        }
+        List<String> roleCodes = loadRoleCodesByIds(domainId, roleIds);
+        guardSingleDomainOwner(domainId, -1L, roleCodes);
+        StaffAccountService.StaffAccount created = staffAccountService.create(new StaffAccountService.CreateStaffCommand(
+                request.username(),
+                request.real_name(),
+                request.nickname(),
+                request.phone(),
+                request.email(),
+                request.password(),
+                roleCodes,
+                List.of(domainId)));
+        long memberId = requireMemberId(domainId, created.id());
+        return getMember(domainId, memberId);
+    }
+
+    @Transactional
+    public DomainMemberDtos.DomainMemberView updateMemberStatus(
+            long domainId,
+            long memberId,
+            DomainMemberDtos.UpdateDomainMemberStatusRequest request) {
+        requireDomain(domainId);
+        String status = normalizeMemberStatus(request.status());
+        if (status == null) {
+            throw new IllegalArgumentException("无效的成员状态");
+        }
+        loadMember(domainId, memberId);
+        if ("disabled".equals(status)) {
+            List<String> roleCodes = loadMemberRoleCodes(memberId);
+            if (roleCodes.contains("domain_admin")) {
+                guardLastDomainAdmin(domainId, memberId);
+            }
+            if (roleCodes.contains("super_admin")) {
+                guardLastDomainSuperAdmin(domainId, memberId);
+            }
+        }
+        int updated = jdbcTemplate.update("""
+                        UPDATE domain_member
+                        SET status = ?,
+                            disabled_at = CASE WHEN ? = 'disabled' THEN CURRENT_TIMESTAMP(3) ELSE NULL END,
+                            activated_at = CASE WHEN ? = 'active' THEN CURRENT_TIMESTAMP(3) ELSE activated_at END,
+                            updated_at = CURRENT_TIMESTAMP(3)
+                        WHERE id = ?
+                          AND business_domain_id = ?
+                          AND deleted_at IS NULL
+                        """,
+                status,
+                status,
+                status,
+                memberId,
+                domainId);
+        if (updated == 0) {
+            throw new IllegalArgumentException("domain member not found");
+        }
         return getMember(domainId, memberId);
     }
 
@@ -325,13 +428,13 @@ public class DomainMemberService {
         return total == null ? 0L : total;
     }
 
-    private MemberQuery buildMemberQuery(long domainId, String status, String keyword) {
+    private MemberQuery buildMemberQuery(long domainId, String status, String keyword, LocalDateTime createdFrom, LocalDateTime createdTo) {
         List<String> conditions = new ArrayList<>();
         List<Object> args = new ArrayList<>();
         conditions.add("dm.business_domain_id = ?");
         args.add(domainId);
         conditions.add("dm.deleted_at IS NULL");
-        String resolvedStatus = normalizeStatus(status);
+        String resolvedStatus = normalizeMemberStatus(status);
         if (resolvedStatus != null) {
             conditions.add("dm.status = ?");
             args.add(resolvedStatus);
@@ -345,17 +448,59 @@ public class DomainMemberService {
             args.add(like);
             args.add(like);
         }
+        if (createdFrom != null) {
+            conditions.add("dm.created_at >= ?");
+            args.add(Timestamp.valueOf(createdFrom));
+        }
+        if (createdTo != null) {
+            conditions.add("dm.created_at <= ?");
+            args.add(Timestamp.valueOf(createdTo));
+        }
         String whereClause = conditions.isEmpty() ? "" : " WHERE " + String.join(" AND ", conditions);
         return new MemberQuery(whereClause, List.copyOf(args));
     }
 
-    private Object[] pagingArgs(MemberQuery query, int page, int pageSize) {
+    private StaffCandidateQuery buildStaffCandidateQuery(long domainId, String keyword) {
+        List<String> conditions = new ArrayList<>();
+        List<Object> args = new ArrayList<>();
+        conditions.add("sa.status = 'active'");
+        conditions.add("""
+                NOT EXISTS (
+                    SELECT 1
+                    FROM domain_member dm
+                    WHERE dm.staff_account_id = sa.id
+                      AND dm.business_domain_id = ?
+                      AND dm.deleted_at IS NULL
+                )
+                """);
+        args.add(domainId);
+        if (StringUtils.hasText(keyword)) {
+            String like = "%" + keyword.trim() + "%";
+            conditions.add("(sa.username LIKE ? OR sa.phone LIKE ? OR sa.email LIKE ? OR sa.real_name LIKE ? OR sa.nickname LIKE ?)");
+            args.add(like);
+            args.add(like);
+            args.add(like);
+            args.add(like);
+            args.add(like);
+        }
+        return new StaffCandidateQuery(" WHERE " + String.join(" AND ", conditions), List.copyOf(args));
+    }
+
+    private long countStaffCandidates(StaffCandidateQuery query) {
+        Long total = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM staff_account sa%s".formatted(query.whereClause()),
+                Long.class,
+                query.args().toArray());
+        return total == null ? 0L : total;
+    }
+
+    private Object[] pagingArgs(List<Object> args, int page, int pageSize) {
         int normalizedPage = Math.max(page, 1);
         int normalizedPageSize = Math.max(pageSize, 1);
-        List<Object> args = new ArrayList<>(query.args());
-        args.add(normalizedPageSize);
-        args.add((normalizedPage - 1L) * normalizedPageSize);
-        return args.toArray();
+        List<Object> paging = new ArrayList<>(args);
+        paging.add(normalizedPageSize);
+        paging.add((normalizedPage - 1L) * normalizedPageSize);
+        return paging.toArray();
     }
 
     private MemberRow mapMemberRow(ResultSet rs, int rowNum) throws SQLException {
@@ -370,7 +515,30 @@ public class DomainMemberService {
                 rs.getString("source"),
                 toLocalDateTime(rs.getTimestamp("activated_at")),
                 toLocalDateTime(rs.getTimestamp("disabled_at")),
-                toLocalDateTime(rs.getTimestamp("deleted_at")));
+                toLocalDateTime(rs.getTimestamp("deleted_at")),
+                toLocalDateTime(rs.getTimestamp("created_at")));
+    }
+
+    private StaffCandidateRow mapStaffCandidateRow(ResultSet rs, int rowNum) throws SQLException {
+        return new StaffCandidateRow(
+                rs.getLong("id"),
+                rs.getString("username"),
+                rs.getString("real_name"),
+                rs.getString("nickname"),
+                rs.getString("phone"),
+                rs.getString("email"),
+                rs.getString("status"));
+    }
+
+    private DomainMemberDtos.StaffCandidateView toStaffCandidateView(StaffCandidateRow row) {
+        return new DomainMemberDtos.StaffCandidateView(
+                row.id(),
+                row.username(),
+                row.realName(),
+                row.nickname(),
+                row.phone(),
+                row.email(),
+                row.status());
     }
 
     private DomainMemberDtos.DomainMemberView toView(MemberRow row, List<DomainRoleDtos.DomainRoleView> roles) {
@@ -390,6 +558,7 @@ public class DomainMemberService {
                 row.activatedAt(),
                 row.disabledAt(),
                 row.deletedAt(),
+                row.createdAt(),
                 roles);
     }
 
@@ -405,6 +574,7 @@ public class DomainMemberService {
                                 dm.activated_at,
                                 dm.disabled_at,
                                 dm.deleted_at,
+                                dm.created_at,
                                 sa.username,
                                 sa.phone,
                                 sa.email
@@ -470,12 +640,12 @@ public class DomainMemberService {
         domainService.getDomain(domainId);
     }
 
-    private String normalizeStatus(String status) {
+    private String normalizeMemberStatus(String status) {
         if (!StringUtils.hasText(status)) {
             return null;
         }
         String normalized = status.trim().toLowerCase();
-        if ("active".equals(normalized) || "disabled".equals(normalized) || "deleted".equals(normalized)) {
+        if ("active".equals(normalized) || "disabled".equals(normalized)) {
             return normalized;
         }
         return null;
@@ -509,9 +679,23 @@ public class DomainMemberService {
             String source,
             LocalDateTime activatedAt,
             LocalDateTime disabledAt,
-            LocalDateTime deletedAt) {
+            LocalDateTime deletedAt,
+            LocalDateTime createdAt) {
+    }
+
+    private record StaffCandidateRow(
+            long id,
+            String username,
+            String realName,
+            String nickname,
+            String phone,
+            String email,
+            String status) {
     }
 
     private record MemberQuery(String whereClause, List<Object> args) {
+    }
+
+    private record StaffCandidateQuery(String whereClause, List<Object> args) {
     }
 }

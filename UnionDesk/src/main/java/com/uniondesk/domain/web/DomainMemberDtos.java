@@ -26,7 +26,32 @@ public final class DomainMemberDtos {
             LocalDateTime activated_at,
             LocalDateTime disabled_at,
             LocalDateTime deleted_at,
+            LocalDateTime created_at,
             List<DomainRoleDtos.DomainRoleView> roles) {
+    }
+
+    public record StaffCandidateView(
+            long id,
+            String username,
+            String real_name,
+            String nickname,
+            String phone,
+            String email,
+            String status) {
+    }
+
+    public record UpdateDomainMemberStatusRequest(
+            @NotBlank String status) {
+    }
+
+    public record CreateMemberWithStaffRequest(
+            @NotBlank String username,
+            String real_name,
+            String nickname,
+            @NotBlank String phone,
+            String email,
+            @NotBlank String password,
+            @NotEmpty List<Long> role_ids) {
     }
 
     public record CreateDomainMemberRequest(

@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.uniondesk.iam.core.IdentityPresentationService;
+import com.uniondesk.iam.core.StaffAccountService;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,11 +30,14 @@ class DomainMemberServiceTests {
     @Mock
     private IdentityPresentationService identityPresentationService;
 
+    @Mock
+    private StaffAccountService staffAccountService;
+
     private DomainMemberService domainMemberService;
 
     @BeforeEach
     void setUp() {
-        domainMemberService = new DomainMemberService(jdbcTemplate, domainService, identityPresentationService);
+        domainMemberService = new DomainMemberService(jdbcTemplate, domainService, identityPresentationService, staffAccountService);
     }
 
     @Test

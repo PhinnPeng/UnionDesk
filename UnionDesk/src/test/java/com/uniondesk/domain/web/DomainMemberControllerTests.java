@@ -28,7 +28,7 @@ class DomainMemberControllerTests {
     @Test
     void listMembersReturnsPageResult() throws Exception {
         MockMvc mockMvc = mockMvc();
-        when(domainMemberService.listMembers(1L, 1, 20, null, null)).thenReturn(new PageResult<>(
+        when(domainMemberService.listMembers(1L, 1, 20, null, null, null, null)).thenReturn(new PageResult<>(
                 1,
                 List.of(memberView(11L))));
 
@@ -84,6 +84,54 @@ class DomainMemberControllerTests {
         verify(domainMemberService).deleteMember(1L, 11L);
     }
 
+    @Test
+    void listStaffCandidatesReturnsPageResult() throws Exception {
+        MockMvc mockMvc = mockMvc();
+        when(domainMemberService.listStaffCandidates(1L, 1, 20, null)).thenReturn(new PageResult<>(
+                1,
+                List.of(new DomainMemberDtos.StaffCandidateView(1001L, "staff-1", "张三", "小王", "13800000000", "a@b.com", "active"))));
+
+        mockMvc.perform(get("/api/v1/admin/domains/1/members/staff-candidates"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.list[0].username").value("staff-1"));
+    }
+
+    @Test
+    void updateMemberStatusReturnsView() throws Exception {
+        MockMvc mockMvc = mockMvc();
+        when(domainMemberService.updateMemberStatus(eq(1L), eq(11L), any())).thenReturn(memberView(11L));
+
+        mockMvc.perform(put("/api/v1/admin/domains/1/members/11/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "status": "disabled"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(11));
+    }
+
+    @Test
+    void createMemberWithStaffReturnsView() throws Exception {
+        MockMvc mockMvc = mockMvc();
+        when(domainMemberService.createMemberWithStaff(eq(1L), any())).thenReturn(memberView(11L));
+
+        mockMvc.perform(post("/api/v1/admin/domains/1/members/with-staff")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "new-staff",
+                                  "phone": "13800001111",
+                                  "password": "Passw0rd!",
+                                  "role_ids": [21]
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(11));
+    }
+
     private MockMvc mockMvc() {
         return MockMvcBuilders.standaloneSetup(new DomainMemberController(domainMemberService)).build();
     }
@@ -104,6 +152,7 @@ class DomainMemberControllerTests {
                 now,
                 null,
                 null,
+                now,
                 List.of(new DomainRoleDtos.DomainRoleView(21L, 1L, "domain_admin", "业务域管理员", true)));
     }
 }

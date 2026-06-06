@@ -248,7 +248,7 @@
 | US-S2-UX-01 | 2 | E6 横切 | Todo |
 | US-S2-01 | 3 | 平台域超额 | Todo |
 | US-S2-02 | 2 | 平台域超额 | Todo |
-| US-S2-03 | 5 | 平台域超额 | Todo |
+| US-S2-03 | 5 | 平台域超额 | Done |
 | US-S2-04 | 2 | 平台域超额 | Todo |
 | US-S2-05 | 3 | 平台域超额 | Todo |
 | US-S2-06 | 2 | 平台域超额 | Todo |
@@ -279,11 +279,17 @@
   1. 详情「基础信息」Tab 正确回显 `code`/`name`/`logo`/`description`/`portal` 等；保存后列表与详情一致。
   2. 软删除前弹窗要求输入与 **`domain.code` 完全一致** 的确认文案；通过后进入 **Step-up** 二次认证再调用删除 API。
   3. 业务域列表 **不展示** `deleted_at IS NOT NULL` 的记录。
-  4. 已软删域访问详情 URL 时跳转列表或展示不可访问（与后端 `getDomain` 行为一致）。
-  5. **软删写入**：`DELETE` 执行时更新 **`updated_at`**、**`updated_by`**（与操作人一致）；设置 **`deleted_at`**；**不新增** `deleted` 布尔列——是否已删以 **`deleted_at IS NOT NULL`** 为准（可继续联动 `status = 0`，与现实现一致）。
-  6. **权限**：删除按钮与接口使用 **`platform.domain.control.deleted`**（Flyway 登记菜单按钮 + `RequirePermission`）；无权限不展示删除入口。
-- **规则**: `code` 创建后不可改；删除为软删。
-- **DB 增量**: 权限码 `platform.domain.control.deleted`（Flyway）；**无** `deleted` 列
+  4. ~~已删域访问详情 URL 时跳转列表或展示不可访问~~ — **延后**（S2+；依赖 `getDomain` 对已删域行为与详情门控，基础能力未齐，不阻塞 S2-01 其余 AC）。
+  5. **删除写入**：`DELETE` 执行时更新 **`updated_at`**、**`updated_by`**（与操作人一致）；设置 **`deleted_at`**；**不新增** `deleted` 布尔列——是否已删以 **`deleted_at IS NOT NULL`** 为准；**不修改** `status`（`status` 仅表示启用/禁用）。
+  6. **权限**（控制台，Flyway `202605330004`～`202605330005` + `RequirePermission` + 菜单按钮）：
+     - 进入控制台 / 详情 GET：`platform.domain.control.entry`
+     - 概览 Tab：`platform.domain.control.overview`
+     - 更新基础信息（PUT）：`platform.domain.control.general.update`
+     - 删除业务域（DELETE）：`platform.domain.control.general.delete`
+     - 列表「进入控制台」按钮（UI）：`platform.domain.control.read`
+     - 无权限时删除/更新入口 disabled + 提示（非隐藏）
+- **规则**: `code` 创建后不可改；**`status`** 表示启用/禁用；**`deleted_at`** 表示删除（对用户文案称「删除」，无 `deleted` 列）。
+- **DB 增量**: 权限迁移见 Flyway `202605330004`、`202605330005`；**无** `deleted` 列
 - **备注**: `detail-baseinfo.tsx`、`detail-header.tsx`、`DomainService.deleteDomain`
 
 ### US-S2-02 角色管理（只读）
@@ -302,7 +308,7 @@
 
 ### US-S2-03 域内员工管理
 
-- **Epic**: E1（平台域超额）| **Sprint**: S2 | **SP**: 5 | **状态**: Todo
+- **Epic**: E1（平台域超额）| **Sprint**: S2 | **SP**: 5 | **状态**: Done
 - **角色**: 平台管理员
 - **故事**: 作为平台管理员，我需要在业务域详情中添加员工、调整角色，并禁用或启用域内成员。
 - **AC**:
@@ -312,7 +318,7 @@
   4. `shared` 封装成员相关 API；权限 Flyway 含 `domain.member.*` 按钮。
 - **规则**: 同一员工在同一域不可重复添加。
 - **DB 增量**: 无表变更（`domain_member.status` 已存在）；权限码 Flyway 按需
-- **备注**: `detail-members.tsx` 当前只读列表
+- **备注**: `detail-members.tsx` 可交互；Flyway `202606060001`；`PUT .../members/{id}/status`、`POST .../with-staff`、`GET .../staff-candidates`
 
 ### US-S2-04 域内客户管理完善
 

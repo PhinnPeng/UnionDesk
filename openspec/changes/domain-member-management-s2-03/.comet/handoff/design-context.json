@@ -1,0 +1,11 @@
+{
+  "change": "domain-member-management-s2-03",
+  "phase": "design",
+  "mode": "compact",
+  "sources": [
+    "openspec/changes/domain-member-management-s2-03/proposal.md",
+    "openspec/changes/domain-member-management-s2-03/design.md",
+    "openspec/changes/domain-member-management-s2-03/tasks.md",
+    "docs/product/backlog-stories.md"
+  ]
+}

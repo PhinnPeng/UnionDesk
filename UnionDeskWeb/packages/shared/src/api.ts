@@ -53,6 +53,7 @@ import type {
   DomainPermissionItem,
   DomainRolePermissions,
   DomainMember,
+  DomainStaffCandidate,
   BlockedWord,
   P0AttachmentPresignRequest,
   P0AttachmentPresignResponse,
@@ -1112,7 +1113,20 @@ function normalizeDomainMember(raw: Record<string, unknown>): DomainMember {
     activated_at: raw.activated_at != null ? String(raw.activated_at) : raw.activatedAt != null ? String(raw.activatedAt) : null,
     disabled_at: raw.disabled_at != null ? String(raw.disabled_at) : raw.disabledAt != null ? String(raw.disabledAt) : null,
     deleted_at: raw.deleted_at != null ? String(raw.deleted_at) : raw.deletedAt != null ? String(raw.deletedAt) : null,
+    created_at: raw.created_at != null ? String(raw.created_at) : raw.createdAt != null ? String(raw.createdAt) : null,
     roles,
+  };
+}
+
+function normalizeDomainStaffCandidate(raw: Record<string, unknown>): DomainStaffCandidate {
+  return {
+    id: String(raw.id ?? ""),
+    username: raw.username != null ? String(raw.username) : null,
+    real_name: raw.real_name != null ? String(raw.real_name) : raw.realName != null ? String(raw.realName) : null,
+    nickname: raw.nickname != null ? String(raw.nickname) : null,
+    phone: raw.phone != null ? String(raw.phone) : null,
+    email: raw.email != null ? String(raw.email) : null,
+    status: raw.status != null ? String(raw.status) : null,
   };
 }
 
@@ -1198,12 +1212,14 @@ export async function fetchDomainMembersPage(params: {
   page_size?: number;
   status?: string;
   keyword?: string;
+  created_from?: string;
+  created_to?: string;
 }): Promise<P0PageResult<DomainMember>> {
-  const { domainId, page = 1, page_size = 20, status, keyword } = params;
+  const { domainId, page = 1, page_size = 20, status, keyword, created_from, created_to } = params;
   try {
     const response = await api.get<P0PageResult<DomainMember>>(
       `/admin/domains/${encodeURIComponent(domainId)}/members`,
-      { params: { page, page_size, status, keyword } },
+      { params: { page, page_size, status, keyword, created_from, created_to } },
     );
     const data = unwrapApiResponse(response.data);
     return {
@@ -1218,6 +1234,96 @@ export async function fetchDomainMembersPage(params: {
     }
     throw toError(error);
   }
+}
+
+/** `GET /api/v1/admin/domains/{domainId}/members/staff-candidates` */
+export async function fetchDomainStaffCandidates(params: {
+  domainId: string;
+  page?: number;
+  page_size?: number;
+  keyword?: string;
+}): Promise<P0PageResult<DomainStaffCandidate>> {
+  const { domainId, page = 1, page_size = 20, keyword } = params;
+  const response = await api.get<P0PageResult<DomainStaffCandidate>>(
+    `/admin/domains/${encodeURIComponent(domainId)}/members/staff-candidates`,
+    { params: { page, page_size, keyword } },
+  );
+  const data = unwrapApiResponse(response.data);
+  return {
+    total: data.total ?? 0,
+    list: Array.isArray(data.list)
+      ? data.list.map(item => normalizeDomainStaffCandidate(item as unknown as Record<string, unknown>))
+      : [],
+  };
+}
+
+/** `POST /api/v1/admin/domains/{domainId}/members` */
+export async function createDomainMember(
+  domainId: string,
+  body: { staff_account_id: string; role_ids: string[] },
+): Promise<DomainMember> {
+  const response = await api.post<DomainMember>(
+    `/admin/domains/${encodeURIComponent(domainId)}/members`,
+    {
+      staff_account_id: Number(body.staff_account_id),
+      role_ids: body.role_ids.map(id => Number(id)),
+    },
+  );
+  return normalizeDomainMember(unwrapApiResponse(response.data) as Record<string, unknown>);
+}
+
+/** `POST /api/v1/admin/domains/{domainId}/members/with-staff` */
+export async function createDomainMemberWithStaff(
+  domainId: string,
+  body: {
+    username: string;
+    real_name?: string;
+    nickname?: string;
+    phone: string;
+    email?: string;
+    password: string;
+    role_ids: string[];
+  },
+): Promise<DomainMember> {
+  const response = await api.post<DomainMember>(
+    `/admin/domains/${encodeURIComponent(domainId)}/members/with-staff`,
+    {
+      ...body,
+      role_ids: body.role_ids.map(id => Number(id)),
+    },
+  );
+  return normalizeDomainMember(unwrapApiResponse(response.data) as Record<string, unknown>);
+}
+
+/** `PUT /api/v1/admin/domains/{domainId}/members/{memberId}/roles` */
+export async function updateDomainMemberRoles(
+  domainId: string,
+  memberId: string,
+  roleIds: string[],
+): Promise<DomainMember> {
+  const response = await api.put<DomainMember>(
+    `/admin/domains/${encodeURIComponent(domainId)}/members/${encodeURIComponent(memberId)}/roles`,
+    { role_ids: roleIds.map(id => Number(id)) },
+  );
+  return normalizeDomainMember(unwrapApiResponse(response.data) as Record<string, unknown>);
+}
+
+/** `PUT /api/v1/admin/domains/{domainId}/members/{memberId}/status` */
+export async function updateDomainMemberStatus(
+  domainId: string,
+  memberId: string,
+  status: "active" | "disabled",
+): Promise<DomainMember> {
+  const response = await api.put<DomainMember>(
+    `/admin/domains/${encodeURIComponent(domainId)}/members/${encodeURIComponent(memberId)}/status`,
+    { status },
+  );
+  return normalizeDomainMember(unwrapApiResponse(response.data) as Record<string, unknown>);
+}
+
+/** `DELETE /api/v1/admin/domains/{domainId}/members/{memberId}` */
+export async function deleteDomainMember(domainId: string, memberId: string): Promise<void> {
+  await api.delete(`/admin/domains/${encodeURIComponent(domainId)}/members/${encodeURIComponent(memberId)}`);
 }
 
 /** `GET /api/v1/admin/domains/{domainId}/blocked-words` */

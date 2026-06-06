@@ -88,6 +88,7 @@ public final class PermissionCodes {
     public static final String DOMAIN_MEMBER_CREATE = "domain.member.create";
     public static final String DOMAIN_MEMBER_UPDATE_ROLES = "domain.member.update_roles";
     public static final String DOMAIN_MEMBER_DELETE = "domain.member.delete";
+    public static final String DOMAIN_MEMBER_UPDATE_STATUS = "domain.member.update_status";
     public static final String DOMAIN_ROLE_READ = "domain.role.read";
     public static final String DOMAIN_ROLE_CREATE = "domain.role.create";
     public static final String DOMAIN_ROLE_UPDATE = "domain.role.update";

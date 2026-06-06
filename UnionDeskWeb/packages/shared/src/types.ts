@@ -590,7 +590,18 @@ export type DomainMember = {
   activated_at?: string | null;
   disabled_at?: string | null;
   deleted_at?: string | null;
+  created_at?: string | null;
   roles?: DomainRole[];
+};
+
+export type DomainStaffCandidate = {
+  id: string;
+  username?: string | null;
+  real_name?: string | null;
+  nickname?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  status?: string | null;
 };
 
 export type BlockedWord = {

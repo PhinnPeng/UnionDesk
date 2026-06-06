@@ -98,7 +98,7 @@
 | US-S2-UX-01 | 无 | — | Todo |
 | US-S2-01 | 无表变更；权限 `platform.domain.control.entry` / `overview` / `general.update` / `general.delete`（`202605330004`～`202605330005`）；删除写 `updated_at`/`updated_by`/`deleted_at`（**不改 status**；无 `deleted` 列） | 202605330004、202605330005 | Done |
 | US-S2-02 | 权限 `platform.domain.roles.*`（只读）；菜单「角色管理」 | TBD | Todo |
-| US-S2-03 | 无表；`domain.member.status` API；成员按钮权限码 | TBD | Todo |
+| US-S2-03 | 无表；`domain.member.*` 权限码 + `PUT .../status` API；菜单 `PLATFORM-DOMAIN-MEMBERS` | 202606060001 | Done |
 | US-S2-04 | 无（除非客户编辑扩列） | — | Todo |
 | US-S2-05 | `blocked_word` 扩展；权限 `platform.blocked_word.*`、`platform.domain.blocked_word.*` | TBD | Todo |
 | US-S2-06 | 权限 `platform.audit-logs.read`（若缺则 Flyway） | TBD | Todo |
