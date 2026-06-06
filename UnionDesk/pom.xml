@@ -88,6 +88,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+                    <forkCount>1</forkCount>
+                    <reuseForks>true</reuseForks>
                 </configuration>
             </plugin>
             <plugin>

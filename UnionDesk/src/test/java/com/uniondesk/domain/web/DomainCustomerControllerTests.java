@@ -36,7 +36,7 @@ class DomainCustomerControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(1))
                 .andExpect(jsonPath("$.list[0].status").value("pending"))
-                .andExpect(jsonPath("$.list[0].customerAccountId").value(100));
+                .andExpect(jsonPath("$.list[0].customer_account_id").value(100));
     }
 
     @Test

@@ -761,55 +761,14 @@ public class IamService {
 
     @Transactional
     public UserAccount createUser(CreateUserCommand command) {
-        String username = normalize(command.username(), "username");
-        String mobile = normalize(command.mobile(), "mobile");
         String accountType = normalize(command.accountType(), "accountType").toLowerCase();
-        if (!List.of("admin", "customer").contains(accountType)) {
-            throw new IllegalArgumentException("unsupported account type");
+        if ("admin".equals(accountType)) {
+            throw new IllegalArgumentException("请使用 /api/v1/admin/staff 创建员工账号");
         }
-        String password = normalize(command.password(), "password");
-        String email = StringUtils.hasText(command.email()) ? command.email().trim() : null;
-        String remark = normalizeOptional(command.remark());
-        List<String> roleCodes = command.roleCodes() == null ? List.of() : command.roleCodes().stream()
-                .filter(StringUtils::hasText)
-                .map(String::trim)
-                .toList();
-        List<Long> businessDomainIds = command.businessDomainIds() == null ? List.of() : command.businessDomainIds().stream()
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
-        List<Long> organizationIds = command.organizationIds() == null ? List.of() : command.organizationIds().stream()
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
-        if (roleCodes.isEmpty()) {
-            throw new IllegalArgumentException("roleCodes is required");
+        if ("customer".equals(accountType)) {
+            throw new IllegalArgumentException("请使用客户注册或域客户 API 创建客户账号");
         }
-        String nickname = StringUtils.hasText(command.nickname()) ? command.nickname().trim() : null;
-        try {
-            jdbcTemplate.update("""
-                            INSERT INTO user_account (
-                                username, nickname, mobile, email, remark, password_hash, status, account_type, employment_status
-                            )
-                            VALUES (?, ?, ?, ?, ?, ?, 1, ?, 'active')
-                            """,
-                    username,
-                    nickname,
-                    mobile,
-                    email,
-                    remark,
-                    passwordEncoder.encode(password),
-                    accountType);
-        } catch (DuplicateKeyException ex) {
-            throw new IllegalArgumentException("username/mobile/email already exists");
-        }
-        Long userId = jdbcTemplate.queryForObject("SELECT id FROM user_account WHERE username = ? LIMIT 1", Long.class, username);
-        if (userId == null) {
-            throw new IllegalStateException("user create failed");
-        }
-        replaceUserRoleBindings(userId, roleCodes, businessDomainIds);
-        organizationService.replaceUserOrganizations(userId, organizationIds);
-        return loadUser(userId).orElseThrow(() -> new IllegalStateException("user load failed"));
+        throw new IllegalArgumentException("unsupported account type");
     }
 
     @Transactional

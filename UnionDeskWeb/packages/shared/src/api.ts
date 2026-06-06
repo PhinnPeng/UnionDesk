@@ -48,6 +48,12 @@ import type {
   P0AdminTicketListItem,
   P0InvitationCode,
   P0DomainCustomer,
+  P0BatchCreateDomainCustomersResult,
+  DomainRole,
+  DomainPermissionItem,
+  DomainRolePermissions,
+  DomainMember,
+  BlockedWord,
   P0AttachmentPresignRequest,
   P0AttachmentPresignResponse,
   P0AttachmentLocalUploadResponse,
@@ -752,7 +758,8 @@ function legacyDomainToAdmin(row: BusinessDomainView): AdminDomain {
     code: row.code,
     name: row.name,
     visibility_policy_codes: toP0VisibilityList(row.visibilityPolicy),
-    registration_policy: "open",
+    registration_enabled: "allowed",
+    invitation_enabled: "allowed",
     status: row.status != null ? String(row.status) : undefined,
     created_at: undefined
   };
@@ -801,7 +808,7 @@ export async function fetchAdminDomainsPage(params: {
   }
 }
 
-/** 业务域详情：`GET /api/v1/admin/domains/{domain_id}` */
+/** 业务域控制台：`GET /api/v1/admin/domains/{domain_id}` */
 export async function fetchAdminDomain(domainId: string): Promise<AdminDomain> {
   try {
     const response = await api.get<AdminDomain>(`/admin/domains/${encodeURIComponent(domainId)}`);
@@ -833,9 +840,14 @@ export async function createAdminDomain(payload: CreateAdminDomainPayload): Prom
 }
 
 /** 更新业务域：`PUT /api/v1/admin/domains/{domain_id}` */
-export async function updateAdminDomain(domainId: string, payload: UpdateAdminDomainPayload): Promise<void> {
+export async function updateAdminDomain(domainId: string, payload: UpdateAdminDomainPayload): Promise<AdminDomain> {
   try {
-    await api.put(`/admin/domains/${encodeURIComponent(domainId)}`, payload);
+    const response = await api.put<AdminDomain>(`/admin/domains/${encodeURIComponent(domainId)}`, payload);
+    const row = normalizeAdminDomain(unwrapApiResponse(response.data));
+    if (!row) {
+      throw new Error("更新业务域失败：响应无效");
+    }
+    return row;
   } catch (error) {
     throw toError(error);
   }
@@ -963,17 +975,279 @@ export async function fetchP0DomainCustomersPage(params: {
 }): Promise<P0PageResult<P0DomainCustomer>> {
   const { domainId, page, page_size, status, keyword } = params;
   try {
-    const response = await api.get<P0PageResult<P0DomainCustomer>>(
+    const response = await api.get<P0PageResult<Record<string, unknown>>>(
       `/admin/domains/${encodeURIComponent(domainId)}/customers`,
       { params: { page, page_size, status, keyword } }
     );
-    return unwrapApiResponse(response.data);
+    const data = unwrapApiResponse(response.data);
+    return {
+      total: data.total ?? 0,
+      list: Array.isArray(data.list)
+        ? data.list.map(item => normalizeP0DomainCustomer(item))
+        : [],
+    };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
       return { total: 0, list: [] };
     }
     throw toError(error);
   }
+}
+
+function normalizeP0DomainCustomer(raw: Record<string, unknown>): P0DomainCustomer {
+  return {
+    id: String(raw.id ?? ""),
+    customer_account_id: raw.customer_account_id != null
+      ? String(raw.customer_account_id)
+      : raw.customerAccountId != null
+        ? String(raw.customerAccountId)
+        : null,
+    display_name: String(raw.display_name ?? raw.displayName ?? "—"),
+    login_name: raw.login_name != null
+      ? String(raw.login_name)
+      : raw.loginName != null
+        ? String(raw.loginName)
+        : null,
+    phone: raw.phone != null ? String(raw.phone) : null,
+    email: raw.email != null ? String(raw.email) : null,
+    status: raw.status != null ? String(raw.status) : "active",
+    source: raw.source != null ? String(raw.source) : null,
+    activated_at: raw.activated_at != null
+      ? String(raw.activated_at)
+      : raw.activatedAt != null
+        ? String(raw.activatedAt)
+        : null,
+    created_at: raw.created_at != null
+      ? String(raw.created_at)
+      : raw.createdAt != null
+        ? String(raw.createdAt)
+        : null,
+  };
+}
+
+/** `POST .../customers/manual` */
+export async function createDomainCustomerManual(
+  domainId: string,
+  body: { display_name: string; login_name: string; phone: string; email: string },
+): Promise<P0DomainCustomer> {
+  const response = await api.post<Record<string, unknown>>(
+    `/admin/domains/${encodeURIComponent(domainId)}/customers/manual`,
+    body,
+  );
+  return normalizeP0DomainCustomer(unwrapApiResponse(response.data) as Record<string, unknown>);
+}
+
+/** `POST .../customers/from-staff` */
+export async function createDomainCustomersFromStaff(
+  domainId: string,
+  body: { staff_account_ids: string[] },
+): Promise<P0BatchCreateDomainCustomersResult> {
+  const response = await api.post<Record<string, unknown>>(
+    `/admin/domains/${encodeURIComponent(domainId)}/customers/from-staff`,
+    {
+      staff_account_ids: body.staff_account_ids.map(id => Number(id)),
+    },
+  );
+  const data = unwrapApiResponse(response.data) as Record<string, unknown>;
+  const itemsRaw = data.items;
+  return {
+    added: Number(data.added ?? 0),
+    skipped: Number(data.skipped ?? 0),
+    items: Array.isArray(itemsRaw)
+      ? itemsRaw.map(item => normalizeP0DomainCustomer(item as Record<string, unknown>))
+      : [],
+  };
+}
+
+/** `PATCH .../customers/{customerId}/status` */
+export async function updateDomainCustomerStatus(
+  domainId: string,
+  customerId: string,
+  status: "active" | "disabled",
+): Promise<P0DomainCustomer> {
+  const response = await api.patch<Record<string, unknown>>(
+    `/admin/domains/${encodeURIComponent(domainId)}/customers/${encodeURIComponent(customerId)}/status`,
+    { status },
+  );
+  return normalizeP0DomainCustomer(unwrapApiResponse(response.data) as Record<string, unknown>);
+}
+
+function normalizeDomainRole(raw: Record<string, unknown>): DomainRole {
+  return {
+    id: String(raw.id ?? ""),
+    business_domain_id: String(raw.business_domain_id ?? raw.businessDomainId ?? ""),
+    code: String(raw.code ?? ""),
+    name: String(raw.name ?? ""),
+    preset: Boolean(raw.preset),
+  };
+}
+
+function normalizeDomainMember(raw: Record<string, unknown>): DomainMember {
+  const rolesRaw = raw.roles;
+  const roles = Array.isArray(rolesRaw)
+    ? rolesRaw.map(item => normalizeDomainRole(item as Record<string, unknown>))
+    : undefined;
+  return {
+    id: String(raw.id ?? ""),
+    staff_account_id: String(raw.staff_account_id ?? raw.staffAccountId ?? ""),
+    business_domain_id: String(raw.business_domain_id ?? raw.businessDomainId ?? ""),
+    username: raw.username != null
+      ? String(raw.username)
+      : raw.login_name != null
+        ? String(raw.login_name)
+        : raw.loginName != null
+          ? String(raw.loginName)
+          : null,
+    real_name: raw.real_name != null
+      ? String(raw.real_name)
+      : raw.realName != null
+        ? String(raw.realName)
+        : null,
+    nickname: raw.nickname != null ? String(raw.nickname) : null,
+    login_name: raw.login_name != null ? String(raw.login_name) : raw.loginName != null ? String(raw.loginName) : null,
+    phone: raw.phone != null ? String(raw.phone) : null,
+    email: raw.email != null ? String(raw.email) : null,
+    status: raw.status != null ? String(raw.status) : null,
+    source: raw.source != null ? String(raw.source) : null,
+    activated_at: raw.activated_at != null ? String(raw.activated_at) : raw.activatedAt != null ? String(raw.activatedAt) : null,
+    disabled_at: raw.disabled_at != null ? String(raw.disabled_at) : raw.disabledAt != null ? String(raw.disabledAt) : null,
+    deleted_at: raw.deleted_at != null ? String(raw.deleted_at) : raw.deletedAt != null ? String(raw.deletedAt) : null,
+    roles,
+  };
+}
+
+function normalizeBlockedWord(raw: Record<string, unknown>): BlockedWord {
+  return {
+    id: String(raw.id ?? ""),
+    word: String(raw.word ?? ""),
+    created_at: raw.created_at != null ? String(raw.created_at) : raw.createdAt != null ? String(raw.createdAt) : null,
+  };
+}
+
+function normalizeDomainPermissionItem(raw: Record<string, unknown>): DomainPermissionItem {
+  return {
+    id: String(raw.id ?? ""),
+    code: String(raw.code ?? ""),
+    name: String(raw.name ?? ""),
+    module: raw.module != null ? String(raw.module) : null,
+    type: raw.type != null ? String(raw.type) : null,
+  };
+}
+
+function normalizeDomainRolePermissions(raw: Record<string, unknown>): DomainRolePermissions {
+  const itemsRaw = raw.permission_items ?? raw.permissionItems;
+  const permission_items = Array.isArray(itemsRaw)
+    ? itemsRaw.map(item => normalizeDomainPermissionItem(item as Record<string, unknown>))
+    : [];
+  return {
+    role_id: String(raw.role_id ?? raw.roleId ?? ""),
+    code: String(raw.code ?? ""),
+    name: String(raw.name ?? ""),
+    permission_items,
+  };
+}
+
+/** `GET /api/v1/admin/domains/{domainId}/roles`（域内访问，保留） */
+export async function fetchDomainRoles(domainId: string): Promise<DomainRole[]> {
+  try {
+    const response = await api.get<DomainRole[]>(`/admin/domains/${encodeURIComponent(domainId)}/roles`);
+    const data = unwrapApiResponse(response.data);
+    return Array.isArray(data) ? data.map(item => normalizeDomainRole(item as unknown as Record<string, unknown>)) : [];
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return [];
+    }
+    throw toError(error);
+  }
+}
+
+/** `GET /api/v1/admin/domains/{domainId}/platform-roles`（平台控制台） */
+export async function fetchPlatformDomainRoles(domainId: string): Promise<DomainRole[]> {
+  try {
+    const response = await api.get<DomainRole[]>(`/admin/domains/${encodeURIComponent(domainId)}/platform-roles`);
+    const data = unwrapApiResponse(response.data);
+    return Array.isArray(data) ? data.map(item => normalizeDomainRole(item as unknown as Record<string, unknown>)) : [];
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return [];
+    }
+    throw toError(error);
+  }
+}
+
+/** `GET /api/v1/admin/domains/{domainId}/roles/{roleId}/permissions`（域内访问，保留） */
+export async function fetchDomainRolePermissions(domainId: string, roleId: string): Promise<DomainRolePermissions> {
+  const response = await api.get<DomainRolePermissions>(
+    `/admin/domains/${encodeURIComponent(domainId)}/roles/${encodeURIComponent(roleId)}/permissions`,
+  );
+  return normalizeDomainRolePermissions(unwrapApiResponse(response.data) as Record<string, unknown>);
+}
+
+/** `GET /api/v1/admin/domains/{domainId}/platform-roles/{roleId}/permissions`（平台控制台） */
+export async function fetchPlatformDomainRolePermissions(domainId: string, roleId: string): Promise<DomainRolePermissions> {
+  const response = await api.get<DomainRolePermissions>(
+    `/admin/domains/${encodeURIComponent(domainId)}/platform-roles/${encodeURIComponent(roleId)}/permissions`,
+  );
+  return normalizeDomainRolePermissions(unwrapApiResponse(response.data) as Record<string, unknown>);
+}
+
+/** `GET /api/v1/admin/domains/{domainId}/members` */
+export async function fetchDomainMembersPage(params: {
+  domainId: string;
+  page?: number;
+  page_size?: number;
+  status?: string;
+  keyword?: string;
+}): Promise<P0PageResult<DomainMember>> {
+  const { domainId, page = 1, page_size = 20, status, keyword } = params;
+  try {
+    const response = await api.get<P0PageResult<DomainMember>>(
+      `/admin/domains/${encodeURIComponent(domainId)}/members`,
+      { params: { page, page_size, status, keyword } },
+    );
+    const data = unwrapApiResponse(response.data);
+    return {
+      total: data.total ?? 0,
+      list: Array.isArray(data.list)
+        ? data.list.map(item => normalizeDomainMember(item as unknown as Record<string, unknown>))
+        : [],
+    };
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return { total: 0, list: [] };
+    }
+    throw toError(error);
+  }
+}
+
+/** `GET /api/v1/admin/domains/{domainId}/blocked-words` */
+export async function fetchBlockedWords(domainId: string): Promise<BlockedWord[]> {
+  try {
+    const response = await api.get<BlockedWord[]>(
+      `/admin/domains/${encodeURIComponent(domainId)}/blocked-words`,
+    );
+    const data = unwrapApiResponse(response.data);
+    return Array.isArray(data) ? data.map(item => normalizeBlockedWord(item as unknown as Record<string, unknown>)) : [];
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return [];
+    }
+    throw toError(error);
+  }
+}
+
+/** `POST /api/v1/admin/domains/{domainId}/blocked-words` */
+export async function createBlockedWord(domainId: string, word: string): Promise<BlockedWord> {
+  const response = await api.post<BlockedWord>(
+    `/admin/domains/${encodeURIComponent(domainId)}/blocked-words`,
+    { word },
+  );
+  return normalizeBlockedWord(unwrapApiResponse(response.data) as unknown as Record<string, unknown>);
+}
+
+/** `DELETE /api/v1/admin/domains/{domainId}/blocked-words/{wordId}` */
+export async function deleteBlockedWord(domainId: string, wordId: string): Promise<void> {
+  await api.delete(`/admin/domains/${encodeURIComponent(domainId)}/blocked-words/${encodeURIComponent(wordId)}`);
 }
 
 /** P0：`POST /api/v1/attachments/presign` */

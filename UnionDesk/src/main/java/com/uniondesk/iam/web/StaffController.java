@@ -5,14 +5,11 @@ import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.auth.core.UserContextHolder;
 import com.uniondesk.common.web.PageResult;
 import com.uniondesk.common.web.ErrorCodes;
-import com.uniondesk.iam.core.IamService;
-import com.uniondesk.iam.core.IamService.CreateUserCommand;
-import com.uniondesk.iam.core.IamService.UpdateUserCommand;
 import com.uniondesk.iam.core.PermissionCodes;
 import com.uniondesk.iam.core.PlatformRoleService;
 import com.uniondesk.iam.core.RequirePermission;
+import com.uniondesk.iam.core.StaffAccountService;
 import jakarta.validation.Valid;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -32,12 +29,15 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/v1/admin/staff")
 public class StaffController {
 
-    private final IamService iamService;
+    private final StaffAccountService staffAccountService;
     private final PlatformRoleService platformRoleService;
     private final AuthVersionService authVersionService;
 
-    public StaffController(IamService iamService, PlatformRoleService platformRoleService, AuthVersionService authVersionService) {
-        this.iamService = iamService;
+    public StaffController(
+            StaffAccountService staffAccountService,
+            PlatformRoleService platformRoleService,
+            AuthVersionService authVersionService) {
+        this.staffAccountService = staffAccountService;
         this.platformRoleService = platformRoleService;
         this.authVersionService = authVersionService;
     }
@@ -49,7 +49,7 @@ public class StaffController {
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String keyword) {
-        List<StaffDtos.StaffAccountView> rows = iamService.listUsers(false, null).stream()
+        List<StaffDtos.StaffAccountView> rows = staffAccountService.listAll().stream()
                 .map(this::toStaffAccountView)
                 .filter(view -> matchesStatus(view, status))
                 .filter(view -> matchesKeyword(view, keyword))
@@ -72,17 +72,15 @@ public class StaffController {
     @ResponseStatus(HttpStatus.CREATED)
     @RequirePermission(PermissionCodes.PLATFORM_USER_CREATE)
     public StaffDtos.StaffAccountView createStaff(@Valid @RequestBody StaffDtos.CreateStaffRequest request) {
-        IamService.UserAccount created = iamService.createUser(new CreateUserCommand(
-                request.loginName(),
+        StaffAccountService.StaffAccount created = staffAccountService.create(new StaffAccountService.CreateStaffCommand(
+                request.username(),
+                request.real_name(),
                 request.nickname(),
                 request.phone(),
                 request.email(),
-                null,
                 request.password(),
-                request.accountType(),
                 request.roleCodes(),
-                request.businessDomainIds(),
-                null));
+                request.businessDomainIds()));
         return toStaffAccountView(created);
     }
 
@@ -91,36 +89,33 @@ public class StaffController {
     public StaffDtos.StaffAccountView updateStaff(
             @PathVariable long staffId,
             @Valid @RequestBody StaffDtos.UpdateStaffRequest request) {
-        IamService.UserAccount updated = iamService.updateUser(staffId, new UpdateUserCommand(
-                request.loginName(),
+        StaffAccountService.StaffAccount updated = staffAccountService.update(staffId, new StaffAccountService.UpdateStaffCommand(
+                request.username(),
+                request.real_name(),
                 request.nickname(),
                 request.phone(),
                 request.email(),
-                null,
                 request.password(),
-                request.accountType(),
-                request.roleCodes(),
-                request.businessDomainIds(),
                 request.status(),
-                null));
-        authVersionService.incrementVersion(updated.id(), updated.accountType());
+                request.roleCodes(),
+                request.businessDomainIds()));
+        authVersionService.incrementVersion(updated.id(), "staff");
         return toStaffAccountView(updated);
     }
 
     @PostMapping("/{staffId}/disable")
     @RequirePermission(PermissionCodes.PLATFORM_USER_DISABLE)
     public StaffDtos.StaffAccountView disableStaff(@PathVariable long staffId, @RequestParam(required = false) String reason) {
-        UserContext context = UserContextHolder.requireCurrent();
-        IamService.UserAccount updated = iamService.offboardUser(staffId, context.userId(), reason);
-        authVersionService.incrementVersion(updated.id(), updated.accountType());
+        StaffAccountService.StaffAccount updated = staffAccountService.disable(staffId);
+        authVersionService.incrementVersion(updated.id(), "staff");
         return toStaffAccountView(updated);
     }
 
     @PostMapping("/{staffId}/restore")
     @RequirePermission(PermissionCodes.PLATFORM_USER_RESTORE)
     public StaffDtos.StaffAccountView restoreStaff(@PathVariable long staffId) {
-        IamService.UserAccount updated = iamService.restoreUser(staffId);
-        authVersionService.incrementVersion(updated.id(), updated.accountType());
+        StaffAccountService.StaffAccount updated = staffAccountService.restore(staffId);
+        authVersionService.incrementVersion(updated.id(), "staff");
         return toStaffAccountView(updated);
     }
 
@@ -130,14 +125,13 @@ public class StaffController {
             @PathVariable long staffId,
             @Valid @RequestBody StaffDtos.UpdateStaffStatusRequest request) {
         String normalizedStatus = normalizeStatus(request.status());
-        IamService.UserAccount updated;
+        StaffAccountService.StaffAccount updated;
         if ("disabled".equals(normalizedStatus)) {
-            UserContext context = UserContextHolder.requireCurrent();
-            updated = iamService.offboardUser(staffId, context.userId(), "status_update");
+            updated = staffAccountService.disable(staffId);
         } else {
-            updated = iamService.restoreUser(staffId);
+            updated = staffAccountService.restore(staffId);
         }
-        authVersionService.incrementVersion(updated.id(), updated.accountType());
+        authVersionService.incrementVersion(updated.id(), "staff");
         return toStaffAccountView(updated);
     }
 
@@ -151,10 +145,10 @@ public class StaffController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN.message());
         }
 
-        IamService.UserAccount staff = loadStaff(staffId);
+        loadStaff(staffId);
         try {
             platformRoleService.assignPlatformRoles(staffId, request.roleCodes());
-            authVersionService.incrementVersion(staff.id(), staff.accountType());
+            authVersionService.incrementVersion(staffId, "staff");
             return new StaffDtos.StaffPlatformRolesResponse(staffId, platformRoleService.getCurrentPlatformRoles(staffId));
         } catch (IllegalStateException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
@@ -167,23 +161,25 @@ public class StaffController {
         return new StaffDtos.StaffPlatformRolesResponse(staffId, platformRoleService.getCurrentPlatformRoles(staffId));
     }
 
-    private StaffDtos.StaffAccountView toStaffAccountView(IamService.UserAccount user) {
+    private StaffDtos.StaffAccountView toStaffAccountView(StaffAccountService.StaffAccount staff) {
+        boolean active = "active".equalsIgnoreCase(staff.status());
         return new StaffDtos.StaffAccountView(
-                user.id(),
-                user.username(),
-                user.nickname(),
-                user.mobile(),
-                user.email(),
-                user.status(),
-                user.employmentStatus(),
-                user.accountType(),
-                user.roleCodes(),
-                user.businessDomainIds(),
-                platformRoleService.getCurrentPlatformRoles(user.id()));
+                staff.id(),
+                staff.username(),
+                staff.realName(),
+                staff.nickname(),
+                staff.phone(),
+                staff.email(),
+                active ? 1 : 0,
+                active ? "active" : "disabled",
+                "admin",
+                staffAccountService.listDomainRoleCodes(staff.id()),
+                staffAccountService.listBusinessDomainIds(staff.id()),
+                platformRoleService.getCurrentPlatformRoles(staff.id()));
     }
 
-    private IamService.UserAccount loadStaff(long staffId) {
-        return iamService.loadUser(staffId)
+    private StaffAccountService.StaffAccount loadStaff(long staffId) {
+        return staffAccountService.findById(staffId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND.message()));
     }
 
@@ -205,7 +201,8 @@ public class StaffController {
             return true;
         }
         String normalized = keyword.trim().toLowerCase(Locale.ROOT);
-        return contains(view.loginName(), normalized)
+        return contains(view.username(), normalized)
+                || contains(view.real_name(), normalized)
                 || contains(view.nickname(), normalized)
                 || contains(view.phone(), normalized)
                 || contains(view.email(), normalized);

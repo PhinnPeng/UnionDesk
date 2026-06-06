@@ -1,5 +1,6 @@
 package com.uniondesk.iam.web;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -21,7 +22,8 @@ public final class StaffDtos {
 
     public record StaffAccountView(
             long id,
-            String loginName,
+            String username,
+            String real_name,
             String nickname,
             String phone,
             String email,
@@ -34,7 +36,10 @@ public final class StaffDtos {
     }
 
     public record CreateStaffRequest(
-            @NotBlank String loginName,
+            @JsonAlias({"login_name", "loginName"})
+            @NotBlank String username,
+            @JsonAlias({"realName"})
+            String real_name,
             String nickname,
             @NotBlank String phone,
             String email,
@@ -45,7 +50,10 @@ public final class StaffDtos {
     }
 
     public record UpdateStaffRequest(
-            String loginName,
+            @JsonAlias({"login_name", "loginName"})
+            String username,
+            @JsonAlias({"realName"})
+            String real_name,
             String nickname,
             String phone,
             String email,

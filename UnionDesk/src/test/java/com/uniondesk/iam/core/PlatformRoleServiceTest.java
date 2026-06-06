@@ -45,7 +45,7 @@ class PlatformRoleServiceTest {
 
         // 创建一个 staff_account
         jdbcClient.sql("""
-            INSERT INTO staff_account (id, subject_id, login_name, phone, email, password_hash, status)
+            INSERT INTO staff_account (id, subject_id, username, phone, email, password_hash, status)
             VALUES (1, 1, 'admin1', '13800000011', 'admin1@test.com', '{noop}password', 'active')
             ON DUPLICATE KEY UPDATE status = VALUES(status)
             """)
@@ -106,7 +106,7 @@ class PlatformRoleServiceTest {
             .update();
 
         jdbcClient.sql("""
-            INSERT INTO staff_account (id, subject_id, login_name, phone, email, password_hash, status)
+            INSERT INTO staff_account (id, subject_id, username, phone, email, password_hash, status)
             VALUES (2, 2, 'admin2', '13800000002', 'admin2@test.com', '{noop}password', 'active')
             ON DUPLICATE KEY UPDATE status = VALUES(status)
             """)

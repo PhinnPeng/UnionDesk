@@ -448,6 +448,8 @@ export type P0PageResult<T> = {
 
 export type P0VisibilityPolicyCode = "public" | "domain_customer_only" | "channel_only";
 
+export type P0AccessPolicy = "allowed" | "disallowed";
+
 export type P0RegistrationPolicy = "open" | "invitation_only" | "admin_only";
 
 /** 平台 / 域管理侧业务域行（对齐 Domain DTO） */
@@ -458,7 +460,8 @@ export type AdminDomain = {
   description?: string | null;
   logo?: string | null;
   visibility_policy_codes: P0VisibilityPolicyCode[];
-  registration_policy: P0RegistrationPolicy;
+  registration_enabled: P0AccessPolicy;
+  invitation_enabled: P0AccessPolicy;
   status?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -474,7 +477,8 @@ export type CreateAdminDomainPayload = {
   description?: string;
   logo?: string;
   visibility_policy_codes: P0VisibilityPolicyCode[];
-  registration_policy: P0RegistrationPolicy;
+  registration_enabled: P0AccessPolicy;
+  invitation_enabled: P0AccessPolicy;
 };
 
 export type UpdateAdminDomainPayload = {
@@ -482,7 +486,8 @@ export type UpdateAdminDomainPayload = {
   description?: string;
   logo?: string;
   visibility_policy_codes?: P0VisibilityPolicyCode[];
-  registration_policy?: P0RegistrationPolicy;
+  registration_enabled?: P0AccessPolicy;
+  invitation_enabled?: P0AccessPolicy;
   status?: string | number;
 };
 
@@ -546,16 +551,72 @@ export type P0InvitationCode = {
   created_at?: string | null;
 };
 
+export type DomainRole = {
+  id: string;
+  business_domain_id: string;
+  code: string;
+  name: string;
+  preset: boolean;
+};
+
+export type DomainPermissionItem = {
+  id: string;
+  code: string;
+  name: string;
+  module?: string | null;
+  type?: string | null;
+};
+
+export type DomainRolePermissions = {
+  role_id: string;
+  code: string;
+  name: string;
+  permission_items: DomainPermissionItem[];
+};
+
+export type DomainMember = {
+  id: string;
+  staff_account_id: string;
+  business_domain_id: string;
+  username?: string | null;
+  real_name?: string | null;
+  nickname?: string | null;
+  /** @deprecated 使用 username */
+  login_name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  status?: string | null;
+  source?: string | null;
+  activated_at?: string | null;
+  disabled_at?: string | null;
+  deleted_at?: string | null;
+  roles?: DomainRole[];
+};
+
+export type BlockedWord = {
+  id: string;
+  word: string;
+  created_at?: string | null;
+};
+
 export type P0DomainCustomer = {
   id: string;
   customer_account_id?: string | null;
   display_name: string;
+  login_name?: string | null;
   phone?: string | null;
+  email?: string | null;
   status: string;
   source?: string | null;
   activated_at?: string | null;
   tags?: string[] | null;
   created_at?: string | null;
+};
+
+export type P0BatchCreateDomainCustomersResult = {
+  added: number;
+  skipped: number;
+  items: P0DomainCustomer[];
 };
 
 export type P0AttachmentTargetType = "ticket" | "consultation" | "knowledge";

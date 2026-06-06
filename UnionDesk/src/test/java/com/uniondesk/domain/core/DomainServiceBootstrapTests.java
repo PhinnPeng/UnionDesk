@@ -83,18 +83,6 @@ class DomainServiceBootstrapTests {
                 memberId);
         assertEquals(1, superAdminBindingCount);
 
-        Integer legacyBindingCount = jdbcTemplate.queryForObject("""
-                        SELECT COUNT(*)
-                        FROM user_domain_role udr
-                        JOIN role r ON r.id = udr.role_id
-                        WHERE udr.user_id = 2
-                          AND udr.business_domain_id = ?
-                          AND r.code = 'super_admin'
-                        """,
-                Integer.class,
-                domainId);
-        assertEquals(1, legacyBindingCount);
-
         Integer permissionItemCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM permission_item",
                 Integer.class);

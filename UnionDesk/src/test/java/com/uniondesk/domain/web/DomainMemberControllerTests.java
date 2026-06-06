@@ -35,7 +35,7 @@ class DomainMemberControllerTests {
         mockMvc.perform(get("/api/v1/admin/domains/1/members"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(1))
-                .andExpect(jsonPath("$.list[0].login_name").value("staff-1"))
+                .andExpect(jsonPath("$.list[0].username").value("staff-1"))
                 .andExpect(jsonPath("$.list[0].roles[0].code").value("domain_admin"));
     }
 
@@ -95,6 +95,8 @@ class DomainMemberControllerTests {
                 1001L,
                 1L,
                 "staff-1",
+                "张三",
+                "客服小王",
                 "13800000000",
                 "staff@example.com",
                 "active",

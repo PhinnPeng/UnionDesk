@@ -1,0 +1,20 @@
+{
+  "change": "identity-backend-prd-alignment",
+  "phase": "design",
+  "canonical_spec": "openspec",
+  "design_doc": "docs/superpowers/specs/2026-06-06-identity-scheme-a-design.md",
+  "sources": [
+    "openspec/changes/identity-backend-prd-alignment/proposal.md",
+    "openspec/changes/identity-backend-prd-alignment/design.md",
+    "openspec/changes/identity-backend-prd-alignment/tasks.md",
+    "openspec/changes/identity-backend-prd-alignment/specs/identity-subject/spec.md",
+    "openspec/changes/identity-backend-prd-alignment/specs/staff-account/spec.md",
+    "openspec/changes/identity-backend-prd-alignment/specs/customer-account/spec.md",
+    "openspec/changes/identity-backend-prd-alignment/specs/auth-login/spec.md",
+    "openspec/changes/identity-backend-prd-alignment/specs/domain-membership/spec.md",
+    "openspec/changes/identity-backend-prd-alignment/specs/identity-presentation/spec.md"
+  ],
+  "mode": "compact",
+  "generated_by": "manual-fallback-windows",
+  "note": "comet-env.sh unavailable; regenerate via comet-handoff when Git Bash available"
+}

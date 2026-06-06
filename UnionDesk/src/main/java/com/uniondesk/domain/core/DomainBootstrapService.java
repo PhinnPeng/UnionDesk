@@ -79,7 +79,7 @@ public class DomainBootstrapService {
 
         try {
             Long staffId = jdbcTemplate.queryForObject(
-                    "SELECT id FROM staff_account WHERE login_name = ? LIMIT 1",
+                    "SELECT id FROM staff_account WHERE username = ? LIMIT 1",
                     Long.class,
                     username.trim());
             if (staffId != null) {
@@ -131,14 +131,6 @@ public class DomainBootstrapService {
                 superAdminRoleId);
 
         int legacySuperAdminRoleId = requireLegacyRoleId("super_admin");
-        jdbcTemplate.update("""
-                        INSERT INTO user_domain_role (user_id, role_id, business_domain_id, created_at)
-                        VALUES (?, ?, ?, CURRENT_TIMESTAMP(3))
-                        ON DUPLICATE KEY UPDATE created_at = created_at
-                        """,
-                creatorUserId,
-                legacySuperAdminRoleId,
-                domainId);
         syncCreatorDomainSuperAdminBinding(domainId, creatorUserId, legacySuperAdminRoleId);
     }
 

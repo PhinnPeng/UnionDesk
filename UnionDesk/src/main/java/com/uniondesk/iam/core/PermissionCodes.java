@@ -54,11 +54,22 @@ public final class PermissionCodes {
     /** @deprecated use {@link #DOMAIN_ADMIN_LIST_READ} and {@link #DOMAIN_ADMIN_DETAIL_READ} */
     public static final String DOMAIN_ADMIN_READ = "domain.admin.read";
     public static final String DOMAIN_ADMIN_LIST_READ = "platform.domain.list.read";
-    public static final String DOMAIN_ADMIN_DETAIL_READ = "domain.admin.detail.read";
+    public static final String PLATFORM_DOMAIN_CONTROL_ENTRY = "platform.domain.control.entry";
+    public static final String PLATFORM_DOMAIN_CONTROL_OVERVIEW = "platform.domain.control.overview";
+    public static final String PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE = "platform.domain.control.general.update";
+    public static final String PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE_STATUS =
+            "platform.domain.control.general.update-status";
+    public static final String PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE = "platform.domain.control.general.delete";
+    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_ENTRY} */
+    public static final String DOMAIN_ADMIN_DETAIL_READ = PLATFORM_DOMAIN_CONTROL_ENTRY;
     public static final String DOMAIN_ADMIN_CREATE = "platform.domain.create";
     public static final String PLATFORM_DOMAIN_CONTROL_READ = "platform.domain.control.read";
-    public static final String DOMAIN_ADMIN_UPDATE = "domain.admin.update";
-    public static final String DOMAIN_ADMIN_DELETE = "domain.admin.delete";
+    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE} */
+    public static final String PLATFORM_DOMAIN_CONTROL_DELETED = PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE;
+    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE} */
+    public static final String DOMAIN_ADMIN_UPDATE = PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE;
+    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE} */
+    public static final String DOMAIN_ADMIN_DELETE = PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE;
     public static final String PLATFORM_DOMAIN_CUSTOMER_READ = "platform.domain.customer.read";
     public static final String PLATFORM_DOMAIN_CUSTOMER_CREATE = "platform.domain.customer.create";
     public static final String PLATFORM_DOMAIN_CUSTOMER_UPDATE = "platform.domain.customer.update";
@@ -68,6 +79,8 @@ public final class PermissionCodes {
     public static final String DOMAIN_CUSTOMER_CREATE = PLATFORM_DOMAIN_CUSTOMER_CREATE;
     /** @deprecated use {@link #PLATFORM_DOMAIN_CUSTOMER_UPDATE} */
     public static final String DOMAIN_CUSTOMER_UPDATE_STATUS = PLATFORM_DOMAIN_CUSTOMER_UPDATE;
+    public static final String PLATFORM_DOMAIN_ROLES_READ = "platform.domain.roles.read";
+    public static final String PLATFORM_DOMAIN_ROLES_PERMISSIONS_READ = "platform.domain.roles.permissions.read";
     public static final String DOMAIN_INVITATION_CODE_READ = "domain.invitation_code.read";
     public static final String DOMAIN_INVITATION_CODE_CREATE = "domain.invitation_code.create";
     public static final String DOMAIN_INVITATION_CODE_DELETE = "domain.invitation_code.delete";

@@ -305,11 +305,11 @@ public class AuthService {
         if (config.captchaEnabled() && StringUtils.hasText(request.captchaToken())) {
             authCaptchaService.consumeToken(request.captchaToken());
         }
-        String loginName = request.loginName().trim();
+        String username = request.loginName().trim();
         String phone = request.phone().trim();
-        String displayName = StringUtils.hasText(request.displayName()) ? request.displayName().trim() : loginName;
+        String nickname = StringUtils.hasText(request.displayName()) ? request.displayName().trim() : username;
         long subjectId = createIdentitySubject(phone);
-        long accountId = createCustomerAccount(subjectId, loginName, displayName, phone, request.email(), request.password());
+        long accountId = createCustomerAccount(subjectId, username, nickname, phone, request.email(), request.password());
         if (request.domainId() != null) {
             DomainDtos.DomainView domain = domainService.getDomain(request.domainId());
             boolean registrationAllowed = DomainAccessPolicy.isAllowed(domain.registration_enabled());
@@ -326,7 +326,7 @@ public class AuthService {
             insertDomainCustomer(accountId, request.domainId(), hasInvitation ? "invitation" : "self_register", "active");
         }
         AuthDtos.LoginResponse loginResponse = loginCustomer(
-                new AuthDtos.LoginRequest(loginName, request.password(), null, "customer"),
+                new AuthDtos.LoginRequest(username, request.password(), null, "customer"),
                 authClient,
                 LoginIdentifierType.USERNAME,
                 clientIp,
@@ -400,18 +400,18 @@ public class AuthService {
         return id;
     }
 
-    private long createCustomerAccount(long subjectId, String loginName, String displayName, String phone, String email, String password) {
+    private long createCustomerAccount(long subjectId, String username, String nickname, String phone, String email, String password) {
         jdbcTemplate.update("""
                         INSERT INTO customer_account (
-                            subject_id, login_name, display_name, avatar_url, phone, email, password_hash,
+                            subject_id, username, nickname, avatar_url, phone, email, password_hash,
                             must_change_password, status, source, auth_version, password_changed_at,
                             created_at, updated_at
                         )
                         VALUES (?, ?, ?, NULL, ?, ?, ?, 0, 'active', 'local', 1, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
                         """,
                 subjectId,
-                loginName,
-                displayName,
+                username,
+                nickname,
                 phone,
                 email,
                 passwordEncoder.encode(password));

@@ -51,16 +51,25 @@
 - `auth_login_session`：登录会话表，记录会话状态、过期时间、刷新令牌摘要、客户端信息。
 - `login_log`：统一登录日志表（`V202605230001`/`V202605230002`），记录登录成功/失败、失败原因、终端信息及 `client_code`/`sid`/`event_type` 等字段；原 `auth_login_log` 已废弃，应用仅写入本表。
 
-### 3.2 用户与角色
+### 3.2 身份主体与账号（V202605340001 目标态）
 
-- `user_account`：用户主表，当前需要保留登录名、手机号、邮箱、昵称、头像、状态、最近登录信息和离职信息。
+- `identity_subject`：自然人/L1 身份主体；`phone` 唯一；`merged_into_id` 只读解析，本迭代不做合并写入。
+- `staff_account`：员工登录账号。`username`（登录账号）、`real_name`（真实姓名）、`nickname`（昵称）、`avatar_url`；**不写 DB 外键**，引用 `identity_subject` 由业务层校验。
+- `customer_account`：客户登录账号。`username`、`nickname`（原 `display_name`）；同上无 FK。
+- `domain_member`：员工入域关系；展示列 `domain_nickname` / `domain_avatar_url` / `domain_contact_*`；域内展示昵称链见 Design Doc §4.8。
+- `domain_member_role`：域 RBAC 唯一写入路径（`user_domain_role` 停写）。
+- `staff_account_platform_role`：平台级角色绑定。
+
+### 3.3 用户与角色（Legacy 过渡期）
+
+- `user_account`：**停写**（不 INSERT）；登录不 fallback；只读兼容旧数据直至归档。
 - `platform_organization`：平台内部组织树，和 `business_domain` 分开维护，用于承接平台部门、负责人和组织排序。
 - `role`：角色定义表，当前角色包含 `customer`、`agent`、`domain_admin`、`super_admin`、`platform_admin`、`security_auditor`；目标态中 `platform_admin` 为平台级最高权限，`super_admin` 作为业务域最高角色使用（产品称「所有人」，每域唯一；**不单独设 `owner_id` 列**，由 `domain_member_role` + `super_admin` 表达）。
-- `user_global_role`：全局角色绑定表。
-- `user_domain_role`：业务域角色绑定表。
-- `customer_business_domain_access`：客户业务域可见/申请关系表。
+- `user_global_role`：全局角色绑定表（Legacy）。
+- `user_domain_role`：业务域角色绑定表（**停写**；读路径迁移至 `domain_member_role`）。
+- `customer_business_domain_access`：客户业务域可见/申请关系表（已废弃，用 `domain_customer`）。
 
-### 3.3 权限与平台菜单
+### 3.4 权限与平台菜单
 
 - `iam_permission`：权限元数据表，区分 `platform` / `domain` 范围。
 - `iam_role_permission`：角色权限关系表。
@@ -68,9 +77,9 @@
 - `iam_admin_menu`：Admin 菜单树，目录 / 菜单 / 按钮同表。
 - `iam_admin_role_menu_relation`：Admin 角色菜单关系表。
 
-### 3.4 业务域与工单
+### 3.5 业务域与工单
 
-- `business_domain`：业务域主表。
+- `business_domain`：业务域主表；`status` 表示启用/禁用；`deleted_at` 表示删除（无 `deleted` 布尔列）。
 - `consultation_session`：咨询会话主表。
 - `consultation_message`：咨询消息明细。
 - `consultation_ticket_link`：咨询转工单映射。
@@ -80,7 +89,7 @@
 - `ticket_reply`：工单回复。
 - `ticket_event_log`：工单事件流。
 
-### 3.5 反馈、通知与审计
+### 3.6 反馈、通知与审计
 
 - `feedback`：反馈/建议生命周期（**MVP 不使用**；反馈/建议经 `ticket` + `ticket_type` 预置交付，见 [`backlog-epics.md`](../product/backlog-epics.md) §1.3）。
 - `notification_template`：通知模板，支持全局或业务域级配置。

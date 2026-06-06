@@ -3,6 +3,8 @@ package com.uniondesk.domain.core;
 import com.uniondesk.common.web.PageResult;
 import com.uniondesk.domain.web.DomainCustomerDtos;
 import com.uniondesk.domain.web.DomainDtos;
+import com.uniondesk.iam.core.CustomerAccountService;
+import com.uniondesk.iam.core.IdentitySubjectService;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -10,10 +12,8 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -24,17 +24,20 @@ public class DomainCustomerService {
     private final JdbcTemplate jdbcTemplate;
     private final DomainService domainService;
     private final Clock clock;
-    private final PasswordEncoder passwordEncoder;
+    private final IdentitySubjectService identitySubjectService;
+    private final CustomerAccountService customerAccountService;
 
     public DomainCustomerService(
             JdbcTemplate jdbcTemplate,
             DomainService domainService,
             Clock clock,
-            PasswordEncoder passwordEncoder) {
+            IdentitySubjectService identitySubjectService,
+            CustomerAccountService customerAccountService) {
         this.jdbcTemplate = jdbcTemplate;
         this.domainService = domainService;
         this.clock = clock;
-        this.passwordEncoder = passwordEncoder;
+        this.identitySubjectService = identitySubjectService;
+        this.customerAccountService = customerAccountService;
     }
 
     public PageResult<DomainCustomerDtos.DomainCustomerView> listCustomers(
@@ -53,8 +56,8 @@ public class DomainCustomerService {
                                     dc.business_domain_id,
                                     dc.customer_account_id,
                                     ca.subject_id,
-                                    ca.login_name,
-                                    ca.display_name,
+                                    ca.username,
+                                    ca.nickname,
                                     ca.phone,
                                     ca.email,
                                     dc.status,
@@ -87,13 +90,18 @@ public class DomainCustomerService {
             long domainId,
             DomainCustomerDtos.CreateDomainCustomerManualRequest request) {
         loadDomain(domainId);
-        String loginName = request.loginName().trim();
-        String displayName = request.displayName().trim();
+        String username = request.username().trim();
+        String nickname = request.nickname().trim();
         String phone = request.phone().trim();
         String email = StringUtils.hasText(request.email()) ? request.email().trim() : null;
-        ensureCustomerLoginNameAvailable(loginName);
-        long subjectId = createIdentitySubject(phone);
-        long customerAccountId = createCustomerAccount(subjectId, loginName, displayName, phone, email);
+        customerAccountService.ensureUsernameAvailable(username);
+        long customerAccountId = customerAccountService.create(new CustomerAccountService.CreateCustomerCommand(
+                username,
+                nickname,
+                phone,
+                email,
+                java.util.UUID.randomUUID().toString().replace("-", ""),
+                true));
         return insertDomainCustomerLink(domainId, customerAccountId, "manual");
     }
 
@@ -113,7 +121,7 @@ public class DomainCustomerService {
             StaffAccountRow staff = loadStaffAccountForDomain(domainId, staffAccountId);
             long customerAccountId = resolveOrCreateCustomerAccountFromStaff(staff);
             if (isCustomerInDomain(domainId, customerAccountId)) {
-                throw new IllegalArgumentException(staff.loginName() + "：该员工已作为客户存在");
+                throw new IllegalArgumentException(staff.username() + "：该员工已作为客户存在");
             }
             items.add(insertDomainCustomerLink(domainId, customerAccountId, "staff_import"));
             added += 1;
@@ -130,7 +138,7 @@ public class DomainCustomerService {
         String status = normalizeStatus(request.status());
         DomainCustomerDtos.DomainCustomerView current = loadCustomerById(domainId, customerId);
         LocalDateTime now = now();
-        Timestamp activatedAt = "active".equals(status) ? Timestamp.valueOf(now) : Timestamp.valueOf(current.activatedAt() == null ? now : current.activatedAt());
+        Timestamp activatedAt = "active".equals(status) ? Timestamp.valueOf(now) : Timestamp.valueOf(current.activated_at() == null ? now : current.activated_at());
         Timestamp disabledAt = "disabled".equals(status) ? Timestamp.valueOf(now) : null;
         jdbcTemplate.update("""
                         UPDATE domain_customer
@@ -149,18 +157,18 @@ public class DomainCustomerService {
                 domainId);
         return new DomainCustomerDtos.DomainCustomerView(
                 current.id(),
-                current.businessDomainId(),
-                current.customerAccountId(),
-                current.subjectId(),
-                current.loginName(),
-                current.displayName(),
+                current.business_domain_id(),
+                current.customer_account_id(),
+                current.subject_id(),
+                current.username(),
+                current.nickname(),
                 current.phone(),
                 current.email(),
                 status,
                 current.source(),
-                "active".equals(status) ? now : current.activatedAt(),
+                "active".equals(status) ? now : current.activated_at(),
                 "disabled".equals(status) ? now : null,
-                current.createdAt(),
+                current.created_at(),
                 now);
     }
 
@@ -183,7 +191,7 @@ public class DomainCustomerService {
             args.add(normalizeStatus(status));
         }
         if (StringUtils.hasText(keyword)) {
-            conditions.add("(ca.login_name LIKE ? OR ca.display_name LIKE ? OR ca.phone LIKE ? OR ca.email LIKE ?)");
+            conditions.add("(ca.username LIKE ? OR ca.nickname LIKE ? OR ca.phone LIKE ? OR ca.email LIKE ?)");
             String like = "%" + keyword.trim() + "%";
             args.add(like);
             args.add(like);
@@ -208,8 +216,8 @@ public class DomainCustomerService {
                 rs.getLong("business_domain_id"),
                 rs.getLong("customer_account_id"),
                 rs.getLong("subject_id"),
-                rs.getString("login_name"),
-                rs.getString("display_name"),
+                rs.getString("username"),
+                rs.getString("nickname"),
                 rs.getString("phone"),
                 rs.getString("email"),
                 rs.getString("status"),
@@ -228,8 +236,8 @@ public class DomainCustomerService {
                                 dc.business_domain_id,
                                 dc.customer_account_id,
                                 ca.subject_id,
-                                ca.login_name,
-                                ca.display_name,
+                                ca.username,
+                                ca.nickname,
                                 ca.phone,
                                 ca.email,
                                 dc.status,
@@ -254,41 +262,9 @@ public class DomainCustomerService {
         }
     }
 
-    private CustomerAccountRow loadCustomerAccount(long customerAccountId) {
-        try {
-            return jdbcTemplate.queryForObject("""
-                            SELECT id, subject_id, login_name, display_name, phone, email
-                            FROM customer_account
-                            WHERE id = ?
-                            LIMIT 1
-                            """,
-                    (rs, rowNum) -> new CustomerAccountRow(
-                            rs.getLong("id"),
-                            rs.getLong("subject_id"),
-                            rs.getString("login_name"),
-                            rs.getString("display_name"),
-                            rs.getString("phone"),
-                            rs.getString("email")),
-                    customerAccountId);
-        } catch (EmptyResultDataAccessException ex) {
-            throw new IllegalArgumentException("customer account not found");
-        }
-    }
-
-    private void ensureCustomerNotInDomain(long domainId, long customerAccountId) {
-        Integer count = jdbcTemplate.queryForObject("""
-                        SELECT COUNT(*)
-                        FROM domain_customer
-                        WHERE business_domain_id = ?
-                          AND customer_account_id = ?
-                          AND deleted_at IS NULL
-                        """,
-                Integer.class,
-                domainId,
-                customerAccountId);
-        if (count != null && count > 0) {
-            throw new IllegalArgumentException("该客户已在域内");
-        }
+    private CustomerAccountService.CustomerAccount loadCustomerAccount(long customerAccountId) {
+        return customerAccountService.findById(customerAccountId)
+                .orElseThrow(() -> new IllegalArgumentException("customer account not found"));
     }
 
     private boolean isCustomerInDomain(long domainId, long customerAccountId) {
@@ -336,61 +312,16 @@ public class DomainCustomerService {
         return loadCustomerById(domainId, id);
     }
 
-    private void ensureCustomerLoginNameAvailable(String loginName) {
-        Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM customer_account WHERE login_name = ?",
-                Integer.class,
-                loginName);
-        if (count != null && count > 0) {
-            throw new IllegalArgumentException("登录名已存在");
+    private void ensureCustomerNotInDomain(long domainId, long customerAccountId) {
+        if (isCustomerInDomain(domainId, customerAccountId)) {
+            throw new IllegalArgumentException("该客户已在域内");
         }
-    }
-
-    private long createIdentitySubject(String phone) {
-        jdbcTemplate.update("""
-                        INSERT INTO identity_subject (subject_type, phone, status, created_at, updated_at)
-                        VALUES ('person', ?, 'active', CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
-                        """,
-                phone);
-        Long id = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
-        if (id == null) {
-            throw new IllegalStateException("身份主体创建失败");
-        }
-        return id;
-    }
-
-    private long createCustomerAccount(
-            long subjectId,
-            String loginName,
-            String displayName,
-            String phone,
-            String email) {
-        String tempPassword = UUID.randomUUID().toString().replace("-", "");
-        jdbcTemplate.update("""
-                        INSERT INTO customer_account (
-                            subject_id, login_name, display_name, avatar_url, phone, email, password_hash,
-                            must_change_password, status, source, auth_version, password_changed_at,
-                            created_at, updated_at
-                        )
-                        VALUES (?, ?, ?, NULL, ?, ?, ?, 1, 'active', 'local', 1, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
-                        """,
-                subjectId,
-                loginName,
-                displayName,
-                phone,
-                email,
-                passwordEncoder.encode(tempPassword));
-        Long id = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
-        if (id == null) {
-            throw new IllegalStateException("客户账号创建失败");
-        }
-        return id;
     }
 
     private StaffAccountRow loadStaffAccountForDomain(long domainId, long staffAccountId) {
         try {
             return jdbcTemplate.queryForObject("""
-                            SELECT sa.id, sa.login_name, sa.phone, sa.email
+                            SELECT sa.id, sa.username, sa.phone, sa.email
                             FROM domain_member dm
                             JOIN staff_account sa ON sa.id = dm.staff_account_id
                             WHERE dm.business_domain_id = ?
@@ -400,7 +331,7 @@ public class DomainCustomerService {
                             """,
                     (rs, rowNum) -> new StaffAccountRow(
                             rs.getLong("id"),
-                            rs.getString("login_name"),
+                            rs.getString("username"),
                             rs.getString("phone"),
                             rs.getString("email")),
                     domainId,
@@ -411,24 +342,17 @@ public class DomainCustomerService {
     }
 
     private long resolveOrCreateCustomerAccountFromStaff(StaffAccountRow staff) {
-        Long existingId = jdbcTemplate.query("""
-                        SELECT id FROM customer_account
-                        WHERE login_name = ? OR phone = ?
-                        LIMIT 1
-                        """,
-                rs -> rs.next() ? rs.getLong("id") : null,
-                staff.loginName(),
-                staff.phone());
-        if (existingId != null) {
-            return existingId;
-        }
-        long subjectId = createIdentitySubject(staff.phone());
-        return createCustomerAccount(
-                subjectId,
-                staff.loginName(),
-                staff.loginName(),
-                staff.phone(),
-                staff.email());
+        return customerAccountService.findIdByUsernameOrPhone(staff.username(), staff.phone())
+                .orElseGet(() -> {
+                    long subjectId = identitySubjectService.resolveSubjectIdByPhone(staff.phone());
+                    return customerAccountService.create(new CustomerAccountService.CreateCustomerCommand(
+                            staff.username(),
+                            staff.username(),
+                            staff.phone(),
+                            staff.email(),
+                            java.util.UUID.randomUUID().toString().replace("-", ""),
+                            true));
+                });
     }
 
     private DomainDtos.DomainView loadDomain(long domainId) {
@@ -457,18 +381,9 @@ public class DomainCustomerService {
     private record CustomerQuery(String whereClause, List<Object> args) {
     }
 
-    private record CustomerAccountRow(
-            long id,
-            long subjectId,
-            String loginName,
-            String displayName,
-            String phone,
-            String email) {
-    }
-
     private record StaffAccountRow(
             long id,
-            String loginName,
+            String username,
             String phone,
             String email) {
     }

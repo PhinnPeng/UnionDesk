@@ -19,16 +19,22 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import com.uniondesk.iam.core.IdentityPresentationService;
 
 @Service
 public class DomainMemberService {
 
     private final JdbcTemplate jdbcTemplate;
     private final DomainService domainService;
+    private final IdentityPresentationService identityPresentationService;
 
-    public DomainMemberService(JdbcTemplate jdbcTemplate, DomainService domainService) {
+    public DomainMemberService(
+            JdbcTemplate jdbcTemplate,
+            DomainService domainService,
+            IdentityPresentationService identityPresentationService) {
         this.jdbcTemplate = jdbcTemplate;
         this.domainService = domainService;
+        this.identityPresentationService = identityPresentationService;
     }
 
     public PageResult<DomainMemberDtos.DomainMemberView> listMembers(long domainId, int page, int pageSize, String status, String keyword) {
@@ -44,7 +50,7 @@ public class DomainMemberService {
                             dm.activated_at,
                             dm.disabled_at,
                             dm.deleted_at,
-                            sa.login_name,
+                            sa.username,
                             sa.phone,
                             sa.email
                         FROM domain_member dm
@@ -332,7 +338,9 @@ public class DomainMemberService {
         }
         if (StringUtils.hasText(keyword)) {
             String like = "%" + keyword.trim() + "%";
-            conditions.add("(sa.login_name LIKE ? OR sa.phone LIKE ? OR sa.email LIKE ?)");
+            conditions.add("(sa.username LIKE ? OR sa.phone LIKE ? OR sa.email LIKE ? OR sa.real_name LIKE ? OR sa.nickname LIKE ?)");
+            args.add(like);
+            args.add(like);
             args.add(like);
             args.add(like);
             args.add(like);
@@ -355,7 +363,7 @@ public class DomainMemberService {
                 rs.getLong("id"),
                 rs.getLong("staff_account_id"),
                 rs.getLong("business_domain_id"),
-                rs.getString("login_name"),
+                rs.getString("username"),
                 rs.getString("phone"),
                 rs.getString("email"),
                 rs.getString("status"),
@@ -366,11 +374,15 @@ public class DomainMemberService {
     }
 
     private DomainMemberDtos.DomainMemberView toView(MemberRow row, List<DomainRoleDtos.DomainRoleView> roles) {
+        IdentityPresentationService.ResolvedStaffDomainView presentation =
+                identityPresentationService.resolveStaffInDomain(row.staffAccountId(), row.businessDomainId());
         return new DomainMemberDtos.DomainMemberView(
                 row.id(),
                 row.staffAccountId(),
                 row.businessDomainId(),
-                row.loginName(),
+                row.username(),
+                presentation.realName(),
+                presentation.nickname(),
                 row.phone(),
                 row.email(),
                 row.status(),
@@ -393,7 +405,7 @@ public class DomainMemberService {
                                 dm.activated_at,
                                 dm.disabled_at,
                                 dm.deleted_at,
-                                sa.login_name,
+                                sa.username,
                                 sa.phone,
                                 sa.email
                             FROM domain_member dm
@@ -490,7 +502,7 @@ public class DomainMemberService {
             long id,
             long staffAccountId,
             long businessDomainId,
-            String loginName,
+            String username,
             String phone,
             String email,
             String status,

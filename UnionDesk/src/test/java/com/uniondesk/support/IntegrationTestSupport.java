@@ -1,24 +1,14 @@
 package com.uniondesk.support;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uniondesk.auth.core.UserContext;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.web.servlet.MockMvc;
 
 public abstract class IntegrationTestSupport {
 
     protected long defaultDomainId(JdbcTemplate jdbcTemplate) {
-        Long domainId = jdbcTemplate.queryForObject(
-                "SELECT id FROM business_domain WHERE code = 'default' LIMIT 1",
-                Long.class);
-        if (domainId == null) {
-            throw new IllegalStateException("default business domain not found");
-        }
-        return domainId;
+        return IntegrationAuthSupport.activeDefaultDomainId(jdbcTemplate);
     }
 
     protected long defaultTicketTypeId(JdbcTemplate jdbcTemplate, long domainId) {
@@ -66,21 +56,6 @@ public abstract class IntegrationTestSupport {
     }
 
     protected String adminAccessToken(MockMvc mockMvc, ObjectMapper objectMapper) throws Exception {
-        String response = mockMvc.perform(post("/api/v1/auth/login")
-                        .header("X-UD-Client-Code", "ud-admin-web")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "username": "admin",
-                                  "password": "admin123",
-                                  "captcha_token": "test-captcha-token"
-                                }
-                                """))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        JsonNode jsonNode = objectMapper.readTree(response);
-        return jsonNode.get("accessToken").asText();
+        return IntegrationAuthSupport.adminAccessToken(mockMvc, objectMapper);
     }
 }

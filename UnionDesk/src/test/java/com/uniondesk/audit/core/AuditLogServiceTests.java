@@ -163,6 +163,7 @@ class AuditLogServiceTests {
                 "%admin%",
                 "%admin%",
                 "%admin%",
+                "%admin%",
                 LocalDateTime.parse("2026-05-03T09:00:00"));
 
         ArgumentCaptor<Object[]> queryArgs = ArgumentCaptor.forClass(Object[].class);

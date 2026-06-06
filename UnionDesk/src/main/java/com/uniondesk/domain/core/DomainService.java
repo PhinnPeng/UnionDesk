@@ -5,8 +5,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.auth.core.UserContextHolder;
+import com.uniondesk.common.web.ErrorCodes;
 import com.uniondesk.common.web.PageResult;
 import com.uniondesk.domain.web.DomainDtos;
+import com.uniondesk.iam.core.IamService;
+import com.uniondesk.iam.core.PermissionCodes;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -15,12 +18,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class DomainService {
@@ -30,14 +36,17 @@ public class DomainService {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
     private final DomainBootstrapService domainBootstrapService;
+    private final IamService iamService;
 
     public DomainService(
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper,
-            DomainBootstrapService domainBootstrapService) {
+            DomainBootstrapService domainBootstrapService,
+            IamService iamService) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
         this.domainBootstrapService = domainBootstrapService;
+        this.iamService = iamService;
     }
 
     public PageResult<DomainDtos.DomainView> listAdminDomains(
@@ -195,6 +204,31 @@ public class DomainService {
                 ? existing.invitation_enabled()
                 : DomainAccessPolicy.normalize(request.invitation_enabled());
         int status = request.status() == null ? existing.status() : request.status();
+
+        boolean statusChanging = request.status() != null && request.status() != existing.status();
+        boolean profileChanging = !Objects.equals(code, existing.code())
+                || !Objects.equals(name, existing.name())
+                || !Objects.equals(logo, existing.logo())
+                || !Objects.equals(description, existing.description())
+                || !Objects.equals(visibilityPolicyCodes, existing.visibility_policy_codes());
+        boolean policyChanging = !Objects.equals(registrationEnabled, existing.registration_enabled())
+                || !Objects.equals(invitationEnabled, existing.invitation_enabled());
+
+        if (!statusChanging && !profileChanging && !policyChanging) {
+            return existing;
+        }
+
+        if (statusChanging
+                && !iamService.hasAnyPermission(
+                        context, List.of(PermissionCodes.PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE_STATUS))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN.message());
+        }
+        if ((profileChanging || policyChanging)
+                && !iamService.hasAnyPermission(
+                        context, List.of(PermissionCodes.PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN.message());
+        }
+
         String legacyVisibilityPolicy = visibilityPolicyCodes.isEmpty() ? "public" : visibilityPolicyCodes.getFirst();
 
         jdbcTemplate.update("""
@@ -228,7 +262,7 @@ public class DomainService {
         DomainDtos.DomainView existing = getDomain(id);
         int updated = jdbcTemplate.update("""
                         UPDATE business_domain
-                        SET deleted_at = CURRENT_TIMESTAMP(3), status = 0, updated_at = CURRENT_TIMESTAMP(3), updated_by = ?
+                        SET deleted_at = CURRENT_TIMESTAMP(3), updated_at = CURRENT_TIMESTAMP(3), updated_by = ?
                         WHERE id = ?
                           AND deleted_at IS NULL
                         """,
@@ -455,9 +489,6 @@ public class DomainService {
             return 1;
         }
         if ("disabled".equals(normalized) || "inactive".equals(normalized) || "0".equals(normalized)) {
-            return 0;
-        }
-        if ("deleted".equals(normalized)) {
             return 0;
         }
         return null;

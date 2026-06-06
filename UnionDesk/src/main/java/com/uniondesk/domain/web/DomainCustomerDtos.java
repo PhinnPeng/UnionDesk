@@ -14,19 +14,19 @@ public final class DomainCustomerDtos {
 
     public record DomainCustomerView(
             long id,
-            long businessDomainId,
-            long customerAccountId,
-            long subjectId,
-            String loginName,
-            String displayName,
+            long business_domain_id,
+            long customer_account_id,
+            long subject_id,
+            String username,
+            String nickname,
             String phone,
             String email,
             String status,
             String source,
-            LocalDateTime activatedAt,
-            LocalDateTime disabledAt,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt) {
+            LocalDateTime activated_at,
+            LocalDateTime disabled_at,
+            LocalDateTime created_at,
+            LocalDateTime updated_at) {
     }
 
     public record CreateDomainCustomerRequest(
@@ -36,10 +36,10 @@ public final class DomainCustomerDtos {
     }
 
     public record CreateDomainCustomerManualRequest(
-            @JsonAlias({"display_name"})
-            @NotBlank String displayName,
-            @JsonAlias({"login_name"})
-            @NotBlank String loginName,
+            @JsonAlias({"display_name", "displayName", "nickname"})
+            @NotBlank String nickname,
+            @JsonAlias({"login_name", "loginName", "username"})
+            @NotBlank String username,
             @NotBlank String phone,
             String email) {
     }

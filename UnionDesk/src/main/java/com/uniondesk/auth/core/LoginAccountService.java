@@ -22,43 +22,19 @@ public class LoginAccountService {
     }
 
     public Optional<LoginAccount> findByIdentifier(String identifier, LoginIdentifierType type, String accountType) {
-        String sql = switch (normalizeAccountType(accountType)) {
-            case "customer" -> switch (type) {
-                case USERNAME -> customerLookupSql("login_name");
-                case EMAIL -> customerLookupSql("email");
-                case MOBILE -> customerLookupSql("phone");
-            };
-            default -> switch (type) {
-                case USERNAME -> """
-                        SELECT id, username, mobile, email, password_hash, status, account_type, employment_status
-                        FROM user_account
-                        WHERE LOWER(username) = LOWER(?)
-                        LIMIT 1
-                        """;
-                case EMAIL -> """
-                        SELECT id, username, mobile, email, password_hash, status, account_type, employment_status
-                        FROM user_account
-                        WHERE LOWER(email) = LOWER(?)
-                        LIMIT 1
-                        """;
-                case MOBILE -> """
-                        SELECT id, username, mobile, email, password_hash, status, account_type, employment_status
-                        FROM user_account
-                        WHERE mobile = ?
-                        LIMIT 1
-                        """;
-            };
-        };
+        String sql = "customer".equalsIgnoreCase(normalizeAccountType(accountType))
+                ? switch (type) {
+                    case USERNAME -> accountLookupSql("customer_account", "username");
+                    case EMAIL -> accountLookupSql("customer_account", "email");
+                    case MOBILE -> accountLookupSql("customer_account", "phone");
+                }
+                : switch (type) {
+                    case USERNAME -> accountLookupSql("staff_account", "username");
+                    case EMAIL -> accountLookupSql("staff_account", "email");
+                    case MOBILE -> accountLookupSql("staff_account", "phone");
+                };
         return jdbcTemplate.query(sql,
-                (rs, rowNum) -> new LoginAccount(
-                        rs.getLong("id"),
-                        rs.getString("username"),
-                        rs.getString("mobile"),
-                        rs.getString("email"),
-                        rs.getString("password_hash"),
-                        rs.getInt("status"),
-                        rs.getString("account_type"),
-                        rs.getString("employment_status")),
+                (rs, rowNum) -> mapAccount(rs, normalizeAccountType(accountType)),
                 identifier.trim()).stream().findFirst();
     }
 
@@ -67,81 +43,47 @@ public class LoginAccountService {
     }
 
     public Optional<LoginAccount> findById(long userId, String accountType) {
-        String sql = "customer".equalsIgnoreCase(normalizeAccountType(accountType))
-                ? """
-                        SELECT
-                            id,
-                            login_name AS username,
-                            phone AS mobile,
-                            email,
-                            password_hash,
-                            CASE WHEN status = 'active' THEN 1 ELSE 0 END AS status,
-                            'customer' AS account_type,
-                            status AS employment_status
-                        FROM customer_account
-                        WHERE id = ?
-                        LIMIT 1
-                        """
-                : """
-                        SELECT id, username, mobile, email, password_hash, status, account_type, employment_status
-                        FROM user_account
-                        WHERE id = ?
-                        LIMIT 1
-                        """;
+        String normalized = normalizeAccountType(accountType);
+        String table = "customer".equals(normalized) ? "customer_account" : "staff_account";
+        String sql = accountLookupSql(table, "id") + " AND id = ?";
         return jdbcTemplate.query(sql,
-                (rs, rowNum) -> new LoginAccount(
-                        rs.getLong("id"),
-                        rs.getString("username"),
-                        rs.getString("mobile"),
-                        rs.getString("email"),
-                        rs.getString("password_hash"),
-                        rs.getInt("status"),
-                        rs.getString("account_type"),
-                        rs.getString("employment_status")),
+                (rs, rowNum) -> mapAccount(rs, normalized),
                 userId).stream().findFirst();
     }
 
     public List<String> loadRoleCodes(long userId) {
+        return loadRoleCodes(userId, "staff");
+    }
+
+    public List<String> loadRoleCodes(long userId, String accountType) {
+        if ("customer".equalsIgnoreCase(normalizeAccountType(accountType))) {
+            return List.of("customer");
+        }
         List<String> roles = new ArrayList<>(jdbcTemplate.query("""
-                        SELECT DISTINCT role_code
-                        FROM (
-                            SELECT r.code AS role_code
-                            FROM role r
-                            JOIN user_global_role ugr ON ugr.role_id = r.id
-                            WHERE ugr.user_id = ?
-                            UNION
-                            SELECT r.code AS role_code
-                            FROM role r
-                            JOIN user_domain_role udr ON udr.role_id = r.id
-                            WHERE udr.user_id = ?
-                        ) roles
+                        SELECT DISTINCT dr.code
+                        FROM domain_member dm
+                        JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+                        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+                        WHERE dm.staff_account_id = ?
+                          AND dm.status = 'active'
+                          AND dm.deleted_at IS NULL
                         """,
-                (rs, rowNum) -> rs.getString("role_code"),
-                userId,
+                (rs, rowNum) -> rs.getString("code"),
+                userId));
+        roles.addAll(jdbcTemplate.query("""
+                        SELECT DISTINCT pr.code
+                        FROM staff_account_platform_role sapr
+                        JOIN platform_role pr ON pr.id = sapr.platform_role_id
+                        WHERE sapr.staff_account_id = ?
+                        """,
+                (rs, rowNum) -> rs.getString("code"),
                 userId));
         roles.sort(Comparator.comparingInt(LoginAccountService::rolePriority));
         return List.copyOf(roles);
     }
 
     public List<Long> loadAccessibleDomainIds(long userId, List<String> roleCodes) {
-        if (roleCodes == null || roleCodes.isEmpty()) {
-            return List.of();
-        }
-        if (roleCodes.contains("super_admin")) {
-            return jdbcTemplate.queryForList("SELECT id FROM business_domain ORDER BY id", Long.class);
-        }
-        String rolePlaceholders = String.join(",", roleCodes.stream().map(role -> "?").toList());
-        List<Object> args = new ArrayList<>();
-        args.add(userId);
-        args.addAll(roleCodes);
-        return jdbcTemplate.queryForList("""
-                        SELECT DISTINCT udr.business_domain_id
-                        FROM user_domain_role udr
-                        JOIN role r ON r.id = udr.role_id
-                        WHERE udr.user_id = ?
-                          AND r.code IN (%s)
-                        ORDER BY udr.business_domain_id
-                        """.formatted(rolePlaceholders), Long.class, args.toArray());
+        return loadAccessibleDomainIds(userId, "staff", roleCodes);
     }
 
     public List<Long> loadAccessibleDomainIds(long userId, String accountType, List<String> roleCodes) {
@@ -157,24 +99,69 @@ public class LoginAccountService {
                     Long.class,
                     userId);
         }
-        return loadAccessibleDomainIds(userId, roleCodes);
+        if (roleCodes != null && (roleCodes.contains("super_admin") || roleCodes.contains("platform_admin"))) {
+            return jdbcTemplate.queryForList("SELECT id FROM business_domain ORDER BY id", Long.class);
+        }
+        if (roleCodes == null || roleCodes.isEmpty()) {
+            return List.of();
+        }
+        return jdbcTemplate.queryForList("""
+                        SELECT DISTINCT dm.business_domain_id
+                        FROM domain_member dm
+                        JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+                        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+                        WHERE dm.staff_account_id = ?
+                          AND dm.status = 'active'
+                          AND dm.deleted_at IS NULL
+                        ORDER BY dm.business_domain_id
+                        """,
+                Long.class,
+                userId);
     }
 
-    private String customerLookupSql(String columnName) {
+    private String accountLookupSql(String table, String columnName) {
+        String accountType = "customer_account".equals(table) ? "customer" : "staff";
+        if ("id".equals(columnName)) {
+            return """
+                    SELECT
+                        id,
+                        username,
+                        phone AS mobile,
+                        email,
+                        password_hash,
+                        CASE WHEN status = 'active' THEN 1 ELSE 0 END AS status,
+                        '%s' AS account_type,
+                        status AS employment_status
+                    FROM %s
+                    WHERE 1 = 1
+                    """.formatted(accountType, table);
+        }
         return """
                 SELECT
                     id,
-                    login_name AS username,
+                    username,
                     phone AS mobile,
                     email,
                     password_hash,
                     CASE WHEN status = 'active' THEN 1 ELSE 0 END AS status,
-                    'customer' AS account_type,
+                    '%s' AS account_type,
                     status AS employment_status
-                FROM customer_account
+                FROM %s
                 WHERE LOWER(%s) = LOWER(?)
                 LIMIT 1
-                """.formatted(columnName);
+                """.formatted(accountType, table, columnName);
+    }
+
+    private LoginAccount mapAccount(java.sql.ResultSet rs, String accountType) throws java.sql.SQLException {
+        return new LoginAccount(
+                rs.getLong("id"),
+                rs.getString("username"),
+                rs.getString("mobile"),
+                rs.getString("email"),
+                rs.getString("password_hash"),
+                rs.getInt("status"),
+                accountType,
+                rs.getString("employment_status"));
     }
 
     private String normalizeAccountType(String accountType) {
@@ -192,9 +179,10 @@ public class LoginAccountService {
     private static int rolePriority(String role) {
         return switch (role) {
             case "super_admin" -> 0;
-            case "domain_admin" -> 1;
-            case "agent" -> 2;
-            case "customer" -> 3;
+            case "platform_admin" -> 1;
+            case "domain_admin" -> 2;
+            case "agent" -> 3;
+            case "customer" -> 4;
             default -> 10;
         };
     }

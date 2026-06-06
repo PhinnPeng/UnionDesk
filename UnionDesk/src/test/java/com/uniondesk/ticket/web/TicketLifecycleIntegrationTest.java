@@ -2,7 +2,6 @@ package com.uniondesk.ticket.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -15,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uniondesk.auth.core.AuthCaptchaService;
 import com.uniondesk.auth.core.LoginAuditService;
 import com.uniondesk.support.FixedClockTestConfiguration;
+import com.uniondesk.support.IntegrationAuthSupport;
 import com.uniondesk.support.IntegrationTestSupport;
 import com.uniondesk.ticket.core.TicketService;
 import java.util.List;
@@ -40,10 +40,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
 
-    private static final String ADMIN_CLIENT_CODE = "ud-admin-web";
-    private static final String CUSTOMER_CLIENT_CODE = "ud-customer-web";
-    private static final String CAPTCHA_TOKEN = "test-captcha-token";
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -61,7 +57,7 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
 
     @BeforeEach
     void setUp() {
-        doNothing().when(authCaptchaService).consumeToken(anyString());
+        IntegrationAuthSupport.mockCaptchaBypass(authCaptchaService);
         doNothing().when(loginAuditService).record(any());
     }
 
@@ -74,16 +70,16 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
         long ticketId = createTicket(customerToken, domainId, ticketTypeId, "客户提单", "请帮我处理一下登录问题");
 
         mockMvc.perform(post("/api/v1/domains/{domainId}/tickets/my/{ticketId}/withdraw", domainId, ticketId)
-                        .header("Authorization", bearer(customerToken))
-                        .header("X-UD-Client-Code", CUSTOMER_CLIENT_CODE)
+                        .header("Authorization", IntegrationAuthSupport.bearer(customerToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.CUSTOMER_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.WithdrawTicketCommand(1L, "已经解决"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(ticketId));
 
         mockMvc.perform(get("/api/v1/domains/{domainId}/tickets/my/{ticketId}", domainId, ticketId)
-                        .header("Authorization", bearer(customerToken))
-                        .header("X-UD-Client-Code", CUSTOMER_CLIENT_CODE))
+                        .header("Authorization", IntegrationAuthSupport.bearer(customerToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.CUSTOMER_CLIENT_CODE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ticket.status").value("withdrawn"))
                 .andExpect(jsonPath("$.history.length()").value(2))
@@ -102,21 +98,22 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
         long domainId = defaultDomainId(jdbcTemplate);
         long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
         String customerToken = registerCustomer(domainId, "ticket_customer_claim", "customer123");
-        String adminToken = login(ADMIN_CLIENT_CODE, "admin", "admin123");
+        String adminToken = IntegrationAuthSupport.loginAccessToken(
+                mockMvc, objectMapper, IntegrationAuthSupport.ADMIN_CLIENT_CODE, "admin", "admin123");
 
         long ticketId = createTicket(customerToken, domainId, ticketTypeId, "领取后回复", "需要客服跟进");
 
         mockMvc.perform(post("/api/v1/admin/domains/{domainId}/tickets/{ticketId}/claim", domainId, ticketId)
-                        .header("Authorization", bearer(adminToken))
-                        .header("X-UD-Client-Code", ADMIN_CLIENT_CODE)
+                        .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.ClaimTicketCommand(1L))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(ticketId));
 
         mockMvc.perform(post("/api/v1/admin/domains/{domainId}/tickets/{ticketId}/replies", domainId, ticketId)
-                        .header("Authorization", bearer(adminToken))
-                        .header("X-UD-Client-Code", ADMIN_CLIENT_CODE)
+                        .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.ReplyTicketCommand(
                                 ticketVersion(ticketId),
@@ -127,8 +124,8 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                 .andExpect(jsonPath("$.id").exists());
 
         mockMvc.perform(patch("/api/v1/admin/domains/{domainId}/tickets/{ticketId}/status", domainId, ticketId)
-                        .header("Authorization", bearer(adminToken))
-                        .header("X-UD-Client-Code", ADMIN_CLIENT_CODE)
+                        .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.ChangeTicketStatusCommand(
                                 "closed",
@@ -139,8 +136,8 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                 .andExpect(jsonPath("$.id").value(ticketId));
 
         mockMvc.perform(get("/api/v1/admin/domains/{domainId}/tickets/{ticketId}", domainId, ticketId)
-                        .header("Authorization", bearer(adminToken))
-                        .header("X-UD-Client-Code", ADMIN_CLIENT_CODE))
+                        .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ticket.status").value("closed"))
                 .andExpect(jsonPath("$.ticket.version").value(4))
@@ -163,21 +160,22 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
         long domainId = defaultDomainId(jdbcTemplate);
         long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
         String customerToken = registerCustomer(domainId, "ticket_customer_merge", "customer123");
-        String adminToken = login(ADMIN_CLIENT_CODE, "admin", "admin123");
+        String adminToken = IntegrationAuthSupport.loginAccessToken(
+                mockMvc, objectMapper, IntegrationAuthSupport.ADMIN_CLIENT_CODE, "admin", "admin123");
 
         long sourceTicketId = createTicket(customerToken, domainId, ticketTypeId, "待合并工单", "这是源工单");
         long targetTicketId = createTicket(customerToken, domainId, ticketTypeId, "主工单", "这是目标工单");
 
         mockMvc.perform(post("/api/v1/admin/domains/{domainId}/tickets/{ticketId}/claim", domainId, sourceTicketId)
-                        .header("Authorization", bearer(adminToken))
-                        .header("X-UD-Client-Code", ADMIN_CLIENT_CODE)
+                        .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.ClaimTicketCommand(1L))))
                 .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/v1/admin/domains/{domainId}/tickets/{ticketId}/assign", domainId, sourceTicketId)
-                        .header("Authorization", bearer(adminToken))
-                        .header("X-UD-Client-Code", ADMIN_CLIENT_CODE)
+                        .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.AssignTicketCommand(
                                 ticketVersion(sourceTicketId),
@@ -186,8 +184,8 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                 .andExpect(jsonPath("$.id").value(sourceTicketId));
 
         mockMvc.perform(post("/api/v1/admin/domains/{domainId}/tickets/{ticketId}/replies", domainId, sourceTicketId)
-                        .header("Authorization", bearer(adminToken))
-                        .header("X-UD-Client-Code", ADMIN_CLIENT_CODE)
+                        .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.ReplyTicketCommand(
                                 ticketVersion(sourceTicketId),
@@ -198,8 +196,8 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                 .andExpect(jsonPath("$.id").exists());
 
         mockMvc.perform(post("/api/v1/admin/domains/{domainId}/tickets/{ticketId}/merge", domainId, sourceTicketId)
-                        .header("Authorization", bearer(adminToken))
-                        .header("X-UD-Client-Code", ADMIN_CLIENT_CODE)
+                        .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.MergeTicketCommand(
                                 ticketVersion(sourceTicketId),
@@ -209,8 +207,8 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                 .andExpect(jsonPath("$.id").value(sourceTicketId));
 
         mockMvc.perform(get("/api/v1/admin/domains/{domainId}/tickets/{ticketId}", domainId, sourceTicketId)
-                        .header("Authorization", bearer(adminToken))
-                        .header("X-UD-Client-Code", ADMIN_CLIENT_CODE))
+                        .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ticket.status").value("merged"))
                 .andExpect(jsonPath("$.ticket.version").value(5))
@@ -233,13 +231,14 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
         long domainId = defaultDomainId(jdbcTemplate);
         long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
         String customerToken = registerCustomer(domainId, "ticket_customer_conflict", "customer123");
-        String adminToken = login(ADMIN_CLIENT_CODE, "admin", "admin123");
+        String adminToken = IntegrationAuthSupport.loginAccessToken(
+                mockMvc, objectMapper, IntegrationAuthSupport.ADMIN_CLIENT_CODE, "admin", "admin123");
 
         long ticketId = createTicket(customerToken, domainId, ticketTypeId, "版本冲突", "请不要重复处理");
 
         mockMvc.perform(post("/api/v1/admin/domains/{domainId}/tickets/{ticketId}/claim", domainId, ticketId)
-                        .header("Authorization", bearer(adminToken))
-                        .header("X-UD-Client-Code", ADMIN_CLIENT_CODE)
+                        .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.ClaimTicketCommand(2L))))
                 .andExpect(status().isBadRequest())
@@ -251,13 +250,14 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
         long domainId = defaultDomainId(jdbcTemplate);
         long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
         String customerToken = registerCustomer(domainId, "ticket_customer_close", "customer123");
-        String adminToken = login(ADMIN_CLIENT_CODE, "admin", "admin123");
+        String adminToken = IntegrationAuthSupport.loginAccessToken(
+                mockMvc, objectMapper, IntegrationAuthSupport.ADMIN_CLIENT_CODE, "admin", "admin123");
 
         long ticketId = createTicket(customerToken, domainId, ticketTypeId, "非法流转", "直接关闭应该被拒绝");
 
         mockMvc.perform(patch("/api/v1/admin/domains/{domainId}/tickets/{ticketId}/status", domainId, ticketId)
-                        .header("Authorization", bearer(adminToken))
-                        .header("X-UD-Client-Code", ADMIN_CLIENT_CODE)
+                        .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.ChangeTicketStatusCommand(
                                 "closed",
@@ -268,112 +268,15 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                 .andExpect(jsonPath("$.message").value("状态流转不合法"));
     }
 
-    private String login(String clientCode, String username, String password) throws Exception {
-        String response = mockMvc.perform(post("/api/v1/auth/login")
-                        .header("X-UD-Client-Code", clientCode)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "username": "%s",
-                                  "password": "%s",
-                                  "captcha_token": "%s"
-                                }
-                                """.formatted(username, password, CAPTCHA_TOKEN)))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        return readJson(response).get("accessToken").asText();
-    }
-
-    private String registerCustomer(long domainId, String loginName, String password) throws Exception {
-        String response = mockMvc.perform(post("/api/v1/auth/register")
-                        .header("X-UD-Client-Code", CUSTOMER_CLIENT_CODE)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "loginName": "%s",
-                                  "password": "%s",
-                                  "displayName": "%s",
-                                  "phone": "1380000%s",
-                                  "email": "%s@uniondesk.local",
-                                  "domainId": %d,
-                                  "captchaToken": "%s"
-                                }
-                                """.formatted(
-                                loginName,
-                                password,
-                                loginName,
-                                String.format("%04d", Math.abs(loginName.hashCode()) % 10000),
-                                loginName,
-                                domainId,
-                                CAPTCHA_TOKEN)))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        JsonNode json = readJson(response);
-        long accountId = json.get("accountId").asLong();
-        String phone = "1380000%s".formatted(String.format("%04d", Math.abs(loginName.hashCode()) % 10000));
-        String email = "%s@uniondesk.local".formatted(loginName);
-        seedCustomerIdentity(accountId, domainId, loginName, phone, email, password);
-        return json.get("accessToken").asText();
-    }
-
-    private void seedCustomerIdentity(long accountId, long domainId, String username, String phone, String email, String password) {
-        jdbcTemplate.update("""
-                        INSERT INTO user_account (id, username, mobile, email, password_hash, status, account_type)
-                        VALUES (?, ?, ?, ?, ?, 1, 'customer')
-                        ON DUPLICATE KEY UPDATE
-                            username = VALUES(username),
-                            mobile = VALUES(mobile),
-                            email = VALUES(email),
-                            password_hash = VALUES(password_hash),
-                            status = VALUES(status),
-                            account_type = VALUES(account_type)
-                        """,
-                accountId,
-                username,
-                phone,
-                email,
-                "{noop}" + password);
-        jdbcTemplate.update("""
-                        INSERT INTO user_domain_role (user_id, role_id, business_domain_id)
-                        SELECT ?, r.id, ?
-                        FROM role r
-                        WHERE r.code = 'customer'
-                        ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), role_id = VALUES(role_id), business_domain_id = VALUES(business_domain_id)
-                        """,
-                accountId,
-                domainId);
-        jdbcTemplate.update("""
-                        INSERT INTO iam_role_permission (role_id, permission_id)
-                        SELECT r.id, p.id
-                        FROM role r
-                        JOIN iam_permission p ON p.code = 'ticket.create'
-                        WHERE r.code = 'customer'
-                        ON DUPLICATE KEY UPDATE
-                            role_id = VALUES(role_id),
-                            permission_id = VALUES(permission_id)
-                        """);
-        jdbcTemplate.update("""
-                        INSERT INTO iam_role_binding (user_id, role_id, binding_scope, business_domain_id, status)
-                        SELECT ?, r.id, 'domain', ?, 1
-                        FROM role r
-                        WHERE r.code = 'customer'
-                        ON DUPLICATE KEY UPDATE
-                            binding_scope = VALUES(binding_scope),
-                            business_domain_id = VALUES(business_domain_id),
-                            status = VALUES(status)
-                        """,
-                accountId,
-                domainId);
+    private String registerCustomer(long domainId, String username, String password) throws Exception {
+        return IntegrationAuthSupport.registerCustomerAccessToken(
+                mockMvc, objectMapper, jdbcTemplate, domainId, username, password).accessToken();
     }
 
     private long createTicket(String customerToken, long domainId, long ticketTypeId, String title, String description) throws Exception {
         String response = mockMvc.perform(post("/api/v1/domains/{domainId}/tickets", domainId)
-                        .header("Authorization", bearer(customerToken))
-                        .header("X-UD-Client-Code", CUSTOMER_CLIENT_CODE)
+                        .header("Authorization", IntegrationAuthSupport.bearer(customerToken))
+                        .header("X-UD-Client-Code", IntegrationAuthSupport.CUSTOMER_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.CreateTicketCommand(
                                 ticketTypeId,
@@ -399,9 +302,5 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
 
     private JsonNode readJson(String response) throws Exception {
         return objectMapper.readTree(response);
-    }
-
-    private String bearer(String token) {
-        return "Bearer " + token;
     }
 }

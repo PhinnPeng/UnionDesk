@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 
 import com.uniondesk.domain.web.DomainCustomerDtos;
 import com.uniondesk.domain.web.DomainDtos;
+import com.uniondesk.iam.core.CustomerAccountService;
+import com.uniondesk.iam.core.IdentitySubjectService;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -35,7 +37,12 @@ class DomainCustomerServiceTests {
                 .thenReturn(customerView(1L, "active"));
         when(jdbcTemplate.update(anyString(), any(Object[].class))).thenReturn(1);
 
-        DomainCustomerService service = new DomainCustomerService(jdbcTemplate, domainService, CLOCK, mock(org.springframework.security.crypto.password.PasswordEncoder.class));
+        DomainCustomerService service = new DomainCustomerService(
+                jdbcTemplate,
+                domainService,
+                CLOCK,
+                mock(IdentitySubjectService.class),
+                mock(CustomerAccountService.class));
 
         DomainCustomerDtos.DomainCustomerView active = service.updateCustomerStatus(10L, 1L, new DomainCustomerDtos.UpdateDomainCustomerStatusRequest("active"));
         DomainCustomerDtos.DomainCustomerView disabled = service.updateCustomerStatus(10L, 1L, new DomainCustomerDtos.UpdateDomainCustomerStatusRequest("disabled"));

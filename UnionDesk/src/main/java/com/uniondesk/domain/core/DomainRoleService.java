@@ -31,7 +31,7 @@ public class DomainRoleService {
                         SELECT id, business_domain_id, code, name, preset
                         FROM domain_role
                         WHERE business_domain_id = ?
-                        ORDER BY id DESC
+                        ORDER BY preset DESC, id ASC
                         """,
                 this::mapRoleView,
                 domainId);

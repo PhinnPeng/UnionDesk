@@ -174,7 +174,7 @@ public class AuditLogService {
                 SELECT
                     l.id,
                     l.subject_id,
-                    COALESCE(ua.nickname, ca.display_name, ua.username, ca.login_name, l.login_name, 'system') AS operator_name,
+                    COALESCE(ua.nickname, ca.nickname, sa.real_name, sa.username, ca.username, l.login_name, 'system') AS operator_name,
                     l.business_domain_id,
                     bd.name AS domain_name,
                     l.login_name,
@@ -188,6 +188,7 @@ public class AuditLogService {
                     l.created_at
                 FROM login_log l
                 LEFT JOIN user_account ua ON ua.username = l.login_name
+                LEFT JOIN staff_account sa ON sa.subject_id = l.subject_id
                 LEFT JOIN customer_account ca ON ca.subject_id = l.subject_id
                 LEFT JOIN business_domain bd ON bd.id = l.business_domain_id
                 """;
@@ -198,6 +199,7 @@ public class AuditLogService {
                 SELECT COUNT(*)
                 FROM login_log l
                 LEFT JOIN user_account ua ON ua.username = l.login_name
+                LEFT JOIN staff_account sa ON sa.subject_id = l.subject_id
                 LEFT JOIN customer_account ca ON ca.subject_id = l.subject_id
                 LEFT JOIN business_domain bd ON bd.id = l.business_domain_id
                 """;
@@ -330,7 +332,8 @@ public class AuditLogService {
         }
         if (StringUtils.hasText(keyword)) {
             String like = "%" + keyword.trim() + "%";
-            conditions.add("(ua.username LIKE ? OR ua.mobile LIKE ? OR ua.email LIKE ? OR ca.login_name LIKE ? OR ca.display_name LIKE ? OR l.login_name LIKE ?)");
+            conditions.add("(ua.username LIKE ? OR ua.mobile LIKE ? OR ua.email LIKE ? OR sa.username LIKE ? OR ca.username LIKE ? OR ca.nickname LIKE ? OR l.login_name LIKE ?)");
+            args.add(like);
             args.add(like);
             args.add(like);
             args.add(like);
@@ -350,7 +353,9 @@ public class AuditLogService {
         }
         if (StringUtils.hasText(nickname)) {
             String like = "%" + nickname.trim() + "%";
-            conditions.add("(ua.nickname LIKE ? OR ca.display_name LIKE ?)");
+            conditions.add("(ua.nickname LIKE ? OR sa.real_name LIKE ? OR sa.nickname LIKE ? OR ca.nickname LIKE ?)");
+            args.add(like);
+            args.add(like);
             args.add(like);
             args.add(like);
         }

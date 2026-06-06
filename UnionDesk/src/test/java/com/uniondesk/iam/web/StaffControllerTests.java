@@ -1,7 +1,6 @@
 package com.uniondesk.iam.web;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -16,8 +15,8 @@ import com.uniondesk.auth.core.AuthVersionService;
 import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.auth.core.UserContextHolder;
 import com.uniondesk.common.web.ApiExceptionHandler;
-import com.uniondesk.iam.core.IamService;
 import com.uniondesk.iam.core.PlatformRoleService;
+import com.uniondesk.iam.core.StaffAccountService;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
@@ -28,7 +27,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class StaffControllerTests {
 
-    private final IamService iamService = mock(IamService.class);
+    private final StaffAccountService staffAccountService = mock(StaffAccountService.class);
     private final PlatformRoleService platformRoleService = mock(PlatformRoleService.class);
     private final AuthVersionService authVersionService = mock(AuthVersionService.class);
 
@@ -37,20 +36,20 @@ class StaffControllerTests {
         UserContextHolder.clear();
     }
 
-    // P1: StaffController.listStaff 当前为内存分页，数据量 >1000 时需迁移为 SQL 分页
     @Test
     void listStaffReturnsRowsForPlatformAdmin() throws Exception {
         MockMvc mockMvc = mockMvc();
         UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-1", "ud-admin-web"));
         when(platformRoleService.getCurrentPlatformRoles(2L)).thenReturn(List.of("platform_admin"));
-        when(iamService.listUsers(false, null)).thenReturn(List.of(staffAccount(1L, "admin", 1, "active")));
-        when(iamService.listUsers(true, null)).thenReturn(List.of());
+        when(staffAccountService.listAll()).thenReturn(List.of(staffAccount(1L, "admin", "active")));
+        when(staffAccountService.listDomainRoleCodes(1L)).thenReturn(List.of("domain_admin"));
+        when(staffAccountService.listBusinessDomainIds(1L)).thenReturn(List.of(10L));
         when(platformRoleService.getCurrentPlatformRoles(1L)).thenReturn(List.of("domain_admin"));
 
         mockMvc.perform(get("/api/v1/admin/staff"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(1))
-                .andExpect(jsonPath("$.list[0].loginName").value("admin"))
+                .andExpect(jsonPath("$.list[0].username").value("admin"))
                 .andExpect(jsonPath("$.list[0].employmentStatus").value("active"))
                 .andExpect(jsonPath("$.list[0].platformRoles[0]").value("domain_admin"));
     }
@@ -60,8 +59,9 @@ class StaffControllerTests {
         MockMvc mockMvc = mockMvc();
         UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-1", "ud-admin-web"));
         when(platformRoleService.getCurrentPlatformRoles(2L)).thenReturn(List.of("platform_admin"));
-        when(iamService.offboardUser(1L, 2L, "status_update"))
-                .thenReturn(staffAccount(1L, "admin", 0, "disabled"));
+        when(staffAccountService.disable(1L)).thenReturn(staffAccount(1L, "admin", "disabled"));
+        when(staffAccountService.listDomainRoleCodes(1L)).thenReturn(List.of("domain_admin"));
+        when(staffAccountService.listBusinessDomainIds(1L)).thenReturn(List.of());
         when(platformRoleService.getCurrentPlatformRoles(1L)).thenReturn(List.of("domain_admin"));
 
         mockMvc.perform(put("/api/v1/admin/staff/1/status")
@@ -74,13 +74,15 @@ class StaffControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(0))
                 .andExpect(jsonPath("$.employmentStatus").value("disabled"));
-        verify(authVersionService).incrementVersion(1L, "admin");
+        verify(authVersionService).incrementVersion(1L, "staff");
     }
 
     @Test
     void updateStaffStatusToActiveSucceeds() throws Exception {
         MockMvc mockMvc = mockMvc();
-        when(iamService.restoreUser(1L)).thenReturn(staffAccount(1L, "admin", 1, "active"));
+        when(staffAccountService.restore(1L)).thenReturn(staffAccount(1L, "admin", "active"));
+        when(staffAccountService.listDomainRoleCodes(1L)).thenReturn(List.of("domain_admin"));
+        when(staffAccountService.listBusinessDomainIds(1L)).thenReturn(List.of());
         when(platformRoleService.getCurrentPlatformRoles(1L)).thenReturn(List.of("domain_admin"));
 
         mockMvc.perform(put("/api/v1/admin/staff/1/status")
@@ -93,7 +95,7 @@ class StaffControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(1))
                 .andExpect(jsonPath("$.employmentStatus").value("active"));
-        verify(authVersionService).incrementVersion(1L, "admin");
+        verify(authVersionService).incrementVersion(1L, "staff");
     }
 
     @Test
@@ -101,7 +103,9 @@ class StaffControllerTests {
         MockMvc mockMvc = mockMvc();
         UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-1", "ud-admin-web"));
         when(platformRoleService.getCurrentPlatformRoles(2L)).thenReturn(List.of("platform_admin"));
-        when(iamService.createUser(any())).thenReturn(staffAccount(3L, "new-staff", 1, "active"));
+        when(staffAccountService.create(any())).thenReturn(staffAccount(3L, "new-staff", "active"));
+        when(staffAccountService.listDomainRoleCodes(3L)).thenReturn(List.of());
+        when(staffAccountService.listBusinessDomainIds(3L)).thenReturn(List.of());
         when(platformRoleService.getCurrentPlatformRoles(3L)).thenReturn(List.of());
 
         mockMvc.perform(post("/api/v1/admin/staff")
@@ -118,10 +122,9 @@ class StaffControllerTests {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.loginName").value("new-staff"))
+                .andExpect(jsonPath("$.username").value("new-staff"))
                 .andExpect(jsonPath("$.status").value(1));
-        verify(iamService).createUser(argThat(command -> "new-staff".equals(command.username())
-                && "admin".equals(command.accountType())));
+        verify(staffAccountService).create(any());
     }
 
     @Test
@@ -129,12 +132,14 @@ class StaffControllerTests {
         MockMvc mockMvc = mockMvc();
         UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-1", "ud-admin-web"));
         when(platformRoleService.getCurrentPlatformRoles(2L)).thenReturn(List.of("platform_admin"));
-        when(iamService.loadUser(1L)).thenReturn(Optional.of(staffAccount(1L, "admin", 1, "active")));
+        when(staffAccountService.findById(1L)).thenReturn(Optional.of(staffAccount(1L, "admin", "active")));
+        when(staffAccountService.listDomainRoleCodes(1L)).thenReturn(List.of("super_admin"));
+        when(staffAccountService.listBusinessDomainIds(1L)).thenReturn(List.of(10L));
         when(platformRoleService.getCurrentPlatformRoles(1L)).thenReturn(List.of("platform_admin"));
 
         mockMvc.perform(get("/api/v1/admin/staff/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.loginName").value("admin"))
+                .andExpect(jsonPath("$.username").value("admin"))
                 .andExpect(jsonPath("$.platformRoles[0]").value("platform_admin"));
     }
 
@@ -143,9 +148,9 @@ class StaffControllerTests {
         MockMvc mockMvc = mockMvc();
         UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-1", "ud-admin-web"));
         when(platformRoleService.getCurrentPlatformRoles(2L)).thenReturn(List.of("platform_admin"));
-        when(iamService.updateUser(eq(1L), any())).thenReturn(staffAccount(1L, "admin-updated", 1, "active"));
-        when(iamService.listUsers(false, null)).thenReturn(List.of(staffAccount(1L, "admin", 1, "active")));
-        when(iamService.listUsers(true, null)).thenReturn(List.of());
+        when(staffAccountService.update(eq(1L), any())).thenReturn(staffAccount(1L, "admin-updated", "active"));
+        when(staffAccountService.listDomainRoleCodes(1L)).thenReturn(List.of("super_admin"));
+        when(staffAccountService.listBusinessDomainIds(1L)).thenReturn(List.of());
         when(platformRoleService.getCurrentPlatformRoles(1L)).thenReturn(List.of("platform_admin"));
 
         mockMvc.perform(put("/api/v1/admin/staff/1")
@@ -163,8 +168,8 @@ class StaffControllerTests {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.loginName").value("admin-updated"));
-        verify(authVersionService).incrementVersion(1L, "admin");
+                .andExpect(jsonPath("$.username").value("admin-updated"));
+        verify(authVersionService).incrementVersion(1L, "staff");
     }
 
     @Test
@@ -172,15 +177,15 @@ class StaffControllerTests {
         MockMvc mockMvc = mockMvc();
         UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-1", "ud-admin-web"));
         when(platformRoleService.getCurrentPlatformRoles(2L)).thenReturn(List.of("platform_admin"));
-        when(iamService.offboardUser(1L, 2L, "manual")).thenReturn(staffAccount(1L, "admin", 0, "offboarded"));
-        when(iamService.listUsers(false, null)).thenReturn(List.of());
-        when(iamService.listUsers(true, null)).thenReturn(List.of(staffAccount(1L, "admin", 0, "offboarded")));
+        when(staffAccountService.disable(1L)).thenReturn(staffAccount(1L, "admin", "disabled"));
+        when(staffAccountService.listDomainRoleCodes(1L)).thenReturn(List.of("platform_admin"));
+        when(staffAccountService.listBusinessDomainIds(1L)).thenReturn(List.of());
         when(platformRoleService.getCurrentPlatformRoles(1L)).thenReturn(List.of("platform_admin"));
 
         mockMvc.perform(post("/api/v1/admin/staff/1/disable").param("reason", "manual"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.employmentStatus").value("offboarded"));
-        verify(authVersionService).incrementVersion(1L, "admin");
+                .andExpect(jsonPath("$.employmentStatus").value("disabled"));
+        verify(authVersionService).incrementVersion(1L, "staff");
     }
 
     @Test
@@ -206,7 +211,7 @@ class StaffControllerTests {
         MockMvc mockMvc = mockMvc();
         UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-1", "ud-admin-web"));
         when(platformRoleService.getCurrentPlatformRoles(2L)).thenReturn(List.of("platform_admin"));
-        when(iamService.loadUser(1L)).thenReturn(Optional.of(staffAccount(1L, "admin", 1, "active")));
+        when(staffAccountService.findById(1L)).thenReturn(Optional.of(staffAccount(1L, "admin", "active")));
         when(platformRoleService.getCurrentPlatformRoles(1L)).thenReturn(List.of("platform_admin"));
         org.mockito.Mockito.doThrow(new IllegalStateException("role invalid"))
                 .when(platformRoleService)
@@ -224,27 +229,23 @@ class StaffControllerTests {
     }
 
     private MockMvc mockMvc() {
-        return MockMvcBuilders.standaloneSetup(new StaffController(iamService, platformRoleService, authVersionService))
+        return MockMvcBuilders.standaloneSetup(new StaffController(staffAccountService, platformRoleService, authVersionService))
                 .setControllerAdvice(new ApiExceptionHandler())
                 .build();
     }
 
-    private IamService.UserAccount staffAccount(long id, String loginName, int status, String employmentStatus) {
-        return new IamService.UserAccount(
+    private StaffAccountService.StaffAccount staffAccount(long id, String username, String status) {
+        return new StaffAccountService.StaffAccount(
                 id,
-                loginName,
-                "Staff " + loginName,
+                100L + id,
+                username,
+                "真实姓名",
+                "昵称",
+                null,
                 "138000000" + id,
-                loginName + "@uniondesk.local",
-                null,
-                "admin",
+                username + "@uniondesk.local",
                 status,
-                employmentStatus,
-                null,
-                null,
-                null,
-                List.of("super_admin"),
-                List.of(10L),
-                List.of());
+                "local",
+                1);
     }
 }

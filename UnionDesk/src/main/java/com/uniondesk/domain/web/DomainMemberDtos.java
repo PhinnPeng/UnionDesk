@@ -1,5 +1,8 @@
 package com.uniondesk.domain.web;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -13,7 +16,9 @@ public final class DomainMemberDtos {
             long id,
             long staff_account_id,
             long business_domain_id,
-            String login_name,
+            String username,
+            String real_name,
+            String nickname,
             String phone,
             String email,
             String status,

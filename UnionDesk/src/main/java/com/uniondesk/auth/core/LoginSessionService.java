@@ -206,9 +206,9 @@ public class LoginSessionService {
                             s.sid,
                             s.user_id,
                             s.client_code,
-                            COALESCE(u.username, c.login_name, c.display_name, CONCAT(s.account_type, '-', s.user_id)) AS username,
-                            COALESCE(u.mobile, c.phone) AS mobile,
-                            COALESCE(u.email, c.email) AS email,
+                            COALESCE(sa.username, c.username, c.nickname, CONCAT(s.account_type, '-', s.user_id)) AS username,
+                            COALESCE(sa.phone, c.phone) AS mobile,
+                            COALESCE(sa.email, c.email) AS email,
                             s.role_code,
                             s.business_domain_id,
                             s.login_identifier_masked,
@@ -219,7 +219,7 @@ public class LoginSessionService {
                             s.client_ip,
                             s.user_agent
                         FROM auth_login_session s
-                        LEFT JOIN user_account u ON s.account_type = 'staff' AND u.id = s.user_id
+                        LEFT JOIN staff_account sa ON s.account_type = 'staff' AND sa.id = s.user_id
                         LEFT JOIN customer_account c ON s.account_type = 'customer' AND c.id = s.user_id
                         WHERE s.session_status = 'active'
                           AND s.session_type = ?

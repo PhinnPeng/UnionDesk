@@ -68,6 +68,7 @@
 | V202605330001 | 域 admin 权限重命名 | platform.domain.list.read / create / control.read | Done |
 | V202605330002 | US-S1-06 客户管理 | platform.domain.customer.* 三码 + 客户管理菜单 catalog/buttons | Done |
 | V202605330003 | US-S1-06 客户管理 | 已有业务域详情菜单授权的角色补齐客户管理菜单与 API 权限 | Done |
+| V202605340001 | identity-backend-prd-alignment | 身份核心表 DROP FK；staff/customer `login_name`→`username`；customer `display_name`→`nickname`；staff 增 `real_name`/`nickname`/`avatar_url`；domain_member 增 `domain_nickname` 等；回填与 domain_member_role 补录 | Done |
 
 ### 2.1 基线参考快照（US-S0-07）
 
@@ -95,7 +96,7 @@
 | Story ID | 表/列变更（计划） | Flyway 版本 | 状态 |
 |:---|:---|:---|:---|
 | US-S2-UX-01 | 无 | — | Todo |
-| US-S2-01 | 无表变更；权限 `platform.domain.control.deleted`；软删确认 `updated_at`/`updated_by`（无 `deleted` 列） | TBD | Todo |
+| US-S2-01 | 无表变更；权限 `platform.domain.control.entry` / `overview` / `general.update` / `general.delete`（`202605330004`～`202605330005`）；删除写 `updated_at`/`updated_by`/`deleted_at`（**不改 status**；无 `deleted` 列） | 202605330004、202605330005 | Done |
 | US-S2-02 | 权限 `platform.domain.roles.*`（只读）；菜单「角色管理」 | TBD | Todo |
 | US-S2-03 | 无表；`domain.member.status` API；成员按钮权限码 | TBD | Todo |
 | US-S2-04 | 无（除非客户编辑扩列） | — | Todo |
