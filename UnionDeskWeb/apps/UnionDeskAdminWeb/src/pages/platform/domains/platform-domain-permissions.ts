@@ -10,9 +10,16 @@ export const PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE = "platform.domain.control.g
 export const PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE_STATUS =
 	"platform.domain.control.general.update-status";
 export const PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE = "platform.domain.control.general.delete";
-export const PLATFORM_DOMAIN_CUSTOMER_READ = "platform.domain.customer.read";
-export const PLATFORM_DOMAIN_CUSTOMER_CREATE = "platform.domain.customer.create";
-export const PLATFORM_DOMAIN_CUSTOMER_UPDATE = "platform.domain.customer.update";
+export const PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ = "platform.domain.control.customer.read";
+export const PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE = "platform.domain.control.customer.create";
+export const PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS =
+	"platform.domain.control.customer.update-status";
+/** @deprecated 使用 PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ */
+export const PLATFORM_DOMAIN_CUSTOMER_READ = PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ;
+/** @deprecated 使用 PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE */
+export const PLATFORM_DOMAIN_CUSTOMER_CREATE = PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE;
+/** @deprecated 使用 PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS */
+export const PLATFORM_DOMAIN_CUSTOMER_UPDATE = PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS;
 export const PLATFORM_DOMAIN_ROLES_READ = "platform.domain.roles.read";
 export const PLATFORM_DOMAIN_ROLES_PERMISSIONS_READ = "platform.domain.roles.permissions.read";
 export const DOMAIN_MEMBER_READ = "domain.member.read";

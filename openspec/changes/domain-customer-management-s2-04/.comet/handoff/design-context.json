@@ -1,0 +1,14 @@
+{
+  "change": "domain-customer-management-s2-04",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "ccf8e97b320a94bc4ec0eaf366451fb865476a7033da14722a0f21c87b6844e2",
+  "files": [
+    { "path": "openspec/changes/domain-customer-management-s2-04/proposal.md", "sha256": "b61eb1da458fb98457cd1a1b4c25a2871448bbee5eabcff19097e415f80661927" },
+    { "path": "openspec/changes/domain-customer-management-s2-04/design.md", "sha256": "d1429ce510ba6c1cf5f4c182d663358d2ed4f01c144833d03decfb9d0bb7c874" },
+    { "path": "openspec/changes/domain-customer-management-s2-04/tasks.md", "sha256": "e4fe9707cf0a595ffb1a6c9888ee1d07e348bcf2decbdae75bf6cf77ac20ac2d" },
+    { "path": "openspec/changes/domain-customer-management-s2-04/specs/domain-customer-management/spec.md", "sha256": "ca823046be69b43058defe8dc54d465718ea92eb34affdc97af8d470365a2359" }
+  ]
+}

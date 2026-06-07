@@ -1003,12 +1003,14 @@ function normalizeP0DomainCustomer(raw: Record<string, unknown>): P0DomainCustom
       : raw.customerAccountId != null
         ? String(raw.customerAccountId)
         : null,
-    display_name: String(raw.display_name ?? raw.displayName ?? "—"),
+    display_name: String(raw.display_name ?? raw.displayName ?? raw.nickname ?? "—"),
     login_name: raw.login_name != null
       ? String(raw.login_name)
       : raw.loginName != null
         ? String(raw.loginName)
-        : null,
+        : raw.username != null
+          ? String(raw.username)
+          : null,
     phone: raw.phone != null ? String(raw.phone) : null,
     email: raw.email != null ? String(raw.email) : null,
     status: raw.status != null ? String(raw.status) : "active",
@@ -1024,6 +1026,17 @@ function normalizeP0DomainCustomer(raw: Record<string, unknown>): P0DomainCustom
         ? String(raw.createdAt)
         : null,
   };
+}
+
+/** `GET .../customers/{customerId}` */
+export async function fetchDomainCustomer(
+  domainId: string,
+  customerId: string,
+): Promise<P0DomainCustomer> {
+  const response = await api.get<Record<string, unknown>>(
+    `/admin/domains/${encodeURIComponent(domainId)}/customers/${encodeURIComponent(customerId)}`,
+  );
+  return normalizeP0DomainCustomer(unwrapApiResponse(response.data) as Record<string, unknown>);
 }
 
 /** `POST .../customers/manual` */

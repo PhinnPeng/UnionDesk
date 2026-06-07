@@ -68,6 +68,7 @@
 | V202605330001 | 域 admin 权限重命名 | platform.domain.list.read / create / control.read | Done |
 | V202605330002 | US-S1-06 客户管理 | platform.domain.customer.* 三码 + 客户管理菜单 catalog/buttons | Done |
 | V202605330003 | US-S1-06 客户管理 | 已有业务域详情菜单授权的角色补齐客户管理菜单与 API 权限 | Done |
+| V202606070002 | US-S2-04 客户管理完善 | platform.domain.control.customer.* 三码 rename + catalog PLATFORM-DOMAIN-CONTROL-CUSTOMER | Done |
 | V202605340001 | identity-backend-prd-alignment | 身份核心表 DROP FK；staff/customer `login_name`→`username`；customer `display_name`→`nickname`；staff 增 `real_name`/`nickname`/`avatar_url`；domain_member 增 `domain_nickname` 等；回填与 domain_member_role 补录 | Done |
 
 ### 2.1 基线参考快照（US-S0-07）
