@@ -1,10 +1,10 @@
 workflow: full
-phase: verify
+phase: archive
 plan: docs/superpowers/plans/2026-06-07-domain-customer-management-s2-04.md
 isolation: branch
 build_mode: executing-plans
 build_pause: null
-handoff_context: openspec/changes/domain-customer-management-s2-04/.comet/handoff/design-context.json
+handoff_context: openspec/changes/archive/2026-06-07-domain-customer-management-s2-04/.comet/handoff/design-context.json
 handoff_hash: ccf8e97b320a94bc4ec0eaf366451fb865476a7033da14722a0f21c87b6844e2
 verify_mode: full
 base_ref: 57fe21b377ade8f5ce1c67d3fecaf0764e097445
@@ -14,4 +14,4 @@ verification_report: docs/superpowers/reports/2026-06-07-domain-customer-managem
 branch_status: handled
 created_at: 2026-06-07
 verified_at: 2026-06-07
-archived: false
+archived: true
