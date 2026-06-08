@@ -1,17 +1,19 @@
 workflow: full
-phase: verify
+phase: archive
 plan: docs/superpowers/plans/2026-06-08-domain-blockword-management-s2-05.md
 isolation: branch
 build_mode: executing-plans
 build_pause: null
 handoff_context: openspec/changes/domain-blockword-management-s2-05/.comet/handoff/design-context.json
-handoff_hash: pending-manual
+handoff_hash: cc593be31d296414bf72b15476566d2eded5edbd8ed9bdeb12de17633c795bd1
 verify_mode: full
 base_ref: cf250ed7fd3cd5d73695b10c411e962aa6436084
 design_doc: docs/superpowers/specs/2026-06-07-domain-blockword-management-s2-05-design.md
-verify_result: pending
+verify_result: pass
 verification_report: docs/superpowers/reports/2026-06-04-domain-blockword-management-s2-05-verify.md
-branch_status: pending
+branch_status: handled
 created_at: 2026-06-07
-verified_at: null
+verified_at: 2026-06-08
 archived: false
+build_command: cd UnionDesk && ./mvnw.cmd compile -q
+verify_command: cd UnionDesk && ./mvnw.cmd -pl uniondesk-app test "-Dtest=PlatformBlockedWordControllerTests,BlockedWordControllerTests" -q
