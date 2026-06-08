@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.ticket.mapper.TicketRelationMapper">
+
+    <insert id="insert" parameterType="com.uniondesk.ticket.entity.TicketRelationPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ticket_relation (
+            source_ticket_id, target_ticket_id, relation_type, created_by_staff_account_id, note
+        )
+        VALUES (
+            #{sourceTicketId}, #{targetTicketId}, #{relationType}, #{createdByStaffAccountId}, #{note}
+        )
+    </insert>
+
+</mapper>

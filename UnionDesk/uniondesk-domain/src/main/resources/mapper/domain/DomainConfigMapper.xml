@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.domain.mapper.DomainConfigMapper">
+
+    <resultMap id="DomainConfigPo" type="com.uniondesk.domain.entity.DomainConfigPo">
+        <id property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="configKey" column="config_key"/>
+        <result property="configValue" column="config_value"/>
+        <result property="valueType" column="value_type"/>
+        <result property="description" column="description"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="selectByDomainId" resultMap="DomainConfigPo">
+        SELECT config_key, config_value, value_type, description, updated_at
+        FROM domain_config
+        WHERE business_domain_id = #{domainId}
+        ORDER BY config_key ASC
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO domain_config (
+            business_domain_id, config_key, config_value, value_type, description
+        )
+        VALUES (#{businessDomainId}, #{configKey}, #{configValue}, #{valueType}, #{description})
+        ON DUPLICATE KEY UPDATE
+            config_value = VALUES(config_value),
+            value_type = VALUES(value_type),
+            description = VALUES(description),
+            updated_at = CURRENT_TIMESTAMP(3)
+    </insert>
+
+</mapper>

@@ -87,6 +87,11 @@
   color: #ff4d4f;
 }
 
+.slider-captcha-container.moving,
+.slider-captcha-container.verifying {
+  overflow: visible;
+}
+
 /* 滑块 */
 .slider-captcha-slider {
   position: absolute;
@@ -100,13 +105,21 @@
   align-items: center;
   justify-content: center;
   cursor: grab;
-  transition: left 0.3s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   touch-action: none;
 }
 
 .slider-captcha-slider.moving {
   transition: none;
   cursor: grabbing;
+  transform: scale(1.15);
+  box-shadow: 0 0 14px rgba(24, 144, 255, 0.35);
+}
+
+.slider-captcha-slider.verifying {
+  cursor: wait;
+  transform: scale(1.10);
+  box-shadow: 0 0 10px rgba(24, 144, 255, 0.28);
 }
 
 .slider-captcha-slider.success,
@@ -123,6 +136,16 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   fill: none;
+}
+
+.slider-captcha-icon.verifying {
+  stroke: #1890ff;
+  animation: slider-verifying-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes slider-verifying-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 
 .slider-captcha-icon.success {

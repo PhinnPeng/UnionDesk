@@ -610,6 +610,11 @@ export type BlockedWord = {
   created_at?: string | null;
 };
 
+export type BlockedWordBatchResult = {
+  created_count: number;
+  skipped: { word: string; reason: string }[];
+};
+
 export type P0DomainCustomer = {
   id: string;
   customer_account_id?: string | null;

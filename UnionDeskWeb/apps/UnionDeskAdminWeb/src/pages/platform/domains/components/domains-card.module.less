@@ -1,0 +1,106 @@
+/** 业务域列表卡片（随 Ant Design 主题变量适配亮/暗色） */
+.card {
+	display: flex;
+	height: 100%;
+	width: 100%;
+	max-width: 24rem;
+	flex-direction: column;
+	justify-content: space-between;
+	border-radius: 0.5rem;
+	border: 1px solid var(--ant-color-border-secondary);
+	background: var(--ant-color-bg-container);
+	color: var(--ant-color-text);
+	text-align: left;
+	box-shadow:
+		0 1px 2px 0 rgb(0 0 0 / 3%),
+		0 1px 6px -1px rgb(0 0 0 / 2%),
+		0 2px 4px 0 rgb(0 0 0 / 2%);
+	transition: border-color 0.3s, box-shadow 0.3s;
+
+	&:hover {
+		border-color: var(--ant-color-primary);
+	}
+}
+
+.cardBody {
+	flex-grow: 1;
+	padding: 1.25rem;
+}
+
+.cardFooter {
+	border-top: 1px solid var(--ant-color-border-secondary);
+	border-bottom-left-radius: 0.5rem;
+	border-bottom-right-radius: 0.5rem;
+	background: var(--ant-color-fill-alter);
+}
+
+.enterConsoleButton {
+	display: flex;
+	width: 100%;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	border: 0;
+	border-bottom-left-radius: 0.5rem;
+	border-bottom-right-radius: 0.5rem;
+	background: transparent;
+	padding: 0.75rem 0;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--ant-color-primary);
+	cursor: pointer;
+	transition: background-color 0.2s;
+
+	&:hover {
+		background: color-mix(in srgb, var(--ant-color-primary-bg) 50%, transparent);
+	}
+}
+
+.statusBadge {
+	display: inline-flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	border-radius: 4px;
+	border-width: 1px;
+	border-style: solid;
+	padding: 2px 8px;
+	min-height: 22px;
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 1;
+}
+
+.statusLabel {
+	display: inline-flex;
+	align-items: center;
+	line-height: 1;
+}
+
+.statusDot {
+	flex-shrink: 0;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+}
+
+.statusDotEnabled {
+	background: var(--ant-color-success);
+}
+
+.statusDotDisabled {
+	background: var(--ant-color-error);
+}
+
+.statusBadgeEnabled {
+	border-color: var(--ant-color-success-border);
+	background: var(--ant-color-success-bg);
+	color: var(--ant-color-success);
+}
+
+.statusBadgeDisabled {
+	border-color: var(--ant-color-error-border);
+	background: var(--ant-color-error-bg);
+	color: var(--ant-color-error);
+}

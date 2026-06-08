@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.iam.mapper.IamPermissionMapper">
+
+    <resultMap id="RoutePermissionPo" type="com.uniondesk.iam.entity.RoutePermissionPo">
+        <result property="code" column="code"/>
+        <result property="pathPattern" column="path_pattern"/>
+    </resultMap>
+
+    <resultMap id="EffectivePermissionGrantPo" type="com.uniondesk.iam.entity.EffectivePermissionGrantPo">
+        <result property="roleLevel" column="role_level"/>
+        <result property="bindingScope" column="binding_scope"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="permissionScope" column="permission_scope"/>
+    </resultMap>
+
+    <select id="selectRoutePermissions" resultMap="RoutePermissionPo">
+        SELECT code, path_pattern
+        FROM iam_permission
+        WHERE status = 1
+          AND http_method = #{httpMethod}
+          AND path_pattern IS NOT NULL
+    </select>
+
+    <select id="selectEffectiveGrants" resultMap="EffectivePermissionGrantPo">
+        SELECT
+            r.scope AS role_level,
+            b.binding_scope,
+            b.business_domain_id,
+            p.permission_scope
+        FROM iam_role_binding b
+        JOIN role r ON r.id = b.role_id
+        JOIN iam_role_permission rp ON rp.role_id = r.id
+        JOIN iam_permission p ON p.id = rp.permission_id
+        WHERE b.user_id = #{userId}
+          AND b.status = 1
+          AND p.status = 1
+          AND p.code IN
+        <foreach collection="codes" item="code" open="(" separator="," close=")">#{code}</foreach>
+          AND (b.effective_from IS NULL OR b.effective_from &lt;= CURRENT_TIMESTAMP(3))
+          AND (b.effective_to IS NULL OR b.effective_to > CURRENT_TIMESTAMP(3))
+    </select>
+
+    <delete id="deleteRolePermissionsByCatalog">
+        DELETE rp
+        FROM iam_role_permission rp
+        JOIN iam_permission p ON p.id = rp.permission_id
+        WHERE rp.role_id = #{roleId}
+          AND p.code IN
+        <foreach collection="catalogCodes" item="code" open="(" separator="," close=")">#{code}</foreach>
+    </delete>
+
+    <insert id="insertRolePermissionsByCodes">
+        INSERT IGNORE INTO iam_role_permission (role_id, permission_id)
+        SELECT #{roleId}, p.id
+        FROM iam_permission p
+        WHERE p.code IN
+        <foreach collection="codes" item="code" open="(" separator="," close=")">#{code}</foreach>
+    </insert>
+
+</mapper>

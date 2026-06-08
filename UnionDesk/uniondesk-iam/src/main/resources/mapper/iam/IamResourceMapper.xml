@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.iam.mapper.IamResourceMapper">
+
+    <resultMap id="IamResourcePo" type="com.uniondesk.iam.entity.IamResourcePo">
+        <id property="id" column="id"/>
+        <result property="resourceType" column="resource_type"/>
+        <result property="resourceCode" column="resource_code"/>
+        <result property="resourceName" column="resource_name"/>
+        <result property="clientScope" column="client_scope"/>
+        <result property="httpMethod" column="http_method"/>
+        <result property="pathPattern" column="path_pattern"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="icon" column="icon"/>
+        <result property="component" column="component"/>
+        <result property="hidden" column="hidden"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <resultMap id="ApiGrantPo" type="com.uniondesk.iam.entity.ApiGrantPo">
+        <result property="httpMethod" column="http_method"/>
+        <result property="pathPattern" column="path_pattern"/>
+    </resultMap>
+
+    <sql id="resourceColumns">
+        id, resource_type, resource_code, resource_name, client_scope, http_method, path_pattern,
+        parent_id, order_no, icon, component, hidden, status
+    </sql>
+
+    <select id="selectById" resultMap="IamResourcePo">
+        SELECT <include refid="resourceColumns"/> FROM iam_resource WHERE id = #{id} LIMIT 1
+    </select>
+
+    <select id="selectByCode" resultMap="IamResourcePo">
+        SELECT <include refid="resourceColumns"/> FROM iam_resource WHERE resource_code = #{resourceCode} LIMIT 1
+    </select>
+
+    <select id="selectByFilters" resultMap="IamResourcePo">
+        SELECT <include refid="resourceColumns"/> FROM iam_resource
+        WHERE 1 = 1
+        <if test="resourceType != null">AND resource_type = #{resourceType}</if>
+        <if test="clientScope != null">AND client_scope = #{clientScope}</if>
+        ORDER BY resource_type, order_no, id
+    </select>
+
+    <insert id="insert" parameterType="com.uniondesk.iam.entity.IamResourcePo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO iam_resource (
+            resource_type, resource_code, resource_name, client_scope, http_method, path_pattern,
+            parent_id, order_no, icon, component, hidden, status
+        )
+        VALUES (#{resourceType}, #{resourceCode}, #{resourceName}, #{clientScope}, #{httpMethod}, #{pathPattern},
+                #{parentId}, #{orderNo}, #{icon}, #{component}, #{hidden}, #{status})
+    </insert>
+
+    <update id="update" parameterType="com.uniondesk.iam.entity.IamResourcePo">
+        UPDATE iam_resource
+        SET resource_type = #{resourceType},
+            resource_code = #{resourceCode},
+            resource_name = #{resourceName},
+            client_scope = #{clientScope},
+            http_method = #{httpMethod},
+            path_pattern = #{pathPattern},
+            parent_id = #{parentId},
+            order_no = #{orderNo},
+            icon = #{icon},
+            component = #{component},
+            hidden = #{hidden},
+            status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM iam_resource WHERE id = #{id}
+    </delete>
+
+    <select id="countByParentId" resultType="int">
+        SELECT COUNT(*) FROM iam_resource WHERE parent_id = #{parentId}
+    </select>
+
+    <select id="countBindingsByResourceId" resultType="int">
+        SELECT COUNT(*) FROM iam_role_resource WHERE resource_id = #{resourceId}
+    </select>
+
+    <select id="selectMenuByRoleAndClient" resultMap="IamResourcePo">
+        SELECT ir.id, ir.resource_type, ir.resource_code, ir.resource_name, ir.client_scope,
+               ir.http_method, ir.path_pattern, ir.parent_id, ir.order_no, ir.icon, ir.component, ir.hidden, ir.status
+        FROM role r
+        JOIN iam_role_resource irr ON irr.role_id = r.id
+        JOIN iam_resource ir ON ir.id = irr.resource_id
+        WHERE r.code = #{roleCode}
+          AND ir.resource_type = 'menu'
+          AND ir.status = 1
+          AND (ir.client_scope = #{clientCode} OR ir.client_scope = 'all')
+        ORDER BY ir.order_no, ir.id
+    </select>
+
+    <select id="selectActionByRoleAndClient" resultMap="IamResourcePo">
+        SELECT ir.id, ir.resource_type, ir.resource_code, ir.resource_name, ir.client_scope,
+               ir.http_method, ir.path_pattern, ir.parent_id, ir.order_no, ir.icon, ir.component, ir.hidden, ir.status
+        FROM role r
+        JOIN iam_role_resource irr ON irr.role_id = r.id
+        JOIN iam_resource ir ON ir.id = irr.resource_id
+        WHERE r.code = #{roleCode}
+          AND ir.resource_type IN ('action', 'api')
+          AND ir.status = 1
+          AND (ir.client_scope = #{clientCode} OR ir.client_scope = 'all')
+        ORDER BY ir.resource_code
+    </select>
+
+    <select id="selectByRoleId" resultMap="IamResourcePo">
+        SELECT ir.id, ir.resource_type, ir.resource_code, ir.resource_name, ir.client_scope,
+               ir.http_method, ir.path_pattern, ir.parent_id, ir.order_no, ir.icon, ir.component, ir.hidden, ir.status
+        FROM iam_role_resource irr
+        JOIN iam_resource ir ON ir.id = irr.resource_id
+        WHERE irr.role_id = #{roleId}
+        ORDER BY ir.resource_type, ir.order_no, ir.id
+    </select>
+
+    <delete id="deleteRoleResources">
+        DELETE FROM iam_role_resource WHERE role_id = #{roleId}
+    </delete>
+
+    <insert id="insertRoleResource">
+        INSERT INTO iam_role_resource (role_id, resource_id) VALUES (#{roleId}, #{resourceId})
+    </insert>
+
+    <select id="selectMenuTree" resultMap="IamResourcePo">
+        SELECT <include refid="resourceColumns"/> FROM iam_resource
+        WHERE resource_type = 'menu'
+          AND (#{clientScope} IS NULL OR client_scope = #{clientScope} OR client_scope = 'all')
+        ORDER BY order_no, id
+    </select>
+
+    <select id="selectForRoles" resultMap="IamResourcePo">
+        SELECT DISTINCT ir.id, ir.resource_type, ir.resource_code, ir.resource_name, ir.client_scope,
+               ir.http_method, ir.path_pattern, ir.parent_id, ir.order_no, ir.icon, ir.component, ir.hidden, ir.status
+        FROM role r
+        JOIN iam_role_resource irr ON irr.role_id = r.id
+        JOIN iam_resource ir ON ir.id = irr.resource_id
+        WHERE r.code IN
+        <foreach collection="roleCodes" item="code" open="(" separator="," close=")">#{code}</foreach>
+          AND ir.resource_type IN
+        <foreach collection="resourceTypes" item="type" open="(" separator="," close=")">#{type}</foreach>
+          AND ir.status = 1
+          AND (ir.client_scope = #{clientCode} OR ir.client_scope = 'all')
+        ORDER BY ir.resource_type, ir.order_no, ir.id
+    </select>
+
+    <select id="selectActionGrants" resultMap="ApiGrantPo">
+        SELECT UPPER(ir.http_method) AS http_method, ir.path_pattern
+        FROM role r
+        JOIN iam_role_resource irr ON irr.role_id = r.id
+        JOIN iam_resource ir ON ir.id = irr.resource_id
+        WHERE r.code = #{roleCode}
+          AND ir.resource_type IN ('action', 'api')
+          AND ir.status = 1
+          AND ir.http_method IS NOT NULL
+          AND ir.path_pattern IS NOT NULL
+          AND (ir.client_scope = #{clientCode} OR ir.client_scope = 'all')
+        ORDER BY ir.resource_code
+    </select>
+
+    <select id="countByIds" resultType="int">
+        SELECT COUNT(*) FROM iam_resource WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
+    <select id="countByIdsAndType" resultType="int">
+        SELECT COUNT(*) FROM iam_resource WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+        AND resource_type = #{resourceType}
+    </select>
+
+    <select id="selectMenuResourceIdsByRole" resultType="java.lang.Long">
+        SELECT ir.id
+        FROM iam_role_resource irr
+        JOIN iam_resource ir ON ir.id = irr.resource_id
+        WHERE irr.role_id = #{roleId} AND ir.resource_type = 'menu'
+        ORDER BY ir.order_no, ir.id
+    </select>
+
+    <select id="selectActionResourceIdsByRole" resultType="java.lang.Long">
+        SELECT ir.id
+        FROM iam_role_resource irr
+        JOIN iam_resource ir ON ir.id = irr.resource_id
+        WHERE irr.role_id = #{roleId} AND ir.resource_type = 'action'
+        ORDER BY ir.resource_code
+    </select>
+
+</mapper>

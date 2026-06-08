@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.auth.mapper.AuthLoginSessionMapper">
+
+    <resultMap id="AuthLoginSessionPo" type="com.uniondesk.auth.entity.AuthLoginSessionPo">
+        <result property="sid" column="sid"/>
+        <result property="sessionType" column="session_type"/>
+        <result property="accountType" column="account_type"/>
+        <result property="userId" column="user_id"/>
+        <result property="clientCode" column="client_code"/>
+        <result property="roleCode" column="role_code"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="loginIdentifierMasked" column="login_identifier_masked"/>
+        <result property="sessionStatus" column="session_status"/>
+        <result property="issuedAt" column="issued_at"/>
+        <result property="expiresAt" column="expires_at"/>
+        <result property="lastSeenAt" column="last_seen_at"/>
+        <result property="refreshTokenHash" column="refresh_token_hash"/>
+        <result property="clientIp" column="client_ip"/>
+        <result property="userAgent" column="user_agent"/>
+        <result property="revokedAt" column="revoked_at"/>
+        <result property="revokedReason" column="revoked_reason"/>
+    </resultMap>
+
+    <resultMap id="OnlineSessionPo" type="com.uniondesk.auth.entity.OnlineSessionPo">
+        <result property="sid" column="sid"/>
+        <result property="userId" column="user_id"/>
+        <result property="clientCode" column="client_code"/>
+        <result property="username" column="username"/>
+        <result property="mobile" column="mobile"/>
+        <result property="email" column="email"/>
+        <result property="roleCode" column="role_code"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="loginIdentifierMasked" column="login_identifier_masked"/>
+        <result property="sessionStatus" column="session_status"/>
+        <result property="issuedAt" column="issued_at"/>
+        <result property="expiresAt" column="expires_at"/>
+        <result property="lastSeenAt" column="last_seen_at"/>
+        <result property="clientIp" column="client_ip"/>
+        <result property="userAgent" column="user_agent"/>
+    </resultMap>
+
+    <insert id="insertSession" parameterType="com.uniondesk.auth.entity.AuthLoginSessionPo">
+        INSERT INTO auth_login_session (
+            sid, session_type, account_type, user_id, client_code, role_code, business_domain_id,
+            login_identifier_masked, session_status, issued_at, expires_at, last_seen_at,
+            refresh_token_hash, client_ip, user_agent
+        )
+        VALUES (#{sid}, #{sessionType}, #{accountType}, #{userId}, #{clientCode}, #{roleCode}, #{businessDomainId},
+                #{loginIdentifierMasked}, #{sessionStatus}, #{issuedAt}, #{expiresAt}, #{lastSeenAt},
+                #{refreshTokenHash}, #{clientIp}, #{userAgent})
+    </insert>
+
+    <select id="selectBySidAndType" resultMap="AuthLoginSessionPo">
+        SELECT sid, session_type, account_type, user_id, client_code, role_code, business_domain_id,
+               login_identifier_masked, session_status, issued_at, expires_at, last_seen_at,
+               refresh_token_hash, client_ip, user_agent, revoked_at, revoked_reason
+        FROM auth_login_session
+        WHERE sid = #{sid}
+          AND session_type = #{sessionType}
+        LIMIT 1
+    </select>
+
+    <update id="updateLastSeen">
+        UPDATE auth_login_session
+        SET last_seen_at = #{lastSeenAt}
+        WHERE sid = #{sid}
+          AND session_type = #{sessionType}
+          AND session_status = 'active'
+    </update>
+
+    <update id="updateLastSeenAndExpires">
+        UPDATE auth_login_session
+        SET last_seen_at = #{lastSeenAt},
+            expires_at = #{expiresAt}
+        WHERE sid = #{sid}
+          AND session_type = #{sessionType}
+          AND session_status = 'active'
+    </update>
+
+    <update id="revokeBySid">
+        UPDATE auth_login_session
+        SET session_status = 'revoked',
+            revoked_at = #{revokedAt},
+            revoked_reason = #{revokedReason}
+        WHERE sid = #{sid}
+          AND session_status = 'active'
+          AND session_type = #{sessionType}
+    </update>
+
+    <update id="revokeByUserId">
+        UPDATE auth_login_session
+        SET session_status = 'revoked',
+            revoked_at = #{revokedAt},
+            revoked_reason = #{revokedReason}
+        WHERE user_id = #{userId}
+          AND session_status = 'active'
+          AND session_type = #{sessionType}
+    </update>
+
+    <update id="expireBySid">
+        UPDATE auth_login_session
+        SET session_status = 'expired',
+            revoked_at = #{revokedAt},
+            revoked_reason = 'expired'
+        WHERE sid = #{sid}
+          AND session_type = #{sessionType}
+          AND session_status = 'active'
+    </update>
+
+    <update id="revokeAllActiveByUserId">
+        UPDATE auth_login_session
+        SET session_status = 'revoked'
+        WHERE user_id = #{userId}
+          AND session_status = 'active'
+    </update>
+
+    <select id="selectOnlineSessions" resultMap="OnlineSessionPo">
+        SELECT
+            s.sid,
+            s.user_id,
+            s.client_code,
+            COALESCE(sa.username, c.username, c.nickname, CONCAT(s.account_type, '-', s.user_id)) AS username,
+            COALESCE(sa.phone, c.phone) AS mobile,
+            COALESCE(sa.email, c.email) AS email,
+            s.role_code,
+            s.business_domain_id,
+            s.login_identifier_masked,
+            s.session_status,
+            s.issued_at,
+            s.expires_at,
+            s.last_seen_at,
+            s.client_ip,
+            s.user_agent
+        FROM auth_login_session s
+        LEFT JOIN staff_account sa ON s.account_type = 'staff' AND sa.id = s.user_id
+        LEFT JOIN customer_account c ON s.account_type = 'customer' AND c.id = s.user_id
+        WHERE s.session_status = 'active'
+          AND s.session_type = #{sessionType}
+          AND s.expires_at > CURRENT_TIMESTAMP(3)
+        ORDER BY COALESCE(s.last_seen_at, s.issued_at) DESC, s.issued_at DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

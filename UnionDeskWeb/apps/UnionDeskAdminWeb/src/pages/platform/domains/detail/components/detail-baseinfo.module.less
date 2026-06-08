@@ -1,0 +1,49 @@
+.formFooterActions {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 24px;
+}
+
+.dangerSection {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.dangerRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	min-height: 80px;
+	padding: 16px 20px;
+	border: 1px solid var(--ant-color-border-secondary);
+	border-radius: 8px;
+	background: var(--ant-color-fill-quaternary);
+}
+
+.dangerRowDelete {
+	border-color: var(--ant-color-error-border);
+	background: color-mix(in srgb, var(--ant-color-error-bg) 35%, var(--ant-color-bg-container));
+}
+
+.dangerRowMain {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	justify-content: center;
+	gap: 4px;
+	min-width: 0;
+	min-height: 48px;
+}
+
+.dangerRowDesc {
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.dangerRowActions {
+	display: flex;
+	flex-shrink: 0;
+	gap: 8px;
+}

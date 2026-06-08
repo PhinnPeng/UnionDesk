@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.iam.mapper.IdentitySubjectMapper">
+
+    <resultMap id="IdentitySubjectPo" type="com.uniondesk.iam.entity.IdentitySubjectPo">
+        <id property="id" column="id"/>
+        <result property="subjectType" column="subject_type"/>
+        <result property="phone" column="phone"/>
+        <result property="status" column="status"/>
+        <result property="mergedIntoId" column="merged_into_id"/>
+    </resultMap>
+
+    <select id="selectIdByPhone" resultType="java.lang.Long">
+        SELECT id FROM identity_subject WHERE phone = #{phone} LIMIT 1
+    </select>
+
+    <select id="selectById" resultMap="IdentitySubjectPo">
+        SELECT id, status, merged_into_id
+        FROM identity_subject
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="selectMergedIntoId" resultType="java.lang.Long">
+        SELECT merged_into_id FROM identity_subject WHERE id = #{id} LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.uniondesk.iam.entity.IdentitySubjectPo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO identity_subject (subject_type, phone, status, created_at, updated_at)
+        VALUES (#{subjectType}, #{phone}, #{status}, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
+    </insert>
+
+</mapper>

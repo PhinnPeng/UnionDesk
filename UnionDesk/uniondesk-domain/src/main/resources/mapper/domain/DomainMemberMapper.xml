@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.domain.mapper.DomainMemberMapper">
+
+    <resultMap id="DomainMemberPo" type="com.uniondesk.domain.entity.DomainMemberPo">
+        <id property="id" column="id"/>
+        <result property="staffAccountId" column="staff_account_id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="status" column="status"/>
+        <result property="source" column="source"/>
+        <result property="activatedAt" column="activated_at"/>
+        <result property="disabledAt" column="disabled_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="username" column="username"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+    </resultMap>
+
+    <sql id="memberListWhere">
+        <where>
+            dm.business_domain_id = #{domainId}
+            AND dm.deleted_at IS NULL
+            <if test="status != null and status != ''">
+                AND dm.status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (sa.username LIKE #{keyword}
+                     OR sa.phone LIKE #{keyword}
+                     OR sa.email LIKE #{keyword}
+                     OR sa.real_name LIKE #{keyword}
+                     OR sa.nickname LIKE #{keyword})
+            </if>
+            <if test="createdFrom != null">
+                AND dm.created_at &gt;= #{createdFrom}
+            </if>
+            <if test="createdTo != null">
+                AND dm.created_at &lt;= #{createdTo}
+            </if>
+        </where>
+    </sql>
+
+    <select id="listMembers" resultMap="DomainMemberPo">
+        SELECT
+            dm.id,
+            dm.staff_account_id,
+            dm.business_domain_id,
+            dm.status,
+            dm.source,
+            dm.activated_at,
+            dm.disabled_at,
+            dm.deleted_at,
+            dm.created_at,
+            sa.username,
+            sa.phone,
+            sa.email
+        FROM domain_member dm
+        JOIN staff_account sa ON sa.id = dm.staff_account_id
+        <include refid="memberListWhere"/>
+        ORDER BY dm.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countMembers" resultType="long">
+        SELECT COUNT(*)
+        FROM domain_member dm
+        JOIN staff_account sa ON sa.id = dm.staff_account_id
+        <include refid="memberListWhere"/>
+    </select>
+
+    <select id="selectMemberById" resultMap="DomainMemberPo">
+        SELECT
+            dm.id,
+            dm.staff_account_id,
+            dm.business_domain_id,
+            dm.status,
+            dm.source,
+            dm.activated_at,
+            dm.disabled_at,
+            dm.deleted_at,
+            dm.created_at,
+            sa.username,
+            sa.phone,
+            sa.email
+        FROM domain_member dm
+        JOIN staff_account sa ON sa.id = dm.staff_account_id
+        WHERE dm.id = #{id}
+          AND dm.business_domain_id = #{domainId}
+          AND dm.deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+    <insert id="insert">
+        INSERT INTO domain_member (
+            staff_account_id,
+            business_domain_id,
+            status,
+            source,
+            activated_at,
+            disabled_at,
+            deleted_at,
+            created_at,
+            updated_at
+        )
+        VALUES (
+            #{staffAccountId}, #{businessDomainId}, 'active', 'manual',
+            CURRENT_TIMESTAMP(3), NULL, NULL,
+            CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
+        )
+    </insert>
+
+    <insert id="insertWithSource">
+        INSERT INTO domain_member (
+            staff_account_id,
+            business_domain_id,
+            status,
+            source,
+            activated_at,
+            disabled_at,
+            deleted_at,
+            created_at,
+            updated_at
+        )
+        VALUES (
+            #{staffAccountId}, #{businessDomainId}, 'active', #{source},
+            CURRENT_TIMESTAMP(3), NULL, NULL,
+            CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
+        )
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE domain_member
+        SET status = #{status},
+            disabled_at = CASE WHEN #{status} = 'disabled' THEN CURRENT_TIMESTAMP(3) ELSE NULL END,
+            activated_at = CASE WHEN #{status} = 'active' THEN CURRENT_TIMESTAMP(3) ELSE activated_at END,
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{memberId}
+          AND business_domain_id = #{domainId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="softDelete">
+        UPDATE domain_member
+        SET status = 'deleted',
+            deleted_at = CURRENT_TIMESTAMP(3),
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{memberId}
+          AND business_domain_id = #{domainId}
+          AND deleted_at IS NULL
+    </update>
+
+    <select id="countActiveDomainAdmins" resultType="int">
+        SELECT COUNT(DISTINCT dm.id)
+        FROM domain_member dm
+        JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+        WHERE dr.business_domain_id = #{domainId}
+          AND dr.code = 'domain_admin'
+          AND dm.status = 'active'
+          AND dm.deleted_at IS NULL
+          AND dm.id &lt;&gt; #{excludeMemberId}
+    </select>
+
+    <select id="countActiveDomainSuperAdmins" resultType="int">
+        SELECT COUNT(DISTINCT dm.id)
+        FROM domain_member dm
+        JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+        WHERE dr.business_domain_id = #{domainId}
+          AND dr.code = 'super_admin'
+          AND dm.status = 'active'
+          AND dm.deleted_at IS NULL
+          AND dm.id &lt;&gt; #{excludeMemberId}
+    </select>
+
+    <select id="countByDomainAndStaff" resultType="int">
+        SELECT COUNT(*)
+        FROM domain_member
+        WHERE business_domain_id = #{domainId}
+          AND staff_account_id = #{staffAccountId}
+          AND deleted_at IS NULL
+    </select>
+
+    <select id="findMemberIdByDomainAndStaff" resultType="java.lang.Long">
+        SELECT id
+        FROM domain_member
+        WHERE business_domain_id = #{domainId}
+          AND staff_account_id = #{staffAccountId}
+          AND deleted_at IS NULL
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findActiveMemberId" resultType="java.lang.Long">
+        SELECT id
+        FROM domain_member
+        WHERE business_domain_id = #{domainId}
+          AND staff_account_id = #{staffAccountId}
+          AND deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+</mapper>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.iam.mapper.RoleMapper">
+
+    <resultMap id="RolePo" type="com.uniondesk.iam.entity.RolePo">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="scope" column="scope"/>
+        <result property="isSystem" column="is_system"/>
+    </resultMap>
+
+    <resultMap id="BusinessDomainSummary" type="com.uniondesk.iam.mapper.RoleMapper$BusinessDomainSummary">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="code" javaType="java.lang.String"/>
+            <arg column="name" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <select id="selectAll" resultMap="RolePo">
+        SELECT id, code, name, scope, is_system FROM role ORDER BY is_system DESC, id
+    </select>
+
+    <select id="selectById" resultMap="RolePo">
+        SELECT id, code, name, scope, is_system FROM role WHERE id = #{id} LIMIT 1
+    </select>
+
+    <select id="selectByCode" resultMap="RolePo">
+        SELECT id, code, name, scope, is_system FROM role WHERE code = #{code} LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.uniondesk.iam.entity.RolePo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO role (code, name, scope, is_system) VALUES (#{code}, #{name}, #{scope}, #{isSystem})
+    </insert>
+
+    <update id="update" parameterType="com.uniondesk.iam.entity.RolePo">
+        UPDATE role SET code = #{code}, name = #{name}, scope = #{scope} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM role WHERE id = #{id}
+    </delete>
+
+    <select id="countById" resultType="int">
+        SELECT COUNT(*) FROM role WHERE id = #{id}
+    </select>
+
+    <select id="countUserGlobalRoleBindings" resultType="int">
+        SELECT COUNT(*) FROM user_global_role WHERE role_id = #{roleId}
+    </select>
+
+    <select id="countUserDomainRoleBindings" resultType="int">
+        SELECT COUNT(*) FROM user_domain_role WHERE role_id = #{roleId}
+    </select>
+
+    <delete id="deleteUserGlobalRoles">
+        DELETE FROM user_global_role WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteUserDomainRoles">
+        DELETE FROM user_domain_role WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteUserRoleBindings">
+        DELETE FROM iam_role_binding WHERE user_id = #{userId}
+    </delete>
+
+    <insert id="insertUserGlobalRole">
+        INSERT INTO user_global_role (user_id, role_id) VALUES (#{userId}, #{roleId})
+    </insert>
+
+    <insert id="insertUserDomainRole">
+        INSERT INTO user_domain_role (user_id, role_id, business_domain_id) VALUES (#{userId}, #{roleId}, #{businessDomainId})
+    </insert>
+
+    <insert id="insertRoleBindingGlobal">
+        INSERT INTO iam_role_binding (user_id, role_id, binding_scope, business_domain_id, status)
+        VALUES (#{userId}, #{roleId}, 'global', NULL, 1)
+    </insert>
+
+    <insert id="insertRoleBindingDomain">
+        INSERT INTO iam_role_binding (user_id, role_id, binding_scope, business_domain_id, status)
+        VALUES (#{userId}, #{roleId}, 'domain', #{businessDomainId}, 1)
+    </insert>
+
+    <select id="selectUserRoleCodes" resultType="java.lang.String">
+        SELECT DISTINCT r.code
+        FROM role r
+        JOIN (
+            SELECT role_id FROM user_global_role WHERE user_id = #{userId}
+            UNION
+            SELECT role_id FROM user_domain_role WHERE user_id = #{userId}
+        ) rs ON rs.role_id = r.id
+        ORDER BY r.code
+    </select>
+
+    <select id="selectUserRoleCodesByClientAdmin" resultType="java.lang.String">
+        SELECT DISTINCT r.code
+        FROM role r
+        JOIN (
+            SELECT role_id FROM user_global_role WHERE user_id = #{userId}
+            UNION
+            SELECT role_id FROM user_domain_role WHERE user_id = #{userId}
+        ) ur ON ur.role_id = r.id
+    </select>
+
+    <select id="selectUserRoleCodesByClientOther" resultType="java.lang.String">
+        SELECT DISTINCT r.code
+        FROM role r
+        JOIN (
+            SELECT role_id FROM user_global_role WHERE user_id = #{userId}
+            UNION
+            SELECT role_id FROM user_domain_role WHERE user_id = #{userId}
+        ) ur ON ur.role_id = r.id
+        JOIN iam_role_resource irr ON irr.role_id = r.id
+        JOIN iam_resource ir ON ir.id = irr.resource_id
+        WHERE ir.status = 1
+          AND (ir.client_scope = #{clientCode} OR ir.client_scope = 'all')
+    </select>
+
+    <select id="selectByCodes" resultMap="RolePo">
+        SELECT id, code, scope FROM role WHERE code IN
+        <foreach collection="codes" item="code" open="(" separator="," close=")">#{code}</foreach>
+    </select>
+
+    <select id="selectUserDomainIds" resultType="java.lang.Long">
+        SELECT DISTINCT business_domain_id FROM user_domain_role WHERE user_id = #{userId} ORDER BY business_domain_id
+    </select>
+
+    <select id="countProtectedRoleHoldersExcluding" resultType="int">
+        SELECT COUNT(DISTINCT ugr.user_id)
+        FROM user_global_role ugr
+        JOIN role r ON r.id = ugr.role_id
+        JOIN user_account ua ON ua.id = ugr.user_id
+        WHERE r.code = #{roleCode}
+          AND ugr.user_id &lt;&gt; #{userId}
+          AND ua.status = 1
+          AND ua.employment_status &lt;&gt; 'offboarded'
+    </select>
+
+    <select id="selectDomainSummariesForSuperAdmin" resultMap="BusinessDomainSummary">
+        SELECT id, code, name FROM business_domain ORDER BY id
+    </select>
+
+    <select id="selectDomainSummariesForUser" resultMap="BusinessDomainSummary">
+        SELECT DISTINCT d.id, d.code, d.name
+        FROM user_domain_role udr
+        JOIN role r ON r.id = udr.role_id
+        JOIN business_domain d ON d.id = udr.business_domain_id
+        WHERE udr.user_id = #{userId}
+          AND r.code IN
+        <foreach collection="roleCodes" item="code" open="(" separator="," close=")">#{code}</foreach>
+        ORDER BY d.id
+    </select>
+
+    <delete id="deleteRolePermissions">
+        DELETE FROM iam_role_permission WHERE role_id = #{roleId}
+    </delete>
+
+    <delete id="deleteRoleBindings">
+        DELETE FROM iam_role_binding WHERE role_id = #{roleId}
+    </delete>
+
+    <select id="selectScopeById" resultType="java.lang.String">
+        SELECT scope FROM role WHERE id = #{id}
+    </select>
+
+</mapper>

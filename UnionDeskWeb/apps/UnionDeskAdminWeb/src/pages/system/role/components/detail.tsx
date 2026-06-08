@@ -59,7 +59,10 @@ export function Detail({ title, open, onCloseChange, detailData, treeData, refre
 		const flatNodes = flattenTree(treeData);
 		const nodeTypeMap = new Map(flatNodes.map(n => [n.id, n.nodeType]));
 		const selected = values.menus || [];
-		const menuIds = selected.filter(id => nodeTypeMap.get(id) !== "button").map(Number);
+		const menuIds = selected.filter((id) => {
+			const nodeType = nodeTypeMap.get(id);
+			return nodeType === "menu" || nodeType === "catalog";
+		}).map(Number);
 		const buttonIds = selected.filter(id => nodeTypeMap.get(id) === "button").map(Number);
 		if (isEdit) {
 			await fetchUpdateRole(detailData.id!, payload);

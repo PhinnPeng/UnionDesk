@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.notification.mapper.NotificationTemplateMapper">
+
+    <resultMap id="NotificationTemplatePo" type="com.uniondesk.notification.entity.NotificationTemplatePo">
+        <id property="id" column="id"/>
+        <result property="scopeType" column="scope_type"/>
+        <result property="scopeId" column="scope_id"/>
+        <result property="eventCategory" column="event_category"/>
+        <result property="channel" column="channel"/>
+        <result property="code" column="code"/>
+        <result property="titleTemplate" column="title_template"/>
+        <result property="contentTemplate" column="content_template"/>
+        <result property="isSecurity" column="is_security"/>
+        <result property="isUnsubscribable" column="is_unsubscribable"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="selectColumns">
+        SELECT
+            id,
+            scope_type,
+            scope_id,
+            event_category,
+            channel,
+            code,
+            title_template,
+            content_template,
+            is_security,
+            is_unsubscribable,
+            status,
+            created_at,
+            updated_at
+        FROM notification_template
+    </sql>
+
+    <select id="selectByDomainId" resultMap="NotificationTemplatePo">
+        <include refid="selectColumns"/>
+        WHERE scope_type = 'domain' AND scope_id = #{scopeId}
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByDomainId" resultType="long">
+        SELECT COUNT(*)
+        FROM notification_template
+        WHERE scope_type = 'domain' AND scope_id = #{scopeId}
+    </select>
+
+    <select id="selectByIdAndDomainId" resultMap="NotificationTemplatePo">
+        <include refid="selectColumns"/>
+        WHERE id = #{id} AND scope_type = 'domain' AND scope_id = #{scopeId}
+        LIMIT 1
+    </select>
+
+    <update id="updateByIdAndDomainId">
+        UPDATE notification_template
+        SET event_category = #{eventCategory},
+            channel = #{channel},
+            code = #{code},
+            title_template = #{titleTemplate},
+            content_template = #{contentTemplate},
+            is_security = #{isSecurity},
+            is_unsubscribable = #{isUnsubscribable},
+            status = #{status},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id} AND scope_type = 'domain' AND scope_id = #{scopeId}
+    </update>
+
+</mapper>

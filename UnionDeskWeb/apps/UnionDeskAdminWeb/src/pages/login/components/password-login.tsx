@@ -86,8 +86,8 @@ export function PasswordLogin() {
 			await login(buildPasswordLoginPayload(values, captchaToken));
 			messageLoadingApi?.destroy();
 			window.$message?.success(t("authority.loginSuccess"));
-			const redirect = searchParams.get("redirect");
-			navigate(redirect ?? resolveBackHomePath(), { replace: true });
+			const redirect = searchParams.get("redirect")?.trim();
+			navigate(redirect && redirect.length > 0 ? redirect : resolveBackHomePath(), { replace: true });
 		}
 		catch (error) {
 			messageLoadingApi?.destroy();

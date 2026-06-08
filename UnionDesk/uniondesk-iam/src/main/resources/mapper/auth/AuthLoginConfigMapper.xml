@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.auth.mapper.AuthLoginConfigMapper">
+
+    <resultMap id="AuthLoginConfigPo" type="com.uniondesk.auth.entity.AuthLoginConfigPo">
+        <result property="configKey" column="config_key"/>
+        <result property="configValue" column="config_value"/>
+    </resultMap>
+
+    <select id="selectAll" resultMap="AuthLoginConfigPo">
+        SELECT config_key, config_value
+        FROM auth_login_config
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO auth_login_config (config_key, config_value)
+        VALUES (#{configKey}, #{configValue})
+        ON DUPLICATE KEY UPDATE
+            config_value = VALUES(config_value),
+            updated_at = CURRENT_TIMESTAMP(3)
+    </insert>
+
+    <select id="selectMaxUpdatedAt" resultType="java.time.LocalDateTime">
+        SELECT MAX(updated_at)
+        FROM auth_login_config
+    </select>
+
+</mapper>

@@ -52,9 +52,10 @@
 | 业务域删除 | `pages/platform/domains/detail/components/detail-baseinfo.tsx` | `DELETE /api/v1/admin/domains/{id}` | **Partial** | **S2 US-S2-01**：`deleted_at`+`updated_*`；权限 `platform.domain.control.general.delete`；无 `deleted` 列；已删域直链详情 **延后** |
 | 客户入域（邀请码） | `pages/platform/domain-onboarding/` | `InvitationCodeController` | **Partial** | 前端存在 onboarding 面板，后端提供邀请码 CRUD；CustomerWeb 接真实 API 见 **US-S1-05（S1 暂缓）** |
 | 域成员管理 | `detail-members.tsx` | `DomainMemberController` | **Done** | **S2 US-S2-03**：查询/添加（平台员工+新建）/改角色/启停/删除；Flyway `202606060001` |
-| 域客户管理 | `detail-customers.tsx` | `DomainCustomerController` | **Partial** | S1 主路径 Done；**S2 US-S2-04** 体验与单条编辑 |
+| 域客户管理 | `detail-customers.tsx` | `DomainCustomerController` | **Done** | **S2 US-S2-04**：只读查看、启停、筛选空态；`platform.domain.control.customer.*`；Flyway `V202606070002` |
 | 域角色管理 | `detail-roles.tsx` | `DomainRoleController` | **Partial** | **S2 US-S2-02**「角色管理」只读；`platform.domain.roles.*` |
-| 域屏蔽词（域内） | `detail-blockwords.tsx` | `BlockedWordService` | **Partial** | **S2 US-S2-05**：`platform.domain.blocked_word.*`；全局 `platform.blocked_word.*` |
+| 平台屏蔽词（全局） | `pages/platform/blockwords/index.tsx` | `PlatformBlockedWordController` | **Done** | **S2 US-S2-05**：`platform.blocked_word.*`；Flyway `V202606080001` |
+| 域屏蔽词（域内） | `detail-blockwords.tsx` | `BlockedWordController` | **Done** | **S2 US-S2-05**：`platform.domain.control.blocked_word.*` |
 | 域业务日志 | `detail-logs.tsx` | 域级 audit/login API | **Partial** | **S2 US-S2-06**：双 Tab；`platform.audit-logs.read` |
 | 入域双配置迁移 | — | `V202605250001` | **Done** | 脚本已入库；HEAD 后端 DTO/Service 与 AdminWeb 双字段 UI 已对齐（US-S1-03） |
 

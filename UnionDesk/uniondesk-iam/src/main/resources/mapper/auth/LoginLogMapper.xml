@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.auth.mapper.LoginLogMapper">
+
+    <resultMap id="LoginLogPo" type="com.uniondesk.auth.entity.LoginLogPo">
+        <id property="id" column="id"/>
+        <result property="sid" column="sid"/>
+        <result property="subjectId" column="subject_id"/>
+        <result property="loginName" column="login_name"/>
+        <result property="loginIdentifierMasked" column="login_identifier_masked"/>
+        <result property="loginIdentifierType" column="login_identifier_type"/>
+        <result property="eventType" column="event_type"/>
+        <result property="portalType" column="portal_type"/>
+        <result property="clientCode" column="client_code"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="result" column="result"/>
+        <result property="failReason" column="fail_reason"/>
+        <result property="ip" column="ip"/>
+        <result property="userAgent" column="user_agent"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.uniondesk.auth.entity.LoginLogPo">
+        INSERT INTO login_log (
+            subject_id, portal_type, client_code, sid, event_type, business_domain_id,
+            login_name, login_identifier_masked, login_identifier_type,
+            ip, user_agent, result, fail_reason, created_at
+        )
+        VALUES (#{subjectId}, #{portalType}, #{clientCode}, #{sid}, #{eventType}, #{businessDomainId},
+                #{loginName}, #{loginIdentifierMasked}, #{loginIdentifierType},
+                #{ip}, #{userAgent}, #{result}, #{failReason}, #{createdAt})
+    </insert>
+
+    <select id="selectRecentByEventType" resultMap="LoginLogPo">
+        SELECT
+            l.id,
+            l.sid,
+            l.subject_id,
+            l.login_name,
+            l.login_identifier_masked,
+            l.login_identifier_type,
+            l.event_type,
+            l.portal_type,
+            l.client_code,
+            l.business_domain_id,
+            l.result,
+            l.fail_reason,
+            l.ip,
+            l.user_agent,
+            l.created_at
+        FROM login_log l
+        WHERE l.event_type = #{eventType}
+        ORDER BY l.created_at DESC, l.id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectSubjectIdByCustomerAccountId" resultType="java.lang.Long">
+        SELECT subject_id FROM customer_account WHERE id = #{customerAccountId} LIMIT 1
+    </select>
+
+</mapper>

@@ -2,11 +2,37 @@ import type { AppRouteRecordRaw } from "#src/router/types";
 import type { PermissionSnapshotMenu } from "@uniondesk/shared";
 
 import { matchRoutes } from "react-router";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { buildBackendRoutesFromSnapshot } from "#src/api/user/utils";
+vi.mock("#src/store/tabs", () => {
+	const state = {
+		openTabs: [],
+		activeTabKey: null,
+	};
+	const store = Object.assign(
+		vi.fn((selector?: (value: typeof state) => unknown) => (selector ? selector(state) : state)),
+		{
+			getState: () => state,
+			setState: vi.fn(),
+		},
+	);
+	return { useTabsStore: store };
+});
+
+import { buildRoutesFromAdminMenuSnapshot } from "#src/layout/layout-menu";
 import { removeDuplicateRoutes } from "#src/router/guard/utils";
 import { generateRoutesFromBackend } from "./generate-routes-from-backend";
+
+const normalizeMenuPath = (path: string | null | undefined) => path?.trim().replace(/\/+$/, "") ?? "";
+const normalizeComponentPath = (component: string | null | undefined, path: string) =>
+	component ?? `/src/pages${path}/index.tsx`;
+
+function buildBackendRoutesFromSnapshot(menus: readonly PermissionSnapshotMenu[]) {
+	return buildRoutesFromAdminMenuSnapshot(menus, {
+		normalizeMenuPath: normalizeMenuPath,
+		normalizeComponentPath: normalizeComponentPath,
+	});
+}
 
 describe("generateRoutesFromBackend", () => {
 	it("registers platform role and menu pages returned under the permission catalog", async () => {
@@ -161,15 +187,15 @@ describe("generateRoutesFromBackend", () => {
 		}
 	});
 
-	it("registers backend permission menu with absolute child routes without route nesting errors", async () => {
+	it("registers backend permission catalog with absolute child routes without route nesting errors", async () => {
 		const snapshotMenus: PermissionSnapshotMenu[] = [
 			{
 				id: 48,
 				code: "ADM0000000048",
 				parentId: null,
 				name: "权限管理",
-				path: "/platform/permission",
-				component: "./platform/permission",
+				path: null,
+				component: null,
 				scope: "platform",
 				children: [
 					{
@@ -198,9 +224,9 @@ describe("generateRoutesFromBackend", () => {
 		const routes = removeDuplicateRoutes(await generateRoutesFromBackend(backendRoutes));
 
 		expect(backendRoutes[0]?.path).toBeUndefined();
-		expect(backendRoutes[0]?.handle?.menuKey).toBe("/platform/permission");
+		expect(backendRoutes[0]?.handle?.menuKey).toBe("/platform/catalog/48");
 
-		for (const pathname of ["/platform/permission", "/platform/role", "/platform/menu"]) {
+		for (const pathname of ["/platform/role", "/platform/menu"]) {
 			const matches = matchRoutes(routes, pathname) ?? [];
 			const leafRoute = matches.at(-1)?.route;
 

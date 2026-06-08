@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.sla.mapper.SlaTicketMapper">
+
+    <resultMap id="SlaTicketPo" type="com.uniondesk.sla.entity.SlaTicketPo">
+        <result property="priority" column="priority"/>
+        <result property="slaStatus" column="sla_status"/>
+        <result property="slaFirstResponseDeadline" column="sla_first_response_deadline"/>
+        <result property="slaResolutionDeadline" column="sla_resolution_deadline"/>
+        <result property="slaFirstRespondedAt" column="sla_first_responded_at"/>
+        <result property="slaResolvedAt" column="sla_resolved_at"/>
+        <result property="breachActionJson" column="breach_action_json"/>
+    </resultMap>
+
+    <select id="selectSlaSnapshot" resultMap="SlaTicketPo">
+        SELECT
+            t.priority,
+            t.sla_status,
+            t.sla_first_response_deadline,
+            t.sla_resolution_deadline,
+            t.sla_first_responded_at,
+            t.sla_resolved_at,
+            sr.breach_action_json
+        FROM ticket t
+        LEFT JOIN sla_rule sr
+          ON sr.business_domain_id = t.business_domain_id
+         AND (sr.ticket_type_id = t.ticket_type_id OR sr.ticket_type_id IS NULL)
+         AND (sr.priority_level_id IS NULL OR EXISTS (
+             SELECT 1
+             FROM ticket_priority_level tpl
+             WHERE tpl.id = sr.priority_level_id AND tpl.code = t.priority
+         ))
+        WHERE t.id = #{ticketId} AND t.business_domain_id = #{domainId}
+        ORDER BY sr.priority_level_id IS NOT NULL DESC, sr.ticket_type_id IS NOT NULL DESC, sr.id DESC
+        LIMIT 1
+    </select>
+
+    <update id="updateSlaDeadlines">
+        UPDATE ticket
+        SET sla_first_response_deadline = CASE
+                WHEN #{firstResponseMinutes} IS NULL THEN NULL
+                ELSE TIMESTAMPADD(MINUTE, #{firstResponseMinutes}, created_at)
+            END,
+            sla_resolution_deadline = CASE
+                WHEN #{resolutionMinutes} IS NULL THEN NULL
+                ELSE TIMESTAMPADD(MINUTE, #{resolutionMinutes}, created_at)
+            END,
+            sla_status = 'tracking',
+            sla_paused_duration = COALESCE(sla_paused_duration, 0),
+            sla_pause_started_at = NULL
+        WHERE id = #{ticketId}
+    </update>
+
+    <update id="updateFirstResponse">
+        UPDATE ticket
+        SET sla_first_responded_at = COALESCE(sla_first_responded_at, #{now}),
+            sla_status = COALESCE(sla_status, 'tracking')
+        WHERE id = #{ticketId} AND business_domain_id = #{domainId}
+    </update>
+
+    <update id="updateResolution">
+        UPDATE ticket
+        SET sla_resolved_at = COALESCE(sla_resolved_at, #{now}),
+            sla_status = 'resolved'
+        WHERE id = #{ticketId} AND business_domain_id = #{domainId}
+    </update>
+
+    <update id="updatePriorityAndSlaStatus">
+        UPDATE ticket
+        SET priority = #{priority},
+            sla_status = #{slaStatus},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{ticketId}
+    </update>
+
+</mapper>

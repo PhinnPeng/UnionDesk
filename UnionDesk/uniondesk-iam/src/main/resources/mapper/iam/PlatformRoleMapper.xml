@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.iam.mapper.PlatformRoleMapper">
+
+    <delete id="deleteStaffPlatformRoles">
+        DELETE FROM staff_account_platform_role WHERE staff_account_id = #{staffAccountId}
+    </delete>
+
+    <insert id="insertStaffPlatformRole">
+        INSERT INTO staff_account_platform_role (staff_account_id, platform_role_id)
+        VALUES (#{staffAccountId}, #{platformRoleId})
+    </insert>
+
+    <select id="selectCurrentPlatformRoleCodes" resultType="java.lang.String">
+        SELECT pr.code
+        FROM staff_account_platform_role sapr
+        JOIN platform_role pr ON sapr.platform_role_id = pr.id
+        WHERE sapr.staff_account_id = #{staffAccountId}
+    </select>
+
+    <select id="countActivePlatformAdminsExcluding" resultType="int">
+        SELECT COUNT(DISTINCT sapr.staff_account_id)
+        FROM staff_account_platform_role sapr
+        JOIN platform_role pr ON pr.id = sapr.platform_role_id
+        JOIN staff_account sa ON sa.id = sapr.staff_account_id
+        WHERE pr.code = 'platform_admin'
+          AND sa.status = 'active'
+          AND sapr.staff_account_id &lt;&gt; #{staffAccountId}
+    </select>
+
+    <select id="selectPlatformRoleIdByCode" resultType="java.lang.Long">
+        SELECT id FROM platform_role WHERE code = #{code} LIMIT 1
+    </select>
+
+    <select id="selectCurrentDomainRoleCodes" resultType="java.lang.String">
+        SELECT DISTINCT dr.code
+        FROM domain_member dm
+        JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+        WHERE dm.staff_account_id = #{staffAccountId}
+          AND dm.business_domain_id = #{businessDomainId}
+          AND dm.deleted_at IS NULL
+    </select>
+
+</mapper>

@@ -6,7 +6,6 @@ import { lazy } from "react";
 
 const TicketDetail = lazy(() => import("#src/pages/platform/ticket-detail"));
 const DomainDetail = lazy(() => import("#src/pages/platform/domains/detail"));
-const DomainCreate = lazy(() => import("#src/pages/platform/domains/create"));
 
 /**
  * 将内置平台页面包裹在 ContainerLayout 内，经 LayoutContent 渲染（侧栏、顶栏、页签）。
@@ -53,18 +52,7 @@ const routes: AppRouteRecordRaw[] = [
 		handle: {
 			hideInMenu: true,
 			scope: "platform",
-			title: "业务域详情",
-			currentActiveMenu: "/platform/domains",
-		},
-	}),
-	withPlatformLayout({
-		path: "/platform/domains/create",
-		Component: DomainCreate,
-		handle: {
-			hideInMenu: true,
-			scope: "platform",
-			title: "新建业务域",
-			auth: "domain.admin.create",
+			title: "业务域控制台",
 			currentActiveMenu: "/platform/domains",
 		},
 	}),

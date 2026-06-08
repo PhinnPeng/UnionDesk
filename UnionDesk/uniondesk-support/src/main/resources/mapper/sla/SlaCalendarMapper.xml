@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.sla.mapper.SlaCalendarMapper">
+
+    <resultMap id="SlaCalendarPo" type="com.uniondesk.sla.entity.SlaCalendarPo">
+        <id property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="name" column="name"/>
+        <result property="config" column="config"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="selectColumns">
+        SELECT
+            id,
+            business_domain_id,
+            name,
+            config,
+            created_at,
+            updated_at
+        FROM sla_calendar
+    </sql>
+
+    <select id="selectByDomainId" resultMap="SlaCalendarPo">
+        <include refid="selectColumns"/>
+        WHERE business_domain_id = #{domainId}
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByDomainId" resultType="long">
+        SELECT COUNT(*)
+        FROM sla_calendar
+        WHERE business_domain_id = #{domainId}
+    </select>
+
+    <select id="selectByIdAndDomainId" resultMap="SlaCalendarPo">
+        <include refid="selectColumns"/>
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.uniondesk.sla.entity.SlaCalendarPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sla_calendar (
+            business_domain_id, name, config
+        )
+        VALUES (#{businessDomainId}, #{name}, #{config})
+    </insert>
+
+    <update id="updateByIdAndDomainId" parameterType="com.uniondesk.sla.entity.SlaCalendarPo">
+        UPDATE sla_calendar
+        SET name = #{name},
+            config = #{config},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id} AND business_domain_id = #{businessDomainId}
+    </update>
+
+</mapper>

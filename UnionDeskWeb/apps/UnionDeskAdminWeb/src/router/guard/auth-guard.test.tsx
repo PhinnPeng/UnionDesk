@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => {
 	const authState = {
 		token: "token",
+		role: "super_admin",
 		user: {
 			id: 2,
 			menus: [
@@ -24,6 +25,7 @@ const mocks = vi.hoisted(() => {
 		roles: ["admin"],
 		actions: [],
 		menus: [] as typeof authState.user.menus,
+		platformAccess: true,
 		setUserInfo: vi.fn(),
 		reset: vi.fn(),
 	};
@@ -141,6 +143,15 @@ import { AuthGuard } from "./auth-guard";
 describe("AuthGuard", () => {
 	beforeEach(() => {
 		mocks.pathname = "/";
+		mocks.accessState.isAccessChecked = false;
+		mocks.userState.id = 2;
+		mocks.authState.user.menus = [
+			{
+				path: "/platform/home",
+				handle: { scope: "platform" },
+			},
+		];
+		mocks.userState.platformAccess = true;
 		mocks.navigate.mockReset();
 		mocks.fetchUserInfoAndRoutes.mockClear();
 		mocks.generateRoutesFromBackend.mockClear();
@@ -154,7 +165,43 @@ describe("AuthGuard", () => {
 		mocks.accessState.setAccessStore.mockClear();
 	});
 
-	it("redirects the root path to the cached home path before access data is ready", async () => {
+	it("redirects the root path to the cached home path after access data is ready", async () => {
+		mocks.accessState.isAccessChecked = true;
+		mocks.userState.id = 2;
+
+		render(
+			<AuthGuard>
+				<div>child</div>
+			</AuthGuard>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("navigate")).toHaveTextContent("/platform/home");
+		});
+	});
+
+	it("waits for access data before redirecting root path", () => {
+		mocks.accessState.isAccessChecked = false;
+
+		const { container } = render(
+			<AuthGuard>
+				<div>child</div>
+			</AuthGuard>,
+		);
+
+		expect(container.firstChild).toBeNull();
+		expect(screen.queryByTestId("navigate")).toBeNull();
+	});
+
+	it("redirects root to platform home when user has business menus but platformAccess", async () => {
+		mocks.accessState.isAccessChecked = true;
+		mocks.userState.id = 2;
+		mocks.authState.user.menus = [
+			{ path: "/platform/home", handle: { scope: "platform", title: "平台首页" } } as (typeof mocks.authState.user.menus)[number],
+			{ path: "/system/menu", handle: { scope: "business", title: "菜单管理" } } as (typeof mocks.authState.user.menus)[number],
+		];
+		mocks.userState.platformAccess = true;
+
 		render(
 			<AuthGuard>
 				<div>child</div>

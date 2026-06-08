@@ -110,9 +110,88 @@
 - Less 文件中应使用局部作用域（如 CSS Modules 或 BEM 命名）避免污染。  
 - 禁止在项目中同时混用多种样式方案（如 CSS-in-JS + Less 混用），除非有明确历史遗留原因。
 
+### 2.3 命名与代码风格
+- 组件文件使用 PascalCase（如 `UserProfile.tsx`）。  
+- Less 文件与对应的组件同名，使用 kebab-case 或 PascalCase（视项目已有风格而定，保持一致）。  
+- 类名推荐使用 BEM 或 CSS Modules 生成的哈希，避免全局冲突。  
+- 所有注释、用户界面文本、错误提示信息均使用**中文**。  
+- 文件编码统一为 **UTF-8**。
+
+### 2.4 TSX 文件结构
+
+TSX 组件文件应遵循以下**固定自上而下**结构（新建与较大改动时对齐；小范围修复可不强行重排无关代码）：
+
+1. **导入**（`import`，含类型导入）  
+2. **类型定义**（`interface` / `type` / 组件 Props）  
+3. **静态常量**（本文件内业务相关的 `const，`**不得**在此定义路由 Path、查询参数 key 的常量，见 §2.5）
+4. **辅助函数**（本文件内业务相关的私有 `function`；）
+5. **组件主体**（`function Component` 或 `export default function`），内部顺序：  
+   - **状态**（`useState` 等）  
+   - **ref**（`useRef`）  
+   - **副作用**（`useEffect` 等）  
+   - **事件处理**（`handleXxx`）  
+   - **派生数据**（`useMemo` / `useCallback` 及简单派生变量）  
+   - **渲染**（`return` JSX）  
+6. **导出**（`export` / `export default`；若 default 已在第 4 步声明则可省略重复块）
+
+同一文件内的**私有子组件**放在主组件之前，每个子组件同样遵循上述 1→5 结构。
+
+### 2.5 常量与组件拆分
+- **禁止**将路由 Path、查询参数 key **抽取为常量**（含模块级常量、文件顶部 `const`、独立常量文件）；须在 `navigate`、`searchParams`、路由注册等**使用处**直接写普通字符串字面量，保持见名知意。  
+- 若某常量或辅助逻辑**仅被一个组件引用**且不会复用，必须定义在该组件文件内（文件顶部 local const 或私有 function），不得单独建文件 export。  
+- **禁止**为仅单组件使用的 UI 片段再拆独立组件文件（同一文件内的私有子组件除外）。  
+- 跨多个业务模块复用的通用能力（如顶栏页签 [`tabbar-utils.ts`](UnionDeskWeb/apps/UnionDeskAdminWeb/src/utils/tabbar-utils.ts)）方可放入 `src/utils/`。
+
+### 2.6 测试与验证
+- 提交代码前确保开发服务器无报错，关键交互功能正常。  
+- 若涉及接口联调，使用 Mock 数据或真实后端完成冒烟测试。  
+- 修改公共组件或样式时，检查受影响的页面未出现样式错乱。
+
+### 2.7 列表页布局规范（查询栏 + 数据区）
+
+平台控制台**带筛选的列表页**（含全局页、域详情 Tab 内嵌列表）应遵循统一骨架，参考 [`domains/index.tsx`](UnionDeskWeb/apps/UnionDeskAdminWeb/src/pages/platform/domains/index.tsx)、[`detail-members.tsx`](UnionDeskWeb/apps/UnionDeskAdminWeb/src/pages/platform/domains/detail/components/detail-members.tsx)、[`system/menu/index.tsx`](UnionDeskWeb/apps/UnionDeskAdminWeb/src/pages/platform/system/menu/index.tsx)。
+
+**外层结构**
+
+```text
+BasicContent（全局独立页） / div（域详情 Tab 内）
+└── flex flex-col gap-4（或 space-y-4）
+    ├── Card「筛选条件」— bordered={false}
+    │     title: <SearchOutlined /> + 「筛选条件」
+    │     body: TableSearchForm（#src/components/table-search-form）
+    └── Card「{业务}列表」— bordered={false}，extra=工具栏按钮
+          body: Table + pagination（或 BasicTable + request）
+```
+
+**查询栏**
+
+- 使用 **`TableSearchForm`**（ProComponents `QueryFilter` 封装），禁止各页自写查询/重置按钮布局。
+- 表单项用 `Form.Item` + `label` 中文；关键字字段统一 label「关键字」或业务语义（如「屏蔽词」）。
+- `onFinish` 触发查询并重置到第 1 页；`onReset` 清空条件并重新加载。
+
+**数据区**
+
+- 列表用 Ant Design **`Table`**（或树形场景用 **`BasicTable`**，如菜单页）。
+- 分页：`page` / `page_size` / `total`，默认 `page_size=20`，`showSizeChanger: true`。
+- 工具栏（添加、批量、刷新）放列表 `Card` 的 **`extra`**，权限用 **`AuthGuarded`** 包裹。
+- 行内删除等破坏性操作使用 **`ConfirmPopover`**。
+
+**菜单页特例**：`system/menu` 筛选用 **`MenuScopeFilter`（Segmented）** 而非关键字；数据区为 **`BasicTable` 树表**、无分页。新建列表页默认走 TableSearchForm + Table，勿照搬 Segmented。
+
 ---
 
-# 3. 项目信息参考
+# 3. 后端编码规范
+- 不使用数据库外键，仅使用业务逻辑进行约束
+- 新增模块/模块改动/新增功能时，请查阅目前后端的结构并给出适配/新增方案
+- 数据库使用Mybatis
+---
+
+# 4. 设计/计划规范
+- 请保证设计文件结构高度精炼、逻辑性强
+
+--- 
+
+# 5. 项目信息参考
 
 本项目的前端架构、目录结构、路由约定等详细说明，请查阅项目根目录下的 `README.md` 及 `docs/` 文件夹。  
 历史 `doc/` 目录仅供只读参考，不应作为当前规范的依据。

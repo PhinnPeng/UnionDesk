@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.ticket.mapper.AuditLogMapper">
+
+    <insert id="insert" parameterType="com.uniondesk.ticket.entity.AuditLogPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO audit_log (
+            business_domain_id, operator_subject_id, operator_actor_type, target, action,
+            detail, result, request_id
+        )
+        VALUES (
+            #{businessDomainId}, #{operatorSubjectId}, #{operatorActorType}, #{target}, #{action},
+            #{detail}, #{result}, #{requestId}
+        )
+    </insert>
+
+</mapper>

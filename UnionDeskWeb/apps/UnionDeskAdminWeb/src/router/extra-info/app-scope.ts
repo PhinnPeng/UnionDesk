@@ -4,6 +4,10 @@ import { useAuthStore } from "#src/store/auth";
 import { useUserStore } from "#src/store/user";
 
 import { platformHomePath, platformPath } from "./route-path";
+import { resolveHomePathFromMenus } from "./resolve-home-path";
+
+export { hasPlatformRoleHint, isPlatformRoleCode, resolveHomePathFromMenus } from "./resolve-home-path";
+export type { ResolveHomePathOptions } from "./resolve-home-path";
 
 export const appScopes = {
 	business: "business",
@@ -26,34 +30,33 @@ export function getAppHomePath(scope: AppScope) {
 	return scope === appScopes.platform ? platformHomePath : businessHomePath;
 }
 
-function hasBusinessMenus(menus: AppRouteRecordRaw[]) {
-	return menus.some(menu => menu.handle?.scope !== appScopes.platform);
-}
-
 /**
  * 解析「返回首页」目标路径，与 auth-guard 访问 `/` 时的逻辑一致。
  */
 function pickMenusForHome(): AppRouteRecordRaw[] {
-	const { userRoutes, isAccessChecked } = useAccessStore.getState();
-	if (isAccessChecked && userRoutes.length > 0) {
-		return userRoutes;
-	}
 	const storeMenus = useUserStore.getState().menus ?? [];
 	if (storeMenus.length > 0) {
 		return storeMenus;
 	}
-	return useAuthStore.getState().user?.menus ?? [];
+	const authMenus = useAuthStore.getState().user?.menus ?? [];
+	if (authMenus.length > 0) {
+		return authMenus;
+	}
+	const { userRoutes, isAccessChecked } = useAccessStore.getState();
+	if (isAccessChecked && userRoutes.length > 0) {
+		return userRoutes;
+	}
+	return [];
+}
+
+function getHomePathContext() {
+	const { platformAccess, roles } = useUserStore.getState();
+	const loginRole = useAuthStore.getState().role;
+	return { platformAccess, roles, loginRole };
 }
 
 export function resolveBackHomePath(): string {
 	const menus = pickMenusForHome();
-
-	if (menus.length > 0) {
-		return hasBusinessMenus(menus)
-			? getAppHomePath(appScopes.business)
-			: getAppHomePath(appScopes.platform);
-	}
-
-	const { platformAccess } = useUserStore.getState();
-	return platformAccess ? getAppHomePath(appScopes.platform) : getAppHomePath(appScopes.business);
+	const { platformAccess, roles, loginRole } = getHomePathContext();
+	return resolveHomePathFromMenus(menus, platformAccess, { roles, loginRole });
 }

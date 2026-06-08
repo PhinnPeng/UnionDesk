@@ -1,0 +1,17 @@
+workflow: full
+phase: verify
+plan: docs/superpowers/plans/2026-06-08-domain-blockword-management-s2-05.md
+isolation: branch
+build_mode: executing-plans
+build_pause: null
+handoff_context: openspec/changes/domain-blockword-management-s2-05/.comet/handoff/design-context.json
+handoff_hash: pending-manual
+verify_mode: full
+base_ref: cf250ed7fd3cd5d73695b10c411e962aa6436084
+design_doc: docs/superpowers/specs/2026-06-07-domain-blockword-management-s2-05-design.md
+verify_result: pending
+verification_report: docs/superpowers/reports/2026-06-04-domain-blockword-management-s2-05-verify.md
+branch_status: pending
+created_at: 2026-06-07
+verified_at: null
+archived: false

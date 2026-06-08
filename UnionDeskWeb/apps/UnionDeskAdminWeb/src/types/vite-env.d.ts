@@ -1,6 +1,11 @@
 /// <reference types="vite/client" />
 /// <reference types="vite-plugin-svgr/client" />
 
+declare module "*.module.less" {
+	const classes: Record<string, string>;
+	export default classes;
+}
+
 // https://vitejs.dev/guide/env-and-mode.html#intellisense-for-typescript
 interface ImportMetaEnv {
 	readonly VITE_API_BASE_URL: string

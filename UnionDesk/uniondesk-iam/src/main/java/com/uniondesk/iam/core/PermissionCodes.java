@@ -102,9 +102,21 @@ public final class PermissionCodes {
     public static final String DOMAIN_ROLE_DELETE = "domain.role.delete";
     public static final String DOMAIN_ROLE_PERMISSION_READ = "domain.role.permission.read";
     public static final String DOMAIN_ROLE_PERMISSION_UPDATE = "domain.role.permission.update";
-    public static final String DOMAIN_BLOCKED_WORD_READ = "domain.blocked_word.read";
-    public static final String DOMAIN_BLOCKED_WORD_CREATE = "domain.blocked_word.create";
-    public static final String DOMAIN_BLOCKED_WORD_DELETE = "domain.blocked_word.delete";
+    public static final String PLATFORM_BLOCKED_WORD_READ = "platform.blocked_word.read";
+    public static final String PLATFORM_BLOCKED_WORD_CREATE = "platform.blocked_word.create";
+    public static final String PLATFORM_BLOCKED_WORD_DELETE = "platform.blocked_word.delete";
+    public static final String PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ =
+            "platform.domain.control.blocked_word.read";
+    public static final String PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE =
+            "platform.domain.control.blocked_word.create";
+    public static final String PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE =
+            "platform.domain.control.blocked_word.delete";
+    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ} */
+    public static final String DOMAIN_BLOCKED_WORD_READ = PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ;
+    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE} */
+    public static final String DOMAIN_BLOCKED_WORD_CREATE = PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE;
+    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE} */
+    public static final String DOMAIN_BLOCKED_WORD_DELETE = PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE;
     public static final String DOMAIN_CONFIG_READ = "domain.config.read";
     public static final String DOMAIN_CONFIG_UPDATE = "domain.config.update";
     public static final String PLATFORM_SYSTEM_CONFIG_READ = "platform.system_config.read";

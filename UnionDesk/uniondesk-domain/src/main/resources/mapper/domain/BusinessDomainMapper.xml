@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.domain.mapper.BusinessDomainMapper">
+
+    <resultMap id="BusinessDomainPo" type="com.uniondesk.domain.entity.BusinessDomainPo">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="logo" column="logo"/>
+        <result property="visibilityPolicy" column="visibility_policy"/>
+        <result property="visibilityPolicyCodes" column="visibility_policy_codes"/>
+        <result property="registrationEnabled" column="registration_enabled"/>
+        <result property="invitationEnabled" column="invitation_enabled"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="updatedBy" column="updated_by"/>
+        <result property="creatorName" column="creator_name"/>
+        <result property="updaterName" column="updater_name"/>
+    </resultMap>
+
+    <sql id="adminDomainWhere">
+        <where>
+            <if test="!includeDeleted">
+                d.deleted_at IS NULL
+            </if>
+            <if test="status != null">
+                AND d.status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (d.code LIKE #{keyword} OR d.name LIKE #{keyword})
+            </if>
+            <if test="createdFrom != null">
+                AND d.created_at &gt;= #{createdFrom}
+            </if>
+            <if test="createdTo != null">
+                AND d.created_at &lt;= #{createdTo}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectAdminDomains" resultMap="BusinessDomainPo">
+        SELECT
+            d.id,
+            d.code,
+            d.name,
+            d.description,
+            d.logo,
+            d.visibility_policy_codes,
+            d.registration_enabled,
+            d.invitation_enabled,
+            d.status,
+            d.created_at,
+            d.updated_at,
+            d.deleted_at,
+            d.created_by,
+            d.updated_by,
+            uc.username AS creator_name,
+            uu.username AS updater_name
+        FROM business_domain d
+        LEFT JOIN user_account uc ON uc.id = d.created_by
+        LEFT JOIN user_account uu ON uu.id = d.updated_by
+        <include refid="adminDomainWhere"/>
+        ORDER BY d.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countAdminDomains" resultType="long">
+        SELECT COUNT(*) FROM business_domain d
+        <include refid="adminDomainWhere"/>
+    </select>
+
+    <select id="selectBriefDomains" resultMap="BusinessDomainPo">
+        SELECT
+            d.id,
+            d.code,
+            d.name,
+            d.logo
+        FROM business_domain d
+        <where>
+            d.status = 1
+            <if test="keyword != null and keyword != ''">
+                AND (d.code LIKE #{keyword} OR d.name LIKE #{keyword})
+            </if>
+        </where>
+        ORDER BY d.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countBriefDomains" resultType="long">
+        SELECT COUNT(*) FROM business_domain d
+        <where>
+            d.status = 1
+            <if test="keyword != null and keyword != ''">
+                AND (d.code LIKE #{keyword} OR d.name LIKE #{keyword})
+            </if>
+        </where>
+    </select>
+
+    <select id="selectById" resultMap="BusinessDomainPo">
+        SELECT
+            d.id,
+            d.code,
+            d.name,
+            d.description,
+            d.logo,
+            d.visibility_policy_codes,
+            d.registration_enabled,
+            d.invitation_enabled,
+            d.status,
+            d.created_at,
+            d.updated_at,
+            d.deleted_at,
+            d.created_by,
+            d.updated_by,
+            uc.username AS creator_name,
+            uu.username AS updater_name
+        FROM business_domain d
+        LEFT JOIN user_account uc ON uc.id = d.created_by
+        LEFT JOIN user_account uu ON uu.id = d.updated_by
+        WHERE d.id = #{id}
+          AND d.deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+    <select id="selectIdByCode" resultType="java.lang.Long">
+        SELECT id FROM business_domain WHERE code = #{code} LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.uniondesk.domain.entity.BusinessDomainPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO business_domain (
+            code, name, description, visibility_policy, status, created_at, updated_at,
+            registration_enabled, invitation_enabled, visibility_policy_codes, logo, deleted_at, created_by
+        )
+        VALUES (
+            #{code}, #{name}, #{description}, #{visibilityPolicy}, 1,
+            CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3),
+            #{registrationEnabled}, #{invitationEnabled}, #{visibilityPolicyCodes}, #{logo},
+            NULL, #{createdBy}
+        )
+    </insert>
+
+    <update id="updateDomain">
+        UPDATE business_domain
+        SET code = #{code},
+            name = #{name},
+            description = #{description},
+            logo = #{logo},
+            visibility_policy = #{visibilityPolicy},
+            visibility_policy_codes = #{visibilityPolicyCodes},
+            registration_enabled = #{registrationEnabled},
+            invitation_enabled = #{invitationEnabled},
+            status = #{status},
+            updated_at = CURRENT_TIMESTAMP(3),
+            updated_by = #{updatedBy}
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="softDelete">
+        UPDATE business_domain
+        SET deleted_at = CURRENT_TIMESTAMP(3),
+            updated_at = CURRENT_TIMESTAMP(3),
+            updated_by = #{updatedBy}
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </update>
+
+</mapper>

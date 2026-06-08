@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.domain.mapper.DomainMemberRoleMapper">
+
+    <resultMap id="MemberRolePo" type="com.uniondesk.domain.entity.MemberRolePo">
+        <result property="domainMemberId" column="domain_member_id"/>
+        <result property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="preset" column="preset"/>
+    </resultMap>
+
+    <resultMap id="StaffCandidatePo" type="com.uniondesk.domain.entity.StaffCandidatePo">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="realName" column="real_name"/>
+        <result property="nickname" column="nickname"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <delete id="deleteByMemberId">
+        DELETE FROM domain_member_role WHERE domain_member_id = #{memberId}
+    </delete>
+
+    <insert id="insert">
+        INSERT INTO domain_member_role (domain_member_id, domain_role_id, created_at)
+        VALUES (#{memberId}, #{roleId}, CURRENT_TIMESTAMP(3))
+    </insert>
+
+    <insert id="insertIfNotExists">
+        INSERT INTO domain_member_role (domain_member_id, domain_role_id, created_at)
+        SELECT #{memberId}, #{roleId}, CURRENT_TIMESTAMP(3)
+        FROM DUAL
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM domain_member_role
+            WHERE domain_member_id = #{memberId}
+              AND domain_role_id = #{roleId}
+        )
+    </insert>
+
+    <select id="selectRoleCodesByMemberId" resultType="java.lang.String">
+        SELECT dr.code
+        FROM domain_member_role dmr
+        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+        WHERE dmr.domain_member_id = #{memberId}
+        ORDER BY dr.id
+    </select>
+
+    <select id="selectRoleCodesByIds" resultType="java.lang.String">
+        SELECT code
+        FROM domain_role
+        WHERE business_domain_id = #{domainId}
+          AND id IN
+          <foreach item="roleId" collection="roleIds" open="(" separator="," close=")">
+              #{roleId}
+          </foreach>
+        ORDER BY id
+    </select>
+
+    <select id="countRolesByIds" resultType="long">
+        SELECT COUNT(*)
+        FROM domain_role
+        WHERE business_domain_id = #{domainId}
+          AND id IN
+          <foreach item="roleId" collection="roleIds" open="(" separator="," close=")">
+              #{roleId}
+          </foreach>
+    </select>
+
+    <select id="selectRolesByMemberIds" resultMap="MemberRolePo">
+        SELECT
+            dmr.domain_member_id,
+            dr.id,
+            dr.business_domain_id,
+            dr.code,
+            dr.name,
+            dr.preset
+        FROM domain_member_role dmr
+        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+        WHERE dmr.domain_member_id IN
+        <foreach item="memberId" collection="memberIds" open="(" separator="," close=")">
+            #{memberId}
+        </foreach>
+        ORDER BY dmr.domain_member_id, dr.id
+    </select>
+
+    <sql id="staffCandidateWhere">
+        <where>
+            sa.status = 'active'
+            AND NOT EXISTS (
+                SELECT 1
+                FROM domain_member dm
+                WHERE dm.staff_account_id = sa.id
+                  AND dm.business_domain_id = #{domainId}
+                  AND dm.deleted_at IS NULL
+            )
+            <if test="keyword != null and keyword != ''">
+                AND (sa.username LIKE #{keyword}
+                     OR sa.phone LIKE #{keyword}
+                     OR sa.email LIKE #{keyword}
+                     OR sa.real_name LIKE #{keyword}
+                     OR sa.nickname LIKE #{keyword})
+            </if>
+        </where>
+    </sql>
+
+    <select id="listStaffCandidates" resultMap="StaffCandidatePo">
+        SELECT
+            sa.id,
+            sa.username,
+            sa.real_name,
+            sa.nickname,
+            sa.phone,
+            sa.email,
+            sa.status
+        FROM staff_account sa
+        <include refid="staffCandidateWhere"/>
+        ORDER BY sa.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countStaffCandidates" resultType="long">
+        SELECT COUNT(*)
+        FROM staff_account sa
+        <include refid="staffCandidateWhere"/>
+    </select>
+
+</mapper>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.iam.mapper.BusinessDomainMapper">
+
+    <resultMap id="BusinessDomainPo" type="com.uniondesk.iam.entity.BusinessDomainPo">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+    </resultMap>
+
+    <select id="countActiveById" resultType="int">
+        SELECT COUNT(*) FROM business_domain WHERE id = #{id} AND deleted_at IS NULL
+    </select>
+
+    <select id="countByIds" resultType="int">
+        SELECT COUNT(*) FROM business_domain
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="selectAll" resultMap="BusinessDomainPo">
+        SELECT id, code, name FROM business_domain ORDER BY id
+    </select>
+
+</mapper>

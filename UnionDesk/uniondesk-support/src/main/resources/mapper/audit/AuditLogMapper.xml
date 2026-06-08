@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.audit.mapper.AuditLogMapper">
+
+    <resultMap id="AuditLogViewPo" type="com.uniondesk.audit.entity.AuditLogViewPo">
+        <id property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="operatorSubjectId" column="operator_subject_id"/>
+        <result property="operatorName" column="operator_name"/>
+        <result property="operatorActorType" column="operator_actor_type"/>
+        <result property="target" column="target"/>
+        <result property="action" column="action"/>
+        <result property="detail" column="detail"/>
+        <result property="result" column="result"/>
+        <result property="occurredAt" column="occurred_at"/>
+        <result property="requestId" column="request_id"/>
+        <result property="ip" column="ip"/>
+    </resultMap>
+
+    <sql id="auditLogSelectColumns">
+        SELECT
+            a.id,
+            a.business_domain_id,
+            a.operator_subject_id,
+            COALESCE(ua.username, s.phone, 'system') AS operator_name,
+            a.operator_actor_type,
+            a.target,
+            a.action,
+            CAST(a.detail AS CHAR) AS detail,
+            a.result,
+            a.occurred_at,
+            a.request_id,
+            als.client_ip AS ip
+        FROM audit_log a
+        LEFT JOIN identity_subject s ON s.id = a.operator_subject_id
+        LEFT JOIN user_account ua ON ua.id = a.operator_subject_id
+        LEFT JOIN auth_login_session als ON als.sid = a.request_id
+    </sql>
+
+    <sql id="auditLogCountSelect">
+        SELECT COUNT(*)
+        FROM audit_log a
+        LEFT JOIN identity_subject s ON s.id = a.operator_subject_id
+        LEFT JOIN user_account ua ON ua.id = a.operator_subject_id
+        LEFT JOIN auth_login_session als ON als.sid = a.request_id
+    </sql>
+
+    <sql id="auditLogWhereClause">
+        <where>
+            <if test="domainId != null">
+                AND a.business_domain_id = #{domainId}
+            </if>
+            <if test="operator != null and operator != ''">
+                AND (ua.username LIKE CONCAT('%', #{operator}, '%')
+                     OR s.phone LIKE CONCAT('%', #{operator}, '%')
+                     OR a.operator_actor_type LIKE CONCAT('%', #{operator}, '%')
+                     OR CAST(a.operator_subject_id AS CHAR) LIKE CONCAT('%', #{operator}, '%'))
+            </if>
+            <if test="action != null and action != ''">
+                AND a.action LIKE CONCAT('%', #{action}, '%')
+            </if>
+            <if test="module != null and module != ''">
+                AND a.action LIKE CONCAT(#{module}, '%')
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (ua.username LIKE CONCAT('%', #{keyword}, '%')
+                     OR ua.mobile LIKE CONCAT('%', #{keyword}, '%')
+                     OR ua.email LIKE CONCAT('%', #{keyword}, '%')
+                     OR s.phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="ip != null and ip != ''">
+                AND als.client_ip LIKE CONCAT('%', #{ip}, '%')
+            </if>
+            <if test="username != null and username != ''">
+                AND ua.username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="nickname != null and nickname != ''">
+                AND ua.nickname LIKE CONCAT('%', #{nickname}, '%')
+            </if>
+            <if test="startTime != null">
+                AND a.occurred_at &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND a.occurred_at &lt;= #{endTime}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectAuditLogs" resultMap="AuditLogViewPo">
+        <include refid="auditLogSelectColumns"/>
+        <include refid="auditLogWhereClause"/>
+        ORDER BY a.occurred_at DESC, a.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countAuditLogs" resultType="long">
+        <include refid="auditLogCountSelect"/>
+        <include refid="auditLogWhereClause"/>
+    </select>
+
+</mapper>

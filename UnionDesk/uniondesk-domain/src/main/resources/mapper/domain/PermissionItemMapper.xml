@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.domain.mapper.PermissionItemMapper">
+
+    <resultMap id="PermissionItemPo" type="com.uniondesk.domain.entity.PermissionItemPo">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="module" column="module"/>
+        <result property="type" column="type"/>
+    </resultMap>
+
+    <select id="selectAll" resultMap="PermissionItemPo">
+        SELECT id, code, name, module, type
+        FROM permission_item
+        ORDER BY module, type, id
+    </select>
+
+    <select id="selectByRoleId" resultMap="PermissionItemPo">
+        SELECT pi.id, pi.code, pi.name, pi.module, pi.type
+        FROM domain_role_permission drp
+        JOIN permission_item pi ON pi.id = drp.permission_item_id
+        WHERE drp.domain_role_id = #{roleId}
+        ORDER BY pi.module, pi.type, pi.id
+    </select>
+
+    <select id="countByIds" resultType="long">
+        SELECT COUNT(*)
+        FROM permission_item
+        WHERE id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+</mapper>

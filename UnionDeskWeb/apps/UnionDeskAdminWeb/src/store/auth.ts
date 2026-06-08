@@ -35,8 +35,11 @@ export const useAuthStore = create<AuthType & AuthAction>()(
 		...initialState,
 
 		login: async (loginPayload) => {
+			// 避免沿用上次的动态路由 / 页签，导致登录后仍跳业务域首页
+			useAccessStore.getState().reset();
+			useTabsStore.getState().resetTabs();
 			const response = await fetchLogin(loginPayload);
-			let userInfo = buildUserInfoFromLoginUser(response.user, response.user.roles);
+			let userInfo = buildUserInfoFromLoginUser(response.user, response.user.roles, response.role);
 			const nextState: AuthType = {
 				token: response.accessToken,
 				refreshToken: response.refreshToken,

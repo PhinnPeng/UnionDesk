@@ -84,6 +84,9 @@ const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
     const isAtEnd = sliderLeft >= maxDistance * 0.95;
 
     if (isAtEnd) {
+      // 立即切换到校验中状态，提供即时视觉反馈
+      setStatus('verifying');
+
       const normalizedTrack = trackRef.current.map(point => ({
         x: maxDistance > 0 ? Math.round((point.x / maxDistance) * 100) : 0,
         t: point.t,
@@ -189,6 +192,8 @@ const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
   // 容器类名
   const containerClassName = [
     'slider-captcha-container',
+    status === 'moving' && 'moving',
+    status === 'verifying' && 'verifying',
     disabled && 'disabled',
     className,
   ]
@@ -205,6 +210,7 @@ const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
   const sliderClassName = [
     'slider-captcha-slider',
     status === 'moving' && 'moving',
+    status === 'verifying' && 'verifying',
     status === 'success' && 'success',
     disabled && 'disabled',
   ]

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.notification.mapper.InboxMessageMapper">
+
+    <resultMap id="InboxMessagePo" type="com.uniondesk.notification.entity.InboxMessagePo">
+        <id property="id" column="id"/>
+        <result property="notificationLogId" column="notification_log_id"/>
+        <result property="recipientSubjectId" column="recipient_subject_id"/>
+        <result property="portalType" column="portal_type"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="jumpUrl" column="jump_url"/>
+        <result property="read" column="is_read"/>
+        <result property="readAt" column="read_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.uniondesk.notification.entity.InboxMessagePo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO inbox_message (
+            notification_log_id, recipient_subject_id, portal_type, business_domain_id,
+            title, content, jump_url, is_read, read_at
+        )
+        VALUES (
+            #{notificationLogId}, #{recipientSubjectId}, #{portalType}, #{businessDomainId},
+            #{title}, #{content}, #{jumpUrl}, 0, NULL
+        )
+    </insert>
+
+    <select id="countUnread" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM inbox_message
+        WHERE recipient_subject_id = #{recipientSubjectId}
+          AND is_read = 0
+          AND deleted_at IS NULL
+    </select>
+
+    <select id="listByRecipient" resultMap="InboxMessagePo">
+        SELECT
+            id,
+            notification_log_id,
+            recipient_subject_id,
+            portal_type,
+            business_domain_id,
+            title,
+            content,
+            jump_url,
+            is_read,
+            read_at,
+            created_at,
+            updated_at
+        FROM inbox_message
+        WHERE recipient_subject_id = #{recipientSubjectId}
+          AND deleted_at IS NULL
+        <if test="unreadOnly">
+            AND is_read = 0
+        </if>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
+    <update id="markRead">
+        UPDATE inbox_message
+        SET is_read = 1, read_at = COALESCE(read_at, CURRENT_TIMESTAMP(3))
+        WHERE id = #{inboxMessageId}
+          AND recipient_subject_id = #{recipientSubjectId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="markReadBatch">
+        UPDATE inbox_message
+        SET is_read = 1, read_at = COALESCE(read_at, CURRENT_TIMESTAMP(3))
+        WHERE recipient_subject_id = #{recipientSubjectId}
+          AND id IN
+        <foreach collection="messageIds" item="messageId" open="(" separator="," close=")">
+            #{messageId}
+        </foreach>
+          AND deleted_at IS NULL
+    </update>
+
+    <select id="findLatestId" resultType="java.lang.Long">
+        SELECT id
+        FROM inbox_message
+        WHERE recipient_subject_id = #{recipientSubjectId}
+          AND notification_log_id = #{notificationLogId}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+</mapper>

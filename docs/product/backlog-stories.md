@@ -249,8 +249,8 @@
 | US-S2-01 | 3 | 平台域超额 | Todo |
 | US-S2-02 | 2 | 平台域超额 | Todo |
 | US-S2-03 | 5 | 平台域超额 | Done |
-| US-S2-04 | 2 | 平台域超额 | Todo |
-| US-S2-05 | 3 | 平台域超额 | Todo |
+| US-S2-04 | 2 | 平台域超额 | Done |
+| US-S2-05 | 3 | 平台域超额 | Done |
 | US-S2-06 | 2 | 平台域超额 | Todo |
 | US-S2-E2-00 | 3 | E2 主路径 | Todo |
 
@@ -322,20 +322,20 @@
 
 ### US-S2-04 域内客户管理完善
 
-- **Epic**: E1（平台域超额）| **Sprint**: S2 | **SP**: 2 | **状态**: Todo
+- **Epic**: E1（平台域超额）| **Sprint**: S2 | **SP**: 2 | **状态**: Done
 - **角色**: 平台管理员
 - **故事**: 作为平台管理员，我需要在业务域详情中完善客户管理的日常操作体验。
 - **AC**:
-  1. 在 US-S1-06 已有列表/手动添加/员工导入/批量启停基础上，支持单条客户资料查看与编辑（若 API 已支持则接 UI）。
-  2. 筛选、空态、错误提示为中文；权限与 `platform.domain.customer.*` 一致。
+  1. 在 US-S1-06 已有列表/手动添加/员工导入/批量启停基础上，支持单条客户资料**只读查看**（`GET .../customers/{id}` + 只读 Modal）；**不提供**资料编辑。
+  2. 筛选、空态、错误提示为中文；权限与 **`platform.domain.control.customer.*`** 一致（自 `platform.domain.customer.*` 迁移）。
   3. **不包含** 客户自助注册 API（US-S1-04 仍延后）。
 - **规则**: 客户登录标识规则不变（foundation-rules）。
-- **DB 增量**: 无（除非编辑字段需扩列，另登记）
-- **备注**: `detail-customers.tsx`
+- **DB 增量**: Flyway `V202606070002`（权限码 rename + catalog `PLATFORM-DOMAIN-CONTROL-CUSTOMER`）
+- **备注**: `detail-customers.tsx`；`fetchDomainCustomer`；禁用 `ConfirmPopover` 二次确认
 
 ### US-S2-05 双层屏蔽词库（平台全局 + 域内）
 
-- **Epic**: E1（平台域超额）| **Sprint**: S2 | **SP**: 3 | **状态**: Todo
+- **Epic**: E1（平台域超额）| **Sprint**: S2 | **SP**: 3 | **状态**: Done
 - **角色**: 平台管理员
 - **故事**: 作为平台管理员，我需要维护平台级全局屏蔽词与各业务域屏蔽词库。
 - **AC**:

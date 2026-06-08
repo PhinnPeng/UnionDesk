@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.ticket.mapper.TicketTypeMapper">
+
+    <resultMap id="TicketTypePo" type="com.uniondesk.ticket.entity.TicketTypePo">
+        <id property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="statusFlowConfig" column="status_flow_config"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findByDomainId" resultMap="TicketTypePo">
+        SELECT id, business_domain_id, code, name, status_flow_config
+        FROM ticket_type
+        WHERE business_domain_id = #{domainId}
+        ORDER BY id ASC
+    </select>
+
+    <select id="findByIdAndDomainId" resultMap="TicketTypePo">
+        SELECT id, business_domain_id, code, name, status_flow_config
+        FROM ticket_type
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.uniondesk.ticket.entity.TicketTypePo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ticket_type (
+            business_domain_id, code, name, status_flow_config, created_at, updated_at
+        )
+        VALUES (
+            #{businessDomainId}, #{code}, #{name}, #{statusFlowConfig},
+            CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE ticket_type
+        SET name = #{name}, status_flow_config = #{statusFlowConfig}, updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+    </update>
+
+    <delete id="deleteByIdAndDomainId">
+        DELETE FROM ticket_type
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+    </delete>
+
+    <select id="findFirstIdByDomainId" resultType="java.lang.Long">
+        SELECT id
+        FROM ticket_type
+        WHERE business_domain_id = #{domainId}
+        ORDER BY id ASC
+        LIMIT 1
+    </select>
+
+</mapper>

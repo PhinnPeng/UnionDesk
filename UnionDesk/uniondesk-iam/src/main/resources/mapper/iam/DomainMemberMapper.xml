@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.iam.mapper.DomainMemberMapper">
+
+    <resultMap id="DomainMemberPresentationPo" type="com.uniondesk.iam.entity.DomainMemberPresentationPo">
+        <result property="domainNickname" column="domain_nickname"/>
+        <result property="domainAvatarUrl" column="domain_avatar_url"/>
+        <result property="domainContactPhone" column="domain_contact_phone"/>
+        <result property="domainContactEmail" column="domain_contact_email"/>
+    </resultMap>
+
+    <select id="selectPresentation" resultMap="DomainMemberPresentationPo">
+        SELECT domain_nickname, domain_avatar_url, domain_contact_phone, domain_contact_email
+        FROM domain_member
+        WHERE staff_account_id = #{staffAccountId}
+          AND business_domain_id = #{domainId}
+          AND deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+    <select id="selectDistinctDomainIds" resultType="java.lang.Long">
+        SELECT DISTINCT business_domain_id
+        FROM domain_member
+        WHERE staff_account_id = #{staffAccountId} AND deleted_at IS NULL
+        ORDER BY business_domain_id
+    </select>
+
+    <select id="selectRoleCodes" resultType="java.lang.String">
+        SELECT DISTINCT dr.code
+        FROM domain_member dm
+        JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+        WHERE dm.staff_account_id = #{staffAccountId} AND dm.deleted_at IS NULL
+        ORDER BY dr.code
+    </select>
+
+    <select id="selectId" resultType="java.lang.Long">
+        SELECT id FROM domain_member
+        WHERE business_domain_id = #{businessDomainId}
+          AND staff_account_id = #{staffAccountId}
+          AND deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+    <insert id="insert">
+        INSERT INTO domain_member (
+            staff_account_id, business_domain_id, status, source,
+            activated_at, disabled_at, deleted_at, created_at, updated_at
+        )
+        VALUES (#{staffAccountId}, #{businessDomainId}, 'active', 'manual',
+                CURRENT_TIMESTAMP(3), NULL, NULL, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
+    </insert>
+
+    <delete id="deleteRolesByMemberId">
+        DELETE FROM domain_member_role WHERE domain_member_id = #{domainMemberId}
+    </delete>
+
+    <insert id="insertRole">
+        INSERT INTO domain_member_role (domain_member_id, domain_role_id, created_at)
+        VALUES (#{domainMemberId}, #{domainRoleId}, CURRENT_TIMESTAMP(3))
+    </insert>
+
+</mapper>

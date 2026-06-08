@@ -1,3 +1,19 @@
+export {
+	buildRoutesFromAdminMenuSnapshot,
+	isAdminMenuCatalog,
+	resolveCatalogRoutePath,
+	isDescendantRoutePath,
+	shouldUsePathlessLayout,
+	resolvePathlessMenuKey,
+	nodeHasOwnPage,
+} from "./utils";
+export type {
+	AdminMenuRouteNode,
+	MenuPathNormalizer,
+	MenuComponentNormalizer,
+	BuildRoutesFromSnapshotOptions,
+} from "./types";
+
 import type { MenuProps } from "antd";
 import type { MenuItemType } from "./types";
 

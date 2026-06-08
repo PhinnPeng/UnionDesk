@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.iam.mapper.DomainRoleMapper">
+
+    <select id="selectIdByDomainAndCode" resultType="java.lang.Long">
+        SELECT id FROM domain_role
+        WHERE business_domain_id = #{businessDomainId} AND code = #{code}
+        LIMIT 1
+    </select>
+
+</mapper>

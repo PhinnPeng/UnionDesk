@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.ticket.mapper.TicketMapper">
+
+    <resultMap id="TicketDetailPo" type="com.uniondesk.ticket.entity.TicketDetailPo">
+        <id property="id" column="id"/>
+        <result property="ticketNo" column="ticket_no"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="businessDomainCode" column="business_domain_code"/>
+        <result property="businessDomainName" column="business_domain_name"/>
+        <result property="ticketTypeId" column="ticket_type_id"/>
+        <result property="ticketTypeName" column="ticket_type_name"/>
+        <result property="customerId" column="customer_id"/>
+        <result property="assignedTo" column="assigned_to"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="status" column="status"/>
+        <result property="priority" column="priority"/>
+        <result property="source" column="source"/>
+        <result property="result" column="result"/>
+        <result property="version" column="version"/>
+        <result property="customFieldsJson" column="custom_fields_json"/>
+        <result property="slaFirstResponseDeadline" column="sla_first_response_deadline"/>
+        <result property="slaResolutionDeadline" column="sla_resolution_deadline"/>
+        <result property="slaFirstRespondedAt" column="sla_first_responded_at"/>
+        <result property="slaResolvedAt" column="sla_resolved_at"/>
+        <result property="slaStatus" column="sla_status"/>
+        <result property="slaPausedDuration" column="sla_paused_duration"/>
+        <result property="slaPauseStartedAt" column="sla_pause_started_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="lastReplyAt" column="last_reply_at"/>
+        <result property="replyCount" column="reply_count"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.uniondesk.ticket.entity.TicketPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ticket (
+            ticket_no, business_domain_id, customer_id, ticket_type_id, title, description,
+            status, priority, source, assigned_to, custom_fields, version, result,
+            sla_first_response_deadline, sla_resolution_deadline, sla_first_responded_at,
+            sla_resolved_at, sla_status, sla_paused_duration, sla_pause_started_at
+        )
+        VALUES (
+            #{ticketNo}, #{businessDomainId}, #{customerId}, #{ticketTypeId}, #{title}, #{description},
+            'open', #{priority}, #{source}, NULL, #{customFields}, 1, NULL,
+            #{slaFirstResponseDeadline}, #{slaResolutionDeadline}, NULL,
+            NULL, 'tracking', 0, NULL
+        )
+    </insert>
+
+    <select id="findByIdAndDomainId" resultMap="TicketDetailPo">
+        SELECT
+            t.id,
+            t.ticket_no,
+            t.business_domain_id,
+            d.code AS business_domain_code,
+            d.name AS business_domain_name,
+            t.ticket_type_id,
+            tt.name AS ticket_type_name,
+            t.customer_id,
+            t.assigned_to,
+            t.title,
+            t.description,
+            t.status,
+            t.priority,
+            t.source,
+            t.result,
+            t.version,
+            CAST(t.custom_fields AS CHAR) AS custom_fields_json,
+            t.sla_first_response_deadline,
+            t.sla_resolution_deadline,
+            t.sla_first_responded_at,
+            t.sla_resolved_at,
+            t.sla_status,
+            t.sla_paused_duration,
+            t.sla_pause_started_at,
+            t.created_at,
+            t.updated_at,
+            (
+                SELECT MAX(r.created_at)
+                FROM ticket_reply r
+                WHERE r.ticket_id = t.id
+            ) AS last_reply_at,
+            COALESCE((
+                SELECT COUNT(*)
+                FROM ticket_reply r
+                WHERE r.ticket_id = t.id
+            ), 0) AS reply_count
+        FROM ticket t
+        JOIN business_domain d ON d.id = t.business_domain_id
+        JOIN ticket_type tt ON tt.id = t.ticket_type_id
+        WHERE t.id = #{ticketId} AND t.business_domain_id = #{domainId}
+        LIMIT 1
+    </select>
+
+    <select id="listTickets" resultMap="TicketDetailPo">
+        SELECT
+            t.id,
+            t.ticket_no,
+            t.business_domain_id,
+            d.code AS business_domain_code,
+            d.name AS business_domain_name,
+            t.ticket_type_id,
+            tt.name AS ticket_type_name,
+            t.customer_id,
+            t.assigned_to,
+            t.title,
+            t.description,
+            t.status,
+            t.priority,
+            t.source,
+            t.result,
+            t.version,
+            CAST(t.custom_fields AS CHAR) AS custom_fields_json,
+            t.sla_first_response_deadline,
+            t.sla_resolution_deadline,
+            t.sla_first_responded_at,
+            t.sla_resolved_at,
+            t.sla_status,
+            t.sla_paused_duration,
+            t.sla_pause_started_at,
+            t.created_at,
+            t.updated_at,
+            (
+                SELECT MAX(r.created_at)
+                FROM ticket_reply r
+                WHERE r.ticket_id = t.id
+            ) AS last_reply_at,
+            COALESCE((
+                SELECT COUNT(*)
+                FROM ticket_reply r
+                WHERE r.ticket_id = t.id
+            ), 0) AS reply_count
+        FROM ticket t
+        JOIN business_domain d ON d.id = t.business_domain_id
+        JOIN ticket_type tt ON tt.id = t.ticket_type_id
+        WHERE t.business_domain_id = #{domainId}
+        <if test="customerId != null">
+            AND t.customer_id = #{customerId}
+        </if>
+        <if test="status != null and status != ''">
+            AND t.status = #{status}
+        </if>
+        ORDER BY t.updated_at DESC, t.id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findIdByTicketNo" resultType="java.lang.Long">
+        SELECT id
+        FROM ticket
+        WHERE ticket_no = #{ticketNo}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE ticket
+        SET status = #{newStatus},
+            version = version + 1,
+            updated_at = #{now},
+            sla_first_responded_at = CASE
+                WHEN #{newStatus} IN ('processing', 'resolved', 'closed') AND sla_first_responded_at IS NULL THEN #{now}
+                ELSE sla_first_responded_at
+            END,
+            sla_resolved_at = CASE
+                WHEN #{newStatus} IN ('resolved', 'closed') THEN COALESCE(sla_resolved_at, #{now})
+                ELSE sla_resolved_at
+            END,
+            sla_status = CASE
+                WHEN #{newStatus} IN ('closed', 'resolved') THEN 'resolved'
+                WHEN #{newStatus} = 'withdrawn' OR #{newStatus} = 'merged' THEN 'stopped'
+                WHEN #{newStatus} = 'processing' THEN COALESCE(sla_status, 'tracking')
+                ELSE sla_status
+            END
+        WHERE id = #{ticketId} AND version = #{version}
+    </update>
+
+    <update id="updateClaim">
+        UPDATE ticket
+        SET assigned_to = #{assignee},
+            assignee_staff_account_id = #{assignee},
+            status = CASE
+                WHEN status IN ('open', 'new') THEN 'processing'
+                ELSE status
+            END,
+            version = version + 1,
+            updated_at = #{now},
+            sla_first_responded_at = COALESCE(sla_first_responded_at, #{now})
+        WHERE id = #{ticketId} AND business_domain_id = #{domainId} AND version = #{version}
+    </update>
+
+    <update id="updateAssign">
+        UPDATE ticket
+        SET assigned_to = #{assignee},
+            assignee_staff_account_id = #{assignee},
+            status = CASE
+                WHEN status IN ('open', 'new') THEN 'processing'
+                ELSE status
+            END,
+            version = version + 1,
+            updated_at = #{now},
+            sla_first_responded_at = COALESCE(sla_first_responded_at, #{now})
+        WHERE id = #{ticketId} AND business_domain_id = #{domainId} AND version = #{version}
+    </update>
+
+    <update id="updateOnReply">
+        UPDATE ticket
+        SET status = CASE
+                WHEN #{senderType} = 'staff' AND status IN ('open', 'new') THEN 'processing'
+                ELSE status
+            END,
+            version = version + 1,
+            updated_at = #{now},
+            sla_first_responded_at = CASE
+                WHEN #{senderType} = 'staff' AND sla_first_responded_at IS NULL THEN #{now}
+                ELSE sla_first_responded_at
+            END
+        WHERE id = #{ticketId} AND business_domain_id = #{domainId} AND version = #{version}
+    </update>
+
+    <update id="updateWithdraw">
+        UPDATE ticket
+        SET status = 'withdrawn',
+            result = COALESCE(result, #{reason}),
+            sla_status = 'stopped',
+            version = version + 1,
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{ticketId} AND business_domain_id = #{domainId} AND version = #{version}
+    </update>
+
+    <update id="updateMerge">
+        UPDATE ticket
+        SET status = 'merged',
+            result = COALESCE(result, 'merged'),
+            sla_status = 'stopped',
+            version = version + 1,
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{ticketId} AND business_domain_id = #{domainId} AND version = #{version}
+    </update>
+
+    <select id="findDomainCodeById" resultType="java.lang.String">
+        SELECT code
+        FROM business_domain
+        WHERE id = #{domainId}
+        LIMIT 1
+    </select>
+
+    <select id="findNextTicketSequence" resultType="java.lang.Long">
+        SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(ticket_no, '-', -1) AS UNSIGNED)), 0) + 1
+        FROM ticket
+        WHERE business_domain_id = #{domainId} AND ticket_no LIKE #{prefix}
+    </select>
+
+    <select id="findDefaultPriorityCode" resultType="java.lang.String">
+        SELECT code
+        FROM ticket_priority_level
+        WHERE business_domain_id = #{domainId} AND is_default = 1 AND status = 'active'
+        ORDER BY sort_order ASC, id ASC
+        LIMIT 1
+    </select>
+
+</mapper>

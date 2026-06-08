@@ -20,7 +20,7 @@ export default function LayoutContent() {
 	const {
 		token: { colorBgLayout },
 	} = theme.useToken();
-	const { pathname, search } = useLocation();
+	const { pathname } = useLocation();
 	const outlet = useOutlet();
 	const { contentElement } = useLayoutContentStyle();
 	const appScope = useAppScope();
@@ -38,11 +38,13 @@ export default function LayoutContent() {
 	const fixedFooter = usePreferencesStore(state => state.fixedFooter);
 
 	/**
-	 * to distinguish different pages to cache
+	 * 区分页面缓存：仅使用 pathname，避免同一路由内 query（如详情 Tab）切换时被误判为未注册页签而销毁缓存。
 	 */
 	const cacheKey = useMemo(() => {
-		return pathname + search;
-	}, [pathname, search]);
+		return pathname;
+	}, [pathname]);
+
+	const resolveTabPathname = (key: string) => key.split(/[?#]/)[0];
 
 	/**
 	 * 当使用关闭当前标签页、关闭右侧标签页、关闭左侧标签页、关闭其他标签页、关闭所有标签页功能时，需要清除这个标签页的缓存
@@ -50,7 +52,7 @@ export default function LayoutContent() {
 	useEffect(() => {
 		const cacheNodes = aliveRef.current?.getCacheNodes?.();
 		cacheNodes?.forEach((node) => {
-			if (!openTabs.has(node.cacheKey)) {
+			if (!openTabs.has(resolveTabPathname(node.cacheKey))) {
 				aliveRef.current?.destroy(node.cacheKey);
 			}
 		});

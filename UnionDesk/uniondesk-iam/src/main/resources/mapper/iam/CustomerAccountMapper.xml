@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.iam.mapper.CustomerAccountMapper">
+
+    <resultMap id="CustomerAccountPo" type="com.uniondesk.iam.entity.CustomerAccountPo">
+        <id property="id" column="id"/>
+        <result property="subjectId" column="subject_id"/>
+        <result property="username" column="username"/>
+        <result property="nickname" column="nickname"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <select id="selectById" resultMap="CustomerAccountPo">
+        SELECT id, subject_id, username, nickname, phone, email, status
+        FROM customer_account
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="countByUsername" resultType="int">
+        SELECT COUNT(*) FROM customer_account WHERE username = #{username}
+    </select>
+
+    <insert id="insert" parameterType="com.uniondesk.iam.entity.CustomerAccountPo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO customer_account (
+            subject_id, username, nickname, avatar_url, phone, email, password_hash,
+            must_change_password, status, source, auth_version, password_changed_at, created_at, updated_at
+        )
+        VALUES (#{subjectId}, #{username}, #{nickname}, NULL, #{phone}, #{email}, #{passwordHash},
+                #{mustChangePassword}, 'active', 'local', 1, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
+    </insert>
+
+    <select id="selectIdByUsernameOrPhone" resultType="java.lang.Long">
+        SELECT id FROM customer_account WHERE username = #{username} OR phone = #{phone} LIMIT 1
+    </select>
+
+</mapper>

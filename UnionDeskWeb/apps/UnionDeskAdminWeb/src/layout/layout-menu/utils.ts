@@ -1,5 +1,8 @@
 import type { ReactElement } from "react";
 
+import type { PermissionSnapshotMenu } from "@uniondesk/shared";
+import type { AppRouteRecordRaw } from "#src/router/types";
+import type { AdminMenuRouteNode, BuildRoutesFromSnapshotOptions } from "./types";
 import type { MenuItemType } from "./types";
 import { isString } from "#src/utils/is";
 import { removeTrailingSlash } from "#src/router/utils/remove-trailing-slash";
@@ -32,29 +35,6 @@ export function translateMenus(menus: MenuItemType[], t: (key: string) => string
 
 		return translatedMenu;
 	});
-}
-
-/**
- * 通过路径查找菜单
- *
- * @param list 菜单列表
- * @param path 菜单路径
- * @returns 找到的菜单对象，未找到则返回 null
- */
-export function findMenuByPath(
-	list: MenuItemType[],
-	path?: string,
-): MenuItemType | null {
-	for (const menu of list) {
-		if (menu.key === path) {
-			return menu;
-		}
-		const findMenu = menu.children && findMenuByPath(menu.children, path);
-		if (findMenu) {
-			return findMenu;
-		}
-	}
-	return null;
 }
 
 /**
@@ -191,28 +171,6 @@ export function findDeepestFirstItem(splitSideNavItems: MenuItemType[]): MenuIte
 }
 
 /**
- * 获取菜单项中所有键及其对应的层级
- *
- * @param menuItems1 菜单项数组
- * @returns 一个对象，键为菜单项的 key，值为菜单项的层级
- */
-export function getLevelKeys(menuItems1: MenuItemType[]) {
-	const key: Record<string, number> = {};
-	const func = (menuItems2: MenuItemType[], level = 1) => {
-		menuItems2.forEach((item) => {
-			if (item.key) {
-				key[item.key] = level;
-			}
-			if (item.children) {
-				func(item.children, level + 1);
-			}
-		});
-	};
-	func(menuItems1);
-	return key;
-};
-
-/**
  * 获取菜单项的父级键
  *
  * @param menuItems 菜单项数组
@@ -235,4 +193,251 @@ export function getParentKeys(menuItems: MenuItemType[]): Record<string, string[
 
 	traverse(menuItems);
 	return parentKeyMap;
+}
+
+// ==================== catalog-path.ts ====================
+
+/** 无 route_path、无 component 的节点视为目录（catalog） */
+export function isAdminMenuCatalog(menu: PermissionSnapshotMenu): boolean {
+	const hasRoutePath = Boolean(menu.path?.trim());
+	const hasComponent = Boolean(menu.component?.trim());
+	return !hasRoutePath && !hasComponent;
+}
+
+/** 为目录节点生成稳定且唯一的路由 path，避免多个 catalog 被合并到同一空 path */
+export function resolveCatalogRoutePath(menu: PermissionSnapshotMenu): string {
+	const scopePrefix = menu.scope === "platform" ? "/platform" : "/business";
+	const stableKey = typeof menu.id === "number"
+		? String(menu.id)
+		: menu.code?.trim() || "unknown";
+	return `${scopePrefix}/catalog/${stableKey}`;
+}
+
+// ==================== layout-path.ts ====================
+
+/** 子路由 path 是否为父路由 path 的后代（含相等） */
+export function isDescendantRoutePath(childPath: string, parentPath: string): boolean {
+	if (!parentPath) {
+		return false;
+	}
+	return childPath === parentPath || childPath.startsWith(`${parentPath}/`);
+}
+
+/**
+ * 是否使用 pathless 布局路由（侧边栏保留层级，子路由保持绝对 path）。
+ * 适用于 catalog，以及「有自身 path 但子菜单为同级绝对 path」的 menu 父节点（如权限管理）。
+ */
+export function shouldUsePathlessLayout(node: AdminMenuRouteNode): boolean {
+	if (!node.children.length) {
+		return false;
+	}
+	if (isAdminMenuCatalog(node.menu)) {
+		return true;
+	}
+	return node.children.some(child => !isDescendantRoutePath(child.path, node.path));
+}
+
+/** pathless 布局节点在侧边栏使用的 menuKey */
+export function resolvePathlessMenuKey(node: AdminMenuRouteNode): string {
+	if (isAdminMenuCatalog(node.menu)) {
+		return resolveCatalogRoutePath(node.menu);
+	}
+	return node.path;
+}
+
+/** 父节点自身是否对应可访问页面（catalog 目录无独立页） */
+export function nodeHasOwnPage(node: AdminMenuRouteNode): boolean {
+	if (isAdminMenuCatalog(node.menu)) {
+		return false;
+	}
+	return Boolean(node.menu.component?.trim()) || Boolean(node.path);
+}
+
+// ==================== build-routes-from-snapshot.ts ====================
+
+type BackendAppRouteRecordRaw = AppRouteRecordRaw & {
+	component?: string
+};
+
+export function buildRoutesFromAdminMenuSnapshot(
+	menus: readonly PermissionSnapshotMenu[],
+	options: BuildRoutesFromSnapshotOptions,
+): BackendAppRouteRecordRaw[] {
+	const flatMenus = flattenSnapshotMenus(menus);
+	if (!flatMenus.length) {
+		return [];
+	}
+
+	const nodes = flatMenus.map(menu => ({
+		menu,
+		scope: menu.scope,
+		path: resolveNodePath(menu, options.normalizeMenuPath),
+		children: [] as AdminMenuRouteNode[],
+	}));
+
+	const nodesById = new Map<number, AdminMenuRouteNode>();
+	for (const node of nodes) {
+		if (typeof node.menu.id === "number") {
+			nodesById.set(node.menu.id, node);
+		}
+	}
+
+	const roots: AdminMenuRouteNode[] = [];
+	for (const node of nodes) {
+		const parentId = node.menu.parentId;
+		if (typeof parentId === "number" && nodesById.has(parentId)) {
+			nodesById.get(parentId)!.children.push(node);
+		}
+		else {
+			roots.push(node);
+		}
+	}
+
+	const disambiguatedRoots = disambiguateDuplicateLeafPaths(roots);
+	sortAdminMenuRouteNodes(disambiguatedRoots);
+	return disambiguatedRoots.map(node => toAppRouteRecordRaw(node, options));
+}
+
+function flattenSnapshotMenus(menus: readonly PermissionSnapshotMenu[]): PermissionSnapshotMenu[] {
+	const flatMenus: PermissionSnapshotMenu[] = [];
+	const visit = (nodes: readonly PermissionSnapshotMenu[]) => {
+		for (const node of nodes) {
+			const { children, ...menu } = node;
+			flatMenus.push(menu);
+			if (children?.length) {
+				visit(children);
+			}
+		}
+	};
+	visit(menus);
+	return flatMenus;
+}
+
+function resolveNodePath(
+	menu: PermissionSnapshotMenu,
+	normalizeMenuPath: (path: string | null | undefined, scope?: PermissionSnapshotMenu["scope"]) => string,
+): string {
+	if (isAdminMenuCatalog(menu)) {
+		return resolveCatalogRoutePath(menu);
+	}
+	return normalizeMenuPath(menu.path, menu.scope);
+}
+
+/** 仅对同级重复 path 的叶子菜单做 key 区分，不合并 catalog */
+function disambiguateDuplicateLeafPaths(nodes: AdminMenuRouteNode[]): AdminMenuRouteNode[] {
+	return nodes.map((node) => {
+		const children = node.children.length
+			? disambiguateDuplicateLeafPaths(node.children)
+			: [];
+		return {
+			...node,
+			path: resolveDisambiguatedPath(node, nodes),
+			children,
+		};
+	});
+}
+
+function resolveDisambiguatedPath(node: AdminMenuRouteNode, siblings: AdminMenuRouteNode[]): string {
+	if (node.children.length > 0) {
+		return node.path;
+	}
+
+	const duplicateLeafCount = siblings.filter(
+		sibling => sibling.path === node.path && sibling.children.length === 0,
+	).length;
+	if (duplicateLeafCount <= 1) {
+		return node.path;
+	}
+
+	const stableKey = node.menu.id ?? node.menu.code;
+	return stableKey != null ? `${node.path}::${stableKey}` : node.path;
+}
+
+function sortAdminMenuRouteNodes(nodes: AdminMenuRouteNode[]) {
+	nodes.sort((left, right) => {
+		const leftOrder = left.menu.orderNo ?? 0;
+		const rightOrder = right.menu.orderNo ?? 0;
+		if (leftOrder !== rightOrder) {
+			return leftOrder - rightOrder;
+		}
+		return left.path.localeCompare(right.path);
+	});
+	for (const node of nodes) {
+		if (node.children.length) {
+			sortAdminMenuRouteNodes(node.children);
+		}
+	}
+}
+
+function toAppRouteRecordRaw(
+	node: AdminMenuRouteNode,
+	options: BuildRoutesFromSnapshotOptions,
+): BackendAppRouteRecordRaw {
+	const usePathlessLayout = shouldUsePathlessLayout(node);
+	const route: BackendAppRouteRecordRaw = {
+		id: getBackendRouteId(node),
+		handle: {
+			title: node.menu.name,
+			icon: node.menu.icon ?? undefined,
+			order: node.menu.orderNo ?? 0,
+			scope: node.menu.scope ?? undefined,
+			hideInMenu: node.menu.hidden ?? false,
+			auth: node.menu.permissionCode ?? undefined,
+			menuKey: usePathlessLayout ? resolvePathlessMenuKey(node) : undefined,
+		},
+	};
+
+	if (usePathlessLayout) {
+		const layoutChildren: BackendAppRouteRecordRaw[] = [];
+		if (nodeHasOwnPage(node)) {
+			layoutChildren.push(toLeafAppRouteRecordRaw(node, options));
+		}
+		layoutChildren.push(...node.children.map(child => toAppRouteRecordRaw(child, options)));
+		route.children = layoutChildren;
+		return route;
+	}
+
+	route.path = node.path;
+	if (node.children.length) {
+		route.children = node.children.map(child => toAppRouteRecordRaw(child, options));
+	}
+	if (node.menu.component || !node.children.length) {
+		route.component = options.normalizeComponentPath(
+			node.menu.component,
+			node.path,
+			node.scope,
+		);
+	}
+
+	return route;
+}
+
+function toLeafAppRouteRecordRaw(
+	node: AdminMenuRouteNode,
+	options: BuildRoutesFromSnapshotOptions,
+): BackendAppRouteRecordRaw {
+	return {
+		id: getBackendRouteId(node),
+		path: node.path,
+		handle: {
+			title: node.menu.name,
+			icon: node.menu.icon ?? undefined,
+			order: node.menu.orderNo ?? 0,
+			scope: node.menu.scope ?? undefined,
+			hideInMenu: node.menu.hidden ?? false,
+			auth: node.menu.permissionCode ?? undefined,
+		},
+		component: options.normalizeComponentPath(
+			node.menu.component,
+			node.path,
+			node.scope,
+		),
+	};
+}
+
+function getBackendRouteId(node: AdminMenuRouteNode) {
+	const stableKey = typeof node.menu.id === "number"
+		? String(node.menu.id)
+		: node.menu.code || node.path;
+	return `backend:${node.scope ?? "unknown"}:${stableKey}`;
 }

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.ticket.mapper.TicketReplyMapper">
+
+    <resultMap id="TicketReplyPo" type="com.uniondesk.ticket.entity.TicketReplyPo">
+        <id property="id" column="id"/>
+        <result property="ticketId" column="ticket_id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="senderUserId" column="sender_user_id"/>
+        <result property="senderRole" column="sender_role"/>
+        <result property="senderType" column="sender_type"/>
+        <result property="staffAccountId" column="staff_account_id"/>
+        <result property="customerAccountId" column="customer_account_id"/>
+        <result property="replyType" column="reply_type"/>
+        <result property="content" column="content"/>
+        <result property="attachmentUrls" column="attachment_urls"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.uniondesk.ticket.entity.TicketReplyPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ticket_reply (
+            ticket_id, business_domain_id, sender_user_id, sender_role, sender_type,
+            staff_account_id, customer_account_id, reply_type, content, attachment_urls, created_at
+        )
+        VALUES (
+            #{ticketId}, #{businessDomainId}, #{senderUserId}, #{senderRole}, #{senderType},
+            #{staffAccountId}, #{customerAccountId}, #{replyType}, #{content}, #{attachmentUrls}, #{createdAt}
+        )
+    </insert>
+
+    <select id="findByTicketIdAndDomainId" resultMap="TicketReplyPo">
+        SELECT
+            id,
+            sender_type,
+            sender_role,
+            staff_account_id,
+            customer_account_id,
+            reply_type,
+            content,
+            created_at
+        FROM ticket_reply
+        WHERE ticket_id = #{ticketId} AND business_domain_id = #{domainId}
+        ORDER BY created_at ASC, id ASC
+    </select>
+
+    <select id="findLatestIdByTicketId" resultType="java.lang.Long">
+        SELECT id
+        FROM ticket_reply
+        WHERE ticket_id = #{ticketId}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+</mapper>

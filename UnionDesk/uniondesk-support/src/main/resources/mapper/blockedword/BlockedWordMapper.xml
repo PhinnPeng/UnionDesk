@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.blockedword.mapper.BlockedWordMapper">
+
+    <resultMap id="BlockedWordPo" type="com.uniondesk.blockedword.entity.BlockedWordPo">
+        <id property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="word" column="word"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <sql id="globalScopeWhere">
+        business_domain_id IS NULL
+        <if test="keywordLike != null and keywordLike != ''">
+            AND word LIKE #{keywordLike}
+        </if>
+    </sql>
+
+    <sql id="domainScopeWhere">
+        business_domain_id = #{domainId}
+        <if test="keywordLike != null and keywordLike != ''">
+            AND word LIKE #{keywordLike}
+        </if>
+    </sql>
+
+    <select id="selectByDomainId" resultMap="BlockedWordPo">
+        SELECT id, business_domain_id, word, created_at
+        FROM blocked_word
+        WHERE business_domain_id = #{domainId}
+        ORDER BY created_at DESC, id DESC
+    </select>
+
+    <select id="selectById" resultMap="BlockedWordPo">
+        SELECT id, business_domain_id, word, created_at
+        FROM blocked_word
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="selectPageByGlobal" resultMap="BlockedWordPo">
+        SELECT id, business_domain_id, word, created_at
+        FROM blocked_word
+        WHERE <include refid="globalScopeWhere"/>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByGlobal" resultType="long">
+        SELECT COUNT(1)
+        FROM blocked_word
+        WHERE <include refid="globalScopeWhere"/>
+    </select>
+
+    <select id="selectPageByDomain" resultMap="BlockedWordPo">
+        SELECT id, business_domain_id, word, created_at
+        FROM blocked_word
+        WHERE <include refid="domainScopeWhere"/>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByDomain" resultType="long">
+        SELECT COUNT(1)
+        FROM blocked_word
+        WHERE <include refid="domainScopeWhere"/>
+    </select>
+
+    <select id="countByGlobalAndWord" resultType="long">
+        SELECT COUNT(1)
+        FROM blocked_word
+        WHERE business_domain_id IS NULL
+          AND word = #{word}
+    </select>
+
+    <select id="countByDomainAndWord" resultType="long">
+        SELECT COUNT(1)
+        FROM blocked_word
+        WHERE business_domain_id = #{domainId}
+          AND word = #{word}
+    </select>
+
+    <insert id="insert" parameterType="com.uniondesk.blockedword.entity.BlockedWordPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO blocked_word (business_domain_id, word, created_at)
+        VALUES (#{businessDomainId}, #{word}, CURRENT_TIMESTAMP(3))
+    </insert>
+
+    <delete id="deleteByIdAndDomainId">
+        DELETE FROM blocked_word
+        WHERE id = #{id}
+          AND business_domain_id = #{domainId}
+    </delete>
+
+    <delete id="deleteByIdGlobal">
+        DELETE FROM blocked_word
+        WHERE id = #{id}
+          AND business_domain_id IS NULL
+    </delete>
+
+</mapper>

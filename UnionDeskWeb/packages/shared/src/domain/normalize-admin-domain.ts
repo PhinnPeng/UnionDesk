@@ -1,4 +1,4 @@
-import type { AdminDomain, P0PageResult, P0RegistrationPolicy, P0VisibilityPolicyCode } from "../types";
+import type { AdminDomain, P0AccessPolicy, P0PageResult, P0VisibilityPolicyCode } from "../types";
 
 const VISIBILITY_CODES: P0VisibilityPolicyCode[] = ["public", "domain_customer_only", "channel_only"];
 
@@ -25,11 +25,11 @@ function normalizeVisibilityCodes(raw: unknown): P0VisibilityPolicyCode[] {
 	return ["public"];
 }
 
-function normalizeRegistrationPolicy(raw: unknown): P0RegistrationPolicy {
-	if (raw === "open" || raw === "invitation_only" || raw === "admin_only") {
-		return raw;
+function normalizeAccessPolicy(raw: unknown): P0AccessPolicy {
+	if (raw === "disallowed") {
+		return "disallowed";
 	}
-	return "open";
+	return "allowed";
 }
 
 function normalizeStatus(raw: unknown): string | undefined {
@@ -84,8 +84,11 @@ export function normalizeAdminDomain(raw: unknown): AdminDomain | null {
 		visibility_policy_codes: normalizeVisibilityCodes(
 			row.visibility_policy_codes ?? row.visibilityPolicyCodes,
 		),
-		registration_policy: normalizeRegistrationPolicy(
-			row.registration_policy ?? row.registrationPolicy,
+		registration_enabled: normalizeAccessPolicy(
+			row.registration_enabled ?? row.registrationEnabled,
+		),
+		invitation_enabled: normalizeAccessPolicy(
+			row.invitation_enabled ?? row.invitationEnabled,
 		),
 		status: normalizeStatus(row.status),
 		created_at: pickString(row, "created_at", "createdAt") ?? null,

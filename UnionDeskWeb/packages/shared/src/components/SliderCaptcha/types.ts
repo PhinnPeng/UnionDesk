@@ -90,4 +90,4 @@ export interface SliderCaptchaProps {
 /**
  * 验证状态
  */
-export type CaptchaStatus = 'idle' | 'moving' | 'success' | 'fail';
+export type CaptchaStatus = 'idle' | 'moving' | 'verifying' | 'success' | 'fail';

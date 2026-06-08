@@ -2,7 +2,8 @@ import type { LoginUserView, PermissionSnapshot, PermissionSnapshotMenu } from "
 
 import type { AppRouteRecordRaw } from "#src/router/types";
 
-import { buildRoutesFromAdminMenuSnapshot } from "#src/menu/admin-menu-tree";
+import { buildRoutesFromAdminMenuSnapshot } from "#src/layout/layout-menu";
+import { hasPlatformRoleHint } from "#src/router/extra-info/resolve-home-path";
 import { hasBusinessDomainAccess } from "#src/utils/access/business-domain";
 
 import type { UserInfoType } from "./types";
@@ -51,7 +52,11 @@ export function normalizeAccessRoles(roles: readonly string[] = []) {
 	return normalizedRoles;
 }
 
-export function buildUserInfoFromLoginUser(user: LoginUserView, roles: readonly string[]): UserInfoType {
+export function buildUserInfoFromLoginUser(
+	user: LoginUserView,
+	roles: readonly string[],
+	loginRole?: string | null,
+): UserInfoType {
 	return {
 		id: user.id,
 		avatar: "",
@@ -61,7 +66,7 @@ export function buildUserInfoFromLoginUser(user: LoginUserView, roles: readonly 
 		description: "",
 		roles: normalizeAccessRoles(roles),
 		actions: [],
-		platformAccess: false,
+		platformAccess: hasPlatformRoleHint(roles, loginRole),
 		businessDomainAccess: false,
 		menus: [],
 	};
@@ -85,6 +90,15 @@ export function buildUserInfoFromPermissionSnapshot(snapshot: PermissionSnapshot
 }
 
 export function hasPlatformAccess(snapshot: PermissionSnapshot): boolean {
+	if (snapshot.roles.some((role) => {
+		const code = role.toLowerCase();
+		return code === "super_admin" || code === "platform_admin";
+	})) {
+		return true;
+	}
+	if (snapshot.menuTree.some(menu => menu.scope === "platform")) {
+		return true;
+	}
 	return snapshot.actions.some(action => action.code.startsWith("platform."));
 }
 

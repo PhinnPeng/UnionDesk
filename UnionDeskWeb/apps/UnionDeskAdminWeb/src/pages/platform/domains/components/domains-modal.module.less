@@ -1,0 +1,223 @@
+/** 创建向导弹窗：头部 / 步骤 / 内容 / 底栏背景分层 */
+.wizardShell {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	color: var(--ant-color-text);
+}
+
+.wizardHeader,
+.wizardFooter {
+	background: var(--ant-color-fill-alter);
+	border-color: var(--ant-color-border-secondary);
+}
+
+.wizardHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	padding: 16px 24px;
+}
+
+.wizardSteps {
+	background: var(--ant-color-fill-alter);
+	border-bottom: 1px solid var(--ant-color-border-secondary);
+	padding: 16px 32px;
+
+	:global(.ant-steps-item-title) {
+		font-size: 10px !important;
+		font-weight: 600;
+		line-height: 1.4;
+	}
+
+	:global(.ant-steps-item-icon) {
+		width: 32px;
+		height: 32px;
+		line-height: 30px;
+		font-size: 12px;
+	}
+}
+
+.wizardBody {
+	flex: 0 1 auto;
+	background: var(--ant-color-fill-alter);
+	max-height: min(460px, calc(100vh - 280px));
+	overflow-x: hidden;
+	overflow-y: auto;
+	padding: 24px;
+	font-size: 12px;
+	scrollbar-width: none;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+.wizardFooter {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: space-between;
+	border-top-width: 1px;
+	border-top-style: solid;
+	padding: 16px 24px;
+}
+
+/** 可选卡片（模式 / 可见性 / 注册策略） */
+.selectionCard {
+	position: relative;
+	width: 100%;
+	border: 1px solid var(--ant-color-border-secondary);
+	border-radius: 8px;
+	background: var(--ant-color-bg-container);
+	box-shadow:
+		0 1px 2px 0 rgb(0 0 0 / 3%),
+		0 1px 6px -1px rgb(0 0 0 / 2%),
+		0 2px 4px 0 rgb(0 0 0 / 2%);
+	cursor: pointer;
+	text-align: left;
+	transition: border-color 0.2s, background-color 0.2s;
+
+	&:hover:not(:disabled) {
+		border-color: var(--ant-color-border);
+	}
+}
+
+.selectionCardSelected {
+	border: 2px solid var(--ant-color-primary);
+	background: color-mix(in srgb, var(--ant-color-primary-bg) 20%, transparent);
+}
+
+.selectionCardDisabled {
+	cursor: not-allowed;
+	opacity: 0.92;
+}
+
+.selectionCardCheck {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	color: var(--ant-color-primary);
+	font-size: 12px;
+	line-height: 1;
+}
+
+.policyToggleCheck {
+	color: var(--ant-color-primary);
+	font-size: 12px;
+	line-height: 1;
+}
+
+.policySectionTitle {
+	display: block;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ant-color-text);
+}
+
+.selectionCardCheckIdle {
+	color: var(--ant-color-text-quaternary);
+}
+
+.modeCardIcon {
+	display: flex;
+	width: 40px;
+	height: 40px;
+	align-items: center;
+	justify-content: center;
+	border-radius: 8px;
+	border: 1px solid var(--ant-color-primary-border);
+	background: var(--ant-color-bg-container);
+	color: var(--ant-color-primary);
+	box-shadow:
+		0 1px 2px 0 rgb(0 0 0 / 3%),
+		0 1px 6px -1px rgb(0 0 0 / 2%),
+		0 2px 4px 0 rgb(0 0 0 / 2%);
+}
+
+.modeCardIconMuted {
+	border-color: var(--ant-color-border-secondary);
+	background: var(--ant-color-fill-alter);
+	color: #722ed1;
+}
+
+.logoUploadBox {
+	position: relative;
+	display: flex;
+	width: 80px;
+	height: 80px;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	border-radius: 4px;
+	border: 1px dashed var(--ant-color-border);
+	background: var(--ant-color-fill-alter);
+	color: var(--ant-color-text-secondary);
+	box-shadow:
+		0 1px 2px 0 rgb(0 0 0 / 3%),
+		0 1px 6px -1px rgb(0 0 0 / 2%),
+		0 2px 4px 0 rgb(0 0 0 / 2%);
+	cursor: pointer;
+	transition: border-color 0.2s, color 0.2s;
+
+	&:hover {
+		border-color: var(--ant-color-primary);
+		color: var(--ant-color-primary);
+	}
+}
+
+.logoColumn {
+	@media (width >= 768px) {
+		border-right: 1px solid var(--ant-color-border-secondary);
+		padding-right: 16px;
+	}
+}
+
+.sectionDivider {
+	border-top: 1px dashed var(--ant-color-border-secondary);
+	padding-top: 16px;
+}
+
+.basicInfoPanel {
+	border-radius: 8px;
+	background: var(--ant-color-fill-alter);
+	padding: 24px;
+	font-size: 12px;
+}
+
+.policySectionDivider {
+	border-top: 1px solid var(--ant-color-border-secondary);
+	padding-top: 12px;
+}
+
+.previewCard {
+	border-radius: 8px;
+	border: 1px solid var(--ant-color-border-secondary);
+	background: var(--ant-color-bg-container);
+	padding: 16px;
+	box-shadow:
+		0 1px 2px 0 rgb(0 0 0 / 3%),
+		0 1px 6px -1px rgb(0 0 0 / 2%),
+		0 2px 4px 0 rgb(0 0 0 / 2%);
+}
+
+.previewGrid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px 0;
+	border-bottom: 1px solid var(--ant-color-border-secondary);
+	padding-bottom: 12px;
+	font-size: 12px;
+}
+
+.previewHint {
+	border-radius: 4px;
+	border: 1px solid var(--ant-color-primary-border);
+	background: color-mix(in srgb, var(--ant-color-primary-bg) 50%, transparent);
+	padding: 12px;
+	font-size: 10px;
+	line-height: 1.5;
+	color: var(--ant-color-text-secondary);
+}

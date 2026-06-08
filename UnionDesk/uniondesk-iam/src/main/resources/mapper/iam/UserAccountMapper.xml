@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.iam.mapper.UserAccountMapper">
+
+    <resultMap id="UserAccountPo" type="com.uniondesk.iam.entity.UserAccountPo">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="nickname" column="nickname"/>
+        <result property="mobile" column="mobile"/>
+        <result property="email" column="email"/>
+        <result property="remark" column="remark"/>
+        <result property="accountType" column="account_type"/>
+        <result property="status" column="status"/>
+        <result property="employmentStatus" column="employment_status"/>
+        <result property="offboardedAt" column="offboarded_at"/>
+        <result property="offboardedBy" column="offboarded_by"/>
+        <result property="offboardReason" column="offboard_reason"/>
+    </resultMap>
+
+    <resultMap id="UserSummaryPo" type="com.uniondesk.iam.entity.UserSummaryPo">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="mobile" column="mobile"/>
+        <result property="email" column="email"/>
+    </resultMap>
+
+    <sql id="userColumns">
+        id, username, nickname, mobile, email, remark, account_type, status,
+        employment_status, offboarded_at, offboarded_by, offboard_reason
+    </sql>
+
+    <select id="selectByEmploymentStatus" resultMap="UserAccountPo">
+        SELECT <include refid="userColumns"/> FROM user_account
+        WHERE employment_status <if test="offboardedOnly">= 'offboarded'</if><if test="!offboardedOnly">&lt;&gt; 'offboarded'</if>
+        ORDER BY id
+    </select>
+
+    <select id="selectById" resultMap="UserAccountPo">
+        SELECT <include refid="userColumns"/> FROM user_account WHERE id = #{id} LIMIT 1
+    </select>
+
+    <update id="updateSelective">
+        UPDATE user_account
+        <set>
+            <if test="username != null">username = #{username},</if>
+            <if test="nickname != null">nickname = #{nickname},</if>
+            <if test="mobile != null">mobile = #{mobile},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="passwordHash != null">password_hash = #{passwordHash},</if>
+            <if test="accountType != null">account_type = #{accountType},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="offboard">
+        UPDATE user_account
+        SET employment_status = 'offboarded',
+            status = 0,
+            offboarded_at = #{offboardedAt},
+            offboarded_by = #{offboardedBy},
+            offboard_reason = #{offboardReason}
+        WHERE id = #{id}
+    </update>
+
+    <update id="restore">
+        UPDATE user_account
+        SET employment_status = 'active',
+            status = 1,
+            offboarded_at = NULL,
+            offboarded_by = NULL,
+            offboard_reason = NULL
+        WHERE id = #{id}
+    </update>
+
+    <select id="countTicketReferences" resultType="int">
+        SELECT COUNT(*) FROM ticket WHERE customer_id = #{userId} OR assigned_to = #{userId}
+    </select>
+
+    <select id="countConsultationReferences" resultType="int">
+        SELECT COUNT(*) FROM consultation_session WHERE customer_id = #{userId} OR assigned_to = #{userId}
+    </select>
+
+    <update id="clearOffboardedBy">
+        UPDATE user_account SET offboarded_by = NULL WHERE offboarded_by = #{userId}
+    </update>
+
+    <delete id="deleteLoginLogsByUsername">
+        DELETE FROM login_log
+        WHERE login_name = (SELECT username FROM user_account WHERE id = #{userId} LIMIT 1)
+    </delete>
+
+    <delete id="deleteSessions">
+        DELETE FROM auth_login_session WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteUserOrganizations">
+        DELETE FROM user_organization WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteById">
+        DELETE FROM user_account WHERE id = #{id}
+    </delete>
+
+    <update id="revokeSessionsOnOffboard">
+        UPDATE auth_login_session
+        SET session_status = 'revoked',
+            revoked_at = #{revokedAt},
+            revoked_reason = 'user_offboarded'
+        WHERE user_id = #{userId}
+          AND session_status = 'active'
+    </update>
+
+    <select id="selectSummaryById" resultMap="UserSummaryPo">
+        SELECT id, username, mobile, email FROM user_account WHERE id = #{id} LIMIT 1
+    </select>
+
+</mapper>

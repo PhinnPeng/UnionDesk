@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.attachment.mapper.FileAttachmentMapper">
+
+    <resultMap id="FileAttachmentPo" type="com.uniondesk.attachment.entity.FileAttachmentPo">
+        <id property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="uploaderSubjectId" column="uploader_subject_id"/>
+        <result property="portalType" column="portal_type"/>
+        <result property="fileName" column="file_name"/>
+        <result property="mimeType" column="mime_type"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="storageType" column="storage_type"/>
+        <result property="storageKey" column="storage_key"/>
+        <result property="checksum" column="checksum"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.uniondesk.attachment.entity.FileAttachmentPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO file_attachment (
+            business_domain_id, uploader_subject_id, portal_type, file_name, mime_type,
+            file_size, storage_type, storage_key, checksum, status, created_at
+        )
+        VALUES (
+            #{businessDomainId}, #{uploaderSubjectId}, #{portalType}, #{fileName}, #{mimeType},
+            #{fileSize}, #{storageType}, #{storageKey}, #{checksum}, #{status}, #{createdAt}
+        )
+    </insert>
+
+    <update id="updateConfirmed" parameterType="com.uniondesk.attachment.entity.FileAttachmentPo">
+        UPDATE file_attachment
+        SET business_domain_id = #{businessDomainId},
+            uploader_subject_id = #{uploaderSubjectId},
+            portal_type = #{portalType},
+            file_name = #{fileName},
+            mime_type = #{mimeType},
+            file_size = #{fileSize},
+            storage_type = #{storageType},
+            storage_key = #{storageKey},
+            checksum = #{checksum},
+            status = 'confirmed'
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE file_attachment
+        SET status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="FileAttachmentPo">
+        SELECT
+            id,
+            business_domain_id,
+            uploader_subject_id,
+            portal_type,
+            file_name,
+            mime_type,
+            file_size,
+            storage_type,
+            storage_key,
+            checksum,
+            created_at,
+            deleted_at
+        FROM file_attachment
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="selectLatestIdByStorageKey" resultType="java.lang.Long">
+        SELECT id
+        FROM file_attachment
+        WHERE storage_key = #{storageKey}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+</mapper>

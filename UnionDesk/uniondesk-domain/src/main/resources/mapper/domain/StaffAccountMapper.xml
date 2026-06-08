@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.domain.mapper.StaffAccountMapper">
+
+    <resultMap id="StaffAccountPo" type="com.uniondesk.domain.entity.StaffAccountPo">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+    </resultMap>
+
+    <select id="countById" resultType="int">
+        SELECT COUNT(*) FROM staff_account WHERE id = #{id}
+    </select>
+
+    <select id="selectIdById" resultType="java.lang.Long">
+        SELECT id FROM staff_account WHERE id = #{id} LIMIT 1
+    </select>
+
+    <select id="selectUsernameById" resultType="java.lang.String">
+        SELECT username FROM user_account WHERE id = #{id} LIMIT 1
+    </select>
+
+    <select id="selectIdByUsername" resultType="java.lang.Long">
+        SELECT id FROM staff_account WHERE username = #{username} LIMIT 1
+    </select>
+
+    <select id="selectStaffInDomain" resultMap="StaffAccountPo">
+        SELECT sa.id, sa.username, sa.phone, sa.email
+        FROM domain_member dm
+        JOIN staff_account sa ON sa.id = dm.staff_account_id
+        WHERE dm.business_domain_id = #{domainId}
+          AND dm.staff_account_id = #{staffAccountId}
+          AND dm.deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+</mapper>

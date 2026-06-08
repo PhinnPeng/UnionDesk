@@ -1,30 +1,59 @@
 import type { AdminDomain } from "@uniondesk/shared";
 import {
-	P0_STEP_UP_OPERATION,
-	deleteAdminDomain,
 	fetchAdminDomainsPage,
-	updateAdminDomain,
 	toErrorMessage,
 } from "@uniondesk/shared";
 
-import StepUpModal from "#src/components/step-up-modal";
 import { AuthGuarded } from "#src/components/auth-guarded";
 import { BasicContent } from "#src/components/basic-content";
+import { TableSearchForm } from "#src/components/table-search-form";
+import { appScopes } from "#src/router/extra-info/app-scope";
+import { openAppScopeTab } from "#src/utils/tabbar-utils";
 
-import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
-import { App, Button, Card, Empty, Pagination, Space, Spin } from "antd";
+import { PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import { App, Button, Card, DatePicker, Empty, Form, Input, Pagination, Space, Spin } from "antd";
+import type { Dayjs } from "dayjs";
 import { useCallback, useEffect, useState } from "react";
+import type { NavigateFunction } from "react-router";
 import { useNavigate, useSearchParams } from "react-router";
 
-import { DomainCard } from "./components/domain-card";
-import { DomainCreateDrawer } from "./components/domain-create-drawer";
-import { DomainEditDrawer } from "./components/domain-edit-drawer";
-import { SearchPanel, type DomainSearchValues } from "./components/search-panel";
-import { PLATFORM_DOMAINS_CREATE_QUERY } from "./domain-routes";
-import { openPlatformDomainDetailTab } from "./open-domain-tab";
+import { DomainsCard } from "./components/domains-card";
+import { DomainsModal } from "./components/domains-modal";
+import { PLATFORM_DOMAIN_CREATE } from "./platform-domain-permissions";
+
+const { RangePicker } = DatePicker;
+
+/** 列表筛选表单值 */
+export interface DomainSearchValues {
+	keyword?: string;
+	createdRange?: [Dayjs | null, Dayjs | null] | null;
+}
+
+/** 打开业务域控制台顶栏页签 */
+function openDomainDetailTab(
+	navigate: NavigateFunction,
+	domainId: string,
+	domainName?: string,
+	tab: "overview" | "basic" = "overview",
+) {
+	const base = `/platform/domains/detail/${encodeURIComponent(domainId)}`;
+	const path = tab === "overview" ? base : `${base}?tab=${encodeURIComponent(tab)}`;
+	if (domainName?.trim()) {
+		openAppScopeTab(appScopes.platform, navigate, path, {
+			key: base,
+			label: "业务域控制台",
+			newTabTitle: `业务域控制台 - ${domainName.trim()}`,
+			closable: true,
+			draggable: true,
+		});
+	}
+	else {
+		navigate(path);
+	}
+}
 
 export default function PlatformBusinessDomains() {
-	const { message, modal } = App.useApp();
+	const { message } = App.useApp();
 	const navigate = useNavigate();
 	const [searchParams, setSearchParams] = useSearchParams();
 
@@ -35,10 +64,7 @@ export default function PlatformBusinessDomains() {
 	const [pageSize, setPageSize] = useState(20);
 	const [searchValues, setSearchValues] = useState<DomainSearchValues>({});
 
-	const [createDrawerOpen, setCreateDrawerOpen] = useState(false);
-	const [editingDomain, setEditingDomain] = useState<AdminDomain | null>(null);
-	const [stepUpOpen, setStepUpOpen] = useState(false);
-	const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+	const [createWizardOpen, setCreateWizardOpen] = useState(false);
 
 	const reload = useCallback(async (p = page, ps = pageSize, sv = searchValues) => {
 		setLoading(true);
@@ -66,10 +92,10 @@ export default function PlatformBusinessDomains() {
 	}, [reload]);
 
 	useEffect(() => {
-		if (searchParams.get(PLATFORM_DOMAINS_CREATE_QUERY) === "1") {
-			setCreateDrawerOpen(true);
+		if (searchParams.get("create") === "1") {
+			setCreateWizardOpen(true);
 			const next = new URLSearchParams(searchParams);
-			next.delete(PLATFORM_DOMAINS_CREATE_QUERY);
+			next.delete("create");
 			setSearchParams(next, { replace: true });
 		}
 	}, [searchParams, setSearchParams]);
@@ -87,65 +113,46 @@ export default function PlatformBusinessDomains() {
 	};
 
 	const handleManage = (domain: AdminDomain) => {
-		openPlatformDomainDetailTab(navigate, domain.id, domain.name);
-	};
-
-	const handleToggleStatus = (domain: AdminDomain) => {
-		const enabled = domain.status === "1" || domain.status === "active" || domain.status === "enabled";
-		const nextStatus = enabled ? 0 : 1;
-		const actionText = enabled ? "禁用" : "启用";
-
-		modal.confirm({
-			title: `${actionText}业务域`,
-			content: `确认${actionText}业务域「${domain.name}」吗？`,
-			onOk: async () => {
-				try {
-					await updateAdminDomain(domain.id, { status: nextStatus });
-					message.success(`已${actionText}业务域`);
-					await reload();
-				}
-				catch (error) {
-					message.error(toErrorMessage(error));
-				}
-			},
-		});
-	};
-
-	const requestDelete = (domain: AdminDomain) => {
-		setPendingDeleteId(domain.id);
-		setStepUpOpen(true);
-	};
-
-	const afterStepUp = async (token: string) => {
-		setStepUpOpen(false);
-		if (!pendingDeleteId) {
-			return;
-		}
-		const id = pendingDeleteId;
-		setPendingDeleteId(null);
-		try {
-			await deleteAdminDomain(id, { stepUpToken: token });
-			message.success("业务域已删除");
-			await reload();
-		}
-		catch (error) {
-			message.error(toErrorMessage(error));
-		}
+		openDomainDetailTab(navigate, domain.id, domain.name);
 	};
 
 	const handleCreated = async ({ id, name }: { id: string; name: string }) => {
 		await reload();
-		openPlatformDomainDetailTab(navigate, id, name, "basic");
-	};
-
-	const handleDomainSaved = (saved: AdminDomain) => {
-		setRows(prev => prev.map(item => (item.id === saved.id ? saved : item)));
+		openDomainDetailTab(navigate, id, name, "basic");
 	};
 
 	return (
 		<BasicContent className="h-full bg-colorBgLayout">
 			<div className="flex h-full flex-col gap-4 overflow-hidden">
-				<SearchPanel onSearch={handleSearch} onReset={handleReset} loading={loading} />
+				<Card
+					title={(
+						<Space>
+							<SearchOutlined />
+							<span>筛选条件</span>
+						</Space>
+					)}
+					bordered={false}
+					className="mb-4"
+				>
+					<TableSearchForm<DomainSearchValues>
+						loading={loading}
+						initialValues={{
+							keyword: "",
+							createdRange: null,
+						}}
+						onFinish={handleSearch}
+						onReset={() => {
+							handleReset();
+						}}
+					>
+						<Form.Item name="keyword" label="关键词">
+							<Input placeholder="请输入业务域编码或名称" allowClear disabled={loading} />
+						</Form.Item>
+						<Form.Item name="createdRange" label="创建时间">
+							<RangePicker className="w-full" showTime disabled={loading} />
+						</Form.Item>
+					</TableSearchForm>
+				</Card>
 
 				<Card
 					className="min-h-0 flex-1"
@@ -154,11 +161,11 @@ export default function PlatformBusinessDomains() {
 					extra={(
 						<Space>
 							<Button icon={<ReloadOutlined />} onClick={() => reload()}>刷新</Button>
-							<AuthGuarded auth="domain.admin.create">
+							<AuthGuarded auth={PLATFORM_DOMAIN_CREATE}>
 								<Button
 									type="primary"
 									icon={<PlusOutlined />}
-									onClick={() => setCreateDrawerOpen(true)}
+									onClick={() => setCreateWizardOpen(true)}
 								>
 									新建业务域
 								</Button>
@@ -174,13 +181,10 @@ export default function PlatformBusinessDomains() {
 							) : (
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 									{rows.map(item => (
-										<DomainCard
+										<DomainsCard
 											key={item.id}
 											domain={item}
 											onManage={handleManage}
-											onEdit={setEditingDomain}
-											onToggleStatus={handleToggleStatus}
-											onDelete={requestDelete}
 										/>
 									))}
 								</div>
@@ -205,29 +209,10 @@ export default function PlatformBusinessDomains() {
 				</Card>
 			</div>
 
-			<DomainCreateDrawer
-				open={createDrawerOpen}
-				onClose={() => setCreateDrawerOpen(false)}
+			<DomainsModal
+				open={createWizardOpen}
+				onClose={() => setCreateWizardOpen(false)}
 				onCreated={handleCreated}
-			/>
-
-			<DomainEditDrawer
-				open={editingDomain != null}
-				domain={editingDomain}
-				onClose={() => setEditingDomain(null)}
-				onSaved={handleDomainSaved}
-			/>
-
-			<StepUpModal
-				open={stepUpOpen}
-				title="安全验证"
-				description="删除业务域为高危操作，请验证身份。"
-				operationCode={P0_STEP_UP_OPERATION.DELETE_BUSINESS_DOMAIN}
-				onCancel={() => {
-					setStepUpOpen(false);
-					setPendingDeleteId(null);
-				}}
-				onVerified={afterStepUp}
 			/>
 		</BasicContent>
 	);

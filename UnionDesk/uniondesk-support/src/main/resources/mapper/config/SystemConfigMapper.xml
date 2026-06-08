@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.config.mapper.SystemConfigMapper">
+
+    <resultMap id="SystemConfigPo" type="com.uniondesk.config.entity.SystemConfigPo">
+        <result property="configKey" column="config_key"/>
+        <result property="configValue" column="config_value"/>
+        <result property="valueType" column="value_type"/>
+        <result property="description" column="description"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="selectAll" resultMap="SystemConfigPo">
+        SELECT config_key, config_value, value_type, description, updated_at
+        FROM system_config
+        ORDER BY config_key ASC
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO system_config (
+            config_key, config_value, value_type, description
+        )
+        VALUES (#{configKey}, #{configValue}, #{valueType}, #{description})
+        ON DUPLICATE KEY UPDATE
+            config_value = VALUES(config_value),
+            value_type = VALUES(value_type),
+            description = VALUES(description),
+            updated_at = CURRENT_TIMESTAMP(3)
+    </insert>
+
+</mapper>

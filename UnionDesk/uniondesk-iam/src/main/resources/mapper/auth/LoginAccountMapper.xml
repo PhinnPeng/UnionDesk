@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.auth.mapper.LoginAccountMapper">
+
+    <resultMap id="LoginAccountPo" type="com.uniondesk.auth.entity.LoginAccountPo">
+        <result property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="mobile" column="mobile"/>
+        <result property="email" column="email"/>
+        <result property="passwordHash" column="password_hash"/>
+        <result property="status" column="status"/>
+        <result property="accountType" column="account_type"/>
+        <result property="employmentStatus" column="employment_status"/>
+    </resultMap>
+
+    <select id="selectStaffByIdentifier" resultMap="LoginAccountPo">
+        SELECT
+            id, username, phone AS mobile, email, password_hash,
+            CASE WHEN status = 'active' THEN 1 ELSE 0 END AS status,
+            'staff' AS account_type,
+            status AS employment_status
+        FROM staff_account
+        WHERE LOWER(${column}) = LOWER(#{identifier})
+        LIMIT 1
+    </select>
+
+    <select id="selectCustomerByIdentifier" resultMap="LoginAccountPo">
+        SELECT
+            id, username, phone AS mobile, email, password_hash,
+            CASE WHEN status = 'active' THEN 1 ELSE 0 END AS status,
+            'customer' AS account_type,
+            status AS employment_status
+        FROM customer_account
+        WHERE LOWER(${column}) = LOWER(#{identifier})
+        LIMIT 1
+    </select>
+
+    <select id="selectStaffById" resultMap="LoginAccountPo">
+        SELECT
+            id, username, phone AS mobile, email, password_hash,
+            CASE WHEN status = 'active' THEN 1 ELSE 0 END AS status,
+            'staff' AS account_type,
+            status AS employment_status
+        FROM staff_account
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="selectCustomerById" resultMap="LoginAccountPo">
+        SELECT
+            id, username, phone AS mobile, email, password_hash,
+            CASE WHEN status = 'active' THEN 1 ELSE 0 END AS status,
+            'customer' AS account_type,
+            status AS employment_status
+        FROM customer_account
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="selectStaffDomainRoleCodes" resultType="java.lang.String">
+        SELECT DISTINCT dr.code
+        FROM domain_member dm
+        JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+        WHERE dm.staff_account_id = #{userId}
+          AND dm.status = 'active'
+          AND dm.deleted_at IS NULL
+    </select>
+
+    <select id="selectStaffPlatformRoleCodes" resultType="java.lang.String">
+        SELECT DISTINCT pr.code
+        FROM staff_account_platform_role sapr
+        JOIN platform_role pr ON pr.id = sapr.platform_role_id
+        WHERE sapr.staff_account_id = #{userId}
+    </select>
+
+    <select id="selectCustomerAccessibleDomainIds" resultType="java.lang.Long">
+        SELECT business_domain_id
+        FROM domain_customer
+        WHERE customer_account_id = #{userId}
+          AND status = 'active'
+          AND deleted_at IS NULL
+        ORDER BY business_domain_id
+    </select>
+
+    <select id="selectAllDomainIds" resultType="java.lang.Long">
+        SELECT id FROM business_domain WHERE deleted_at IS NULL ORDER BY id
+    </select>
+
+    <select id="selectStaffAccessibleDomainIds" resultType="java.lang.Long">
+        SELECT DISTINCT dm.business_domain_id
+        FROM domain_member dm
+        JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+        WHERE dm.staff_account_id = #{userId}
+          AND dm.status = 'active'
+          AND dm.deleted_at IS NULL
+        ORDER BY dm.business_domain_id
+    </select>
+
+    <update id="updateStaffPassword">
+        UPDATE staff_account
+        SET password_hash = #{passwordHash},
+            password_changed_at = CURRENT_TIMESTAMP(3),
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateCustomerPassword">
+        UPDATE customer_account
+        SET password_hash = #{passwordHash},
+            password_changed_at = CURRENT_TIMESTAMP(3),
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id}
+    </update>
+
+</mapper>

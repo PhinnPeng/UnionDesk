@@ -69,6 +69,7 @@
 | V202605330002 | US-S1-06 客户管理 | platform.domain.customer.* 三码 + 客户管理菜单 catalog/buttons | Done |
 | V202605330003 | US-S1-06 客户管理 | 已有业务域详情菜单授权的角色补齐客户管理菜单与 API 权限 | Done |
 | V202606070002 | US-S2-04 客户管理完善 | platform.domain.control.customer.* 三码 rename + catalog PLATFORM-DOMAIN-CONTROL-CUSTOMER | Done |
+| V202606080001 | US-S2-05 双层屏蔽词库 | platform.blocked_word.* 三码 + 菜单 /platform/blockwords；domain.blocked_word.* → platform.domain.control.blocked_word.* + catalog PLATFORM-DOMAIN-CONTROL-BLOCKED-WORD | Done |
 | V202605340001 | identity-backend-prd-alignment | 身份核心表 DROP FK；staff/customer `login_name`→`username`；customer `display_name`→`nickname`；staff 增 `real_name`/`nickname`/`avatar_url`；domain_member 增 `domain_nickname` 等；回填与 domain_member_role 补录 | Done |
 
 ### 2.1 基线参考快照（US-S0-07）
@@ -101,7 +102,7 @@
 | US-S2-02 | 权限 `platform.domain.roles.*`（只读）；菜单「角色管理」 | TBD | Todo |
 | US-S2-03 | 无表；`domain.member.*` 权限码 + `PUT .../status` API；菜单 `PLATFORM-DOMAIN-MEMBERS` | 202606060001 | Done |
 | US-S2-04 | 无（除非客户编辑扩列） | — | Todo |
-| US-S2-05 | `blocked_word` 扩展；权限 `platform.blocked_word.*`、`platform.domain.blocked_word.*` | TBD | Todo |
+| US-S2-05 | 无表变更；权限 platform.blocked_word.* + platform.domain.control.blocked_word.*；菜单 /platform/blockwords + 域详情 catalog | 202606080001 | Done |
 | US-S2-06 | 权限 `platform.audit-logs.read`（若缺则 Flyway） | TBD | Todo |
 | US-S2-E2-00 | `iam_admin_menu` business 菜单（按需） | TBD | Todo |
 | US-S2-E2-01 | `ticket_type` 等（Stretch） | TBD | 延后 |

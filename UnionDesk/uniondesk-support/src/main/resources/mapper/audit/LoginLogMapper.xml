@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.audit.mapper.LoginLogMapper">
+
+    <resultMap id="LoginLogViewPo" type="com.uniondesk.audit.entity.LoginLogViewPo">
+        <id property="id" column="id"/>
+        <result property="subjectId" column="subject_id"/>
+        <result property="operatorName" column="operator_name"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="domainName" column="domain_name"/>
+        <result property="loginName" column="login_name"/>
+        <result property="portalType" column="portal_type"/>
+        <result property="clientCode" column="client_code"/>
+        <result property="eventType" column="event_type"/>
+        <result property="ip" column="ip"/>
+        <result property="userAgent" column="user_agent"/>
+        <result property="result" column="result"/>
+        <result property="failReason" column="fail_reason"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <sql id="loginLogSelectColumns">
+        SELECT
+            l.id,
+            l.subject_id,
+            COALESCE(ua.nickname, ca.nickname, sa.real_name, sa.username, ca.username, l.login_name, 'system') AS operator_name,
+            l.business_domain_id,
+            bd.name AS domain_name,
+            l.login_name,
+            l.portal_type,
+            l.client_code,
+            l.event_type,
+            l.ip,
+            l.user_agent,
+            l.result,
+            l.fail_reason,
+            l.created_at
+        FROM login_log l
+        LEFT JOIN user_account ua ON ua.username = l.login_name
+        LEFT JOIN staff_account sa ON sa.subject_id = l.subject_id
+        LEFT JOIN customer_account ca ON ca.subject_id = l.subject_id
+        LEFT JOIN business_domain bd ON bd.id = l.business_domain_id
+    </sql>
+
+    <sql id="loginLogCountSelect">
+        SELECT COUNT(*)
+        FROM login_log l
+        LEFT JOIN user_account ua ON ua.username = l.login_name
+        LEFT JOIN staff_account sa ON sa.subject_id = l.subject_id
+        LEFT JOIN customer_account ca ON ca.subject_id = l.subject_id
+        LEFT JOIN business_domain bd ON bd.id = l.business_domain_id
+    </sql>
+
+    <sql id="loginLogWhereClause">
+        <where>
+            <if test="subjectId != null">
+                AND l.subject_id = #{subjectId}
+            </if>
+            <if test="businessDomainId != null">
+                AND l.business_domain_id = #{businessDomainId}
+            </if>
+            <if test="portalType != null and portalType != ''">
+                AND l.portal_type = #{portalType}
+            </if>
+            <if test="clientCode != null and clientCode != ''">
+                AND l.client_code = #{clientCode}
+            </if>
+            <if test="eventType != null and eventType != ''">
+                AND l.event_type = #{eventType}
+            </if>
+            <if test="result != null and result != ''">
+                AND l.result = #{result}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (ua.username LIKE CONCAT('%', #{keyword}, '%')
+                     OR ua.mobile LIKE CONCAT('%', #{keyword}, '%')
+                     OR ua.email LIKE CONCAT('%', #{keyword}, '%')
+                     OR sa.username LIKE CONCAT('%', #{keyword}, '%')
+                     OR ca.username LIKE CONCAT('%', #{keyword}, '%')
+                     OR ca.nickname LIKE CONCAT('%', #{keyword}, '%')
+                     OR l.login_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="ip != null and ip != ''">
+                AND l.ip LIKE CONCAT('%', #{ip}, '%')
+            </if>
+            <if test="username != null and username != ''">
+                AND (ua.username LIKE CONCAT('%', #{username}, '%')
+                     OR l.login_name LIKE CONCAT('%', #{username}, '%'))
+            </if>
+            <if test="nickname != null and nickname != ''">
+                AND (ua.nickname LIKE CONCAT('%', #{nickname}, '%')
+                     OR sa.real_name LIKE CONCAT('%', #{nickname}, '%')
+                     OR sa.nickname LIKE CONCAT('%', #{nickname}, '%')
+                     OR ca.nickname LIKE CONCAT('%', #{nickname}, '%'))
+            </if>
+            <if test="startTime != null">
+                AND l.created_at &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND l.created_at &lt;= #{endTime}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectLoginLogs" resultMap="LoginLogViewPo">
+        <include refid="loginLogSelectColumns"/>
+        <include refid="loginLogWhereClause"/>
+        ORDER BY l.created_at DESC, l.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countLoginLogs" resultType="long">
+        <include refid="loginLogCountSelect"/>
+        <include refid="loginLogWhereClause"/>
+    </select>
+
+</mapper>

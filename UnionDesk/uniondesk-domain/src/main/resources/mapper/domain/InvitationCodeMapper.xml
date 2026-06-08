@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.domain.mapper.InvitationCodeMapper">
+
+    <resultMap id="InvitationCodePo" type="com.uniondesk.domain.entity.InvitationCodePo">
+        <id property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="code" column="code"/>
+        <result property="channel" column="channel"/>
+        <result property="expiresAt" column="expires_at"/>
+        <result property="maxUses" column="max_uses"/>
+        <result property="usedCount" column="used_count"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="selectByDomainId" resultMap="InvitationCodePo">
+        SELECT
+            id, business_domain_id, code, channel, expires_at,
+            max_uses, used_count, status, created_at, updated_at
+        FROM invitation_code
+        WHERE business_domain_id = #{domainId}
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByDomainId" resultType="long">
+        SELECT COUNT(*) FROM invitation_code WHERE business_domain_id = #{domainId}
+    </select>
+
+    <select id="selectByIdAndDomain" resultMap="InvitationCodePo">
+        SELECT
+            id, business_domain_id, code, channel, expires_at,
+            max_uses, used_count, status, created_at, updated_at
+        FROM invitation_code
+        WHERE id = #{id}
+          AND business_domain_id = #{domainId}
+        LIMIT 1
+    </select>
+
+    <select id="selectActiveByDomainAndCode" resultMap="InvitationCodePo">
+        SELECT
+            id, business_domain_id, code, channel, expires_at,
+            max_uses, used_count, status
+        FROM invitation_code
+        WHERE business_domain_id = #{domainId}
+          AND code = #{code}
+          AND status = 'active'
+        LIMIT 1
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO invitation_code (
+            business_domain_id, code, channel, expires_at, max_uses,
+            used_count, status, created_at, updated_at
+        )
+        VALUES (
+            #{businessDomainId}, #{code}, #{channel}, #{expiresAt}, #{maxUses},
+            0, 'active', CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
+        )
+    </insert>
+
+    <update id="deactivate">
+        UPDATE invitation_code
+        SET status = 'inactive',
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id}
+          AND business_domain_id = #{domainId}
+          AND status &lt;&gt; 'inactive'
+    </update>
+
+    <update id="incrementUsedCount">
+        UPDATE invitation_code
+        SET used_count = used_count + 1,
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id}
+    </update>
+
+</mapper>

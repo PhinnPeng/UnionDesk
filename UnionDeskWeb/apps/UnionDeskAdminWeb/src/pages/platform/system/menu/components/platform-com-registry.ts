@@ -18,7 +18,7 @@ export const platformComRegistry: PlatformComRegistryItem[] = [
 
 	{ label: "平台管理/平台首页", value: "platform/home" },
 	{ label: "平台管理/业务域管理/业务域列表", value: "platform/domains" },
-	{ label: "平台管理/业务域管理/业务域详情", value: "platform/domains/detail" },
+	{ label: "平台管理/业务域管理/业务域控制台", value: "platform/domains/detail" },
 	{ label: "平台管理/业务域管理/域配置", value: "platform/domain-config" },
 	{ label: "平台管理/业务域管理/客户入域", value: "platform/domain-onboarding" },
 	{ label: "平台管理/平台用户", value: "platform/user" },
@@ -31,6 +31,7 @@ export const platformComRegistry: PlatformComRegistryItem[] = [
 	{ label: "平台管理/SLA 管理", value: "platform/sla-management" },
 	{ label: "平台管理/系统设置", value: "platform/system-settings" },
 	{ label: "平台管理/审计日志", value: "platform/audit-logs" },
+	{ label: "平台管理/屏蔽词库", value: "platform/blockwords" },
 	{ label: "平台管理/日志审计/登录日志", value: "platform/log/login-log" },
 	{ label: "平台管理/日志审计/操作日志", value: "platform/log/operation-log" },
 	{ label: "平台管理/工单详情", value: "platform/ticket-detail" },

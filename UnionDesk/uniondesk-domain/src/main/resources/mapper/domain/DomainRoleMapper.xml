@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.domain.mapper.DomainRoleMapper">
+
+    <resultMap id="DomainRolePo" type="com.uniondesk.domain.entity.DomainRolePo">
+        <id property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="preset" column="preset"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="selectByDomainId" resultMap="DomainRolePo">
+        SELECT id, business_domain_id, code, name, preset
+        FROM domain_role
+        WHERE business_domain_id = #{domainId}
+        ORDER BY preset DESC, id ASC
+    </select>
+
+    <select id="selectByIdAndDomain" resultMap="DomainRolePo">
+        SELECT id, business_domain_id, code, name, preset
+        FROM domain_role
+        WHERE id = #{id}
+          AND business_domain_id = #{domainId}
+        LIMIT 1
+    </select>
+
+    <select id="selectIdByDomainAndCode" resultType="java.lang.Long">
+        SELECT id
+        FROM domain_role
+        WHERE business_domain_id = #{domainId}
+          AND code = #{code}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insert">
+        INSERT INTO domain_role (
+            business_domain_id, code, name, preset, created_at, updated_at
+        )
+        VALUES (#{domainId}, #{code}, #{name}, #{preset}, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
+    </insert>
+
+    <insert id="insertIfNotExists">
+        INSERT INTO domain_role (
+            business_domain_id, code, name, preset, created_at, updated_at
+        )
+        SELECT #{domainId}, #{code}, #{name}, 1, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
+        FROM DUAL
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM domain_role
+            WHERE business_domain_id = #{domainId}
+              AND code = #{code}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE domain_role
+        SET code = #{code},
+            name = #{name},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id}
+          AND business_domain_id = #{domainId}
+    </update>
+
+    <delete id="deleteRolePermissions">
+        DELETE FROM domain_role_permission WHERE domain_role_id = #{roleId}
+    </delete>
+
+    <insert id="insertRolePermission">
+        INSERT INTO domain_role_permission (domain_role_id, permission_item_id, created_at)
+        VALUES (#{roleId}, #{permissionItemId}, CURRENT_TIMESTAMP(3))
+    </insert>
+
+    <select id="countRoleMembers" resultType="int">
+        SELECT COUNT(*)
+        FROM domain_member_role dmr
+        JOIN domain_member dm ON dm.id = dmr.domain_member_id
+        WHERE dmr.domain_role_id = #{roleId}
+          AND dm.business_domain_id = #{domainId}
+          AND dm.deleted_at IS NULL
+    </select>
+
+    <delete id="deleteByIdAndDomain">
+        DELETE FROM domain_role
+        WHERE id = #{id}
+          AND business_domain_id = #{domainId}
+    </delete>
+
+    <insert id="seedSuperAdminAllPermissions">
+        INSERT INTO domain_role_permission (domain_role_id, permission_item_id, created_at)
+        SELECT #{superAdminRoleId}, pi.id, CURRENT_TIMESTAMP(3)
+        FROM permission_item pi
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM domain_role_permission drp
+            WHERE drp.domain_role_id = #{superAdminRoleId}
+              AND drp.permission_item_id = pi.id
+        )
+    </insert>
+
+</mapper>

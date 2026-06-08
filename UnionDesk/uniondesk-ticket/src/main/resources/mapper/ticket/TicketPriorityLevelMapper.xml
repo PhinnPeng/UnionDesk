@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.ticket.mapper.TicketPriorityLevelMapper">
+
+    <resultMap id="TicketPriorityLevelPo" type="com.uniondesk.ticket.entity.TicketPriorityLevelPo">
+        <id property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="isDefault" column="is_default"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findByDomainId" resultMap="TicketPriorityLevelPo">
+        SELECT id, business_domain_id, name, sort_order, is_default
+        FROM ticket_priority_level
+        WHERE business_domain_id = #{domainId}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="findByIdAndDomainId" resultMap="TicketPriorityLevelPo">
+        SELECT id, business_domain_id, name, sort_order, is_default, status
+        FROM ticket_priority_level
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.uniondesk.ticket.entity.TicketPriorityLevelPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ticket_priority_level (
+            business_domain_id, code, name, sort_order, is_default, status, created_at, updated_at
+        )
+        VALUES (
+            #{businessDomainId}, #{code}, #{name}, #{sortOrder},
+            #{isDefault}, 'active', CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE ticket_priority_level
+        SET code = #{code}, name = #{name}, sort_order = #{sortOrder},
+            is_default = #{isDefault}, updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+    </update>
+
+    <delete id="deleteByIdAndDomainId">
+        DELETE FROM ticket_priority_level
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+    </delete>
+
+    <update id="clearDefaults">
+        UPDATE ticket_priority_level
+        SET is_default = 0, updated_at = CURRENT_TIMESTAMP(3)
+        WHERE business_domain_id = #{domainId}
+    </update>
+
+    <update id="clearDefaultsExcept">
+        UPDATE ticket_priority_level
+        SET is_default = 0, updated_at = CURRENT_TIMESTAMP(3)
+        WHERE business_domain_id = #{domainId} AND id &lt;&gt; #{keepId}
+    </update>
+
+</mapper>

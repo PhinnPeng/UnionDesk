@@ -5,7 +5,7 @@ import { useCurrentRoute } from "#src/hooks/use-current-route";
 import { hideLoading } from "#src/plugins/hide-loading";
 import { setupLoading } from "#src/plugins/loading";
 import { exception403Path, exception404Path, exception500Path, loginPath } from "#src/router/extra-info";
-import { appScopes, getAppHomePath, resolveBackHomePath } from "#src/router/extra-info/app-scope";
+import { resolveBackHomePath, resolveHomePathFromMenus } from "#src/router/extra-info/app-scope";
 import { accessRoutes, externalRoutes, whiteRouteNames } from "#src/router/routes";
 import { coreRoutes } from "#src/router/routes/core";
 import { ascending } from "#src/router/utils/ascending";
@@ -41,11 +41,27 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	const isAuthorized = useUserStore(state => Boolean(state.id));
 	const userRoles = useUserStore(state => state.roles);
 	const userActions = useUserStore(state => state.actions);
-	const userMenus = useUserStore(state => state.menus ?? EMPTY_MENUS);
-	const { setAccessStore, isAccessChecked, routeList } = useAccessStore();
+	const platformAccess = useUserStore(state => state.platformAccess);
+	const loginRole = useAuthStore(state => state.role);
+	const setAccessStore = useAccessStore(state => state.setAccessStore);
+	const isAccessChecked = useAccessStore(state => state.isAccessChecked);
+	const routeList = useAccessStore(state => state.routeList);
 	const { enableBackendAccess, enableFrontendAceess } = usePreferencesStore(state => state);
 
 	const isPathInNoLoginWhiteList = noLoginWhiteList.includes(pathname);
+
+	useEffect(() => {
+		if (!isLogin || isAuthorized || !isAccessChecked) {
+			return;
+		}
+		goLogin();
+	}, [isAccessChecked, isAuthorized, isLogin]);
+
+	useEffect(() => {
+		if (isPathInNoLoginWhiteList || !isLogin || pathname === loginPath || isAccessChecked) {
+			hideLoading();
+		}
+	}, [isAccessChecked, isLogin, isPathInNoLoginWhiteList, pathname]);
 
 	useEffect(() => {
 		async function loadAccessData() {
@@ -55,13 +71,16 @@ export function AuthGuard({ children }: AuthGuardProps) {
 			accessLoadInFlightRef.current = true;
 			setupLoading();
 
+			const latestUserState = useUserStore.getState();
+			const latestIsAuthorized = Boolean(latestUserState.id);
+			const latestUserMenus = latestUserState.menus ?? EMPTY_MENUS;
 			const routes: AppRouteRecordRaw[] = [];
-			const latestRoles: string[] = isAuthorized ? [...userRoles] : [];
+			const latestRoles: string[] = latestIsAuthorized ? [...latestUserState.roles] : [];
 			let backendMenus: AppRouteRecordRaw[] = [];
 			let userInfoError: unknown = null;
 
 			try {
-				const shouldFetchSnapshot = !isAuthorized || userMenus.length === 0;
+				const shouldFetchSnapshot = !latestIsAuthorized || latestUserMenus.length === 0;
 				if (shouldFetchSnapshot) {
 					const snapshot = await fetchUserInfoAndRoutes();
 					latestRoles.splice(0, latestRoles.length, ...snapshot.userInfo.roles);
@@ -69,7 +88,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 					useUserStore.getState().setUserInfo(snapshot.userInfo);
 				}
 				else {
-					backendMenus = userMenus;
+					backendMenus = latestUserMenus;
 				}
 			}
 			catch (error) {
@@ -116,23 +135,18 @@ export function AuthGuard({ children }: AuthGuardProps) {
 		pathname,
 		search,
 		isLogin,
-		isAuthorized,
 		isAccessChecked,
 		enableBackendAccess,
 		enableFrontendAceess,
-		userRoles,
 		navigate,
 		setAccessStore,
-		userMenus,
 	]);
 
 	if (isPathInNoLoginWhiteList) {
-		hideLoading();
 		return children;
 	}
 
 	if (!isLogin) {
-		hideLoading();
 		if (pathname !== loginPath) {
 			const redirectPath = pathname.length > 1 ? `${loginPath}?redirect=${pathname}${search}` : loginPath;
 			return <Navigate to={redirectPath} replace />;
@@ -141,18 +155,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	}
 
 	if (pathname === loginPath) {
-		hideLoading();
 		if (isLogin) {
 			return <Navigate to={resolveBackHomePath()} replace />;
 		}
 		return children;
-	}
-
-	if (pathname === "/") {
-		hideLoading();
-		const hasBusinessMenus = authUserMenus.some(menu => menu.handle?.scope !== appScopes.platform);
-		const homePath = hasBusinessMenus ? getAppHomePath(appScopes.business) : getAppHomePath(appScopes.platform);
-		return <Navigate to={homePath} replace />;
 	}
 
 	if (!isAccessChecked) {
@@ -160,12 +166,16 @@ export function AuthGuard({ children }: AuthGuardProps) {
 	}
 
 	if (!isAuthorized) {
-		hideLoading();
-		goLogin();
 		return null;
 	}
 
-	hideLoading();
+	if (pathname === "/") {
+		const homePath = resolveHomePathFromMenus(authUserMenus, platformAccess, {
+			roles: userRoles,
+			loginRole,
+		});
+		return <Navigate to={homePath} replace />;
+	}
 
 	const routeRoles = currentRoute?.handle?.roles;
 	const ignoreAccess = currentRoute?.handle?.ignoreAccess;

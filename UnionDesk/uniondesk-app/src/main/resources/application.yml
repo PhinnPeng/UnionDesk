@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: uniondesk
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 22MB
+  datasource:
+    url: jdbc:mysql://127.0.0.1:30306/uniondesk?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: uniondesk_app
+    password: gq0fd2sqOCncrNp3eBeGuLty
+  flyway:
+    enabled: true
+    validate-on-migrate: false
+    locations: classpath:db/migration/current
+  profiles:
+    include: demo
+
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 100
+
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+uniondesk:
+  security:
+    jwt:
+      issuer: uniondesk
+      secret: uniondesk-demo-jwt-secret-please-change-me
+      access-token-ttl: PT24H
+      refresh-token-ttl: P7D
+  storage:
+    endpoint: ${MINIO_ENDPOINT:http://127.0.0.1:30090}
+    access-key: ${MINIO_ACCESS_KEY:comm_minio}
+    secret-key: ${MINIO_SECRET_KEY:Ck3LnjpLGY2aGhyIu2OoMAFd}
+    bucket: ${MINIO_BUCKET:uniondesk-attachments}
+    region: us-east-1
+    presign-expiry-seconds: 300

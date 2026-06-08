@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.common.mapper.IdentityResolutionMapper">
+
+    <select id="findCustomerSubjectId" resultType="java.lang.Long">
+        SELECT subject_id
+        FROM customer_account
+        WHERE id = #{accountId}
+        LIMIT 1
+    </select>
+
+    <select id="findStaffSubjectId" resultType="java.lang.Long">
+        SELECT subject_id
+        FROM staff_account
+        WHERE id = #{accountId}
+        LIMIT 1
+    </select>
+
+    <select id="findIdentitySubjectId" resultType="java.lang.Long">
+        SELECT id
+        FROM identity_subject
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="findUserAccountPhone" resultType="java.lang.String">
+        SELECT COALESCE(NULLIF(mobile, ''), #{fallback})
+        FROM user_account
+        WHERE id = #{userId}
+        LIMIT 1
+    </select>
+
+    <insert id="insertIdentitySubject">
+        INSERT INTO identity_subject (id, subject_type, phone, status)
+        VALUES (#{id}, 'person', #{phone}, 'active')
+    </insert>
+
+    <select id="findIdentitySubjectIdByPhone" resultType="java.lang.Long">
+        SELECT id
+        FROM identity_subject
+        WHERE phone = #{phone}
+        LIMIT 1
+    </select>
+
+</mapper>

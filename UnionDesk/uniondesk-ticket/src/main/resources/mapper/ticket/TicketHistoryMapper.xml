@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.ticket.mapper.TicketHistoryMapper">
+
+    <resultMap id="TicketHistoryPo" type="com.uniondesk.ticket.entity.TicketHistoryPo">
+        <id property="id" column="id"/>
+        <result property="ticketId" column="ticket_id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="action" column="action"/>
+        <result property="fromValue" column="from_value"/>
+        <result property="toValue" column="to_value"/>
+        <result property="operatorSubjectId" column="operator_subject_id"/>
+        <result property="operatorActorType" column="operator_actor_type"/>
+        <result property="payload" column="payload_json"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.uniondesk.ticket.entity.TicketHistoryPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ticket_history (
+            ticket_id, business_domain_id, action, from_value, to_value,
+            operator_subject_id, operator_actor_type, payload
+        )
+        VALUES (
+            #{ticketId}, #{businessDomainId}, #{action}, #{fromValue}, #{toValue},
+            #{operatorSubjectId}, #{operatorActorType}, #{payload}
+        )
+    </insert>
+
+    <select id="findByTicketIdAndDomainId" resultMap="TicketHistoryPo">
+        SELECT
+            id,
+            action,
+            from_value,
+            to_value,
+            operator_subject_id,
+            operator_actor_type,
+            CAST(payload AS CHAR) AS payload_json,
+            created_at
+        FROM ticket_history
+        WHERE ticket_id = #{ticketId} AND business_domain_id = #{domainId}
+        ORDER BY created_at ASC, id ASC
+    </select>
+
+</mapper>

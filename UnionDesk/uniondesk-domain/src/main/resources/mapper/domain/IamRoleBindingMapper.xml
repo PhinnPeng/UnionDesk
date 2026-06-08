@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.domain.mapper.IamRoleBindingMapper">
+
+    <select id="selectIdByBinding" resultType="int">
+        SELECT COUNT(*)
+        FROM iam_role_binding
+        WHERE user_id = #{userId}
+          AND role_id = #{roleId}
+          AND binding_scope = 'domain'
+          AND business_domain_id = #{domainId}
+    </select>
+
+    <insert id="insertIfNotExists">
+        INSERT INTO iam_role_binding (
+            user_id, role_id, binding_scope, business_domain_id,
+            status, created_at, updated_at
+        )
+        SELECT #{userId}, #{roleId}, 'domain', #{domainId}, 1,
+               CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
+        FROM DUAL
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM iam_role_binding
+            WHERE user_id = #{userId}
+              AND role_id = #{roleId}
+              AND binding_scope = 'domain'
+              AND business_domain_id = #{domainId}
+        )
+    </insert>
+
+    <select id="selectLegacyRoleId" resultType="java.lang.Integer">
+        SELECT id FROM role WHERE code = #{code} LIMIT 1
+    </select>
+
+</mapper>

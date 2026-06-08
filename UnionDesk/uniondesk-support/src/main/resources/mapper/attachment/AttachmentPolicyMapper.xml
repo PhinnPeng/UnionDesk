@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.attachment.mapper.AttachmentPolicyMapper">
+
+    <resultMap id="AttachmentPolicyPo" type="com.uniondesk.attachment.entity.AttachmentPolicyPo">
+        <result property="scopeType" column="scope_type"/>
+        <result property="scopeId" column="scope_id"/>
+        <result property="allowedTypesJson" column="allowed_types_json"/>
+        <result property="maxSingleSizeMb" column="max_single_size_mb"/>
+        <result property="maxTotalSizeMb" column="max_total_size_mb"/>
+    </resultMap>
+
+    <select id="selectDomainPolicy" resultMap="AttachmentPolicyPo">
+        SELECT allowed_types_json, max_single_size_mb, max_total_size_mb
+        FROM attachment_policy
+        WHERE scope_type = 'domain' AND scope_id = #{scopeId}
+        LIMIT 1
+    </select>
+
+    <select id="selectPlatformPolicy" resultMap="AttachmentPolicyPo">
+        SELECT allowed_types_json, max_single_size_mb, max_total_size_mb
+        FROM attachment_policy
+        WHERE scope_type = 'platform' AND scope_id = 0
+        LIMIT 1
+    </select>
+
+</mapper>

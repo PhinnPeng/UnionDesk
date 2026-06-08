@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.auth.mapper.AuthClientMapper">
+
+    <resultMap id="AuthClientPo" type="com.uniondesk.auth.entity.AuthClientPo">
+        <result property="clientCode" column="client_code"/>
+        <result property="allowedAccountType" column="allowed_account_type"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <select id="selectByClientCode" resultMap="AuthClientPo">
+        SELECT client_code, allowed_account_type, status
+        FROM auth_client
+        WHERE client_code = #{clientCode}
+        LIMIT 1
+    </select>
+
+</mapper>

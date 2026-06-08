@@ -44,7 +44,7 @@ flowchart TB
 | 1 | US-S2-01 | 业务域基础信息与安全删除 | 3 | 平台域超额 | Todo |
 | 2 | US-S2-02 | 角色管理（只读） | 2 | 平台域超额 | Todo |
 | 3 | US-S2-03 | 域内员工管理 | 5 | 平台域超额 | Todo |
-| 4 | US-S2-04 | 域内客户管理完善 | 2 | 平台域超额 | Todo |
+| 4 | US-S2-04 | 域内客户管理完善 | 2 | 平台域超额 | Done |
 | 5 | US-S2-05 | 双层屏蔽词库（平台全局 + 域内） | 3 | 平台域超额 | Todo |
 | 6 | US-S2-06 | 域内业务日志 | 2 | 平台域超额 | Todo |
 | E2 | US-S2-E2-00 | 业务域端最小可达 | 3 | E2 主路径 | Todo |
@@ -69,7 +69,7 @@ flowchart TB
 | 平台域详情 | US-S2-01～06 | `/platform/domains/detail` 各 Tab；`shared` API 封装；权限 Flyway |
 | 业务域端 | US-S2-E2-00 | `scope=business` 菜单/首页/至少一条主路径 |
 | 登录滑块 | US-S2-UX-01 | §4；无后端变更 |
-| 删除域 | US-S2-01 | 软删写 `deleted_at`/`updated_at`/`updated_by`；**无 `deleted` 列**；权限 **`platform.domain.control.deleted`** |
+| 删除域 | US-S2-01 | 删除写 `deleted_at`/`updated_at`/`updated_by`（**不改 status**）；**无 `deleted` 列**；`status`=启停；权限 **`platform.domain.control.general.delete`** |
 | 角色管理 | US-S2-02 | **只读**；权限 **`platform.domain.roles.*`** |
 | 屏蔽词 | US-S2-05 | **`platform.blocked_word.*`**（全局）/ **`platform.domain.blocked_word.*`**（域内） |
 | 域日志 | US-S2-06 | **`platform.audit-logs.read`** |
@@ -123,10 +123,10 @@ flowchart TB
 
 | ID | 验收要点 |
 |:---|:---|
-| US-S2-01 | 回显/更新；软删写 **`updated_at`/`updated_by`/`deleted_at`**（**无 `deleted` 列**）；删除权限 **`platform.domain.control.deleted`**；code + Step-up |
+| US-S2-01 | 回显/更新；删除写 **`updated_at`/`updated_by`/`deleted_at`**（**不改 status**；**无 `deleted` 列**）；`status`=启停；权限 **`platform.domain.control.general.*`** + **`entry`** / **`overview`**；code + Step-up；**已删域直链详情** 延后 |
 | US-S2-02 | Tab 名 **「角色管理」**；**只读**列表（可选只读权限查看）；**`platform.domain.roles.*`** |
 | US-S2-03 | 添加员工、改角色、移除；**成员禁用/启用 API**；最后 `domain_admin` 校验 |
-| US-S2-04 | 在 US-S1-06 基础上：单条编辑/启停、筛选与空态；不含注册 API |
+| US-S2-04 | 在 US-S1-06 基础上：单条**只读查看**/启停、筛选与空态；**`platform.domain.control.customer.*`**；不含注册 API |
 | US-S2-05 | 全局 **`platform.blocked_word.*`** + 域内 **`platform.domain.blocked_word.*`** |
 | US-S2-06 | 操作/登录日志 Tab；**`platform.audit-logs.read`** |
 | US-S2-E2-00 | 无 `platform.*` 权限 → 业务域首页；快照含 **`platform.*`** → 视为平台权限 |

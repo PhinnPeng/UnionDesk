@@ -1,0 +1,11 @@
+{
+  "change": "domain-blockword-management-s2-05",
+  "phase": "design",
+  "canonical_spec": "openspec/changes/domain-blockword-management-s2-05/specs/domain-blockword-management/spec.md",
+  "design_doc": "docs/superpowers/specs/2026-06-07-domain-blockword-management-s2-05-design.md",
+  "sources": [
+    "openspec/changes/domain-blockword-management-s2-05/proposal.md",
+    "openspec/changes/domain-blockword-management-s2-05/design.md",
+    "openspec/changes/domain-blockword-management-s2-05/tasks.md"
+  ]
+}

@@ -14,6 +14,9 @@ export const PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ = "platform.domain.control.cu
 export const PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE = "platform.domain.control.customer.create";
 export const PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS =
 	"platform.domain.control.customer.update-status";
+export const PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ = "platform.domain.control.blocked_word.read";
+export const PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE = "platform.domain.control.blocked_word.create";
+export const PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE = "platform.domain.control.blocked_word.delete";
 /** @deprecated 使用 PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ */
 export const PLATFORM_DOMAIN_CUSTOMER_READ = PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ;
 /** @deprecated 使用 PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE */

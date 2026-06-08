@@ -22,7 +22,7 @@
 		"name": "菜单名称",
 		"routePath": "路由路径",
 		"addMenu": "新增菜单",
-		"addButton": "新增按钮",
+		"addButton": "新增",
 		"editMenu": "编辑菜单",
 		"menuType": "菜单类型",
 		"menuTypeDesc": "菜单类型说明：目录、菜单、按钮",

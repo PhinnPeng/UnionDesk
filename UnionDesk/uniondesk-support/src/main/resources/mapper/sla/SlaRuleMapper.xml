@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.sla.mapper.SlaRuleMapper">
+
+    <resultMap id="SlaRulePo" type="com.uniondesk.sla.entity.SlaRulePo">
+        <id property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="name" column="name"/>
+        <result property="ticketTypeId" column="ticket_type_id"/>
+        <result property="priorityLevelId" column="priority_level_id"/>
+        <result property="calendarId" column="calendar_id"/>
+        <result property="firstResponseMinutes" column="first_response_minutes"/>
+        <result property="resolutionMinutes" column="resolution_minutes"/>
+        <result property="isUrgentConfig" column="is_urgent_config"/>
+        <result property="breachActionJson" column="breach_action_json"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="TicketSlaPolicyPo" type="com.uniondesk.sla.entity.TicketSlaPolicyPo">
+        <result property="firstResponseMinutes" column="first_response_minutes"/>
+        <result property="resolutionMinutes" column="resolution_minutes"/>
+        <result property="breachActionJson" column="breach_action_json"/>
+    </resultMap>
+
+    <sql id="selectColumns">
+        SELECT
+            id,
+            business_domain_id,
+            name,
+            ticket_type_id,
+            priority_level_id,
+            calendar_id,
+            first_response_minutes,
+            resolution_minutes,
+            is_urgent_config,
+            breach_action_json,
+            created_at,
+            updated_at
+        FROM sla_rule
+    </sql>
+
+    <select id="selectByDomainId" resultMap="SlaRulePo">
+        <include refid="selectColumns"/>
+        WHERE business_domain_id = #{domainId}
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByDomainId" resultType="long">
+        SELECT COUNT(*)
+        FROM sla_rule
+        WHERE business_domain_id = #{domainId}
+    </select>
+
+    <select id="selectByIdAndDomainId" resultMap="SlaRulePo">
+        <include refid="selectColumns"/>
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.uniondesk.sla.entity.SlaRulePo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sla_rule (
+            business_domain_id, name, ticket_type_id, priority_level_id, calendar_id,
+            first_response_minutes, resolution_minutes, is_urgent_config, breach_action_json
+        )
+        VALUES (#{businessDomainId}, #{name}, #{ticketTypeId}, #{priorityLevelId}, #{calendarId},
+                #{firstResponseMinutes}, #{resolutionMinutes}, #{isUrgentConfig}, #{breachActionJson})
+    </insert>
+
+    <update id="updateByIdAndDomainId" parameterType="com.uniondesk.sla.entity.SlaRulePo">
+        UPDATE sla_rule
+        SET name = #{name},
+            ticket_type_id = #{ticketTypeId},
+            priority_level_id = #{priorityLevelId},
+            calendar_id = #{calendarId},
+            first_response_minutes = #{firstResponseMinutes},
+            resolution_minutes = #{resolutionMinutes},
+            is_urgent_config = #{isUrgentConfig},
+            breach_action_json = #{breachActionJson},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id} AND business_domain_id = #{businessDomainId}
+    </update>
+
+    <delete id="deleteByIdAndDomainId">
+        DELETE FROM sla_rule
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+    </delete>
+
+    <select id="selectPolicy" resultMap="TicketSlaPolicyPo">
+        SELECT
+            sr.first_response_minutes,
+            sr.resolution_minutes,
+            sr.breach_action_json
+        FROM sla_rule sr
+        LEFT JOIN ticket_priority_level tpl ON tpl.id = sr.priority_level_id
+        WHERE sr.business_domain_id = #{domainId}
+          AND (sr.ticket_type_id = #{ticketTypeId} OR sr.ticket_type_id IS NULL)
+          AND (sr.priority_level_id IS NULL OR tpl.code = #{priorityCode})
+        ORDER BY sr.priority_level_id IS NOT NULL DESC, sr.ticket_type_id IS NOT NULL DESC, sr.id DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectTicketPriority" resultType="java.lang.String">
+        SELECT priority
+        FROM ticket
+        WHERE id = #{ticketId}
+        LIMIT 1
+    </select>
+
+</mapper>

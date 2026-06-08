@@ -57,7 +57,7 @@ vi.mock("@ant-design/pro-components", () => ({
 					name: "测试角色",
 					code: "custom_test",
 					scope: "domain",
-					menus: ["1", "2"],
+					menus: ["1", "2", "99"],
 				});
 			}}
 		>
@@ -96,6 +96,7 @@ describe("Role Detail", () => {
 				treeData={[
 					{ id: "1", title: "菜单", nodeType: "menu", children: [] },
 					{ id: "2", title: "按钮", nodeType: "button", children: [] },
+					{ id: "99", title: "屏蔽词库", nodeType: "catalog", children: [] },
 				]}
 				onCloseChange={mocks.onCloseChange}
 				refreshTable={mocks.refreshTable}
@@ -107,7 +108,10 @@ describe("Role Detail", () => {
 		await waitFor(() => {
 			expect(mocks.messageSuccess).toHaveBeenCalledWith("common.updateSuccess");
 		});
-		expect(mocks.refreshTable).toHaveBeenCalledTimes(1);
+		expect(mocks.fetchUpdateRolePermissions).toHaveBeenCalledWith(9, {
+			menuIds: [1, 99],
+			buttonIds: [2],
+		});
 		expect(mocks.onCloseChange).toHaveBeenCalledTimes(1);
 	});
 });

@@ -14,12 +14,15 @@ export function useAuth() {
 			: undefined;
 	const routeScope = (currentRoute?.handle?.scope as string | undefined) ?? pathnameScope ?? "business";
 
-	const hasPermission = (code?: string | null): boolean => {
+	const hasPermission = (code?: string | string[] | null): boolean => {
 		if (!code) {
 			return true;
 		}
 		if (!actions?.length) {
 			return false;
+		}
+		if (Array.isArray(code)) {
+			return code.some(item => actions.includes(item));
 		}
 		return actions.includes(code);
 	};

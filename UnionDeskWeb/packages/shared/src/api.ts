@@ -55,6 +55,7 @@ import type {
   DomainMember,
   DomainStaffCandidate,
   BlockedWord,
+  BlockedWordBatchResult,
   P0AttachmentPresignRequest,
   P0AttachmentPresignResponse,
   P0AttachmentLocalUploadResponse,
@@ -1339,20 +1340,87 @@ export async function deleteDomainMember(domainId: string, memberId: string): Pr
   await api.delete(`/admin/domains/${encodeURIComponent(domainId)}/members/${encodeURIComponent(memberId)}`);
 }
 
-/** `GET /api/v1/admin/domains/{domainId}/blocked-words` */
-export async function fetchBlockedWords(domainId: string): Promise<BlockedWord[]> {
+/** `GET /api/v1/admin/blocked-words` */
+export async function fetchPlatformBlockedWordsPage(params: {
+  page: number;
+  page_size: number;
+  keyword?: string;
+}): Promise<P0PageResult<BlockedWord>> {
+  const { page, page_size, keyword } = params;
   try {
-    const response = await api.get<BlockedWord[]>(
-      `/admin/domains/${encodeURIComponent(domainId)}/blocked-words`,
-    );
+    const response = await api.get<P0PageResult<Record<string, unknown>>>("/admin/blocked-words", {
+      params: { page, page_size, keyword },
+    });
     const data = unwrapApiResponse(response.data);
-    return Array.isArray(data) ? data.map(item => normalizeBlockedWord(item as unknown as Record<string, unknown>)) : [];
+    return {
+      total: data.total ?? 0,
+      list: Array.isArray(data.list)
+        ? data.list.map(item => normalizeBlockedWord(item))
+        : [],
+    };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
-      return [];
+      return { total: 0, list: [] };
     }
     throw toError(error);
   }
+}
+
+/** `POST /api/v1/admin/blocked-words` */
+export async function createPlatformBlockedWord(word: string): Promise<BlockedWord> {
+  const response = await api.post<BlockedWord>("/admin/blocked-words", { word });
+  return normalizeBlockedWord(unwrapApiResponse(response.data) as unknown as Record<string, unknown>);
+}
+
+/** `POST /api/v1/admin/blocked-words/batch` */
+export async function createPlatformBlockedWordsBatch(words: string[]): Promise<BlockedWordBatchResult> {
+  const response = await api.post<BlockedWordBatchResult>("/admin/blocked-words/batch", { words });
+  const data = unwrapApiResponse(response.data) as BlockedWordBatchResult;
+  return {
+    created_count: data.created_count ?? 0,
+    skipped: Array.isArray(data.skipped) ? data.skipped : [],
+  };
+}
+
+/** `DELETE /api/v1/admin/blocked-words/{wordId}` */
+export async function deletePlatformBlockedWord(wordId: string): Promise<void> {
+  await api.delete(`/admin/blocked-words/${encodeURIComponent(wordId)}`);
+}
+
+/** `GET /api/v1/admin/domains/{domainId}/blocked-words` */
+export async function fetchBlockedWordsPage(
+  domainId: string,
+  params: {
+    page: number;
+    page_size: number;
+    keyword?: string;
+  },
+): Promise<P0PageResult<BlockedWord>> {
+  const { page, page_size, keyword } = params;
+  try {
+    const response = await api.get<P0PageResult<Record<string, unknown>>>(
+      `/admin/domains/${encodeURIComponent(domainId)}/blocked-words`,
+      { params: { page, page_size, keyword } },
+    );
+    const data = unwrapApiResponse(response.data);
+    return {
+      total: data.total ?? 0,
+      list: Array.isArray(data.list)
+        ? data.list.map(item => normalizeBlockedWord(item))
+        : [],
+    };
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return { total: 0, list: [] };
+    }
+    throw toError(error);
+  }
+}
+
+/** @deprecated 使用 fetchBlockedWordsPage */
+export async function fetchBlockedWords(domainId: string): Promise<BlockedWord[]> {
+  const result = await fetchBlockedWordsPage(domainId, { page: 1, page_size: 200 });
+  return result.list;
 }
 
 /** `POST /api/v1/admin/domains/{domainId}/blocked-words` */
@@ -1362,6 +1430,19 @@ export async function createBlockedWord(domainId: string, word: string): Promise
     { word },
   );
   return normalizeBlockedWord(unwrapApiResponse(response.data) as unknown as Record<string, unknown>);
+}
+
+/** `POST /api/v1/admin/domains/{domainId}/blocked-words/batch` */
+export async function createBlockedWordsBatch(domainId: string, words: string[]): Promise<BlockedWordBatchResult> {
+  const response = await api.post<BlockedWordBatchResult>(
+    `/admin/domains/${encodeURIComponent(domainId)}/blocked-words/batch`,
+    { words },
+  );
+  const data = unwrapApiResponse(response.data) as BlockedWordBatchResult;
+  return {
+    created_count: data.created_count ?? 0,
+    skipped: Array.isArray(data.skipped) ? data.skipped : [],
+  };
 }
 
 /** `DELETE /api/v1/admin/domains/{domainId}/blocked-words/{wordId}` */

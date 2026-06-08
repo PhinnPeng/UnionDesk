@@ -3,7 +3,14 @@ import { fetchDomainConfig, updateDomainConfig } from "#src/api/platform/domain-
 import { App, Button, Card, Col, Form, Input, Row, Select, Space } from "antd";
 import { useEffect, useState } from "react";
 
-import { resolveNumericDomainId } from "../domains/domain-utils";
+function resolveNumericDomainId(domainId: string): number | null {
+	const trimmed = domainId.trim();
+	if (!trimmed || !/^\d+$/.test(trimmed)) {
+		return null;
+	}
+	const numeric = Number(trimmed);
+	return Number.isSafeInteger(numeric) ? numeric : null;
+}
 
 interface DomainConfigPanelProps {
 	domainId: string;

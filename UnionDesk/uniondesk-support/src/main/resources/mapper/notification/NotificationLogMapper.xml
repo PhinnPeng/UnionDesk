@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.notification.mapper.NotificationLogMapper">
+
+    <insert id="insert" parameterType="com.uniondesk.notification.entity.NotificationLogPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO notification_log (
+            business_domain_id, source_type, source_id, channel, recipient_subject_id,
+            portal_type, template_code, payload_json, status, retry_count, last_error, next_retry_at, sent_at
+        )
+        VALUES (
+            #{businessDomainId}, #{sourceType}, #{sourceId}, #{channel}, #{recipientSubjectId},
+            #{portalType}, #{templateCode}, #{payloadJson}, #{status}, #{retryCount}, #{lastError}, #{nextRetryAt}, #{sentAt}
+        )
+    </insert>
+
+    <select id="findLatestId" resultType="java.lang.Long">
+        SELECT id
+        FROM notification_log
+        WHERE recipient_subject_id = #{recipientSubjectId}
+          AND source_id = #{sourceId}
+          AND template_code = #{templateCode}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+</mapper>
