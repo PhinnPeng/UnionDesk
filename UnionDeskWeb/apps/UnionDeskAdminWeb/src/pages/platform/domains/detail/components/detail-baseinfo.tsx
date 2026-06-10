@@ -16,10 +16,12 @@ import { useEffect, useMemo, useState } from "react";
 import { DomainBasicInfoFields } from "../../components/domains-modal";
 import modalStyles from "../../components/domains-modal.module.less";
 import {
+	PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE,
+	PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE,
+	PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE_STATUS,
+} from "../../platform-domain-permissions";
+import {
 	DEFAULT_DOMAIN_LOGO,
-	DOMAIN_CONTROL_GENERAL_DELETE_PERMISSION,
-	DOMAIN_CONTROL_GENERAL_UPDATE_PERMISSION,
-	DOMAIN_CONTROL_GENERAL_UPDATE_STATUS_PERMISSION,
 	isDomainEnabled,
 	resolveNumericDomainId,
 } from "./detail-shared";
@@ -95,9 +97,9 @@ export function DetailBaseinfo({ domain, onSaved, onDeleted }: DetailBaseinfoPro
 		form.setFieldsValue(buildFormValues(domain));
 	}, [domain.id, domain.updated_at, form]);
 
-	const canUpdate = hasPermission(DOMAIN_CONTROL_GENERAL_UPDATE_PERMISSION);
-	const canUpdateStatus = hasPermission(DOMAIN_CONTROL_GENERAL_UPDATE_STATUS_PERMISSION);
-	const canDelete = hasPermission(DOMAIN_CONTROL_GENERAL_DELETE_PERMISSION);
+	const canUpdate = hasPermission(PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE);
+	const canUpdateStatus = hasPermission(PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE_STATUS);
+	const canDelete = hasPermission(PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE);
 	const enabled = isDomainEnabled(domain);
 	const formKey = `${domain.id}-${domain.updated_at ?? "0"}`;
 	const statusDescription = enabled

@@ -9,7 +9,8 @@ import type { TableColumnsType } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { useCallback, useEffect, useState } from "react";
 
-import { DOMAIN_CONTROL_LOGIN_LOG_READ_PERMISSION, resolveNumericDomainId } from "./detail-shared";
+import { PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ } from "../../platform-domain-permissions";
+import { resolveNumericDomainId } from "./detail-shared";
 
 const { RangePicker } = DatePicker;
 
@@ -116,7 +117,7 @@ export function DetailLoginLogs({ domainId }: DetailLoginLogsProps) {
 	}
 
 	return (
-		<AuthGuarded auth={DOMAIN_CONTROL_LOGIN_LOG_READ_PERMISSION} fallback={<Empty description="无权限查看登录日志" />}>
+		<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ} fallback={<Empty description="无权限查看登录日志" />}>
 			<Card title="登录日志" bordered={false}>
 				<TableSearchForm
 					form={form}

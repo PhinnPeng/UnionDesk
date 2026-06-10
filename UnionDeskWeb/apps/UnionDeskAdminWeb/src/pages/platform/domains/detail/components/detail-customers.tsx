@@ -14,10 +14,10 @@ import { ConfirmPopover } from "#src/components/confirm-popover";
 
 import {
 	PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE,
+	PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ,
 	PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS,
 } from "../../platform-domain-permissions";
 
-import { DOMAIN_CUSTOMER_READ_PERMISSION } from "./detail-shared";
 
 import {
 	App,
@@ -677,7 +677,7 @@ export function DetailCustomers({ domainId }: DetailCustomersProps) {
 	], [applyStatusChange, handleRowEnable]);
 
 	return (
-		<AuthGuarded auth={DOMAIN_CUSTOMER_READ_PERMISSION} fallback={<Empty description="无权限查看客户管理" />}>
+		<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ} fallback={<Empty description="无权限查看客户管理" />}>
 			<div>
 				<Title level={5} className="!mb-4">客户管理</Title>
 				<Card className="!mb-4">

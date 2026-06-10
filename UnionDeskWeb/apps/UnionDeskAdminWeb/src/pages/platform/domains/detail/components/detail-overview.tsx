@@ -6,7 +6,8 @@ import { useAuth } from "#src/hooks/use-auth";
 import { Button, Card, Empty, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 
-import { DOMAIN_CUSTOMER_READ_PERMISSION, type DetailTabKey } from "./detail-shared";
+import { PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ } from "../../platform-domain-permissions";
+import { type DetailTabKey } from "./detail-shared";
 
 import styles from "../index.module.less";
 
@@ -27,7 +28,7 @@ const KPI_ITEMS = [
 
 export function DetailOverview({ domain, onNavigateTab }: DetailOverviewProps) {
 	const { hasPermission } = useAuth();
-	const canViewCustomers = hasPermission(DOMAIN_CUSTOMER_READ_PERMISSION);
+	const canViewCustomers = hasPermission(PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ);
 	const [pendingTicketCount, setPendingTicketCount] = useState<number | null>(null);
 
 	useEffect(() => {

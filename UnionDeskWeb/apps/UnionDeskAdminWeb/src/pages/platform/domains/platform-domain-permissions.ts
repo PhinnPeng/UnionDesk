@@ -21,12 +21,6 @@ export const PLATFORM_LOG_AUDIT_READ = "platform.log.audit.read";
 export const PLATFORM_LOG_LOGIN_READ = "platform.log.login.read";
 export const PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ = "platform.domain.control.audit_log.read";
 export const PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ = "platform.domain.control.login_log.read";
-/** @deprecated 使用 PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ */
-export const PLATFORM_DOMAIN_CUSTOMER_READ = PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ;
-/** @deprecated 使用 PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE */
-export const PLATFORM_DOMAIN_CUSTOMER_CREATE = PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE;
-/** @deprecated 使用 PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS */
-export const PLATFORM_DOMAIN_CUSTOMER_UPDATE = PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS;
 export const PLATFORM_DOMAIN_ROLES_READ = "platform.domain.roles.read";
 export const PLATFORM_DOMAIN_ROLES_PERMISSIONS_READ = "platform.domain.roles.permissions.read";
 export const DOMAIN_MEMBER_READ = "domain.member.read";

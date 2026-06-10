@@ -1,0 +1,12 @@
+{
+  "change": "iam-rbac-optimization",
+  "phase": "design",
+  "canonicalSpec": "openspec",
+  "sources": [
+    "openspec/changes/iam-rbac-optimization/proposal.md",
+    "openspec/changes/iam-rbac-optimization/design.md",
+    "openspec/changes/iam-rbac-optimization/tasks.md",
+    "openspec/changes/iam-rbac-optimization/specs/iam-rbac-governance/spec.md"
+  ],
+  "designDoc": "docs/superpowers/specs/2026-06-09-iam-rbac-optimization-design.md"
+}

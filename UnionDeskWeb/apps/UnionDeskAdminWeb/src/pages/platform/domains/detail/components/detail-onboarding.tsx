@@ -7,7 +7,7 @@ import { useAuth } from "#src/hooks/use-auth";
 import { App, Switch, Tabs, Typography } from "antd";
 import { useCallback, useState } from "react";
 
-import { DOMAIN_CONTROL_ENTRY_PERMISSION, DOMAIN_CONTROL_GENERAL_UPDATE_PERMISSION } from "./detail-shared";
+import { PLATFORM_DOMAIN_CONTROL_ENTRY, PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE } from "../../platform-domain-permissions";
 
 import styles from "./detail-onboarding.module.less";
 
@@ -66,7 +66,7 @@ function AccessPolicySwitchRow({
 export function DetailOnboarding({ domain, onSaved }: DetailOnboardingProps) {
 	const { message, modal } = App.useApp();
 	const { hasPermission } = useAuth();
-	const canUpdate = hasPermission(DOMAIN_CONTROL_GENERAL_UPDATE_PERMISSION);
+	const canUpdate = hasPermission(PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE);
 
 	const [regLoading, setRegLoading] = useState(false);
 	const [invLoading, setInvLoading] = useState(false);
@@ -145,7 +145,7 @@ export function DetailOnboarding({ domain, onSaved }: DetailOnboardingProps) {
 			<Title level={5} className="!mb-4">
 				客户入域
 			</Title>
-			<AuthGuarded auth={DOMAIN_CONTROL_ENTRY_PERMISSION}>
+			<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_ENTRY}>
 				<Tabs
 					type="card"
 					items={[

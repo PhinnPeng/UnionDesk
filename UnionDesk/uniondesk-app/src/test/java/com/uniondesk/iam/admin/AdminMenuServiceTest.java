@@ -515,7 +515,7 @@ class AdminMenuServiceTest {
                 .thenAnswer(invocation -> {
                     RowMapper<?> mapper = invocation.getArgument(1);
                     ResultSet rs = mock(ResultSet.class);
-                    when(rs.getString("code")).thenReturn(PermissionCodes.PLATFORM_DOMAIN_CUSTOMER_READ);
+                    when(rs.getString("code")).thenReturn(PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ);
                     when(rs.getString("name")).thenReturn("查看客户");
                     when(rs.getString("http_method")).thenReturn("GET");
                     when(rs.getString("path_pattern")).thenReturn("/api/v1/admin/domains/*/customers");
@@ -525,7 +525,7 @@ class AdminMenuServiceTest {
         AdminMenuService.PermissionSnapshotData snapshot = service.loadPermissionSnapshot(List.of("super_admin"));
 
         assertThat(snapshot.actions()).extracting(AdminMenuService.GrantedPermission::permissionCode)
-                .contains(PermissionCodes.PLATFORM_DOMAIN_CUSTOMER_READ);
+                .contains(PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ);
     }
 
     private static void stubEmptyRolePermissionQuery(JdbcTemplate jdbcTemplate) {

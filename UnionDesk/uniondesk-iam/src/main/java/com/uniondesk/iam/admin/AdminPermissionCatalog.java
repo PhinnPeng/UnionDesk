@@ -90,7 +90,6 @@ public final class AdminPermissionCatalog {
             new PermissionDefinition(PermissionCodes.DOMAIN_ADMIN_LIST_READ, "View domain admin list", "platform", "GET", "/api/v1/admin/domains"),
             new PermissionDefinition(PermissionCodes.PLATFORM_DOMAIN_CONTROL_ENTRY, "Enter domain console", "platform", "GET", "/api/v1/admin/domains/*"),
             new PermissionDefinition(PermissionCodes.PLATFORM_DOMAIN_CONTROL_OVERVIEW, "View domain console overview", "platform", null, null),
-            new PermissionDefinition(PermissionCodes.DOMAIN_ADMIN_READ, "View domain admin domains", "platform", "GET", "/api/v1/admin/domains/**"),
             new PermissionDefinition(PermissionCodes.DOMAIN_ADMIN_CREATE, "Create business domain", "platform", "POST", "/api/v1/admin/domains"),
             new PermissionDefinition(PermissionCodes.PLATFORM_DOMAIN_CONTROL_READ, "Enter business domain console", "platform", null, null),
             new PermissionDefinition(PermissionCodes.PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE, "Update domain general info", "platform", "PUT", "/api/v1/admin/domains/*"),

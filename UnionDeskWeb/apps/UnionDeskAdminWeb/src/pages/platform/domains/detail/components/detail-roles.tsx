@@ -8,7 +8,7 @@ import { App, Button, Descriptions, Drawer, Empty, Spin, Table, Tag, Typography 
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { DOMAIN_ROLE_PERMISSION_READ_PERMISSION, DOMAIN_ROLES_READ_PERMISSION } from "./detail-shared";
+import { PLATFORM_DOMAIN_ROLES_PERMISSIONS_READ, PLATFORM_DOMAIN_ROLES_READ } from "../../platform-domain-permissions";
 
 import styles from "./detail-roles.module.less";
 
@@ -90,7 +90,7 @@ export function DetailRoles({ domainId }: DetailRolesProps) {
 		setPermissionItems([]);
 	};
 
-	const canViewPermissions = hasPermission(DOMAIN_ROLE_PERMISSION_READ_PERMISSION);
+	const canViewPermissions = hasPermission(PLATFORM_DOMAIN_ROLES_PERMISSIONS_READ);
 
 	const permissionGroups = useMemo(
 		() => groupPermissionItemsByModule(permissionItems),
@@ -134,7 +134,7 @@ export function DetailRoles({ domainId }: DetailRolesProps) {
 	}, [canViewPermissions, handleViewPermissions]);
 
 	return (
-		<AuthGuarded auth={DOMAIN_ROLES_READ_PERMISSION} fallback={<Empty description="无权限查看角色管理" />}>
+		<AuthGuarded auth={PLATFORM_DOMAIN_ROLES_READ} fallback={<Empty description="无权限查看角色管理" />}>
 			<div>
 				<Title level={5} className={styles.pageTitle}>
 					角色管理

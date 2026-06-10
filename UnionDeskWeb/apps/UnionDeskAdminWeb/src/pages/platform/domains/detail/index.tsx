@@ -26,15 +26,14 @@ import { DetailRoles } from "./components/detail-roles";
 import { DetailSider } from "./components/detail-sider";
 import { DetailTickets } from "./components/detail-tickets";
 import {
-	DOMAIN_CONTROL_AUDIT_LOG_READ_PERMISSION,
-	DOMAIN_CONTROL_ENTRY_PERMISSION,
-	DOMAIN_CONTROL_LOGIN_LOG_READ_PERMISSION,
-	DOMAIN_CONTROL_OVERVIEW_PERMISSION,
-	DOMAIN_CUSTOMER_READ_PERMISSION,
-	DOMAIN_ROLES_READ_PERMISSION,
-	type DetailTabKey,
-	parseDetailTab,
-} from "./components/detail-shared";
+	PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ,
+	PLATFORM_DOMAIN_CONTROL_ENTRY,
+	PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ,
+	PLATFORM_DOMAIN_CONTROL_OVERVIEW,
+	PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ,
+	PLATFORM_DOMAIN_ROLES_READ,
+} from "../platform-domain-permissions";
+import { type DetailTabKey, parseDetailTab } from "./components/detail-shared";
 
 import styles from "./index.module.less";
 
@@ -104,11 +103,11 @@ function renderActiveTab(
 export default function PlatformDomainDetail() {
 	const { message } = App.useApp();
 	const { hasPermission } = useAuth();
-	const canViewCustomers = hasPermission(DOMAIN_CUSTOMER_READ_PERMISSION);
-	const canViewOverview = hasPermission(DOMAIN_CONTROL_OVERVIEW_PERMISSION);
-	const canViewRoles = hasPermission(DOMAIN_ROLES_READ_PERMISSION);
-	const canViewAuditLogs = hasPermission(DOMAIN_CONTROL_AUDIT_LOG_READ_PERMISSION);
-	const canViewLoginLogs = hasPermission(DOMAIN_CONTROL_LOGIN_LOG_READ_PERMISSION);
+	const canViewCustomers = hasPermission(PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ);
+	const canViewOverview = hasPermission(PLATFORM_DOMAIN_CONTROL_OVERVIEW);
+	const canViewRoles = hasPermission(PLATFORM_DOMAIN_ROLES_READ);
+	const canViewAuditLogs = hasPermission(PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ);
+	const canViewLoginLogs = hasPermission(PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ);
 	const navigate = useNavigate();
 	const { domainId: domainIdParam } = useParams();
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -244,7 +243,7 @@ export default function PlatformDomainDetail() {
 			) : !domain ? (
 				<Empty description="未找到业务域" />
 			) : (
-				<AuthGuarded auth={DOMAIN_CONTROL_ENTRY_PERMISSION}>
+				<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_ENTRY}>
 					<div className={`${styles.detailShell} flex flex-col`}>
 						<DetailHeader domain={domain} />
 						<div className={styles.detailBody}>

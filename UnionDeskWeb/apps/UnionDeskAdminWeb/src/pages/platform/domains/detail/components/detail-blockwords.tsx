@@ -14,9 +14,9 @@ import { TableSearchForm } from "#src/components/table-search-form";
 import {
 	PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE,
 	PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE,
+	PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ,
 } from "../../platform-domain-permissions";
 
-import { DOMAIN_BLOCKED_WORD_READ_PERMISSION } from "./detail-shared";
 
 import { PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import {
@@ -192,7 +192,7 @@ export function DetailBlockwords({ domainId }: DetailBlockwordsProps) {
 	], [handleDelete]);
 
 	return (
-		<AuthGuarded auth={DOMAIN_BLOCKED_WORD_READ_PERMISSION} fallback={<Empty description="无权限查看屏蔽词库" />}>
+		<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ} fallback={<Empty description="无权限查看屏蔽词库" />}>
 			<div>
 				<Title level={5} className="!mb-4">屏蔽词库</Title>
 				<div className="flex flex-col gap-4">

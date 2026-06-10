@@ -17,7 +17,15 @@ import { useAuth } from "#src/hooks/use-auth";
 
 import { useMemo } from "react";
 
-import { DOMAIN_BLOCKED_WORD_READ_PERMISSION, DOMAIN_CONTROL_AUDIT_LOG_READ_PERMISSION, DOMAIN_CONTROL_LOGIN_LOG_READ_PERMISSION, DOMAIN_CUSTOMER_READ_PERMISSION, DOMAIN_CONTROL_OVERVIEW_PERMISSION, DOMAIN_ROLES_READ_PERMISSION, type DetailTabKey } from "./detail-shared";
+import {
+	PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ,
+	PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ,
+	PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ,
+	PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ,
+	PLATFORM_DOMAIN_CONTROL_OVERVIEW,
+	PLATFORM_DOMAIN_ROLES_READ,
+} from "../../platform-domain-permissions";
+import { type DetailTabKey } from "./detail-shared";
 
 import styles from "../index.module.less";
 
@@ -45,22 +53,22 @@ export function DetailSider({ activeTab, onSelect }: DetailSiderProps) {
 	const { hasPermission } = useAuth();
 	const navItems = useMemo(
 		() => NAV_ITEMS.filter((item) => {
-			if (item.key === "customers" && !hasPermission(DOMAIN_CUSTOMER_READ_PERMISSION)) {
+			if (item.key === "customers" && !hasPermission(PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ)) {
 				return false;
 			}
-			if (item.key === "overview" && !hasPermission(DOMAIN_CONTROL_OVERVIEW_PERMISSION)) {
+			if (item.key === "overview" && !hasPermission(PLATFORM_DOMAIN_CONTROL_OVERVIEW)) {
 				return false;
 			}
-			if (item.key === "roles" && !hasPermission(DOMAIN_ROLES_READ_PERMISSION)) {
+			if (item.key === "roles" && !hasPermission(PLATFORM_DOMAIN_ROLES_READ)) {
 				return false;
 			}
-			if (item.key === "blockwords" && !hasPermission(DOMAIN_BLOCKED_WORD_READ_PERMISSION)) {
+			if (item.key === "blockwords" && !hasPermission(PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ)) {
 				return false;
 			}
-			if (item.key === "audit_logs" && !hasPermission(DOMAIN_CONTROL_AUDIT_LOG_READ_PERMISSION)) {
+			if (item.key === "audit_logs" && !hasPermission(PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ)) {
 				return false;
 			}
-			if (item.key === "login_logs" && !hasPermission(DOMAIN_CONTROL_LOGIN_LOG_READ_PERMISSION)) {
+			if (item.key === "login_logs" && !hasPermission(PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ)) {
 				return false;
 			}
 			return true;

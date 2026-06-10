@@ -42,10 +42,6 @@ public final class PermissionCodes {
     public static final String PLATFORM_PERMISSION_MANAGE = "platform.permission.manage";
     public static final String PLATFORM_LOG_AUDIT_READ = "platform.log.audit.read";
     public static final String PLATFORM_LOG_LOGIN_READ = "platform.log.login.read";
-    /** @deprecated use {@link #PLATFORM_LOG_AUDIT_READ} */
-    public static final String PLATFORM_AUDIT_LOG_READ = PLATFORM_LOG_AUDIT_READ;
-    /** @deprecated use {@link #PLATFORM_LOG_LOGIN_READ} */
-    public static final String PLATFORM_LOGIN_LOG_READ = PLATFORM_LOG_LOGIN_READ;
 
     public static final String DOMAIN_USER_READ = "domain.user.read";
     public static final String DOMAIN_USER_CREATE = "domain.user.create";
@@ -55,12 +51,6 @@ public final class PermissionCodes {
     public static final String DOMAIN_READ = "domain.read";
     public static final String PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ = "platform.domain.control.audit_log.read";
     public static final String PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ = "platform.domain.control.login_log.read";
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ} */
-    public static final String DOMAIN_AUDIT_LOG_READ = PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ;
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ} */
-    public static final String DOMAIN_LOGIN_LOG_READ = PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ;
-    /** @deprecated use {@link #DOMAIN_ADMIN_LIST_READ} and {@link #DOMAIN_ADMIN_DETAIL_READ} */
-    public static final String DOMAIN_ADMIN_READ = "domain.admin.read";
     public static final String DOMAIN_ADMIN_LIST_READ = "platform.domain.list.read";
     public static final String PLATFORM_DOMAIN_CONTROL_ENTRY = "platform.domain.control.entry";
     public static final String PLATFORM_DOMAIN_CONTROL_OVERVIEW = "platform.domain.control.overview";
@@ -68,32 +58,12 @@ public final class PermissionCodes {
     public static final String PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE_STATUS =
             "platform.domain.control.general.update-status";
     public static final String PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE = "platform.domain.control.general.delete";
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_ENTRY} */
-    public static final String DOMAIN_ADMIN_DETAIL_READ = PLATFORM_DOMAIN_CONTROL_ENTRY;
     public static final String DOMAIN_ADMIN_CREATE = "platform.domain.create";
     public static final String PLATFORM_DOMAIN_CONTROL_READ = "platform.domain.control.read";
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE} */
-    public static final String PLATFORM_DOMAIN_CONTROL_DELETED = PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE;
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE} */
-    public static final String DOMAIN_ADMIN_UPDATE = PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE;
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE} */
-    public static final String DOMAIN_ADMIN_DELETE = PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE;
     public static final String PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ = "platform.domain.control.customer.read";
     public static final String PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE = "platform.domain.control.customer.create";
     public static final String PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS =
             "platform.domain.control.customer.update-status";
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ} */
-    public static final String PLATFORM_DOMAIN_CUSTOMER_READ = PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ;
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE} */
-    public static final String PLATFORM_DOMAIN_CUSTOMER_CREATE = PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE;
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS} */
-    public static final String PLATFORM_DOMAIN_CUSTOMER_UPDATE = PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS;
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ} */
-    public static final String DOMAIN_CUSTOMER_READ = PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ;
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE} */
-    public static final String DOMAIN_CUSTOMER_CREATE = PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE;
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS} */
-    public static final String DOMAIN_CUSTOMER_UPDATE_STATUS = PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS;
     public static final String PLATFORM_DOMAIN_ROLES_READ = "platform.domain.roles.read";
     public static final String PLATFORM_DOMAIN_ROLES_PERMISSIONS_READ = "platform.domain.roles.permissions.read";
     public static final String DOMAIN_INVITATION_CODE_READ = "domain.invitation_code.read";
@@ -119,12 +89,6 @@ public final class PermissionCodes {
             "platform.domain.control.blocked_word.create";
     public static final String PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE =
             "platform.domain.control.blocked_word.delete";
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ} */
-    public static final String DOMAIN_BLOCKED_WORD_READ = PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ;
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE} */
-    public static final String DOMAIN_BLOCKED_WORD_CREATE = PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE;
-    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE} */
-    public static final String DOMAIN_BLOCKED_WORD_DELETE = PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE;
     public static final String DOMAIN_CONFIG_READ = "domain.config.read";
     public static final String DOMAIN_CONFIG_UPDATE = "domain.config.update";
     public static final String PLATFORM_SYSTEM_CONFIG_READ = "platform.system_config.read";
