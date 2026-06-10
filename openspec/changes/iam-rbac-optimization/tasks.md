@@ -24,7 +24,7 @@
 
 - [x] 4.1 全仓无 `DOMAIN_.*_PERMISSION` import（域模块已改直引 `platform-domain-permissions.ts`）
 - [x] 4.2 全仓无 `@deprecated` 权限 re-export
-- [ ] 4.3 手工：super_admin 重新登录后域详情各 tab 与清理前一致
+- [x] 4.3 手工：super_admin 重新登录后域详情各 tab 与清理前一致
 
 ## 5. 明确不做
 
