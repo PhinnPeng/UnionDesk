@@ -1,5 +1,5 @@
 workflow: full
-phase: verify
+phase: archive
 build_mode: subagent-driven-development
 build_pause: null
 isolation: worktree
@@ -7,11 +7,12 @@ verify_mode: full
 base_ref: 7687a88248b0dd0a0af4b900aae852b2efda4a26
 design_doc: openspec/changes/iam-rbac-optimization/design.md
 plan: openspec/changes/iam-rbac-optimization/tasks.md
-verify_result: pending
-verification_report: null
-branch_status: pending
+verify_result: pass
+verification_report: openspec/changes/iam-rbac-optimization/.comet/reports/2026-06-10-iam-rbac-optimization-verify.md
+branch_status: handled
 created_at: 2026-06-09
-verified_at: null
+verified_at: 2026-06-11
 archived: false
 handoff_context: openspec/changes/iam-rbac-optimization/.comet/handoff/design-context.json
-handoff_hash: manual-2026-06-09
+handoff_hash: 615e7daec0c7e10100c0912bc7d561d657a26375bb39f2a68ecc60ab962af5e0
+build_command: cd UnionDesk && ./mvnw compile -q
