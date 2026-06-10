@@ -3,10 +3,10 @@ phase: build
 build_mode: subagent-driven-development
 build_pause: null
 isolation: worktree
-verify_mode: null
+verify_mode: full
 base_ref: 7687a88248b0dd0a0af4b900aae852b2efda4a26
-design_doc: docs/superpowers/specs/2026-06-09-iam-rbac-optimization-design.md
-plan: docs/superpowers/plans/2026-06-09-iam-rbac-optimization.md
+design_doc: openspec/changes/iam-rbac-optimization/design.md
+plan: openspec/changes/iam-rbac-optimization/tasks.md
 verify_result: pending
 verification_report: null
 branch_status: pending
