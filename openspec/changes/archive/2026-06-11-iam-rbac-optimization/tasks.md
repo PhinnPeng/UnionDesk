@@ -1,3 +1,7 @@
+---
+archived-with: 2026-06-11-iam-rbac-optimization
+status: final
+---
 ## 1. 文档
 
 - [x] 1.1 `docs/architecture/iam-rbac-dual-table-architecture.md`

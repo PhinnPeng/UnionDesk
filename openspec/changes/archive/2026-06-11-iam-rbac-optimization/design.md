@@ -1,3 +1,8 @@
+---
+archived-with: 2026-06-11-iam-rbac-optimization
+status: final
+status: final
+---
 # IAM RBAC — 高层设计
 
 定稿 Design Doc：`docs/superpowers/specs/2026-06-09-iam-rbac-optimization-design.md`
