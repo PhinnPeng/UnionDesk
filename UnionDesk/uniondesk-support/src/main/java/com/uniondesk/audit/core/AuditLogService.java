@@ -79,22 +79,29 @@ public class AuditLogService {
             int pageSize,
             String operator,
             String action,
+            String keyword,
             LocalDateTime startTime,
             LocalDateTime endTime) {
-        return listPlatformAuditLogs(page, pageSize, domainId, operator, action, startTime, endTime);
+        return listPlatformAuditLogs(page, pageSize, domainId, operator, action, startTime, endTime,
+                null, keyword, null, null, null);
     }
 
     public PageResult<AuditDtos.LoginLogView> listDomainLoginLogs(
             long domainId,
             int page,
             int pageSize,
+            String portalType,
+            String result,
+            String keyword,
             String operator,
             String action,
             LocalDateTime startTime,
             LocalDateTime endTime) {
+        String resolvedKeyword = StringUtils.hasText(keyword) ? keyword : operator;
+        String resolvedResult = StringUtils.hasText(result) ? result : action;
         return listPlatformLoginLogs(
-                page, pageSize, null, null, action, startTime, endTime,
-                operator, null, null, null, domainId, null, "LOGIN");
+                page, pageSize, null, portalType, resolvedResult, startTime, endTime,
+                resolvedKeyword, null, null, null, domainId, null, "LOGIN");
     }
 
     public PageResult<AuditDtos.LoginLogView> listPlatformLoginLogs(

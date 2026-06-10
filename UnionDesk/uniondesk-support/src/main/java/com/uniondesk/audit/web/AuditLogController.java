@@ -23,7 +23,7 @@ public class AuditLogController {
     }
 
     @GetMapping("/audit-logs")
-    @RequirePermission(PermissionCodes.PLATFORM_AUDIT_LOG_READ)
+    @RequirePermission(PermissionCodes.PLATFORM_LOG_AUDIT_READ)
     public PageResult<AuditDtos.AuditLogView> listPlatformAuditLogs(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
@@ -43,15 +43,16 @@ public class AuditLogController {
     }
 
     @GetMapping("/domains/{domainId}/audit-logs")
-    @RequirePermission(PermissionCodes.DOMAIN_AUDIT_LOG_READ)
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ)
     public PageResult<AuditDtos.AuditLogView> listDomainAuditLogs(
             @PathVariable long domainId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
             @RequestParam(required = false) String operator,
             @RequestParam(required = false) String action,
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
-        return auditLogService.listDomainAuditLogs(domainId, page, pageSize, operator, action, startTime, endTime);
+        return auditLogService.listDomainAuditLogs(domainId, page, pageSize, operator, action, keyword, startTime, endTime);
     }
 }

@@ -1,6 +1,7 @@
 package com.uniondesk.audit.web;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -85,6 +86,7 @@ class AuditLogControllerTests {
                 eq(20),
                 eq("admin"),
                 eq("ticket.update"),
+                isNull(),
                 any(),
                 any()))
                 .thenReturn(new PageResult<>(1, List.of(new AuditDtos.AuditLogView(
@@ -109,6 +111,6 @@ class AuditLogControllerTests {
                 .andExpect(jsonPath("$.total").value(1))
                 .andExpect(jsonPath("$.list[0].target").value("ticket:1"));
 
-        verify(auditLogService).listDomainAuditLogs(eq(10L), eq(1), eq(20), eq("admin"), eq("ticket.update"), any(), any());
+        verify(auditLogService).listDomainAuditLogs(eq(10L), eq(1), eq(20), eq("admin"), eq("ticket.update"), isNull(), any(), any());
     }
 }

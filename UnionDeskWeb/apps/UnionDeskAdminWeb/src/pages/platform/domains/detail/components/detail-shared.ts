@@ -11,7 +11,8 @@ export const detailTabs = [
 	"blockwords",
 	"notifications",
 	"config",
-	"logs",
+	"audit_logs",
+	"login_logs",
 ] as const;
 
 export type DetailTabKey = (typeof detailTabs)[number];
@@ -28,6 +29,8 @@ export {
 	PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ as DOMAIN_BLOCKED_WORD_READ_PERMISSION,
 	PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE as DOMAIN_BLOCKED_WORD_CREATE_PERMISSION,
 	PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE as DOMAIN_BLOCKED_WORD_DELETE_PERMISSION,
+	PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ as DOMAIN_CONTROL_AUDIT_LOG_READ_PERMISSION,
+	PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ as DOMAIN_CONTROL_LOGIN_LOG_READ_PERMISSION,
 	PLATFORM_DOMAIN_ROLES_READ as DOMAIN_ROLES_READ_PERMISSION,
 	PLATFORM_DOMAIN_ROLES_PERMISSIONS_READ as DOMAIN_ROLE_PERMISSION_READ_PERMISSION,
 } from "../../platform-domain-permissions";
@@ -46,6 +49,9 @@ export const visibilityOptions: { value: P0VisibilityPolicyCode; label: string }
 ];
 
 export function parseDetailTab(value: string | null): DetailTabKey {
+	if (value === "logs") {
+		return "audit_logs";
+	}
 	if (value && (detailTabs as readonly string[]).includes(value)) {
 		return value as DetailTabKey;
 	}

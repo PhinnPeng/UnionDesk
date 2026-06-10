@@ -1,0 +1,13 @@
+{
+  "change": "domain-audit-logs-s2-06",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "886865863f4a4457c1deceea19bdc80fca57f9b30b1190c016c5c076d823f049",
+  "files": [
+    { "path": "openspec/changes/domain-audit-logs-s2-06/proposal.md", "sha256": "435adb88742799ac574a6faed4edea78d17f55aa047dddde7c4e2552ff91e881" },
+    { "path": "openspec/changes/domain-audit-logs-s2-06/design.md", "sha256": "902ea38c7f090f11b4bb787e080ef1b34aa9fa1a177c9634bd05c399c9e1d65f" },
+    { "path": "openspec/changes/domain-audit-logs-s2-06/tasks.md", "sha256": "8e9bb136aae4920646a8311197699ef04f56a125926f2ae7eeb376c68ab659f0" }
+  ]
+}

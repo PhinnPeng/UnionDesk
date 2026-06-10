@@ -40,8 +40,12 @@ public final class PermissionCodes {
     public static final String PLATFORM_USER_DELETE = "platform.user.delete";
 
     public static final String PLATFORM_PERMISSION_MANAGE = "platform.permission.manage";
-    public static final String PLATFORM_AUDIT_LOG_READ = "platform.audit_log.read";
-    public static final String PLATFORM_LOGIN_LOG_READ = "platform.login_log.read";
+    public static final String PLATFORM_LOG_AUDIT_READ = "platform.log.audit.read";
+    public static final String PLATFORM_LOG_LOGIN_READ = "platform.log.login.read";
+    /** @deprecated use {@link #PLATFORM_LOG_AUDIT_READ} */
+    public static final String PLATFORM_AUDIT_LOG_READ = PLATFORM_LOG_AUDIT_READ;
+    /** @deprecated use {@link #PLATFORM_LOG_LOGIN_READ} */
+    public static final String PLATFORM_LOGIN_LOG_READ = PLATFORM_LOG_LOGIN_READ;
 
     public static final String DOMAIN_USER_READ = "domain.user.read";
     public static final String DOMAIN_USER_CREATE = "domain.user.create";
@@ -49,8 +53,12 @@ public final class PermissionCodes {
     public static final String DOMAIN_USER_REMOVE = "domain.user.remove";
     public static final String PLATFORM_DOMAIN_READ = "domain.read";
     public static final String DOMAIN_READ = "domain.read";
-    public static final String DOMAIN_AUDIT_LOG_READ = "domain.audit_log.read";
-    public static final String DOMAIN_LOGIN_LOG_READ = "domain.login_log.read";
+    public static final String PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ = "platform.domain.control.audit_log.read";
+    public static final String PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ = "platform.domain.control.login_log.read";
+    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ} */
+    public static final String DOMAIN_AUDIT_LOG_READ = PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ;
+    /** @deprecated use {@link #PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ} */
+    public static final String DOMAIN_LOGIN_LOG_READ = PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ;
     /** @deprecated use {@link #DOMAIN_ADMIN_LIST_READ} and {@link #DOMAIN_ADMIN_DETAIL_READ} */
     public static final String DOMAIN_ADMIN_READ = "domain.admin.read";
     public static final String DOMAIN_ADMIN_LIST_READ = "platform.domain.list.read";

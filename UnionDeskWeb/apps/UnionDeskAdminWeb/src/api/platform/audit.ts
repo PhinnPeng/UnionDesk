@@ -89,3 +89,23 @@ export function fetchLoginLogsPage(params: LoginLogQuery): Promise<PageResult<Lo
 	const query = buildQuery(params as Record<string, unknown>);
 	return requestBackendJson<PageResult<LoginLogView>>(`v1/admin/login-logs${query ? `?${query}` : ""}`);
 }
+
+export function fetchDomainAuditLogs(
+	domainId: number,
+	params: PlatformAuditLogQuery,
+): Promise<PageResult<PlatformAuditLogView>> {
+	const query = buildQuery(params as Record<string, unknown>);
+	return requestBackendJson<PageResult<PlatformAuditLogView>>(
+		`v1/admin/domains/${domainId}/audit-logs${query ? `?${query}` : ""}`,
+	);
+}
+
+export function fetchDomainLoginLogs(
+	domainId: number,
+	params: LoginLogQuery,
+): Promise<PageResult<LoginLogView>> {
+	const query = buildQuery(params as Record<string, unknown>);
+	return requestBackendJson<PageResult<LoginLogView>>(
+		`v1/admin/domains/${domainId}/login-logs${query ? `?${query}` : ""}`,
+	);
+}

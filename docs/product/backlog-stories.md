@@ -251,7 +251,7 @@
 | US-S2-03 | 5 | 平台域超额 | Done |
 | US-S2-04 | 2 | 平台域超额 | Done |
 | US-S2-05 | 3 | 平台域超额 | Done |
-| US-S2-06 | 2 | 平台域超额 | Todo |
+| US-S2-06 | 2 | 平台域超额 | Done |
 | US-S2-E2-00 | 3 | E2 主路径 | Todo |
 
 **Stretch（不纳入 S2 签 off）**：US-S2-E2-01 工单类型设计；US-S1-08 跨域拦截。
@@ -351,17 +351,17 @@
 
 ### US-S2-06 域内业务日志
 
-- **Epic**: E1（平台域超额）| **Sprint**: S2 | **SP**: 2 | **状态**: Todo
+- **Epic**: E1（平台域超额）| **Sprint**: S2 | **SP**: 2 | **状态**: Done
 - **角色**: 平台管理员
 - **故事**: 作为平台管理员，我需要在业务域详情中查看该域的操作日志与登录日志。
 - **AC**:
-  1. 「日志」Tab 含 **操作日志**、**登录日志** 子 Tab（或等价切换）。
-  2. 支持分页与时间/结果/关键词筛选；列与平台 [`audit-logs`](../../UnionDeskWeb/apps/UnionDeskAdminWeb/src/pages/platform/audit-logs) 对齐。
-  3. 调用域级 audit/login API（或平台 API + `domain_id` 筛选）。
-  4. **权限**：Tab 与接口校验 **`platform.audit-logs.read`**（Flyway 与 `AuthGuarded` 一致）。
+  1. 域详情侧栏独立入口「操作日志」「登录日志」（非页内 Tabs）。
+  2. 支持分页与时间/结果/关键词筛选；列与平台 [`audit-logs`](../../UnionDeskWeb/apps/UnionDeskAdminWeb/src/pages/platform/audit-logs) 对齐（无业务域列）。
+  3. 调用域级 `GET .../domains/{domainId}/audit-logs` / `login-logs` API。
+  4. **权限**：`platform.domain.control.audit_log.read` / `platform.domain.control.login_log.read`；平台页 `platform.log.*`。
 - **规则**: 审计日志不可删。
-- **DB 增量**: 权限码 `platform.audit-logs.read`（若尚未入库则 Flyway）
-- **备注**: `detail-logs.tsx` 当前仅审计
+- **DB 增量**: Flyway `202606090001`（权限迁移 + 域详情 catalog）
+- **备注**: `detail-audit-logs.tsx` / `detail-login-logs.tsx`
 
 ### US-S2-E2-00 业务域端最小可达
 

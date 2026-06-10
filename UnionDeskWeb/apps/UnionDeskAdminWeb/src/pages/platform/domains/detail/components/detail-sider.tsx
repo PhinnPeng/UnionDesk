@@ -4,6 +4,7 @@ import {
 	FormOutlined,
 	IdcardOutlined,
 	LineChartOutlined,
+	LoginOutlined,
 	SafetyCertificateOutlined,
 	SettingOutlined,
 	ShopOutlined,
@@ -16,7 +17,7 @@ import { useAuth } from "#src/hooks/use-auth";
 
 import { useMemo } from "react";
 
-import { DOMAIN_BLOCKED_WORD_READ_PERMISSION, DOMAIN_CUSTOMER_READ_PERMISSION, DOMAIN_CONTROL_OVERVIEW_PERMISSION, DOMAIN_ROLES_READ_PERMISSION, type DetailTabKey } from "./detail-shared";
+import { DOMAIN_BLOCKED_WORD_READ_PERMISSION, DOMAIN_CONTROL_AUDIT_LOG_READ_PERMISSION, DOMAIN_CONTROL_LOGIN_LOG_READ_PERMISSION, DOMAIN_CUSTOMER_READ_PERMISSION, DOMAIN_CONTROL_OVERVIEW_PERMISSION, DOMAIN_ROLES_READ_PERMISSION, type DetailTabKey } from "./detail-shared";
 
 import styles from "../index.module.less";
 
@@ -36,7 +37,8 @@ const NAV_ITEMS: { key: DetailTabKey; label: string; icon: React.ReactNode }[] =
 	{ key: "blockwords", label: "屏蔽词库", icon: <StopOutlined /> },
 	{ key: "notifications", label: "通知配置", icon: <BellOutlined /> },
 	{ key: "config", label: "参数配置", icon: <SettingOutlined /> },
-	{ key: "logs", label: "业务日志", icon: <FileSearchOutlined /> },
+	{ key: "audit_logs", label: "操作日志", icon: <FileSearchOutlined /> },
+	{ key: "login_logs", label: "登录日志", icon: <LoginOutlined /> },
 ];
 
 export function DetailSider({ activeTab, onSelect }: DetailSiderProps) {
@@ -53,6 +55,12 @@ export function DetailSider({ activeTab, onSelect }: DetailSiderProps) {
 				return false;
 			}
 			if (item.key === "blockwords" && !hasPermission(DOMAIN_BLOCKED_WORD_READ_PERMISSION)) {
+				return false;
+			}
+			if (item.key === "audit_logs" && !hasPermission(DOMAIN_CONTROL_AUDIT_LOG_READ_PERMISSION)) {
+				return false;
+			}
+			if (item.key === "login_logs" && !hasPermission(DOMAIN_CONTROL_LOGIN_LOG_READ_PERMISSION)) {
 				return false;
 			}
 			return true;

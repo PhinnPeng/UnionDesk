@@ -56,7 +56,7 @@
 | 域角色管理 | `detail-roles.tsx` | `DomainRoleController` | **Partial** | **S2 US-S2-02**「角色管理」只读；`platform.domain.roles.*` |
 | 平台屏蔽词（全局） | `pages/platform/blockwords/index.tsx` | `PlatformBlockedWordController` | **Done** | **S2 US-S2-05**：`platform.blocked_word.*`；Flyway `V202606080001` |
 | 域屏蔽词（域内） | `detail-blockwords.tsx` | `BlockedWordController` | **Done** | **S2 US-S2-05**：`platform.domain.control.blocked_word.*` |
-| 域业务日志 | `detail-logs.tsx` | 域级 audit/login API | **Partial** | **S2 US-S2-06**：双 Tab；`platform.audit-logs.read` |
+| 域业务日志 | `detail-audit-logs.tsx` / `detail-login-logs.tsx` | 域级 audit/login API | **Done** | **S2 US-S2-06**：侧栏双页；`platform.domain.control.*` / `platform.log.*` |
 | 入域双配置迁移 | — | `V202605250001` | **Done** | 脚本已入库；HEAD 后端 DTO/Service 与 AdminWeb 双字段 UI 已对齐（US-S1-03） |
 
 **Flyway 相关**：`V202605200002`（base 建表）、`V202605200003`（audit 字段）、`V202605240001`（description）、`V202605250001`（access policy，双字段已对齐）。

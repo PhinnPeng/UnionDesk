@@ -2,6 +2,7 @@ package com.uniondesk.audit.web;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,6 +27,9 @@ class LoginLogControllerTests {
                 eq(10L),
                 eq(1),
                 eq(20),
+                isNull(),
+                isNull(),
+                isNull(),
                 eq("admin"),
                 eq("SUCCESS"),
                 any(),
@@ -55,6 +59,7 @@ class LoginLogControllerTests {
                 .andExpect(jsonPath("$.list[0].result").value("success"))
                 .andExpect(jsonPath("$.list[0].loginName").value("admin"));
 
-        verify(auditLogService).listDomainLoginLogs(eq(10L), eq(1), eq(20), eq("admin"), eq("SUCCESS"), any(), any());
+        verify(auditLogService).listDomainLoginLogs(
+                eq(10L), eq(1), eq(20), isNull(), isNull(), isNull(), eq("admin"), eq("SUCCESS"), any(), any());
     }
 }

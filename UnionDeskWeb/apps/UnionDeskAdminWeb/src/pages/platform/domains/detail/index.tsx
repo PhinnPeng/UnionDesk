@@ -12,11 +12,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 
 import { DetailBaseinfo } from "./components/detail-baseinfo";
+import { DetailAuditLogs } from "./components/detail-audit-logs";
 import { DetailBlockwords } from "./components/detail-blockwords";
 import { DetailConfig } from "./components/detail-config";
 import { DetailCustomers } from "./components/detail-customers";
 import { DetailHeader } from "./components/detail-header";
-import { DetailLogs } from "./components/detail-logs";
+import { DetailLoginLogs } from "./components/detail-login-logs";
 import { DetailMembers } from "./components/detail-members";
 import { DetailNotifications } from "./components/detail-notifications";
 import { DetailOnboarding } from "./components/detail-onboarding";
@@ -25,7 +26,9 @@ import { DetailRoles } from "./components/detail-roles";
 import { DetailSider } from "./components/detail-sider";
 import { DetailTickets } from "./components/detail-tickets";
 import {
+	DOMAIN_CONTROL_AUDIT_LOG_READ_PERMISSION,
 	DOMAIN_CONTROL_ENTRY_PERMISSION,
+	DOMAIN_CONTROL_LOGIN_LOG_READ_PERMISSION,
 	DOMAIN_CONTROL_OVERVIEW_PERMISSION,
 	DOMAIN_CUSTOMER_READ_PERMISSION,
 	DOMAIN_ROLES_READ_PERMISSION,
@@ -40,6 +43,8 @@ function resolveEffectiveTab(
 	canViewOverview: boolean,
 	canViewCustomers: boolean,
 	canViewRoles: boolean,
+	canViewAuditLogs: boolean,
+	canViewLoginLogs: boolean,
 ): DetailTabKey {
 	if (activeTab === "overview" && !canViewOverview) {
 		return "basic";
@@ -48,6 +53,12 @@ function resolveEffectiveTab(
 		return canViewOverview ? "overview" : "basic";
 	}
 	if (activeTab === "roles" && !canViewRoles) {
+		return canViewOverview ? "overview" : "basic";
+	}
+	if (activeTab === "audit_logs" && !canViewAuditLogs) {
+		return canViewOverview ? "overview" : "basic";
+	}
+	if (activeTab === "login_logs" && !canViewLoginLogs) {
 		return canViewOverview ? "overview" : "basic";
 	}
 	return activeTab;
@@ -81,8 +92,10 @@ function renderActiveTab(
 			return <DetailNotifications />;
 		case "config":
 			return <DetailConfig domainId={domain.id} />;
-		case "logs":
-			return <DetailLogs domainId={domain.id} />;
+		case "audit_logs":
+			return <DetailAuditLogs domainId={domain.id} />;
+		case "login_logs":
+			return <DetailLoginLogs domainId={domain.id} />;
 		default:
 			return <DetailOverview domain={domain} onNavigateTab={onNavigateTab} />;
 	}
@@ -94,6 +107,8 @@ export default function PlatformDomainDetail() {
 	const canViewCustomers = hasPermission(DOMAIN_CUSTOMER_READ_PERMISSION);
 	const canViewOverview = hasPermission(DOMAIN_CONTROL_OVERVIEW_PERMISSION);
 	const canViewRoles = hasPermission(DOMAIN_ROLES_READ_PERMISSION);
+	const canViewAuditLogs = hasPermission(DOMAIN_CONTROL_AUDIT_LOG_READ_PERMISSION);
+	const canViewLoginLogs = hasPermission(DOMAIN_CONTROL_LOGIN_LOG_READ_PERMISSION);
 	const navigate = useNavigate();
 	const { domainId: domainIdParam } = useParams();
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -167,7 +182,14 @@ export default function PlatformDomainDetail() {
 	}, [domain?.name, domainId, resetTableTitle, setTableTitle]);
 
 	const activeTab = parseDetailTab(searchParams.get("tab"));
-	const effectiveTab = resolveEffectiveTab(activeTab, canViewOverview, canViewCustomers, canViewRoles);
+	const effectiveTab = resolveEffectiveTab(
+		activeTab,
+		canViewOverview,
+		canViewCustomers,
+		canViewRoles,
+		canViewAuditLogs,
+		canViewLoginLogs,
+	);
 
 	useEffect(() => {
 		if (effectiveTab === activeTab) {
@@ -193,6 +215,12 @@ export default function PlatformDomainDetail() {
 			return;
 		}
 		if (tab === "roles" && !canViewRoles) {
+			return;
+		}
+		if (tab === "audit_logs" && !canViewAuditLogs) {
+			return;
+		}
+		if (tab === "login_logs" && !canViewLoginLogs) {
 			return;
 		}
 		const next = new URLSearchParams(searchParams);

@@ -23,7 +23,7 @@ public class LoginLogController {
     }
 
     @GetMapping("/login-logs")
-    @RequirePermission(PermissionCodes.PLATFORM_LOGIN_LOG_READ)
+    @RequirePermission(PermissionCodes.PLATFORM_LOG_LOGIN_READ)
     public PageResult<AuditDtos.LoginLogView> listPlatformLoginLogs(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
@@ -57,15 +57,19 @@ public class LoginLogController {
     }
 
     @GetMapping("/domains/{domainId}/login-logs")
-    @RequirePermission(PermissionCodes.DOMAIN_LOGIN_LOG_READ)
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ)
     public PageResult<AuditDtos.LoginLogView> listLoginLogs(
             @PathVariable long domainId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
+            @RequestParam(required = false) String result,
+            @RequestParam(name = "portal_type", required = false) String portalType,
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String operator,
             @RequestParam(required = false) String action,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
-        return auditLogService.listDomainLoginLogs(domainId, page, pageSize, operator, action, startTime, endTime);
+        return auditLogService.listDomainLoginLogs(
+                domainId, page, pageSize, portalType, result, keyword, operator, action, startTime, endTime);
     }
 }

@@ -68,7 +68,7 @@ export default function PlatformHome() {
 		<BasicContent className="h-full bg-colorBgLayout">
 			<Card
 				className="h-full"
-				bodyStyle={{ height: "100%" }}
+				styles={{ body: { height: "100%" } }}
 			>
 				<div className="flex h-full flex-col gap-6">
 					<div className="flex flex-col gap-3">

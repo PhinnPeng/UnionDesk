@@ -113,7 +113,7 @@ class AuditLogServiceTests {
                 .thenReturn(List.of(row));
 
         PageResult<AuditDtos.LoginLogView> page = auditLogService.listDomainLoginLogs(
-                10L, 3, 15, "admin", "SUCCESS", null, end);
+                10L, 3, 15, null, "SUCCESS", null, "admin", null, null, end);
 
         assertThat(page.total()).isEqualTo(3L);
         assertThat(page.list()).hasSize(1);
