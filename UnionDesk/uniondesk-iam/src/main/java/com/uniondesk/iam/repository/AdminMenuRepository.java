@@ -79,6 +79,13 @@ public class AdminMenuRepository {
         adminMenuMapper.insertRoleMenuRelation(roleId, menuId);
     }
 
+    public void batchInsertRoleMenuRelations(int roleId, List<Long> menuIds) {
+        if (menuIds == null || menuIds.isEmpty()) {
+            return;
+        }
+        adminMenuMapper.batchInsertRoleMenuRelations(roleId, menuIds);
+    }
+
     public List<Long> findParentIdsByMenuIds(List<Long> menuIds) {
         return adminMenuMapper.selectParentIdsByMenuIds(menuIds);
     }

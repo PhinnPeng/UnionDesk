@@ -41,8 +41,7 @@ class AdminMenuServiceRolePermissionsTest {
 
         assertThat(permissions.menuIds()).contains(catalogId);
         assertThat(permissions.buttonIds()).contains(buttonId);
-        verify(adminMenuRepository).insertRoleMenuRelation(roleId, catalogId);
-        verify(adminMenuRepository).insertRoleMenuRelation(roleId, buttonId);
+        verify(adminMenuRepository).batchInsertRoleMenuRelations(roleId, List.of(catalogId, buttonId));
     }
 
     @Test

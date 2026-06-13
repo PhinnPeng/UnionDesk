@@ -41,6 +41,8 @@ public interface AdminMenuMapper {
 
     void insertRoleMenuRelation(@Param("roleId") int roleId, @Param("menuId") long menuId);
 
+    void batchInsertRoleMenuRelations(@Param("roleId") int roleId, @Param("menuIds") List<Long> menuIds);
+
     List<Long> selectParentIdsByMenuIds(@Param("menuIds") List<Long> menuIds);
 
     List<Long> selectRequiredButtonIdsByParentIds(@Param("parentIds") List<Long> parentIds);

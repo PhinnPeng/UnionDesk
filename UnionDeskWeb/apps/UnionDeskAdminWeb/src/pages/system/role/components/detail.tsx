@@ -183,8 +183,8 @@ export function Detail({ title, open, onCloseChange, detailData, treeData, refre
 				]}
 			/>
 
-			<Form.Item name="menus" label={t("system.role.assignMenu")} tooltip="按钮节点标注 [按钮] 前缀，与菜单统一勾选">
-				<FormTreeItem treeData={treeData} />
+			<Form.Item name="menus" label={t("system.role.assignMenu")} tooltip="按钮节点标注 [按钮] 前缀；勾选父节点将联动勾选所有子节点">
+				<FormTreeItem treeData={treeData} checkStrictly />
 			</Form.Item>
 		</DrawerForm>
 	);

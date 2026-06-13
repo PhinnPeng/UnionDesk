@@ -9,7 +9,7 @@ services:
       MYSQL_PASSWORD: gq0fd2sqOCncrNp3eBeGuLty
       TZ: UTC
     ports:
-      - "3306:3306"
+      - "30306:3306"
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_0900_ai_ci

@@ -244,12 +244,10 @@ public class AdminMenuService {
         }
         ensureRoleCanOwnButtonPermissions(roleId, normalizedButtonIds);
         adminMenuRepository.deleteRoleMenuRelationsByRoleId(roleId);
-        for (Long menuId : normalizedMenuIds) {
-            adminMenuRepository.insertRoleMenuRelation(roleId, menuId);
-        }
-        for (Long buttonId : normalizedButtonIds) {
-            adminMenuRepository.insertRoleMenuRelation(roleId, buttonId);
-        }
+        List<Long> allMenuRelationIds = new ArrayList<>(normalizedMenuIds.size() + normalizedButtonIds.size());
+        allMenuRelationIds.addAll(normalizedMenuIds);
+        allMenuRelationIds.addAll(normalizedButtonIds);
+        adminMenuRepository.batchInsertRoleMenuRelations(roleId, allMenuRelationIds);
         replaceRolePermissionRows(roleId, normalizedButtonIds);
         return loadRolePermissions(roleId);
     }

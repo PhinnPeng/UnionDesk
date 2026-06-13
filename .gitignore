@@ -1,5 +1,8 @@
 .gitnexus
 
+# Git worktrees (comet isolated builds)
+.worktrees/
+
 # Agent and local tooling artifacts
 .claude/
 CLAUDE.md

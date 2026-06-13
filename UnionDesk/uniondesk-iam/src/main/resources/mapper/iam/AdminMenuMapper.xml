@@ -149,6 +149,14 @@
         VALUES (#{roleId}, #{menuId}, CURRENT_TIMESTAMP(3))
     </insert>
 
+    <insert id="batchInsertRoleMenuRelations">
+        INSERT INTO iam_admin_role_menu_relation (role_id, menu_id, created_at)
+        VALUES
+        <foreach collection="menuIds" item="menuId" separator=",">
+            (#{roleId}, #{menuId}, CURRENT_TIMESTAMP(3))
+        </foreach>
+    </insert>
+
     <select id="selectParentIdsByMenuIds" resultType="java.lang.Long">
         SELECT DISTINCT parent_id FROM iam_admin_menu WHERE id IN
         <foreach collection="menuIds" item="id" open="(" separator="," close=")">#{id}</foreach>
