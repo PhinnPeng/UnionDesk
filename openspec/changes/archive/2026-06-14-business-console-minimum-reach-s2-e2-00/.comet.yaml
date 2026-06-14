@@ -13,6 +13,6 @@ verification_report: docs/superpowers/reports/2026-06-04-business-console-minimu
 branch_status: handled
 created_at: 2026-06-04
 verified_at: 2026-06-14
-archived: false
+archived: true
 handoff_context: openspec/changes/business-console-minimum-reach-s2-e2-00/.comet/handoff/design-context.json
 handoff_hash: dd01d56a2ae29e0cad20f614b90dfeca06e1b7d31f04a3e5e90f60551d72da84
