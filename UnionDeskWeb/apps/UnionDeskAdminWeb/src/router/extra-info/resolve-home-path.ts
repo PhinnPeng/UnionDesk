@@ -32,48 +32,31 @@ function getHomePath(scope: typeof scopePlatform | typeof scopeBusiness) {
 	return scope === scopePlatform ? platformHomePath : businessHomePath;
 }
 
-function hasBusinessMenus(menus: AppRouteRecordRaw[]) {
-	return menus.some(menu => menu.handle?.scope !== scopePlatform);
-}
-
-function hasPlatformMenus(menus: AppRouteRecordRaw[]): boolean {
-	for (const menu of menus) {
-		if (menu.handle?.scope === scopePlatform) {
-			return true;
-		}
-		if (menu.children?.length && hasPlatformMenus(menu.children)) {
-			return true;
-		}
+/**
+ * 按快照 actions 权限码组合解析默认首页。
+ * 仅 platform.* → 平台控制台；仅非 platform.* 或两者都有 → 统一业务域后台。
+ */
+export function resolveHomePathFromActions(actions: readonly string[]): string {
+	const hasPlatform = actions.some(code => code.startsWith("platform."));
+	const hasNonPlatform = actions.some(code => !code.startsWith("platform."));
+	if (hasPlatform && !hasNonPlatform) {
+		return getHomePath(scopePlatform);
 	}
-	return false;
-}
-
-function shouldPreferPlatformHome(
-	menus: AppRouteRecordRaw[],
-	platformAccess: boolean,
-	options?: ResolveHomePathOptions,
-): boolean {
-	return platformAccess
-		|| hasPlatformMenus(menus)
-		|| hasPlatformRoleHint(options?.roles ?? [], options?.loginRole);
+	return getHomePath(scopeBusiness);
 }
 
 /**
- * 根据菜单与平台权限解析默认首页（登录成功、访问 `/`、返回首页共用）。
- * 具备 platformAccess、平台 scope 菜单或平台角色时优先 `/platform/home`。
+ * 根据 actions 解析默认首页（登录成功、访问 `/`、返回首页共用）。
+ * actions 非空时优先走三元规则；否则回退业务域默认首页。
  */
 export function resolveHomePathFromMenus(
-	menus: AppRouteRecordRaw[],
-	platformAccess: boolean,
-	options?: ResolveHomePathOptions,
+	_menus: AppRouteRecordRaw[],
+	_platformAccess: boolean,
+	_options?: ResolveHomePathOptions,
+	actions: readonly string[] = [],
 ): string {
-	if (shouldPreferPlatformHome(menus, platformAccess, options)) {
-		return getHomePath(scopePlatform);
-	}
-	if (menus.length > 0) {
-		return hasBusinessMenus(menus)
-			? getHomePath(scopeBusiness)
-			: getHomePath(scopePlatform);
+	if (actions.length > 0) {
+		return resolveHomePathFromActions(actions);
 	}
 	return getHomePath(scopeBusiness);
 }

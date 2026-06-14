@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => {
 	const userState = {
 		id: 2,
 		roles: ["admin"],
-		actions: [],
+		actions: [] as string[],
 		menus: [] as typeof authState.user.menus,
 		platformAccess: true,
 		setUserInfo: vi.fn(),
@@ -145,6 +145,7 @@ describe("AuthGuard", () => {
 		mocks.pathname = "/";
 		mocks.accessState.isAccessChecked = false;
 		mocks.userState.id = 2;
+		mocks.userState.actions = [];
 		mocks.authState.user.menus = [
 			{
 				path: "/platform/home",
@@ -165,9 +166,25 @@ describe("AuthGuard", () => {
 		mocks.accessState.setAccessStore.mockClear();
 	});
 
-	it("redirects the root path to the cached home path after access data is ready", async () => {
+	it("redirects the root path to business home when actions are empty", async () => {
 		mocks.accessState.isAccessChecked = true;
 		mocks.userState.id = 2;
+
+		render(
+			<AuthGuard>
+				<div>child</div>
+			</AuthGuard>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("navigate")).toHaveTextContent("/system/menu");
+		});
+	});
+
+	it("redirects root to platform home when actions contain only platform.* codes", async () => {
+		mocks.accessState.isAccessChecked = true;
+		mocks.userState.id = 2;
+		mocks.userState.actions = ["platform.menu.read"];
 
 		render(
 			<AuthGuard>
@@ -193,7 +210,7 @@ describe("AuthGuard", () => {
 		expect(screen.queryByTestId("navigate")).toBeNull();
 	});
 
-	it("redirects root to platform home when user has business menus but platformAccess", async () => {
+	it("redirects root to business home when actions contain platform.* and domain.*", async () => {
 		mocks.accessState.isAccessChecked = true;
 		mocks.userState.id = 2;
 		mocks.authState.user.menus = [
@@ -201,6 +218,7 @@ describe("AuthGuard", () => {
 			{ path: "/system/menu", handle: { scope: "business", title: "菜单管理" } } as (typeof mocks.authState.user.menus)[number],
 		];
 		mocks.userState.platformAccess = true;
+		mocks.userState.actions = ["platform.menu.read", "domain.menu.read"];
 
 		render(
 			<AuthGuard>
@@ -209,12 +227,13 @@ describe("AuthGuard", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByTestId("navigate")).toHaveTextContent("/platform/home");
+			expect(screen.getByTestId("navigate")).toHaveTextContent("/system/menu");
 		});
 	});
 
 	it("redirects logged-in users away from the login page", async () => {
 		mocks.pathname = "/login";
+		mocks.userState.actions = ["platform.menu.read"];
 
 		render(
 			<AuthGuard>

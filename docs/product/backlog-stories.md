@@ -252,7 +252,7 @@
 | US-S2-04 | 2 | 平台域超额 | Done |
 | US-S2-05 | 3 | 平台域超额 | Done |
 | US-S2-06 | 2 | 平台域超额 | Done |
-| US-S2-E2-00 | 3 | E2 主路径 | Todo |
+| US-S2-E2-00 | 3 | E2 主路径 | Done |
 
 **Stretch（不纳入 S2 签 off）**：US-S2-E2-01 工单类型设计；US-S1-08 跨域拦截。
 
@@ -365,16 +365,18 @@
 
 ### US-S2-E2-00 业务域端最小可达
 
-- **Epic**: E2 | **Sprint**: S2 | **SP**: 3 | **状态**: Todo
+- **Epic**: E2 | **Sprint**: S2 | **SP**: 3 | **状态**: Done
 - **角色**: 具备 business scope 的域内员工
 - **故事**: 作为域内员工，我登录后应进入业务域端首页，并能通过菜单访问至少一个系统管理页面。
 - **AC**:
-  1. 仅 **business** 权限、无平台权限的账号：登录后默认进入域内首页（如 `/home` 或菜单首项），**非** `/platform/home`。
+  1. 仅 **business** 权限、无平台权限的账号：登录后默认进入域内首页（`/system/menu` 或 `VITE_BASE_HOME_PATH`），**非** `/platform/home`。
   2. 动态菜单与 `iam_admin_menu.scope=business` 一致；至少 **1** 个 `pages/system/*` 页面可打开（非 Empty 占位）。
   3. 与平台端菜单隔离：business 树中无 `/platform/` 模块。
-  4. **平台权限判定（前端）**：权限快照 `actions` 中若存在任意以 **`platform.`** 开头的权限码，则视为具备 **平台权限**（`platformAccess = true`），首页解析与 [`resolve-home-path.ts`](../../UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/extra-info/resolve-home-path.ts) 优先 `/platform/home`；与后端 `platformAccess` 字段对齐或以前端规则为准（实现时二选一文档化）。
+  4. **平台入口与默认首页（前端，解耦）**：
+     - `platformAccess`（`hasPlatformAccess`）：快照 `actions` 含任意 **`platform.*`** → 可进入平台控制台（顶栏入口）。
+     - 默认首页（`resolveHomePathFromActions`）：仅 `platform.*` → `/platform/home`；仅非 `platform.*` 或 **两者都有** → `/system/menu`（或 `VITE_BASE_HOME_PATH`）。
 - **规则**: 双控制台边界见 backlog-epics §8.0。
-- **DB 增量**: 按需菜单 Flyway；可选扩展 snapshot 中 `platformAccess` 推导逻辑
+- **DB 增量**: Flyway `V202606140001`（business 按钮 `domain.*` + `domain_admin` 平台绑定收敛）
 - **备注**: inventory §7；工单类型等归 **US-S2-E2-01（Stretch）**
 
 ---

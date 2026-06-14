@@ -2,6 +2,7 @@ package com.uniondesk.iam.core;
 
 import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.iam.admin.AdminMenuService;
+import com.uniondesk.iam.admin.AdminPermissionCatalog;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -163,7 +164,10 @@ public class IamService {
                     .filter(menu -> activeMenuScope.equals(menu.scope()))
                     .toList();
             menuTree = AdminMenuService.buildTree(activeMenus);
-            actions = snapshotData.actions().stream()
+            List<AdminMenuService.GrantedPermission> scopedActions = snapshotData.actions().stream()
+                    .filter(action -> matchesSnapshotActionScope(action.permissionCode(), activeMenuScope))
+                    .toList();
+            actions = scopedActions.stream()
                     .map(action -> new IamResource(
                             action.id(),
                             "action",
@@ -209,6 +213,17 @@ public class IamService {
         catch (IllegalArgumentException ex) {
             return "business";
         }
+    }
+
+    private boolean matchesSnapshotActionScope(String permissionCode, String activeMenuScope) {
+        if (!StringUtils.hasText(permissionCode)) {
+            return false;
+        }
+        String normalizedCode = permissionCode.trim();
+        if ("business".equals(activeMenuScope)) {
+            return !normalizedCode.startsWith("platform.");
+        }
+        return AdminPermissionCatalog.findByCode(normalizedCode).isPresent();
     }
 
     public List<IamResource> listResources(String resourceType, String clientScope) {

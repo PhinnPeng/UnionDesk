@@ -1,80 +1,40 @@
-import type { AppRouteRecordRaw } from "#src/router/types";
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { resolveHomePathFromMenus } from "./resolve-home-path";
+import { resolveHomePathFromActions, resolveHomePathFromMenus } from "./resolve-home-path";
 
-const platformOnlyMenus: AppRouteRecordRaw[] = [
-	{
-		path: "/platform/home",
-		handle: { scope: "platform", title: "平台首页" },
-	},
-];
+describe("resolveHomePathFromActions", () => {
+	beforeEach(() => {
+		vi.stubEnv("VITE_BASE_HOME_PATH", "/system/menu");
+	});
 
-const mixedScopeMenus: AppRouteRecordRaw[] = [
-	{
-		path: "/platform/home",
-		handle: { scope: "platform", title: "平台首页" },
-	},
-	{
-		path: "/system/menu",
-		handle: { scope: "business", title: "菜单管理" },
-	},
-];
+	it("仅 platform.* 权限时进入平台首页", () => {
+		expect(resolveHomePathFromActions(["platform.menu.read", "platform.home.read"])).toBe("/platform/home");
+	});
 
-const businessOnlyMenus: AppRouteRecordRaw[] = [
-	{
-		path: "/system/menu",
-		handle: { scope: "business", title: "菜单管理" },
-	},
-];
+	it("仅 domain.* 权限时进入业务域首页", () => {
+		expect(resolveHomePathFromActions(["domain.menu.read", "domain.role.read"])).toBe("/system/menu");
+	});
+
+	it("platform.* 与 domain.* 同时存在时进入业务域首页", () => {
+		expect(resolveHomePathFromActions(["platform.menu.read", "domain.menu.read"])).toBe("/system/menu");
+	});
+
+	it("无 actions 时进入业务域默认首页", () => {
+		expect(resolveHomePathFromActions([])).toBe("/system/menu");
+	});
+});
 
 describe("resolveHomePathFromMenus", () => {
 	beforeEach(() => {
 		vi.stubEnv("VITE_BASE_HOME_PATH", "/system/menu");
 	});
 
-	it("platformAccess 为 true 时，即使存在 business 顶层菜单也进入平台首页", () => {
-		expect(resolveHomePathFromMenus(mixedScopeMenus, true)).toBe("/platform/home");
+	it("传入 actions 时优先走三元规则", () => {
+		expect(resolveHomePathFromMenus([], true, undefined, ["platform.menu.read"])).toBe("/platform/home");
+		expect(resolveHomePathFromMenus([], true, undefined, ["platform.menu.read", "domain.menu.read"])).toBe("/system/menu");
 	});
 
-	it("platformAccess 为 false 但存在 platform 顶层菜单时仍进入平台首页", () => {
-		expect(resolveHomePathFromMenus(platformOnlyMenus, false)).toBe("/platform/home");
-	});
-
-	it("platformAccess 为 false 且仅有 business 菜单时进入业务域首页", () => {
-		expect(resolveHomePathFromMenus(businessOnlyMenus, false)).toBe("/system/menu");
-	});
-
-	it("platformAccess 为 false 但菜单含 platform 与 business 时仍进入平台首页", () => {
-		expect(resolveHomePathFromMenus(mixedScopeMenus, false)).toBe("/platform/home");
-	});
-
-	it("platformAccess 为 true 且无菜单时仍进入平台首页", () => {
-		expect(resolveHomePathFromMenus([], true)).toBe("/platform/home");
-	});
-
-	it("无 platformAccess 且无菜单时进入业务域默认首页", () => {
-		expect(resolveHomePathFromMenus([], false)).toBe("/system/menu");
-	});
-
-	it("快照未就绪但 loginRole 为 super_admin 时仍进入平台首页", () => {
-		expect(resolveHomePathFromMenus([], false, { loginRole: "super_admin" })).toBe("/platform/home");
-	});
-
-	it("嵌套 platform 子菜单时识别为平台首页", () => {
-		const nestedPlatformMenus: AppRouteRecordRaw[] = [
-			{
-				path: "/platform/catalog/1",
-				handle: { title: "权限管理" },
-				children: [
-					{
-						path: "/platform/home",
-						handle: { scope: "platform", title: "平台首页" },
-					},
-				],
-			},
-		];
-		expect(resolveHomePathFromMenus(nestedPlatformMenus, false)).toBe("/platform/home");
+	it("无 actions 时回退业务域默认首页", () => {
+		expect(resolveHomePathFromMenus([], true)).toBe("/system/menu");
 	});
 });

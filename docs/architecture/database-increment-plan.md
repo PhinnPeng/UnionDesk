@@ -104,7 +104,7 @@
 | US-S2-04 | 无（除非客户编辑扩列） | — | Todo |
 | US-S2-05 | 无表变更；权限 platform.blocked_word.* + platform.domain.control.blocked_word.*；菜单 /platform/blockwords + 域详情 catalog | 202606080001 | Done |
 | US-S2-06 | 无表变更；platform.audit_log.read/login_log.read → platform.log.*；domain.audit_log/login_log.read → platform.domain.control.*；域详情 catalog 操作/登录日志 | 202606090001 | Done |
-| US-S2-E2-00 | `iam_admin_menu` business 菜单（按需） | TBD | Todo |
+| US-S2-E2-00 | business 按钮 domain.* + domain_admin 菜单收敛 | V202606140001 | Done |
 | US-S2-E2-01 | `ticket_type` 等（Stretch） | TBD | 延后 |
 
 ---

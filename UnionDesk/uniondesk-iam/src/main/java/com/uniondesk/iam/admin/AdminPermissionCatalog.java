@@ -19,6 +19,10 @@ public final class AdminPermissionCatalog {
             new PermissionDefinition(PermissionCodes.PLATFORM_MENU_CREATE, "Create menu", "platform", "POST", "/api/v1/iam/menus"),
             new PermissionDefinition(PermissionCodes.PLATFORM_MENU_UPDATE, "Update menu", "platform", "PUT", "/api/v1/iam/menus/*"),
             new PermissionDefinition(PermissionCodes.PLATFORM_MENU_DELETE, "Delete menu", "platform", "DELETE", "/api/v1/iam/menus/*"),
+            new PermissionDefinition(PermissionCodes.DOMAIN_MENU_READ, "View domain menus", "domain", "GET", "/api/v1/iam/menus/tree"),
+            new PermissionDefinition(PermissionCodes.DOMAIN_MENU_CREATE, "Create domain menu", "domain", "POST", "/api/v1/iam/menus"),
+            new PermissionDefinition(PermissionCodes.DOMAIN_MENU_UPDATE, "Update domain menu", "domain", "PUT", "/api/v1/iam/menus/*"),
+            new PermissionDefinition(PermissionCodes.DOMAIN_MENU_DELETE, "Delete domain menu", "domain", "DELETE", "/api/v1/iam/menus/*"),
             new PermissionDefinition(
                     PermissionCodes.PLATFORM_ADMIN_PERMISSION_CODES_READ,
                     "View admin permission codes",

@@ -119,7 +119,10 @@ public class IamController {
     }
 
     @GetMapping("/menus/tree")
-    @RequirePermission(PermissionCodes.PLATFORM_MENU_READ)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_MENU_READ,
+            PermissionCodes.DOMAIN_MENU_READ
+    })
     public Object listMenusTree(@RequestParam(name = "scope", required = false) String scope) {
         if (StringUtils.hasText(scope)) {
             return adminMenuService.listMenuTree(scope).stream()
@@ -138,7 +141,10 @@ public class IamController {
 
     @PostMapping("/menus")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_MENU_CREATE)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_MENU_CREATE,
+            PermissionCodes.DOMAIN_MENU_CREATE
+    })
     public IamDtos.ResourceView createMenu(@Valid @RequestBody IamDtos.CreateMenuRequest request) {
         AdminMenuNode node = adminMenuService.createMenu(new CreateAdminMenuCommand(
                 request.nodeType(),
@@ -156,7 +162,10 @@ public class IamController {
     }
 
     @PutMapping("/menus/{menuId}")
-    @RequirePermission(PermissionCodes.PLATFORM_MENU_UPDATE)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_MENU_UPDATE,
+            PermissionCodes.DOMAIN_MENU_UPDATE
+    })
     public IamDtos.ResourceView updateMenu(@PathVariable long menuId, @Valid @RequestBody IamDtos.UpdateMenuRequest request) {
         AdminMenuNode node = adminMenuService.updateMenu(menuId, new UpdateAdminMenuCommand(
                 request.nodeType(),
@@ -175,7 +184,10 @@ public class IamController {
 
     @DeleteMapping("/menus/{menuId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.PLATFORM_MENU_DELETE)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_MENU_DELETE,
+            PermissionCodes.DOMAIN_MENU_DELETE
+    })
     public void deleteMenu(@PathVariable long menuId) {
         adminMenuService.deleteMenu(menuId);
         iamService.evictAuthorizationCache();

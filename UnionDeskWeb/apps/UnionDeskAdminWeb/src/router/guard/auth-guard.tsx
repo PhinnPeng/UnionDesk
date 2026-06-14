@@ -173,7 +173,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 		const homePath = resolveHomePathFromMenus(authUserMenus, platformAccess, {
 			roles: userRoles,
 			loginRole,
-		});
+		}, userActions);
 		return <Navigate to={homePath} replace />;
 	}
 

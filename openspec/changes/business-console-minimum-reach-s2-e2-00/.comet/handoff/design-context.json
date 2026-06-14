@@ -1,0 +1,14 @@
+{
+  "change": "business-console-minimum-reach-s2-e2-00",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "dd01d56a2ae29e0cad20f614b90dfeca06e1b7d31f04a3e5e90f60551d72da84",
+  "files": [
+    { "path": "openspec/changes/business-console-minimum-reach-s2-e2-00/proposal.md", "sha256": "2e4b815879dc8bb67f9ff604c60fc4065c4050b7b8ff7ddf2631a18e18d227e1" },
+    { "path": "openspec/changes/business-console-minimum-reach-s2-e2-00/design.md", "sha256": "7cb2c19e47b5d5a59f5dcd6f45d37ce691369d8906b0404a78aa6ef956b00fc1" },
+    { "path": "openspec/changes/business-console-minimum-reach-s2-e2-00/tasks.md", "sha256": "6e563d25b7899c3884754be25a17f82872ed4687c191acb3b2842c561c1737dd" },
+    { "path": "openspec/changes/business-console-minimum-reach-s2-e2-00/specs/business-console-minimum-reach/spec.md", "sha256": "4f190c0c0f4a6baf50915ae094363b28f55b66ebd2747378235d48c29d060a38" }
+  ]
+}

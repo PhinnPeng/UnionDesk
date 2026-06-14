@@ -6,7 +6,7 @@ import { useUserStore } from "#src/store/user";
 import { platformHomePath, platformPath } from "./route-path";
 import { resolveHomePathFromMenus } from "./resolve-home-path";
 
-export { hasPlatformRoleHint, isPlatformRoleCode, resolveHomePathFromMenus } from "./resolve-home-path";
+export { hasPlatformRoleHint, isPlatformRoleCode, resolveHomePathFromActions, resolveHomePathFromMenus } from "./resolve-home-path";
 export type { ResolveHomePathOptions } from "./resolve-home-path";
 
 export const appScopes = {
@@ -50,13 +50,13 @@ function pickMenusForHome(): AppRouteRecordRaw[] {
 }
 
 function getHomePathContext() {
-	const { platformAccess, roles } = useUserStore.getState();
+	const { platformAccess, roles, actions } = useUserStore.getState();
 	const loginRole = useAuthStore.getState().role;
-	return { platformAccess, roles, loginRole };
+	return { platformAccess, roles, loginRole, actions };
 }
 
 export function resolveBackHomePath(): string {
 	const menus = pickMenusForHome();
-	const { platformAccess, roles, loginRole } = getHomePathContext();
-	return resolveHomePathFromMenus(menus, platformAccess, { roles, loginRole });
+	const { platformAccess, roles, loginRole, actions } = getHomePathContext();
+	return resolveHomePathFromMenus(menus, platformAccess, { roles, loginRole }, actions);
 }

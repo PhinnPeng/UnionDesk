@@ -94,6 +94,66 @@ class IamServiceTests {
     }
 
     @Test
+    void loadPermissionSnapshotFiltersPlatformActionsForDomainRoles() {
+        IamRepository iamRepository = mock(IamRepository.class);
+        AdminMenuService adminMenuService = mock(AdminMenuService.class);
+        IamService service = newService(iamRepository, mock(OrganizationService.class), adminMenuService);
+
+        stubUserSummary(iamRepository);
+        when(iamRepository.findUserRoleCodesByClientAdmin(42L)).thenReturn(List.of("domain_admin"));
+        when(iamRepository.findRolesByCodes(anyList())).thenReturn(List.of(rolePo(3, "domain_admin", "domain", 1)));
+        when(iamRepository.findDomainSummariesForUser(eq(42L), anyList())).thenReturn(List.of(domainSummary(8L, "domain-8", "业务域8")));
+        when(adminMenuService.loadPermissionSnapshot(anyList()))
+                .thenReturn(new AdminMenuService.PermissionSnapshotData(
+                        List.of(
+                                new AdminMenuService.AdminMenuNode(
+                                        2L, "ADM0000000002", "menu", "business", "业务菜单",
+                                        "/system/menu", "./system/menu", "domain.menu.read",
+                                        null, 2, "MenuOutlined", false, 1, false, List.of())),
+                        List.of(
+                                new AdminMenuService.GrantedPermission(
+                                        6L, "查看菜单", PermissionCodes.PLATFORM_MENU_READ, "GET", "/api/v1/iam/menus/tree", 2L, 0, false),
+                                new AdminMenuService.GrantedPermission(
+                                        7L, "查看菜单", PermissionCodes.DOMAIN_MENU_READ, "GET", "/api/v1/iam/menus/tree", 2L, 0, false))));
+
+        IamService.PermissionSnapshot snapshot = service.loadPermissionSnapshot(
+                new UserContext(42L, "domain_admin", 1L, "sid-1", "ud-admin-web"));
+
+        assertThat(snapshot.actions()).extracting(IamService.IamResource::resourceCode)
+                .containsExactly(PermissionCodes.DOMAIN_MENU_READ);
+    }
+
+    @Test
+    void loadPermissionSnapshotKeepsPlatformActionsForGlobalRoles() {
+        IamRepository iamRepository = mock(IamRepository.class);
+        AdminMenuService adminMenuService = mock(AdminMenuService.class);
+        IamService service = newService(iamRepository, mock(OrganizationService.class), adminMenuService);
+
+        stubUserSummary(iamRepository);
+        when(iamRepository.findUserRoleCodesByClientAdmin(42L)).thenReturn(List.of("super_admin"));
+        when(iamRepository.findRolesByCodes(anyList())).thenReturn(List.of(rolePo(4, "super_admin", "global", 1)));
+        when(iamRepository.findDomainSummariesForUser(eq(42L), anyList())).thenReturn(List.of());
+        when(adminMenuService.loadPermissionSnapshot(anyList()))
+                .thenReturn(new AdminMenuService.PermissionSnapshotData(
+                        List.of(
+                                new AdminMenuService.AdminMenuNode(
+                                        1L, "ADM0000000001", "menu", "platform", "平台菜单",
+                                        "/platform/menu", "./platform/system/menu", "platform.menu.read",
+                                        null, 1, "MenuOutlined", false, 1, false, List.of())),
+                        List.of(
+                                new AdminMenuService.GrantedPermission(
+                                        6L, "查看菜单", PermissionCodes.PLATFORM_MENU_READ, "GET", "/api/v1/iam/menus/tree", 1L, 0, false),
+                                new AdminMenuService.GrantedPermission(
+                                        7L, "查看菜单", PermissionCodes.DOMAIN_MENU_READ, "GET", "/api/v1/iam/menus/tree", 2L, 0, false))));
+
+        IamService.PermissionSnapshot snapshot = service.loadPermissionSnapshot(
+                new UserContext(42L, "super_admin", 1L, "sid-1", "ud-admin-web"));
+
+        assertThat(snapshot.actions()).extracting(IamService.IamResource::resourceCode)
+                .contains(PermissionCodes.PLATFORM_MENU_READ, PermissionCodes.DOMAIN_MENU_READ);
+    }
+
+    @Test
     void loadPermissionSnapshotKeepsBusinessMenusForDomainRoles() {
         IamRepository iamRepository = mock(IamRepository.class);
         AdminMenuService adminMenuService = mock(AdminMenuService.class);

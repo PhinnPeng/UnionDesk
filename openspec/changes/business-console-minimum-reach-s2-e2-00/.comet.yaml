@@ -1,0 +1,18 @@
+workflow: full
+phase: build
+build_mode: subagent-driven-development
+build_pause: null
+isolation: branch
+verify_mode: null
+base_ref: 89afaa086cda87c1ec59c77b4b851be92d6d0296
+design_doc: docs/superpowers/specs/2026-06-04-business-console-minimum-reach-s2-e2-00-design.md
+plan: docs/superpowers/plans/2026-06-04-business-console-minimum-reach-s2-e2-00.md
+build_command: export JAVA_HOME="/mnt/c/Program Files/Eclipse Adoptium/jdk-21.0.10.7-hotspot" && export PATH="$JAVA_HOME/bin:$PATH" && cd UnionDesk && mvn install -pl uniondesk-iam -DskipTests -q && mvn compile -pl uniondesk-app -am -q
+verify_result: null
+verification_report: null
+branch_status: null
+created_at: 2026-06-04
+verified_at: null
+archived: false
+handoff_context: openspec/changes/business-console-minimum-reach-s2-e2-00/.comet/handoff/design-context.json
+handoff_hash: dd01d56a2ae29e0cad20f614b90dfeca06e1b7d31f04a3e5e90f60551d72da84
