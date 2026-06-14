@@ -4,7 +4,13 @@ import { fetchDomainAuditLogs } from "#src/api/platform/audit";
 import { AuthGuarded } from "#src/components/auth-guarded";
 import { TableSearchForm } from "#src/components/table-search-form";
 
-import { App, Card, DatePicker, Empty, Form, Input, Table, Tag } from "antd";
+import {
+	AUDIT_ACTION_FILTER_OPTIONS,
+	formatAuditDetail,
+	resolveAuditActionLabel,
+} from "#src/pages/platform/audit-logs/audit-log-labels";
+
+import { App, Card, DatePicker, Empty, Form, Input, Select, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { useCallback, useEffect, useState } from "react";
@@ -82,7 +88,7 @@ export function DetailAuditLogs({ domainId }: DetailAuditLogsProps) {
 			title: "动作",
 			dataIndex: "action",
 			width: 180,
-			render: (_, row) => row.action ?? "—",
+			render: (_, row) => resolveAuditActionLabel(row),
 		},
 		{
 			title: "结果",
@@ -101,8 +107,11 @@ export function DetailAuditLogs({ domainId }: DetailAuditLogsProps) {
 		{
 			title: "明细",
 			dataIndex: "detail",
-			ellipsis: true,
-			render: (_, row) => row.detail ?? "—",
+			render: (_, row) => (
+				<Typography.Paragraph style={{ marginBottom: 0, whiteSpace: "pre-wrap" }}>
+					{formatAuditDetail(row.detail)}
+				</Typography.Paragraph>
+			),
 		},
 		{
 			title: "发生时间",
@@ -135,7 +144,7 @@ export function DetailAuditLogs({ domainId }: DetailAuditLogsProps) {
 						<Input allowClear placeholder="姓名 / ID" />
 					</Form.Item>
 					<Form.Item name="action" label="动作">
-						<Input allowClear placeholder="如 ticket.reply" />
+						<Select allowClear placeholder="全部动作" options={[...AUDIT_ACTION_FILTER_OPTIONS]} />
 					</Form.Item>
 					<Form.Item name="timeRange" label="时间范围">
 						<RangePicker showTime className="w-full" />

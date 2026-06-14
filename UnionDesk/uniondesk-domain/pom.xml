@@ -17,7 +17,7 @@
     <dependencies>
         <dependency>
             <groupId>com.uniondesk</groupId>
-            <artifactId>uniondesk-iam</artifactId>
+            <artifactId>uniondesk-support</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

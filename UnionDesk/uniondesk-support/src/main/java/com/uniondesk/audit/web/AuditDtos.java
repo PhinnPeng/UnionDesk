@@ -15,6 +15,7 @@ public final class AuditDtos {
             String operatorActorType,
             String target,
             String action,
+            String actionLabel,
             String detail,
             String result,
             LocalDateTime occurredAt,

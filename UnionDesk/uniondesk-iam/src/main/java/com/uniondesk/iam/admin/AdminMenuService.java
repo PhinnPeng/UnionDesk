@@ -1,8 +1,12 @@
 package com.uniondesk.iam.admin;
 
+import com.uniondesk.auth.core.UserContextHolder;
+import com.uniondesk.common.event.RolePermissionsChangedEvent;
+import com.uniondesk.common.event.UnionDeskEventPublisher;
 import com.uniondesk.iam.admin.AdminPermissionCatalog.PermissionDefinition;
 import com.uniondesk.iam.entity.AdminMenuPo;
 import com.uniondesk.iam.entity.RolePermissionRowPo;
+import com.uniondesk.iam.entity.RolePo;
 import com.uniondesk.iam.entity.RoutePathRowPo;
 import com.uniondesk.iam.repository.AdminMenuRepository;
 import java.time.Clock;
@@ -32,10 +36,15 @@ public class AdminMenuService {
     private static final List<String> SUPPORTED_NODE_TYPES = List.of(NODE_TYPE_CATALOG, NODE_TYPE_MENU, NODE_TYPE_BUTTON);
 
     private final AdminMenuRepository adminMenuRepository;
+    private final UnionDeskEventPublisher eventPublisher;
     private final Clock clock;
 
-    public AdminMenuService(AdminMenuRepository adminMenuRepository, Clock clock) {
+    public AdminMenuService(
+            AdminMenuRepository adminMenuRepository,
+            UnionDeskEventPublisher eventPublisher,
+            Clock clock) {
         this.adminMenuRepository = adminMenuRepository;
+        this.eventPublisher = eventPublisher;
         this.clock = clock;
     }
 
@@ -229,6 +238,7 @@ public class AdminMenuService {
     @Transactional
     public RolePermissions replaceRolePermissions(int roleId, List<Long> menuIds, List<Long> buttonIds) {
         assertRoleExists(roleId);
+        RolePermissions beforePermissions = loadRolePermissions(roleId);
         Set<Long> normalizedMenuIds = menuIds == null ? new LinkedHashSet<>() : new LinkedHashSet<>(menuIds);
         Set<Long> normalizedButtonIds = buttonIds == null ? new LinkedHashSet<>() : new LinkedHashSet<>(buttonIds);
         ensureNodeTypes(normalizedMenuIds, List.of(NODE_TYPE_MENU, NODE_TYPE_CATALOG));
@@ -249,7 +259,34 @@ public class AdminMenuService {
         allMenuRelationIds.addAll(normalizedButtonIds);
         adminMenuRepository.batchInsertRoleMenuRelations(roleId, allMenuRelationIds);
         replaceRolePermissionRows(roleId, normalizedButtonIds);
-        return loadRolePermissions(roleId);
+        RolePermissions afterPermissions = loadRolePermissions(roleId);
+        publishRolePermissionsChangedEvent(roleId, beforePermissions, afterPermissions);
+        return afterPermissions;
+    }
+
+    private void publishRolePermissionsChangedEvent(
+            int roleId,
+            RolePermissions beforePermissions,
+            RolePermissions afterPermissions) {
+        RolePo role = adminMenuRepository.findRoleById(roleId).orElse(null);
+        if (role == null) {
+            return;
+        }
+        var context = UserContextHolder.current();
+        if (context.isEmpty()) {
+            return;
+        }
+        long operatorUserId = context.get().userId();
+        eventPublisher.publish(new RolePermissionsChangedEvent(
+                0L,
+                roleId,
+                role.getName(),
+                role.getCode(),
+                List.copyOf(beforePermissions.menuIds()),
+                List.copyOf(afterPermissions.menuIds()),
+                List.copyOf(beforePermissions.buttonIds()),
+                List.copyOf(afterPermissions.buttonIds()),
+                operatorUserId));
     }
 
     private RequiredMenuIds loadRequiredMenuAndButtonIds(int roleId) {

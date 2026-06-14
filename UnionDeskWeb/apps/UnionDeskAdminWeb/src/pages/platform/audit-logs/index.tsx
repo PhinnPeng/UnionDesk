@@ -12,6 +12,14 @@ import type { BusinessDomainView } from "@uniondesk/shared";
 
 import type { LoginLogView, PlatformAuditLogView } from "#src/api/platform/audit";
 
+import {
+	AUDIT_ACTION_FILTER_OPTIONS,
+	formatAuditDetail,
+	formatLoginPortalType,
+	formatLoginResult,
+	resolveAuditActionLabel,
+} from "./audit-log-labels";
+
 type AuditTabKey = "audit" | "login";
 
 const { RangePicker } = DatePicker;
@@ -138,6 +146,7 @@ export default function PlatformAuditLogs() {
 			title: "动作",
 			dataIndex: "action",
 			width: 180,
+			render: (_, row) => resolveAuditActionLabel(row),
 		},
 		{
 			title: "结果",
@@ -153,7 +162,11 @@ export default function PlatformAuditLogs() {
 		{
 			title: "明细",
 			dataIndex: "detail",
-			ellipsis: true,
+			render: (_, row) => (
+				<Typography.Paragraph style={{ marginBottom: 0, whiteSpace: "pre-wrap" }}>
+					{formatAuditDetail(row.detail)}
+				</Typography.Paragraph>
+			),
 		},
 		{
 			title: "发生时间",
@@ -180,12 +193,15 @@ export default function PlatformAuditLogs() {
 			title: "门户",
 			dataIndex: "portalType",
 			width: 120,
+			render: (_, row) => formatLoginPortalType(row.portalType),
 		},
 		{
 			title: "结果",
 			dataIndex: "result",
 			width: 110,
-			render: (_, row) => <Tag color={row.result === "success" ? "green" : "red"}>{row.result ?? "-"}</Tag>,
+			render: (_, row) => (
+				<Tag color={row.result === "success" ? "green" : "red"}>{formatLoginResult(row.result)}</Tag>
+			),
 		},
 		{
 			title: "IP",
@@ -240,7 +256,7 @@ export default function PlatformAuditLogs() {
 									<Input allowClear placeholder="姓名 / ID" />
 								</Form.Item>
 								<Form.Item name="action" label="动作">
-									<Input allowClear placeholder="如 ticket.reply" />
+									<Select allowClear placeholder="全部动作" options={[...AUDIT_ACTION_FILTER_OPTIONS]} />
 								</Form.Item>
 								<Form.Item name="timeRange" label="时间范围">
 									<RangePicker showTime className="w-full" />
@@ -280,8 +296,8 @@ export default function PlatformAuditLogs() {
 										allowClear
 										placeholder="全部门户"
 										options={[
-											{ label: "admin", value: "admin" },
-											{ label: "customer", value: "customer" },
+											{ label: "员工端", value: "staff" },
+											{ label: "客户端", value: "customer" },
 										]}
 									/>
 								</Form.Item>
@@ -290,8 +306,8 @@ export default function PlatformAuditLogs() {
 										allowClear
 										placeholder="全部结果"
 										options={[
-											{ label: "success", value: "success" },
-											{ label: "failure", value: "failure" },
+											{ label: "成功", value: "success" },
+											{ label: "失败", value: "failure" },
 										]}
 									/>
 								</Form.Item>

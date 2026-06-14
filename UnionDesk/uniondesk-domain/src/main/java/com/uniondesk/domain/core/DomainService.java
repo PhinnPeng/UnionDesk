@@ -5,9 +5,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.auth.core.UserContextHolder;
+import com.uniondesk.audit.semantics.AuditLogWriter;
+import com.uniondesk.common.audit.AuditActionCodes;
+import com.uniondesk.common.audit.AuditDetailTextBuilder;
+import com.uniondesk.common.audit.AuditTargetFormatter;
 import com.uniondesk.common.web.ErrorCodes;
 import com.uniondesk.common.web.PageResult;
-import com.uniondesk.domain.entity.AuditLogPo;
 import com.uniondesk.domain.entity.BusinessDomainPo;
 import com.uniondesk.domain.repository.DomainRepository;
 import com.uniondesk.domain.web.DomainDtos;
@@ -15,9 +18,7 @@ import com.uniondesk.iam.core.IamService;
 import com.uniondesk.iam.core.PermissionCodes;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -34,16 +35,19 @@ public class DomainService {
     private final ObjectMapper objectMapper;
     private final DomainBootstrapService domainBootstrapService;
     private final IamService iamService;
+    private final AuditLogWriter auditLogWriter;
 
     public DomainService(
             DomainRepository domainRepository,
             ObjectMapper objectMapper,
             DomainBootstrapService domainBootstrapService,
-            IamService iamService) {
+            IamService iamService,
+            AuditLogWriter auditLogWriter) {
         this.domainRepository = domainRepository;
         this.objectMapper = objectMapper;
         this.domainBootstrapService = domainBootstrapService;
         this.iamService = iamService;
+        this.auditLogWriter = auditLogWriter;
     }
 
     public PageResult<DomainDtos.DomainView> listAdminDomains(
@@ -110,14 +114,16 @@ public class DomainService {
             throw new IllegalStateException("business domain create failed");
         }
 
-        DomainBootstrapService.BootstrapResult bootstrap = domainBootstrapService.bootstrapNewDomain(id, context.userId());
-        Map<String, Object> auditPayload = new HashMap<>();
-        auditPayload.put("code", request.code());
-        auditPayload.put("name", request.name());
-        auditPayload.put("creator_user_id", context.userId());
-        auditPayload.put("staff_account_id", bootstrap.staffAccountId());
-        auditPayload.put("granted_role", bootstrap.grantedRole());
-        recordAudit(id, context, "domain:" + request.code(), "domain.create", auditPayload, "success");
+        domainBootstrapService.bootstrapNewDomain(id, context.userId());
+        auditLogWriter.write(
+                id,
+                context.userId(),
+                "staff",
+                AuditTargetFormatter.formatDomain(request.name().trim(), request.code().trim()),
+                AuditActionCodes.PLATFORM_DOMAIN_CREATE,
+                AuditDetailTextBuilder.buildDomainCreateDetail(request.name().trim(), request.code().trim()),
+                "success",
+                context.sessionId());
 
         return new DomainDtos.DomainCreateResponse(id, request.code().trim());
     }
@@ -171,8 +177,41 @@ public class DomainService {
                 code, name, description, logo, legacyVisibilityPolicy, toJson(visibilityPolicyCodes),
                 registrationEnabled, invitationEnabled, status, context.userId(), id);
 
-        recordAudit(id, context, "domain:" + code, "domain.update",
-                Map.of("id", id, "name", name, "status", status), "success");
+        String target = AuditTargetFormatter.formatDomain(name, code);
+        if (statusChanging) {
+            auditLogWriter.write(
+                    id,
+                    context.userId(),
+                    "staff",
+                    target,
+                    AuditActionCodes.PLATFORM_DOMAIN_UPDATE_STATUS,
+                    AuditDetailTextBuilder.buildDomainStatusDetail(name, code, existing.status(), status),
+                    "success",
+                    context.sessionId());
+        }
+        if (profileChanging || policyChanging) {
+            auditLogWriter.write(
+                    id,
+                    context.userId(),
+                    "staff",
+                    target,
+                    AuditActionCodes.PLATFORM_DOMAIN_UPDATE,
+                    AuditDetailTextBuilder.buildDomainUpdateDetail(
+                            name,
+                            code,
+                            existing.name(),
+                            name,
+                            existing.description(),
+                            description,
+                            existing.visibility_policy_codes(),
+                            visibilityPolicyCodes,
+                            existing.registration_enabled(),
+                            registrationEnabled,
+                            existing.invitation_enabled(),
+                            invitationEnabled),
+                    "success",
+                    context.sessionId());
+        }
 
         return getDomain(id);
     }
@@ -186,44 +225,19 @@ public class DomainService {
             throw new IllegalArgumentException("business domain not found");
         }
 
-        recordAudit(id, context, "domain:" + existing.code(), "domain.delete",
-                Map.of("id", id, "code", existing.code()), "success");
+        recordAudit(id, context, existing);
     }
 
-    private void recordAudit(
-            long businessDomainId,
-            UserContext context,
-            String target,
-            String action,
-            Map<String, Object> detail,
-            String result) {
-        Long auditDomainId = businessDomainId > 0 ? businessDomainId : null;
-        try {
-            AuditLogPo auditPo = new AuditLogPo();
-            auditPo.setBusinessDomainId(auditDomainId);
-            auditPo.setOperatorSubjectId(ensureIdentitySubject(context.userId()));
-            auditPo.setOperatorActorType("staff");
-            auditPo.setTarget(target);
-            auditPo.setAction(action);
-            auditPo.setDetail(toJsonMap(detail));
-            auditPo.setResult(result);
-            auditPo.setRequestId(context.sessionId());
-            domainRepository.insertAuditLog(auditPo);
-        } catch (RuntimeException ex) {
-            // 审计写入失败不应阻断业务域主流程
-        }
-    }
-
-    private long ensureIdentitySubject(long userId) {
-        return domainRepository.ensureIdentitySubject(userId);
-    }
-
-    private String toJsonMap(Map<String, Object> detail) {
-        try {
-            return objectMapper.writeValueAsString(detail);
-        } catch (JsonProcessingException ex) {
-            return "{}";
-        }
+    private void recordAudit(long id, UserContext context, DomainDtos.DomainView existing) {
+        auditLogWriter.write(
+                id,
+                context.userId(),
+                "staff",
+                AuditTargetFormatter.formatDomain(existing.name(), existing.code()),
+                AuditActionCodes.PLATFORM_DOMAIN_DELETE,
+                AuditDetailTextBuilder.buildDomainDeleteDetail(existing.name(), existing.code()),
+                "success",
+                context.sessionId());
     }
 
     private DomainDtos.DomainView toDomainView(BusinessDomainPo po) {

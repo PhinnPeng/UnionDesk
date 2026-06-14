@@ -3,9 +3,11 @@ package com.uniondesk.iam.repository;
 import com.uniondesk.iam.entity.AdminMenuPo;
 import com.uniondesk.iam.entity.ParentPermissionMappingPo;
 import com.uniondesk.iam.entity.RolePermissionRowPo;
+import com.uniondesk.iam.entity.RolePo;
 import com.uniondesk.iam.entity.RoutePathRowPo;
 import com.uniondesk.iam.mapper.AdminMenuMapper;
 import com.uniondesk.iam.mapper.IamPermissionMapper;
+import com.uniondesk.iam.mapper.RoleMapper;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,10 +19,19 @@ public class AdminMenuRepository {
 
     private final AdminMenuMapper adminMenuMapper;
     private final IamPermissionMapper iamPermissionMapper;
+    private final RoleMapper roleMapper;
 
-    public AdminMenuRepository(AdminMenuMapper adminMenuMapper, IamPermissionMapper iamPermissionMapper) {
+    public AdminMenuRepository(
+            AdminMenuMapper adminMenuMapper,
+            IamPermissionMapper iamPermissionMapper,
+            RoleMapper roleMapper) {
         this.adminMenuMapper = adminMenuMapper;
         this.iamPermissionMapper = iamPermissionMapper;
+        this.roleMapper = roleMapper;
+    }
+
+    public Optional<RolePo> findRoleById(int roleId) {
+        return Optional.ofNullable(roleMapper.selectById(roleId));
     }
 
     public List<AdminMenuPo> findAll(String scope) {

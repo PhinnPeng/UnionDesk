@@ -13,6 +13,7 @@ export interface PlatformAuditLogView {
 	operatorActorType?: string | null
 	target?: string | null
 	action?: string | null
+	actionLabel?: string | null
 	detail?: string | null
 	result?: string | null
 	occurredAt?: string | null

@@ -47,34 +47,35 @@ class AuditLogServiceTests {
         row.setOperatorName("admin");
         row.setOperatorActorType("staff");
         row.setTarget("ticket:1");
-        row.setAction("ticket.create");
-        row.setDetail("{\"k\":\"v\"}");
+        row.setAction("platform.domain.update");
+        row.setDetail("名称：旧 → 新");
         row.setResult("success");
         row.setOccurredAt(LocalDateTime.parse("2026-05-03T08:30:00"));
         row.setRequestId("req-1");
         row.setIp("127.0.0.1");
 
         when(auditLogRepository.countAuditLogs(
-                eq(10L), eq("admin"), eq("ticket.create"),
+                eq(10L), eq("admin"), eq("platform.domain.update"),
                 isNull(), isNull(), isNull(), isNull(), isNull(),
                 eq(start), eq(end)))
                 .thenReturn(2L);
         when(auditLogRepository.findAuditLogs(
-                eq(10L), eq("admin"), eq("ticket.create"),
+                eq(10L), eq("admin"), eq("platform.domain.update"),
                 isNull(), isNull(), isNull(), isNull(), isNull(),
                 eq(start), eq(end),
                 eq(0), eq(250)))
                 .thenReturn(List.of(row));
 
         PageResult<AuditDtos.AuditLogView> page = auditLogService.listPlatformAuditLogs(
-                0, 250, 10L, "admin", "ticket.create", start, end);
+                0, 250, 10L, "admin", "platform.domain.update", start, end);
 
         assertThat(page.total()).isEqualTo(2L);
         assertThat(page.list()).hasSize(1);
-        assertThat(page.list().get(0).action()).isEqualTo("ticket.create");
+        assertThat(page.list().get(0).action()).isEqualTo("platform.domain.update");
+        assertThat(page.list().get(0).actionLabel()).isEqualTo("业务域更新");
 
         verify(auditLogRepository).findAuditLogs(
-                eq(10L), eq("admin"), eq("ticket.create"),
+                eq(10L), eq("admin"), eq("platform.domain.update"),
                 isNull(), isNull(), isNull(), isNull(), isNull(),
                 eq(start), eq(end),
                 eq(0), eq(250));

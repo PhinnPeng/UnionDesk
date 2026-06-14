@@ -18,7 +18,7 @@ class AdminMenuServiceRolePermissionsTest {
     @Test
     void replaceRolePermissionsAcceptsCatalogInMenuIds() {
         AdminMenuRepository adminMenuRepository = mock(AdminMenuRepository.class);
-        AdminMenuService service = new AdminMenuService(adminMenuRepository, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(adminMenuRepository, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
         int roleId = 4;
         long catalogId = 128L;
         long buttonId = 129L;
@@ -47,7 +47,7 @@ class AdminMenuServiceRolePermissionsTest {
     @Test
     void replaceRolePermissionsRejectsButtonInMenuIds() {
         AdminMenuRepository adminMenuRepository = mock(AdminMenuRepository.class);
-        AdminMenuService service = new AdminMenuService(adminMenuRepository, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(adminMenuRepository, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
 
         when(adminMenuRepository.countRoleById(4)).thenReturn(1);
         when(adminMenuRepository.countByIdsAndNodeTypes(List.of(129L), List.of("menu", "catalog"))).thenReturn(0);

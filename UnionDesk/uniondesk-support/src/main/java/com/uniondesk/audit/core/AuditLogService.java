@@ -4,6 +4,7 @@ import com.uniondesk.audit.entity.AuditLogViewPo;
 import com.uniondesk.audit.entity.LoginLogViewPo;
 import com.uniondesk.audit.repository.AuditLogRepository;
 import com.uniondesk.audit.web.AuditDtos;
+import com.uniondesk.common.audit.AuditActionCatalog;
 import com.uniondesk.common.web.PageResult;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -173,6 +174,7 @@ public class AuditLogService {
     }
 
     private AuditDtos.AuditLogView toAuditLogView(AuditLogViewPo po) {
+        String detail = po.getDetail();
         return new AuditDtos.AuditLogView(
                 po.getId(),
                 po.getBusinessDomainId(),
@@ -181,7 +183,8 @@ public class AuditLogService {
                 po.getOperatorActorType(),
                 po.getTarget(),
                 po.getAction(),
-                po.getDetail(),
+                AuditActionCatalog.resolveActionLabel(po.getAction(), detail),
+                detail,
                 po.getResult(),
                 po.getOccurredAt(),
                 po.getRequestId(),

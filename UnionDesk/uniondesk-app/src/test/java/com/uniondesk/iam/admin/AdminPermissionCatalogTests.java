@@ -25,7 +25,7 @@ class AdminPermissionCatalogTests {
 
     @Test
     void listPermissionCodesFiltersByScope() {
-        AdminMenuService service = new AdminMenuService(null, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(null, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
 
         assertThat(service.listPermissionCodes("platform"))
                 .allSatisfy(permission -> assertThat(permission.permissionScope()).isEqualTo("platform"));

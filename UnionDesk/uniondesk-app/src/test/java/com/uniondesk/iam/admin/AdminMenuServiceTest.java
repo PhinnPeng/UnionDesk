@@ -30,7 +30,7 @@ class AdminMenuServiceTest {
     void listMenuTreePreservesScopeFromRows() throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuRepository adminMenuRepository = mock(AdminMenuRepository.class);
-        AdminMenuService service = new AdminMenuService(adminMenuRepository, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(adminMenuRepository, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
         when(jdbcTemplate.query(
                 org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("SELECT parent_id, permission_code")),
                 org.mockito.ArgumentMatchers.<ResultSetExtractor<Map<Long, String>>>any()))
@@ -71,7 +71,7 @@ class AdminMenuServiceTest {
     void loadPermissionSnapshotPreservesScopeFromRows() throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuRepository adminMenuRepository = mock(AdminMenuRepository.class);
-        AdminMenuService service = new AdminMenuService(adminMenuRepository, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(adminMenuRepository, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
         stubEmptyRolePermissionQuery(jdbcTemplate);
         when(jdbcTemplate.query(
                 org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("FROM iam_admin_role_menu_relation") && sql.contains("JOIN iam_admin_menu m")),
@@ -109,7 +109,7 @@ class AdminMenuServiceTest {
     void loadPermissionSnapshotFiltersCatalogNodesAndKeepsHiddenFlag() throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuRepository adminMenuRepository = mock(AdminMenuRepository.class);
-        AdminMenuService service = new AdminMenuService(adminMenuRepository, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(adminMenuRepository, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
         stubEmptyRolePermissionQuery(jdbcTemplate);
         when(jdbcTemplate.query(
                 org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("FROM iam_admin_role_menu_relation") && sql.contains("JOIN iam_admin_menu m")),
@@ -191,7 +191,7 @@ class AdminMenuServiceTest {
     void replaceRolePermissionsAutoCarriesRequiredPlatformHomeForGlobalRole() throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuRepository adminMenuRepository = mock(AdminMenuRepository.class);
-        AdminMenuService service = new AdminMenuService(adminMenuRepository, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(adminMenuRepository, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
         int roleId = 7;
         long homeMenuId = 11L;
         long homeButtonId = 12L;
@@ -245,7 +245,7 @@ class AdminMenuServiceTest {
     void updateMenuAllowsRequiredMenu() throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuRepository adminMenuRepository = mock(AdminMenuRepository.class);
-        AdminMenuService service = new AdminMenuService(adminMenuRepository, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(adminMenuRepository, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
         AdminMenuService.AdminMenuNode requiredHome = new AdminMenuService.AdminMenuNode(
                 11L,
                 "ADM0000000011",
@@ -311,7 +311,7 @@ class AdminMenuServiceTest {
     void updateMenuRejectsRequiredNodeTypeChangeBeforeDatabaseConstraint() throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuRepository adminMenuRepository = mock(AdminMenuRepository.class);
-        AdminMenuService service = new AdminMenuService(adminMenuRepository, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(adminMenuRepository, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
         AdminMenuService.AdminMenuNode requiredMenu = new AdminMenuService.AdminMenuNode(
                 38L,
                 "ADM0000000038",
@@ -357,7 +357,7 @@ class AdminMenuServiceTest {
     void createMenuRejectsPlatformRouteAlias() {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuRepository adminMenuRepository = mock(AdminMenuRepository.class);
-        AdminMenuService service = new AdminMenuService(adminMenuRepository, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(adminMenuRepository, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
 
         assertThatThrownBy(() -> service.createMenu(new AdminMenuService.CreateAdminMenuCommand(
                 "menu",
@@ -379,7 +379,7 @@ class AdminMenuServiceTest {
     void createMenuRejectsCanonicalDuplicateRoutePath() {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuRepository adminMenuRepository = mock(AdminMenuRepository.class);
-        AdminMenuService service = new AdminMenuService(adminMenuRepository, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(adminMenuRepository, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
         when(jdbcTemplate.queryForList(
                 org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null
                         && sql.contains("SELECT route_path, scope")
@@ -406,7 +406,7 @@ class AdminMenuServiceTest {
     void updateMenuIgnoresLegacyBusinessRouteAliasWhenCheckingDuplicates() {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuRepository adminMenuRepository = mock(AdminMenuRepository.class);
-        AdminMenuService service = new AdminMenuService(adminMenuRepository, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(adminMenuRepository, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
         AdminMenuService.AdminMenuNode existingMenu = new AdminMenuService.AdminMenuNode(
                 38L,
                 "ADM0000000038",
@@ -463,7 +463,7 @@ class AdminMenuServiceTest {
     void deleteMenuRemovesRoleBindingsAndMenuRow() throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuRepository adminMenuRepository = mock(AdminMenuRepository.class);
-        AdminMenuService service = new AdminMenuService(adminMenuRepository, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(adminMenuRepository, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
         AdminMenuService.AdminMenuNode deletableMenu = new AdminMenuService.AdminMenuNode(
                 11L,
                 "ADM0000000011",
@@ -502,7 +502,7 @@ class AdminMenuServiceTest {
     void loadPermissionSnapshotMergesRolePermissionsIntoActions() throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         AdminMenuRepository adminMenuRepository = mock(AdminMenuRepository.class);
-        AdminMenuService service = new AdminMenuService(adminMenuRepository, Clock.systemUTC());
+        AdminMenuService service = new AdminMenuService(adminMenuRepository, org.mockito.Mockito.mock(com.uniondesk.common.event.UnionDeskEventPublisher.class), Clock.systemUTC());
         when(jdbcTemplate.query(
                 org.mockito.ArgumentMatchers.<String>argThat(sql -> sql != null && sql.contains("FROM iam_admin_role_menu_relation") && sql.contains("JOIN iam_admin_menu m")),
                 org.mockito.ArgumentMatchers.<RowMapper<AdminMenuService.AdminMenuNode>>any(),
