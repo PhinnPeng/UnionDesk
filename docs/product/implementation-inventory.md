@@ -46,14 +46,14 @@
 |:---|:---|:---|:---|:---|
 | 业务域列表 | `pages/platform/domains/index.tsx` | `DomainController` | **Done** | 卡片展示 + 分页、关键词搜索、创建日期筛选；新建向导 Modal；删除需 step-up 二次认证 |
 | 业务域创建 | `pages/platform/domains/components/domains-modal.tsx` | `POST /api/v1/admin/domains` | **Done** | 多步向导；Step3 含 `registration_enabled` / `invitation_enabled` 双开关（US-S1-03） |
-| 业务域编辑 | `pages/platform/domains/detail/components/detail-baseinfo.tsx`、`detail-onboarding.tsx` | `PUT /api/v1/admin/domains/{id}` | **Partial** | 基础信息 Tab 可更新；**S2 US-S2-01** 完善回显与删除 UX（输入 code + Step-up） |
+| 业务域编辑 | `pages/platform/domains/detail/components/detail-baseinfo.tsx`、`detail-onboarding.tsx` | `PUT /api/v1/admin/domains/{id}` | **Done** | **S2 US-S2-01** 回显/更新/删除 UX（code 确认 + Step-up）；AC4 已删域直链 **延后** |
 | 业务域详情 | `pages/platform/domains/detail/index.tsx` | `GET /api/v1/admin/domains/{id}` | **Done** | Meta 头 + 左侧 10 Tab（概览/基础/配置/客户入域/工单/角色/屏蔽词/通知/日志/成员）+ 右侧内容区 |
 | 业务域配置 | `pages/platform/domain-config/config-panel.tsx` | `DomainConfigController` | **Done** | KV 键值对配置表单（key/value/valueType/description） |
-| 业务域删除 | `pages/platform/domains/detail/components/detail-baseinfo.tsx` | `DELETE /api/v1/admin/domains/{id}` | **Partial** | **S2 US-S2-01**：`deleted_at`+`updated_*`；权限 `platform.domain.control.general.delete`；无 `deleted` 列；已删域直链详情 **延后** |
+| 业务域删除 | `pages/platform/domains/detail/components/detail-baseinfo.tsx` | `DELETE /api/v1/admin/domains/{id}` | **Done** | **S2 US-S2-01**：`deleted_at`+`updated_*`；权限 `platform.domain.control.general.delete`；已删域直链详情 **延后** |
 | 客户入域（邀请码） | `pages/platform/domain-onboarding/` | `InvitationCodeController` | **Partial** | 前端存在 onboarding 面板，后端提供邀请码 CRUD；CustomerWeb 接真实 API 见 **US-S1-05（S1 暂缓）** |
 | 域成员管理 | `detail-members.tsx` | `DomainMemberController` | **Done** | **S2 US-S2-03**：查询/添加（平台员工+新建）/改角色/启停/删除；Flyway `202606060001` |
 | 域客户管理 | `detail-customers.tsx` | `DomainCustomerController` | **Done** | **S2 US-S2-04**：只读查看、启停、筛选空态；`platform.domain.control.customer.*`；Flyway `V202606070002` |
-| 域角色管理 | `detail-roles.tsx` | `DomainRoleController` | **Partial** | **S2 US-S2-02**「角色管理」只读；`platform.domain.roles.*` |
+| 域角色管理 | `detail-roles.tsx` | `DomainRoleController` | **Done** | **S2 US-S2-02**「角色管理」只读；`platform.domain.roles.*`；Flyway `202605330007`～`008` |
 | 平台屏蔽词（全局） | `pages/platform/blockwords/index.tsx` | `PlatformBlockedWordController` | **Done** | **S2 US-S2-05**：`platform.blocked_word.*`；Flyway `V202606080001` |
 | 域屏蔽词（域内） | `detail-blockwords.tsx` | `BlockedWordController` | **Done** | **S2 US-S2-05**：`platform.domain.control.blocked_word.*` |
 | 域业务日志 | `detail-audit-logs.tsx` / `detail-login-logs.tsx` | 域级 audit/login API | **Done** | **S2 US-S2-06**：侧栏双页；`platform.domain.control.*` / `platform.log.*` |
@@ -175,11 +175,11 @@
 |:---|:---|:---|:---|:---|
 | 1 | 首页仪表盘数据为 demo 模拟 | 首页 | Partial | 接入真实聚合查询 |
 | 2 | 跨域访问拒绝未全面覆盖 | IAM | Todo（S1 暂缓） | US-S1-08 |
-| 3 | 域成员/客户/角色/日志/屏蔽词 Tab 未成品化 | 业务域 | Partial | **S2 US-S2-02～06** |
+| 3 | 域成员/客户/角色/日志/屏蔽词 Tab 未成品化 | 业务域 | **Done** | **S2 US-S2-02～06** 已签 off |
 | 4 | 操作日志/登录日志两套前端页面冗余 | 日志审计 | Done（重复） | 收敛为统一入口 |
 | 5 | 审计日志无导出功能 | 日志审计 | Todo | 评估是否需要 |
-| 6 | 登录后默认跳转误落 `/system/menu`（双 scope 平台管理员） | 认证 / 登录页 | **Done** | `resolve-home-path.ts` + `platformAccess` 优先 → `/platform/home`（S1） |
-| 7 | 登录滑块验证交互（按住反馈、终点松手顿挫） | 认证 / 登录页 | Partial | **US-S2-UX-01**（S2 Committed，sprint-2-plan §4） |
+| 6 | 登录后默认首页（平台/业务域分离） | 认证 / 登录页 | **Done** | **US-S2-E2-00**：三元规则 + `/home` / `/platform/home` |
+| 7 | 登录滑块验证交互（按住反馈、终点松手顿挫） | 认证 / 登录页 | **Done** | **US-S2-UX-01** |
 
 ### 6.3 交叉引用
 
@@ -200,8 +200,8 @@
 
 | 项 | 前端线索 | 后端 | 状态 | 备注 |
 |:---|:---|:---|:---|:---|
-| 业务域首页/入口 | `/home` 等 | — | **Todo** | **US-S2-E2-00**；与 `/platform/home` 分离 |
-| 系统用户/角色/菜单/部门 | `pages/system/user` 等 | IAM 域级 API | **Partial** | E2-00 至少 1 页非 Empty |
+| 业务域首页/入口 | `/home`、`/platform/home` | IAM 快照 + 路由 | **Done** | **US-S2-E2-00**；`resolveHomePathFromActions` 三元规则 |
+| 系统用户/角色/菜单/部门 | `pages/system/menu`、`pages/system/role` 等 | IAM 域级 API | **Partial** | E2-00：`/system/menu`、`/system/role` 可打开；`/system/user` 等仍占位 |
 | 域内成员/客户/角色（business 端） | 根级模块（待扩） | 域 API | **Partial** | 平台侧见 §3 **US-S2-02～04** |
 | 工单类型设计 | — | `ticket_type` | **Todo** | **US-S2-E2-01 Stretch** |
 | 域 SLA / 通知模板 | — | — | **Todo** | PRD §3.3.1，S3+ |

@@ -2,9 +2,9 @@
 
 | 文档版本 | 日期 | 周期 | 说明 |
 |:---|:---|:---|:---|
-| 2.1 | 2026-05-26 | 2 周（建议） | Story 权限码与范围细化（02 只读；软删字段约定） |
+| 2.2 | 2026-06-15 | 2 周（建议） | S2 Committed 全部 Done；§10 签 off |
 
-> **状态**：**Committed**（与 L6 [`backlog-stories.md`](./backlog-stories.md) Sprint 2 章节同步）。  
+> **状态**：**Signed off**（2026-06-15；与 L6 [`backlog-stories.md`](./backlog-stories.md) Sprint 2 章节同步）。  
 > **前提**：S1 已签 off（见 [`sprint-1-plan.md`](./sprint-1-plan.md) §11）。  
 > 联调环境继承 [`sprint-0-plan.md`](./sprint-0-plan.md) §3；Flyway 策略见 [`database-increment-plan.md`](../architecture/database-increment-plan.md) §3。
 
@@ -40,14 +40,14 @@ flowchart TB
 
 | 顺序 | ID | 标题 | SP | 类型 | 状态 |
 |:---|:---|:---|:---|:---|:---|
-| UX | US-S2-UX-01 | 登录滑块验证体验优化 | 2 | E6 横切 | Todo |
-| 1 | US-S2-01 | 业务域基础信息与安全删除 | 3 | 平台域超额 | Todo |
-| 2 | US-S2-02 | 角色管理（只读） | 2 | 平台域超额 | Todo |
-| 3 | US-S2-03 | 域内员工管理 | 5 | 平台域超额 | Todo |
+| UX | US-S2-UX-01 | 登录滑块验证体验优化 | 2 | E6 横切 | Done |
+| 1 | US-S2-01 | 业务域基础信息与安全删除 | 3 | 平台域超额 | Done |
+| 2 | US-S2-02 | 角色管理（只读） | 2 | 平台域超额 | Done |
+| 3 | US-S2-03 | 域内员工管理 | 5 | 平台域超额 | Done |
 | 4 | US-S2-04 | 域内客户管理完善 | 2 | 平台域超额 | Done |
-| 5 | US-S2-05 | 双层屏蔽词库（平台全局 + 域内） | 3 | 平台域超额 | Todo |
-| 6 | US-S2-06 | 域内业务日志 | 2 | 平台域超额 | Todo |
-| E2 | US-S2-E2-00 | 业务域端最小可达 | 3 | E2 主路径 | Todo |
+| 5 | US-S2-05 | 双层屏蔽词库（平台全局 + 域内） | 3 | 平台域超额 | Done |
+| 6 | US-S2-06 | 域内业务日志 | 2 | 平台域超额 | Done |
+| E2 | US-S2-E2-00 | 业务域端最小可达 | 3 | E2 主路径 | Done |
 | | | **合计** | **22** | | |
 
 ### 2.1 Stretch / 延后（不纳入 S2 签 off）
@@ -73,7 +73,7 @@ flowchart TB
 | 角色管理 | US-S2-02 | **只读**；权限 **`platform.domain.roles.*`** |
 | 屏蔽词 | US-S2-05 | **`platform.blocked_word.*`**（全局）/ **`platform.domain.blocked_word.*`**（域内） |
 | 域日志 | US-S2-06 | **`platform.audit-logs.read`** |
-| E2 首页 | US-S2-E2-00 | 快照含任意 **`platform.*`** 权限 → 视为平台权限 |
+| E2 首页 | US-S2-E2-00 | **`platformAccess`** 看 `platform.*`；默认首页三元规则（仅 platform.*→平台；双具备仍进业务域 `/home`） |
 
 ### 3.2 不做
 
@@ -86,7 +86,7 @@ flowchart TB
 
 ## 4. US-S2-UX-01 登录滑块验证体验优化
 
-> **状态**：Todo（S2 Committed；可与 §2 平台域 Story 并行）。
+> **状态**：Done（S2 Committed；可与 §2 平台域 Story 并行）。
 
 ### 4.1 用户故事
 
@@ -129,7 +129,7 @@ flowchart TB
 | US-S2-04 | 在 US-S1-06 基础上：单条**只读查看**/启停、筛选与空态；**`platform.domain.control.customer.*`**；不含注册 API |
 | US-S2-05 | 全局 **`platform.blocked_word.*`** + 域内 **`platform.domain.blocked_word.*`** |
 | US-S2-06 | 操作/登录日志 Tab；**`platform.audit-logs.read`** |
-| US-S2-E2-00 | 无 `platform.*` 权限 → 业务域首页；快照含 **`platform.*`** → 视为平台权限 |
+| US-S2-E2-00 | 无 `platform.*` → 业务域首页 `/home`；仅 `platform.*` → `/platform/home`；双具备 → 仍进业务域；`platformAccess` 管平台入口 |
 
 ---
 
@@ -164,11 +164,11 @@ cd UnionDesk
 
 ## 7. Definition of Done
 
-- [ ] §2 Committed Story（含 **US-S2-UX-01**）AC 满足，`backlog-stories.md` 状态已更新
-- [ ] 无擅自展开 Stretch / S3+ Story
-- [ ] S2 相关 Flyway 已在 [`database-increment-plan.md`](../architecture/database-increment-plan.md) §3 登记并执行
-- [ ] 与代码偏差登记 [`qa/implementation-traceability.md`](../qa/implementation-traceability.md)（若有）
-- [ ] `implementation-inventory.md` §3 / §7 与交付一致
+- [x] §2 Committed Story（含 **US-S2-UX-01**）AC 满足，`backlog-stories.md` 状态已更新
+- [x] 无擅自展开 Stretch / S3+ Story
+- [x] S2 相关 Flyway 已在 [`database-increment-plan.md`](../architecture/database-increment-plan.md) §3 登记并执行
+- [x] 与代码偏差登记 [`qa/implementation-traceability.md`](../qa/implementation-traceability.md)（若有）
+- [x] `implementation-inventory.md` §3 / §7 与交付一致
 
 ---
 
@@ -195,3 +195,16 @@ cd UnionDesk
 4. US-S2-04 / US-S2-05 / US-S2-06（可并行）
 5. US-S2-05 全局词库（Flyway + 重启）
 6. US-S2-E2-00
+
+---
+
+## 10. 签 off
+
+| 项 | 记录 |
+|:---|:---|
+| **签 off 日期** | 2026-06-15 |
+| **Committed Story** | US-S2-UX-01、US-S2-01～06、US-S2-E2-00 — 全部 **Done**（见 §2、`backlog-stories.md`） |
+| **Stretch 未纳入** | US-S2-E2-01、US-S1-08、US-S1-04/05 |
+| **已知延后（不阻塞签 off）** | US-S2-01 AC4 已删域直链详情；US-S2-E2-01 工单类型；`/system/user` 等 business 页仍为占位 |
+| **收口跟踪** | `.codex-tmp/S2-closure-tracker.md`（临时；签 off 后可删） |
+| **合并基线** | `master` @ `51316ef` 及后续文档收口 commit |

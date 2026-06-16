@@ -97,11 +97,11 @@
 
 | Story ID | 表/列变更（计划） | Flyway 版本 | 状态 |
 |:---|:---|:---|:---|
-| US-S2-UX-01 | 无 | — | Todo |
+| US-S2-UX-01 | 无 | — | Done |
 | US-S2-01 | 无表变更；权限 `platform.domain.control.entry` / `overview` / `general.update` / `general.delete`（`202605330004`～`202605330005`）；删除写 `updated_at`/`updated_by`/`deleted_at`（**不改 status**；无 `deleted` 列） | 202605330004、202605330005 | Done |
-| US-S2-02 | 权限 `platform.domain.roles.*`（只读）；菜单「角色管理」 | TBD | Todo |
+| US-S2-02 | 权限 `platform.domain.roles.*`（只读）；菜单「角色管理」 | 202605330007、202605330008 | Done |
 | US-S2-03 | 无表；`domain.member.*` 权限码 + `PUT .../status` API；菜单 `PLATFORM-DOMAIN-MEMBERS` | 202606060001 | Done |
-| US-S2-04 | 无（除非客户编辑扩列） | — | Todo |
+| US-S2-04 | 无（除非客户编辑扩列） | V202606070002 | Done |
 | US-S2-05 | 无表变更；权限 platform.blocked_word.* + platform.domain.control.blocked_word.*；菜单 /platform/blockwords + 域详情 catalog | 202606080001 | Done |
 | US-S2-06 | 无表变更；platform.audit_log.read/login_log.read → platform.log.*；domain.audit_log/login_log.read → platform.domain.control.*；域详情 catalog 操作/登录日志 | 202606090001 | Done |
 | US-S2-E2-00 | business 按钮 domain.* + domain_admin 菜单收敛 | V202606140001 | Done |
