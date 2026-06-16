@@ -3,7 +3,7 @@ import { useAccessStore } from "#src/store/access";
 import { useAuthStore } from "#src/store/auth";
 import { useUserStore } from "#src/store/user";
 
-import { platformHomePath, platformPath } from "./route-path";
+import { businessHomePath, platformHomePath, platformPath } from "./route-path";
 import { resolveHomePathFromMenus } from "./resolve-home-path";
 
 export { hasPlatformRoleHint, isPlatformRoleCode, resolveHomePathFromActions, resolveHomePathFromMenus } from "./resolve-home-path";
@@ -15,8 +15,6 @@ export const appScopes = {
 } as const;
 
 export type AppScope = typeof appScopes[keyof typeof appScopes];
-
-const businessHomePath = import.meta.env.VITE_BASE_HOME_PATH || "/system/menu";
 
 export function isPlatformRoutePath(pathname?: string) {
 	return typeof pathname === "string" && (pathname === platformPath || pathname.startsWith(`${platformPath}/`));

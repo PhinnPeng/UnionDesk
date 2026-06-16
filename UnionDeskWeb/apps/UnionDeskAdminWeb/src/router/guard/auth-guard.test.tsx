@@ -177,7 +177,7 @@ describe("AuthGuard", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByTestId("navigate")).toHaveTextContent("/system/menu");
+			expect(screen.getByTestId("navigate")).toHaveTextContent("/home");
 		});
 	});
 
@@ -227,7 +227,7 @@ describe("AuthGuard", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByTestId("navigate")).toHaveTextContent("/system/menu");
+			expect(screen.getByTestId("navigate")).toHaveTextContent("/home");
 		});
 	});
 

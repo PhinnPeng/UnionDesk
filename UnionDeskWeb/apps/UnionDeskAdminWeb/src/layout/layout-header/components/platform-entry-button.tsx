@@ -9,9 +9,7 @@ import { cn } from "#src/utils/cn";
 import { AppstoreOutlined, RollbackOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router";
 
-import { platformHomePath } from "#src/router/extra-info";
-
-const businessHomePath = import.meta.env.VITE_BASE_HOME_PATH || "/system/menu";
+import { businessHomePath, platformHomePath } from "#src/router/extra-info";
 const EMPTY_MENUS: AppRouteRecordRaw[] = [];
 
 export function PlatformEntryButton({ className, ...restProps }: ButtonProps) {

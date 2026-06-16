@@ -1,11 +1,9 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
 
-import { platformHomePath } from "./route-path";
+import { businessHomePath, platformHomePath } from "./route-path";
 
 const scopePlatform = "platform";
 const scopeBusiness = "business";
-
-const businessHomePath = import.meta.env.VITE_BASE_HOME_PATH || "/system/menu";
 
 export interface ResolveHomePathOptions {
 	roles?: readonly string[]
