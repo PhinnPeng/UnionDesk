@@ -1,11 +1,11 @@
 workflow: full
-phase: verify
+phase: archive
 build_mode: executing-plans
 build_pause: null
 isolation: branch
 verify_mode: full
-verify_result: pending
-verified_at: null
+verify_result: pass
+verified_at: 2026-06-17
 archived: null
 plan: docs/superpowers/plans/2026-06-04-iam-role-console-binding-alignment.md
 base_ref: 090fb0849a26c96de3bafbc90d9447f5f628138f
@@ -14,5 +14,5 @@ created_at: 2026-06-04
 handoff_context: openspec/changes/iam-role-console-binding-alignment/.comet/handoff/design-context.json
 handoff_hash: 5f56a33d64e3325d8650f2aeaa931a7723fd1b1854a18a347ec816642ed52964
 design_doc: docs/superpowers/specs/2026-06-04-iam-role-console-binding-alignment-design.md
-verification_report: null
-branch_status: pending
+verification_report: docs/superpowers/reports/2026-06-04-iam-role-console-binding-alignment-verify.md
+branch_status: handled
