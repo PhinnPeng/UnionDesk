@@ -50,4 +50,4 @@ WHERE r.code = 'agent'
 DELETE sapr
 FROM staff_account_platform_role sapr
 JOIN staff_account sa ON sa.id = sapr.staff_account_id
-WHERE sa.login_name = 'admin';
+WHERE sa.username = 'admin';

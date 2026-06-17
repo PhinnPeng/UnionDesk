@@ -10,6 +10,7 @@ public final class PermissionCodes {
     public static final String DOMAIN_MENU_CREATE = "domain.menu.create";
     public static final String DOMAIN_MENU_UPDATE = "domain.menu.update";
     public static final String DOMAIN_MENU_DELETE = "domain.menu.delete";
+    public static final String DOMAIN_HOME_READ = "domain.home.read";
     public static final String PLATFORM_ADMIN_PERMISSION_CODES_READ = "platform.admin_permission_codes.read";
 
     public static final String PLATFORM_IAM_RESOURCE_READ = "platform.iam.resource.read";
