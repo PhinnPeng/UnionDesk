@@ -43,9 +43,15 @@ vi.mock("antd", () => ({
 	Form: {
 		useForm: () => [{
 			setFieldsValue: vi.fn(),
+			getFieldValue: vi.fn(() => []),
+			validateFields: vi.fn(async () => ({ name: "测试角色", code: "custom_test" })),
 		}],
 		Item: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	},
+	Tag: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+	Button: ({ children, onClick }: { children: React.ReactNode, onClick?: () => void }) => (
+		<button type="button" onClick={onClick}>{children}</button>
+	),
 }));
 
 vi.mock("@ant-design/pro-components", () => ({
@@ -56,7 +62,6 @@ vi.mock("@ant-design/pro-components", () => ({
 				void onFinish({
 					name: "测试角色",
 					code: "custom_test",
-					scope: "domain",
 					menus: ["1", "2", "99"],
 				});
 			}}
@@ -65,9 +70,6 @@ vi.mock("@ant-design/pro-components", () => ({
 			<button type="submit">提交</button>
 		</form>
 	),
-	ProFormRadio: {
-		Group: () => <div data-testid="scope" />,
-	},
 	ProFormText: () => <input />,
 }));
 
@@ -92,6 +94,7 @@ describe("Role Detail", () => {
 			<Detail
 				title="编辑角色"
 				open
+				lockedScope="domain"
 				detailData={{ id: 9, name: "旧角色", code: "custom_test", scope: "domain", system: false }}
 				treeData={[
 					{ id: "1", title: "菜单", nodeType: "menu", children: [] },

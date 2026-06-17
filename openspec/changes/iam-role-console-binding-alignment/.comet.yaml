@@ -1,0 +1,18 @@
+workflow: full
+phase: verify
+build_mode: executing-plans
+build_pause: null
+isolation: branch
+verify_mode: full
+verify_result: pending
+verified_at: null
+archived: null
+plan: docs/superpowers/plans/2026-06-04-iam-role-console-binding-alignment.md
+base_ref: 090fb0849a26c96de3bafbc90d9447f5f628138f
+build_command: cmd.exe /C "cd /d F:\WorkSpace\UnionDesk\UnionDesk && mvn install -pl uniondesk-iam -DskipTests -q && mvn test -pl uniondesk-app -Dtest=PermissionScopePolicyTests -q"
+created_at: 2026-06-04
+handoff_context: openspec/changes/iam-role-console-binding-alignment/.comet/handoff/design-context.json
+handoff_hash: 5f56a33d64e3325d8650f2aeaa931a7723fd1b1854a18a347ec816642ed52964
+design_doc: docs/superpowers/specs/2026-06-04-iam-role-console-binding-alignment-design.md
+verification_report: null
+branch_status: pending

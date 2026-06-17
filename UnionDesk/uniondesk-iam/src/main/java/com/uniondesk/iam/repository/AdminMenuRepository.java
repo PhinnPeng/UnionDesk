@@ -109,6 +109,13 @@ public class AdminMenuRepository {
         return adminMenuMapper.selectRoleScopeById(roleId);
     }
 
+    public List<RolePo> findRolesByCodes(List<String> roleCodes) {
+        if (roleCodes == null || roleCodes.isEmpty()) {
+            return List.of();
+        }
+        return roleMapper.selectByCodes(roleCodes);
+    }
+
     public List<String> findPermissionCodesByMenuIds(List<Long> menuIds) {
         return adminMenuMapper.selectPermissionCodesByMenuIds(menuIds);
     }

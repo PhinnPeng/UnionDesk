@@ -13,14 +13,24 @@ public class PermissionScopePolicy {
     private static final String PERMISSION_SCOPE_DOMAIN = "domain";
 
     public boolean canRoleOwnPermission(String roleLevel, String permissionScope) {
+        return canRoleOwnPermission(roleLevel, permissionScope, null);
+    }
+
+    public boolean canRoleOwnPermission(String roleLevel, String permissionScope, String permissionCode) {
         String normalizedRoleLevel = normalize(roleLevel);
         String normalizedPermissionScope = normalize(permissionScope);
+        String normalizedCode = normalizeOptionalCode(permissionCode);
         if (ROLE_LEVEL_GLOBAL.equals(normalizedRoleLevel)) {
-            return PERMISSION_SCOPE_PLATFORM.equals(normalizedPermissionScope)
-                    || PERMISSION_SCOPE_DOMAIN.equals(normalizedPermissionScope);
+            if (!PERMISSION_SCOPE_PLATFORM.equals(normalizedPermissionScope)) {
+                return false;
+            }
+            return normalizedCode == null || normalizedCode.startsWith("platform.");
         }
-        return ROLE_LEVEL_DOMAIN.equals(normalizedRoleLevel)
-                && PERMISSION_SCOPE_DOMAIN.equals(normalizedPermissionScope);
+        if (!ROLE_LEVEL_DOMAIN.equals(normalizedRoleLevel)
+                || !PERMISSION_SCOPE_DOMAIN.equals(normalizedPermissionScope)) {
+            return false;
+        }
+        return normalizedCode == null || !normalizedCode.startsWith("platform.");
     }
 
     public boolean isPermissionEffective(
@@ -39,16 +49,14 @@ public class PermissionScopePolicy {
             return ROLE_LEVEL_GLOBAL.equals(normalizedRoleLevel)
                     && ROLE_LEVEL_GLOBAL.equals(normalizedBindingScope);
         }
-        if (ROLE_LEVEL_GLOBAL.equals(normalizedRoleLevel)
-                && ROLE_LEVEL_GLOBAL.equals(normalizedBindingScope)) {
-            return true;
+        if (ROLE_LEVEL_DOMAIN.equals(normalizedRoleLevel)
+                && ROLE_LEVEL_DOMAIN.equals(normalizedBindingScope)) {
+            if (bindingBusinessDomainId == null) {
+                return false;
+            }
+            return targetBusinessDomainId == null || bindingBusinessDomainId.equals(targetBusinessDomainId);
         }
-        if (!ROLE_LEVEL_DOMAIN.equals(normalizedRoleLevel)
-                || !ROLE_LEVEL_DOMAIN.equals(normalizedBindingScope)
-                || bindingBusinessDomainId == null) {
-            return false;
-        }
-        return targetBusinessDomainId == null || bindingBusinessDomainId.equals(targetBusinessDomainId);
+        return false;
     }
 
     private static String normalize(String value) {
@@ -56,5 +64,12 @@ public class PermissionScopePolicy {
             return "";
         }
         return value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static String normalizeOptionalCode(String permissionCode) {
+        if (!StringUtils.hasText(permissionCode)) {
+            return null;
+        }
+        return permissionCode.trim();
     }
 }

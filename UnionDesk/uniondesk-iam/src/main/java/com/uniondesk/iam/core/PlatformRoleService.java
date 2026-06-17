@@ -8,12 +8,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 平台角色管理服务
- * 负责：
- * 1. 平台角色授权/回收
- * 2. 最后一名 platform_admin 保活规则
- * 3. 最后一名域级 super_admin 保活规则
- * 4. 最后一名 domain_admin 保活规则
+ * 平台角色管理服务（遗留 staff_account_platform_role 表）。
+ * IAM 读路径以 {@code user_global_role} 为准；本服务待后续 change 收敛。
  */
 @Service
 public class PlatformRoleService {

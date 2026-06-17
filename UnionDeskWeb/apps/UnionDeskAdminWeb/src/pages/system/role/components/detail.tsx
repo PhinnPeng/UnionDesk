@@ -5,17 +5,15 @@ import { FormTreeItem } from "#src/components/basic-form";
 
 import {
 	DrawerForm,
-	ProFormRadio,
 	ProFormText,
 } from "@ant-design/pro-components";
-import { App, Button, Form } from "antd";
+import { App, Button, Form, Tag } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface RoleFormValues {
 	name: string
 	code: string
-	scope: string
 	menus: string[]
 }
 
@@ -27,6 +25,7 @@ interface DetailProps {
 	treeData: TreeNodeWithType[]
 	title: React.ReactNode
 	open: boolean
+	lockedScope: RoleItemType["scope"]
 	detailData: Partial<RoleItemType> & { menuIds?: number[]; buttonIds?: number[] }
 	onCloseChange: () => void
 	refreshTable?: () => void | Promise<void>
@@ -43,7 +42,11 @@ function flattenTree(nodes: TreeNodeWithType[]): TreeNodeWithType[] {
 	return result;
 }
 
-export function Detail({ title, open, onCloseChange, detailData, treeData, refreshTable }: DetailProps) {
+function getScopeLabel(scope: RoleItemType["scope"]) {
+	return scope === "global" ? "平台角色" : "业务域角色";
+}
+
+export function Detail({ title, open, onCloseChange, detailData, treeData, refreshTable, lockedScope }: DetailProps) {
 	const { t } = useTranslation();
 	const { message } = App.useApp();
 	const [form] = Form.useForm<RoleFormValues>();
@@ -54,7 +57,7 @@ export function Detail({ title, open, onCloseChange, detailData, treeData, refre
 		const payload: RolePayload = {
 			name: values.name,
 			code: values.code,
-			scope: values.scope,
+			scope: lockedScope,
 		};
 		const flatNodes = flattenTree(treeData);
 		const nodeTypeMap = new Map(flatNodes.map(n => [n.id, n.nodeType]));
@@ -85,7 +88,7 @@ export function Detail({ title, open, onCloseChange, detailData, treeData, refre
 		if (submitting) {
 			return;
 		}
-		const values = await form.validateFields(["name", "code", "scope"]);
+		const values = await form.validateFields(["name", "code"]);
 		setSubmitting(true);
 		try {
 			await saveRole({
@@ -110,7 +113,6 @@ export function Detail({ title, open, onCloseChange, detailData, treeData, refre
 			form.setFieldsValue({
 				name: detailData.name ?? "",
 				code: detailData.code ?? "",
-				scope: detailData.scope ?? "domain",
 				menus: allSelected,
 			});
 		}
@@ -150,7 +152,6 @@ export function Detail({ title, open, onCloseChange, detailData, treeData, refre
 				],
 			}}
 			initialValues={{
-				scope: "domain",
 				menus: [],
 			}}
 		>
@@ -172,16 +173,9 @@ export function Detail({ title, open, onCloseChange, detailData, treeData, refre
 				disabled={isEdit}
 			/>
 
-			<ProFormRadio.Group
-				name="scope"
-				label={t("system.role.scope")}
-				radioType="button"
-				rules={[{ required: true }]}
-				options={[
-					{ label: t("system.role.scopeGlobal"), value: "global" },
-					{ label: t("system.role.scopeDomain"), value: "domain" },
-				]}
-			/>
+			<Form.Item label={t("system.role.scope")}>
+				<Tag color={lockedScope === "global" ? "blue" : "green"}>{getScopeLabel(lockedScope)}</Tag>
+			</Form.Item>
 
 			<Form.Item name="menus" label={t("system.role.assignMenu")} tooltip="按钮节点标注 [按钮] 前缀；勾选父节点将联动勾选所有子节点">
 				<FormTreeItem treeData={treeData} checkStrictly />

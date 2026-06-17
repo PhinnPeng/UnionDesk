@@ -1,0 +1,14 @@
+{
+  "change": "iam-role-console-binding-alignment",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "5f56a33d64e3325d8650f2aeaa931a7723fd1b1854a18a347ec816642ed52964",
+  "files": [
+    { "path": "openspec/changes/iam-role-console-binding-alignment/proposal.md", "sha256": "e66f14455ceb6f7f46dae54e884d2651ab30fb7f70ae6cb4a18c1ed61fbf5df3" },
+    { "path": "openspec/changes/iam-role-console-binding-alignment/design.md", "sha256": "718c9b7f959f6c7ecfd73b814949da0595a948b1cb47bc9c160a1b88b7f30540" },
+    { "path": "openspec/changes/iam-role-console-binding-alignment/tasks.md", "sha256": "f9b3e382df7635647fb420b7b88a8d867d3fc6c32620fce971723f6e1b28b661" },
+    { "path": "openspec/changes/iam-role-console-binding-alignment/specs/iam-role-console-binding/spec.md", "sha256": "11cc17a747b67cf2771d7d79f378e7e1fda2eca8700edd6d4801337f23de1516" }
+  ]
+}

@@ -147,6 +147,7 @@ export default function Role() {
 			<Detail
 				title={title}
 				open={isOpen}
+				lockedScope={getVisibleRoleScope(routeScope)}
 				onCloseChange={() => {
 					setIsOpen(false);
 					setDetailData({});

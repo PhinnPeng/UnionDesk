@@ -105,7 +105,19 @@
 | US-S2-05 | 无表变更；权限 platform.blocked_word.* + platform.domain.control.blocked_word.*；菜单 /platform/blockwords + 域详情 catalog | 202606080001 | Done |
 | US-S2-06 | 无表变更；platform.audit_log.read/login_log.read → platform.log.*；domain.audit_log/login_log.read → platform.domain.control.*；域详情 catalog 操作/登录日志 | 202606090001 | Done |
 | US-S2-E2-00 | business 按钮 domain.* + domain_admin 菜单收敛 | V202606140001 | Done |
+| iam-role-console-binding | global/domain 角色权限包收敛 + admin→platform_admin | V202606150001 | Done |
 | US-S2-E2-01 | `ticket_type` 等（Stretch） | TBD | 延后 |
+
+### Sprint 3（E3 工单闭环 + IAM 治理）
+
+| Story ID | 表/列变更（计划） | Flyway 版本 | 状态 |
+|:---|:---|:---|:---|
+| US-S3-00 | `iam_role_permission` 混包清理；`user_global_role` bootstrap；`iam_admin_role_menu_relation` scope 对齐；无新表 | TBD | Todo |
+| US-S3-01 | 无表变更；`domain.ticket_type.*` 等菜单/按钮权限；域详情工单 Tab catalog | TBD | Todo |
+| US-S3-02 | 无（注册 API 无表变更） | — | Todo |
+| US-S3-03 | 无 | — | Todo |
+| US-S3-04 | 无表变更；business scope 工单队列/详情菜单 + `ticket.*` 按钮权限 | TBD | Todo |
+| US-S3-E4-01 | `sla_rule` 等（Stretch） | TBD | 延后 |
 
 ---
 

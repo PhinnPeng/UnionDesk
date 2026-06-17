@@ -20,8 +20,7 @@ import {
 	type PlatformUserRow,
 	type PlatformUserSearchValues,
 } from "#src/pages/platform/user/utils";
-import { appScopes } from "#src/router/extra-info/app-scope";
-import { filterRolesByAppScope } from "#src/pages/system/role/utils";
+import { filterAssignablePlatformRoles } from "#src/pages/system/role/utils";
 
 import {
 	ApartmentOutlined,
@@ -181,7 +180,7 @@ export default function PlatformUser() {
 
 	const departmentNameMap = useMemo(() => buildDepartmentNameMap(organizations), [organizations]);
 	const roleNameMap = useMemo(() => buildRoleNameMap(roles), [roles]);
-	const platformRoles = useMemo(() => filterRolesByAppScope(roles, appScopes.platform), [roles]);
+	const platformRoles = useMemo(() => filterAssignablePlatformRoles(roles), [roles]);
 	const platformRoleCodeSet = useMemo(() => new Set(platformRoles.map(role => role.code)), [platformRoles]);
 	const visibleUsers = useMemo(
 		() => (canReadOffboardPool ? replaceUsers(users, offboardUsers) : users),

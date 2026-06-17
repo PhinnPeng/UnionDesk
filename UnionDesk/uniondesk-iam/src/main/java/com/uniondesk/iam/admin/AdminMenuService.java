@@ -138,6 +138,7 @@ public class AdminMenuService {
         }
         List<GrantedPermission> merged = new ArrayList<>(menuButtonActions);
         long syntheticId = -1L;
+        Map<String, String> roleScopeByCode = loadRoleScopeByCodes(roleCodes);
         for (RolePermissionRow row : loadRolePermissionRows(roleCodes)) {
             if (!StringUtils.hasText(row.code()) || existingCodes.contains(row.code())) {
                 continue;
@@ -147,6 +148,9 @@ public class AdminMenuService {
                 continue;
             }
             PermissionDefinition def = definition.get();
+            if (!anyRoleCanOwnPermission(roleCodes, roleScopeByCode, def)) {
+                continue;
+            }
             merged.add(new GrantedPermission(
                     syntheticId--,
                     StringUtils.hasText(row.name()) ? row.name() : row.code(),
@@ -252,7 +256,7 @@ public class AdminMenuService {
         if (!normalizedMenuIds.isEmpty()) {
             normalizedButtonIds.addAll(adminMenuRepository.findRequiredButtonIdsByParentIds(new ArrayList<>(normalizedMenuIds)));
         }
-        ensureRoleCanOwnButtonPermissions(roleId, normalizedButtonIds);
+        ensureRoleMenuScopeAlignment(roleId, normalizedMenuIds, normalizedButtonIds);
         adminMenuRepository.deleteRoleMenuRelationsByRoleId(roleId);
         List<Long> allMenuRelationIds = new ArrayList<>(normalizedMenuIds.size() + normalizedButtonIds.size());
         allMenuRelationIds.addAll(normalizedMenuIds);
@@ -538,21 +542,66 @@ public class AdminMenuService {
         }
     }
 
-    private void ensureRoleCanOwnButtonPermissions(int roleId, Set<Long> buttonIds) {
-        if (buttonIds.isEmpty()) {
+    private void ensureRoleMenuScopeAlignment(int roleId, Set<Long> menuIds, Set<Long> buttonIds) {
+        if (menuIds.isEmpty() && buttonIds.isEmpty()) {
             return;
         }
         String roleScope = adminMenuRepository.findRoleScopeById(roleId);
-        if ("global".equalsIgnoreCase(roleScope)) {
-            return;
+        String expectedMenuScope = expectedMenuScopeForRole(roleScope);
+        Set<Long> allNodeIds = new LinkedHashSet<>();
+        allNodeIds.addAll(menuIds);
+        allNodeIds.addAll(buttonIds);
+        for (Long nodeId : allNodeIds) {
+            AdminMenuPo node = adminMenuRepository.findById(nodeId).orElse(null);
+            if (node == null) {
+                continue;
+            }
+            if (!expectedMenuScope.equalsIgnoreCase(node.getScope())) {
+                throw new IllegalArgumentException("角色范围与菜单范围不一致");
+            }
         }
         List<String> permissionCodes = adminMenuRepository.findPermissionCodesByMenuIds(new ArrayList<>(buttonIds));
         for (String permissionCode : permissionCodes) {
             PermissionDefinition definition = requirePermissionDefinition(permissionCode);
-            if (!"domain".equalsIgnoreCase(definition.permissionScope())) {
-                throw new IllegalArgumentException("domain role cannot own platform permission");
+            if (!matchesRolePermissionBinding(roleScope, definition)) {
+                throw new IllegalArgumentException("角色范围与权限码不一致");
             }
         }
+    }
+
+    private static String expectedMenuScopeForRole(String roleScope) {
+        return "global".equalsIgnoreCase(roleScope) ? "platform" : "business";
+    }
+
+    private static boolean matchesRolePermissionBinding(String roleScope, PermissionDefinition definition) {
+        if ("global".equalsIgnoreCase(roleScope)) {
+            return "platform".equalsIgnoreCase(definition.permissionScope())
+                    && definition.code().startsWith("platform.");
+        }
+        return !definition.code().startsWith("platform.");
+    }
+
+    private Map<String, String> loadRoleScopeByCodes(List<String> roleCodes) {
+        Map<String, String> roleScopeByCode = new LinkedHashMap<>();
+        for (RolePo role : adminMenuRepository.findRolesByCodes(roleCodes)) {
+            if (role != null && StringUtils.hasText(role.getCode())) {
+                roleScopeByCode.put(role.getCode().trim(), role.getScope());
+            }
+        }
+        return roleScopeByCode;
+    }
+
+    private boolean anyRoleCanOwnPermission(
+            List<String> roleCodes,
+            Map<String, String> roleScopeByCode,
+            PermissionDefinition definition) {
+        for (String roleCode : roleCodes) {
+            String roleScope = roleScopeByCode.get(roleCode);
+            if (roleScope != null && matchesRolePermissionBinding(roleScope, definition)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void replaceRolePermissionRows(int roleId, Set<Long> buttonIds) {
