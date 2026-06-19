@@ -2,9 +2,10 @@
 
 | 文档版本 | 日期 | 说明 |
 |:---|:---|:---|
-| 1.3 | 2026-05-26 | S2 范围：E2-00 + 平台域 US-S2-01～06 + UX-01（§6.3） |
+| 1.5 | 2026-06-17 | US-S3-00 Done |
+| 1.4 | 2026-06-16 | S3 范围：E3 工单闭环 + IAM 治理 + S1-04/05 并入（§6.4） |
 
-> 权威链见 [`../README.md`](../README.md)。User Story 明细见 [`backlog-stories.md`](./backlog-stories.md)。S0 执行见 [`sprint-0-plan.md`](./sprint-0-plan.md)；**S1 执行见 [`sprint-1-plan.md`](./sprint-1-plan.md)**；**S2 执行见 [`sprint-2-plan.md`](./sprint-2-plan.md)**。
+> 权威链见 [`../README.md`](../README.md)。User Story 明细见 [`backlog-stories.md`](./backlog-stories.md)。S0 执行见 [`sprint-0-plan.md`](./sprint-0-plan.md)；**S1** [`sprint-1-plan.md`](./sprint-1-plan.md)（已签 off）；**S2** [`sprint-2-plan.md`](./sprint-2-plan.md)（已签 off）；**S3** [`sprint-3-plan.md`](./sprint-3-plan.md)（编码中，US-S3-00 Done）。
 
 ---
 
@@ -42,9 +43,9 @@
 | **E0** | 项目奠基与工程骨架 | **S0** | 收口 | Backlog、联调说明、increment-plan、管理端盘点（平台端）、ADR、**基线快照与迁移备份**；**零业务功能** |
 | **E1** | 员工平台端完善 | **S1** | Committed | **`/platform/*`**：登录、动态菜单、业务域、组织、全局用户/IAM、审计等（PRD §3.4） |
 | **E2** | 员工业务域端完善 | **S2** | 规划 | **根级非 `/platform/`** 模块 + 域内配置（PRD §3.3）；business 菜单成品化 |
-| **E3** | 工单最小闭环 | S3+ | 占位 | 客户提单 → 客服处理 → 客户查单；含预置反馈/建议类型（PRD §3.1–3.2） |
-| **E4** | SLA v1 | S3+ | 占位 | 规则、计时、列表/详情预警 |
-| **E5** | 在线咨询 | S3+ | 占位 | 会话、坐席、转工单 |
+| **E3** | 工单最小闭环 | **S3** | **Committed** | 客户提单 → 客服处理 → 客户查单；含预置反馈/建议类型（PRD §3.1–3.2） |
+| **E4** | SLA v1 | S3 Stretch / S4 | 占位 | 规则、计时、列表/详情预警 |
+| **E5** | 在线咨询 | S4+ | 占位 | 会话、坐席、转工单 |
 | **E6** | 平台治理横切 | 跨 Sprint | 部分在 S1 | 审计、step-up、登录日志、敏感操作（PRD §2.4、§3.4.3） |
 
 > **E3–E5**：下轮规划再拆 User Story 与 SP。**E2** 不作为 S0/S1 Committed。
@@ -85,8 +86,9 @@
 |:---|:---|:---|:---|
 | **当前** | **S0** | **E0** | 按 sprint-0-plan、US-S0-01～**07** 执行；**不重写** |
 | **第 2 步** | **S1** | **E1** + **E6** 部分 | 约 13 SP；完善 **`/platform/`**；见 sprint-0-plan §7 |
-| **第 3 步** | **S2** | **E2** + **E6** 部分 | 业务域端为主；可选 **US-S2-UX-01** 滑块体验（见 sprint-2-plan） |
-| 下轮 | S3+ | **E3**… | 工单、SLA、咨询 |
+| **第 3 步** | **S2** | **E2** + **E6** 部分 | 业务域端为主；**US-S2-UX-01** 滑块（已签 off 2026-06-15） |
+| **当前** | **S3** | **E3** + **E6** 部分 | 工单最小闭环；见 sprint-3-plan §2 |
+| 下轮 | S4+ | **E4** / **E5** | SLA UI、在线咨询 |
 
 **速率假设（solo + Agent）**：S0 ≈ 7 SP；S1 ≈ 13 SP / 2 周。
 
@@ -140,9 +142,21 @@ flowchart TB
 
 **不做**：PRD §3.2 客服作业台（归 E3/E5）；独立 `feedback` 表业务（MVP 不用）。
 
-### 6.4 E3+ 
+### 6.4 E3 — 工单最小闭环（S3 Committed）
 
-工单闭环、SLA、在线咨询、客户端深度联调；北极星主路径在 **E3** 验收。
+**做**（见 [`sprint-3-plan.md`](./sprint-3-plan.md)）：
+
+- **US-S3-00**：IAM 角色—控制台绑定（E6 前置）— **Done**（2026-06-17）
+- **US-S3-01**：工单类型与模板 MVP（承接 US-S2-E2-01）
+- **US-S3-02～03**：CustomerWeb 注册/入域 + 提单/我的工单（并入 US-S1-04/05）
+- **US-S3-04**：员工 business 端工单队列与处理
+- **验收**：单域 **FR-06** 闭环
+
+**不做**：在线咨询运行时（E5）、SLA 完整 UI（E4 Stretch）、工单画布全量、跨域 FR-02 系统化（US-S1-08 → S4+）。
+
+### 6.5 E4+ 
+
+SLA 完整能力、在线咨询、客户端深度联调余量。
 
 ---
 

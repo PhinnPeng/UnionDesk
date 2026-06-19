@@ -2,6 +2,8 @@
 
 | 文档版本 | 日期 | 说明 |
 |:---|:---|:---|
+| 2.0 | 2026-06-16 | S3 Committed：US-S3-00～04；S1-04/05 并入 S3-02 |
+| 2.1 | 2026-06-17 | US-S3-00 IAM 控制台绑定 Done（V202606150001） |
 | 1.9 | 2026-06-15 | S2 Committed 全部 Done（UX-01、S2-01～06、E2-00） |
 | 1.8 | 2026-05-26 | S2 Story 细化：软删/权限码（01/02/05/06/E2-00）；US-S2-02 改为只读「角色管理」 |
 
@@ -382,11 +384,103 @@
 
 ---
 
-## Sprint 3 及以后（占位）
+## Sprint 3 — E3 工单最小闭环 + IAM 治理前置（Committed）
 
-> Epic 方向见 [`backlog-epics.md`](./backlog-epics.md)。E3–E5 Story 下轮规划时再拆 SP 与 AC。
+> **Sprint 执行计划**：[`sprint-3-plan.md`](./sprint-3-plan.md)（§2 主表，约 **22 SP**）。  
+> **范围**：**E3** 北极星主路径（FR-06）+ **E2 余量**（工单类型 MVP，承接 US-S2-E2-01）+ **E6**（IAM 控制台绑定）+ **S1 暂缓**（US-S1-04/05 并入 S3-02/03）。  
+> **前提**：S2 已签 off（2026-06-15）。
 
-> **US-S1-04**（客户注册 API）、**US-S1-05**（CustomerWeb）：**S1 暂缓**（US-S1-04 决策 2026-05-30；US-S1-05 决策 2026-05-26）；建议后续 Sprint（E3）再排；不阻塞 E1 平台端收口。
+### Committed 汇总
+
+| ID | SP | 类型 | 状态 |
+|:---|:---|:---|:---|
+| US-S3-00 | 3 | E6 横切 | Done |
+| US-S3-01 | 5 | E2/E3 前置 | Done |
+| US-S3-02 | 4 | E3 客户端 | Todo |
+| US-S3-03 | 5 | E3 客户端 | Todo |
+| US-S3-04 | 5 | E3 员工端 | Todo |
+
+**Stretch（不纳入 S3 签 off）**：US-S3-E4-01/02（SLA UI）、US-S3-UX-02/03（审计语义/日志收敛）、US-S1-08、US-S2-01 AC4、E5 咨询运行时。
+
+### US-S3-00 IAM 角色—控制台绑定对齐
+
+- **Epic**: E6（横切治理）| **Sprint**: S3 | **SP**: 3 | **状态**: Done
+- **角色**: 平台管理员、域管理员
+- **故事**: 作为管理员，我希望平台角色与业务域角色分别只绑定对应控制台菜单与权限包，以便首页、菜单与工单权限验收符合 PRD §4.1.3。
+- **AC**:
+  1. `role.scope=global` 的角色仅含 `platform.*` 直授与 `iam_admin_menu.scope=platform` 菜单绑定。
+  2. `role.scope=domain` 的角色仅含非 `platform.*` 业务码与 `scope=business` 菜单；不得直授 `platform.*`。
+  3. 保存角色菜单/权限时 scope 不一致 → 拒绝 + 中文提示。
+  4. 种子 `admin` 默认绑定 `platform_admin`（非全局 super_admin 混包）；`platform_admin` 快照默认 `/platform/home`；纯 `domain_admin` 默认 `/home`（维持 E2-00 三元规则）。
+  5. Flyway 清理混包 `iam_role_permission` 并登记 increment-plan。
+- **规则**: FR-03；PRD §4.1.3 双层权限
+- **DB 增量**: Flyway `V202606150001`（见 increment-plan §3 Sprint 3）
+- **备注**: openspec `iam-role-console-binding-alignment`（2026-06-17 归档）；**S3 编码第 1 步已完成**
+
+### US-S3-01 工单类型与模板配置（F3.1）
+
+- **Epic**: E2 / E3 | **Sprint**: S3 | **SP**: 5 | **状态**: Done
+- **角色**: 域管理员（平台域详情）
+- **故事**: 作为域管理员，我希望配置本域工单类型与模板，以便客户提单时可选类型且状态流合法。
+- **AC**:
+  1. 平台域详情「工单管理」Tab（`detail-tickets.tsx`）可列表/新建/编辑/删除工单类型与模板（对接 `TicketConfigController`）。
+  2. Drawer 三 Tab：基础信息、Formily 表单设计（系统字段 title/description 锁定）、React Flow 状态流 DAG。
+  3. 保存状态流时满足 **TR-01**（至少一个终态）；违反时保存失败 + 中文提示。
+  4. 预置「反馈」「建议」类型可启用/停用；`general` 补默认 form_schema。
+  5. 权限 `platform.domain.control.ticket_type.*`；`AuthGuarded` + `RequirePermission` 一致；Tab/按钮门控。
+- **规则**: TR-01、TR-02（配置层约束）
+- **DB 增量**: Flyway `V202606170001`（`ticket_type.status`/`form_schema` + platform 四码 + catalog；见 increment-plan §3）
+- **备注**: 承接 **US-S2-E2-01** Stretch；openspec `ticket-type-config-s3-01`（2026-06-17）
+
+### US-S3-02 客户注册与 CustomerWeb 入域
+
+- **Epic**: E3 | **Sprint**: S3 | **SP**: 4 | **状态**: Todo
+- **角色**: 客户
+- **故事**: 作为客户，我希望在客户端用真实 API 注册并加入允许注册的业务域。
+- **AC**:
+  1. 注册 API 校验 `registration_enabled` / `invitation_enabled`（**DR-01**、**DR-02**）；错误中文。
+  2. CustomerWeb 注册/登录页调用 `/api/v1/auth/register`（及既有登录 API）；移除主路径 demo portal 入域。
+  3. 域选择仅展示 `registration_enabled=allowed` 的业务域。
+  4. 完成原 **US-S1-04**、**US-S1-05** backlog 状态更新为 Done。
+- **规则**: DR-01、DR-02
+- **DB 增量**: 无（除非邀请码表缺口）
+- **备注**: S1 暂缓 Story 并入 S3
+
+### US-S3-03 CustomerWeb 提单与我的工单
+
+- **Epic**: E3 | **Sprint**: S3 | **SP**: 5 | **状态**: Todo
+- **角色**: 客户
+- **故事**: 作为已入域客户，我希望提交工单并查看处理进度与公开回复。
+- **AC**:
+  1. 提单页调用 `POST /api/v1/domains/{domain_id}/tickets`；成功后展示工单号。
+  2. 我的工单列表 `GET .../tickets/my`；详情含公开回复时间线。
+  3. 客户可补充公开回复；在允许撤回的状态下可撤回（**TR-03**）。
+  4. 未入域客户访问域能力 → 拒绝 + 中文（**FR-05**）。
+  5. `pnpm run typecheck` 通过（含 CustomerWeb）。
+- **规则**: FR-05、FR-06、TR-03
+- **DB 增量**: 无
+- **备注**: 依赖 US-S3-01（至少 1 个启用类型）、US-S3-02（客户账号）
+
+### US-S3-04 员工端工单队列与处理
+
+- **Epic**: E3 | **Sprint**: S3 | **SP**: 5 | **状态**: Todo
+- **角色**: 客服（`agent`）
+- **故事**: 作为域内客服，我希望在业务域端查看并处理本域工单，以便完成客户服务。
+- **AC**:
+  1. business scope 菜单可进入工单队列（非仅 `/platform/ticket-pool` P0 演示页）。
+  2. 列表对接 `GET /api/v1/admin/domains/{domain_id}/tickets`；支持状态等筛选；分页或 limit 与产品约定一致。
+  3. 详情：领取、指派、公开回复、内部备注（若 API 支持）、状态变更；终态后不可再变更（**TR-02**）。
+  4. 权限 `ticket.*`；无权限按钮不可见，API 403 + 中文。
+  5. 主路径不再依赖 demo `/tickets` 回退（可保留开发兜底并文档注明）。
+- **规则**: FR-01、FR-03、FR-06、TR-02、TR-04
+- **DB 增量**: business 工单菜单 + 按钮权限 Flyway TBD
+- **备注**: 升级现有 `ticket-pool` / `ticket-detail`；与 US-S3-03 共同完成 FR-06
+
+---
+
+## Sprint 4 及以后（占位）
+
+> Epic 方向见 [`backlog-epics.md`](./backlog-epics.md)。E4 SLA、E5 咨询、US-S1-08 等见 sprint-3-plan §2.1 Stretch。
 
 ---
 

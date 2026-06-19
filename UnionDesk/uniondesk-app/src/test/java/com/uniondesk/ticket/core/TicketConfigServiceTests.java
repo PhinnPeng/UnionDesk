@@ -79,15 +79,16 @@ class TicketConfigServiceTests {
 
         List<TicketConfigDtos.TicketTypeView> list = ticketConfigService.listTicketTypes(1L);
         assertThat(list).hasSize(1);
-        assertThat(list.get(0).dynamic_fields()).isInstanceOf(Map.class);
+        assertThat(list.get(0).status_flow()).isInstanceOf(Map.class);
 
         TicketConfigDtos.CreateTicketTypeRequest createRequest = new TicketConfigDtos.CreateTicketTypeRequest(
                 "technical",
                 "技术支持",
-                Map.of("flow", List.of("open", "closed")));
+                Map.of("states", List.of(Map.of("code", "closed", "name", "已关闭", "state_type", "terminal", "allow_customer_withdraw", false)), "transitions", List.of()),
+                null);
         TicketConfigDtos.TicketTypeView created = ticketConfigService.createTicketType(1L, createRequest);
         assertThat(created.code()).isEqualTo("technical");
-        assertThat(created.dynamic_fields()).isEqualTo(Map.of("flow", List.of("open", "closed")));
+        assertThat(created.status_flow()).isNotNull();
         ArgumentCaptor<Object[]> typeInsert = ArgumentCaptor.forClass(Object[].class);
         verify(jdbcTemplate).update(argThat(sql -> sql != null && sql.contains("INSERT INTO ticket_type")), typeInsert.capture());
         assertThat(typeInsert.getValue()[2]).isEqualTo("技术支持");
@@ -95,11 +96,12 @@ class TicketConfigServiceTests {
 
         TicketConfigDtos.UpdateTicketTypeRequest updateRequest = new TicketConfigDtos.UpdateTicketTypeRequest(
                 "技术支持-2",
-                Map.of("flow", List.of("open")),
+                Map.of("states", List.of(Map.of("code", "closed", "name", "已关闭", "state_type", "terminal", "allow_customer_withdraw", false)), "transitions", List.of()),
+                null,
                 "disabled");
         TicketConfigDtos.TicketTypeView updated = ticketConfigService.updateTicketType(1L, 11L, updateRequest);
         assertThat(updated.name()).isEqualTo("技术支持-2");
-        assertThat(updated.dynamic_fields()).isEqualTo(Map.of("flow", List.of("open")));
+        assertThat(updated.status()).isEqualTo("disabled");
 
         when(jdbcTemplate.update(argThat(sql -> sql != null && sql.contains("DELETE FROM ticket_type")), any(Object[].class)))
                 .thenReturn(1);

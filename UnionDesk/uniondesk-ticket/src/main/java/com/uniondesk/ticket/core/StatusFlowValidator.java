@@ -1,0 +1,82 @@
+package com.uniondesk.ticket.core;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+@SuppressWarnings("unchecked")
+public final class StatusFlowValidator {
+
+    private StatusFlowValidator() {
+    }
+
+    public static void validate(Object statusFlow) {
+        if (!(statusFlow instanceof Map<?, ?> flowMap)) {
+            throw new IllegalArgumentException("状态流不能为空");
+        }
+        Object statesObj = flowMap.get("states");
+        if (!(statesObj instanceof List<?> states) || states.isEmpty()) {
+            throw new IllegalArgumentException("状态流不能为空");
+        }
+        Set<String> codes = new HashSet<>();
+        boolean hasTerminal = false;
+        for (Object stateObj : states) {
+            if (!(stateObj instanceof Map<?, ?> state)) {
+                throw new IllegalArgumentException("状态流格式无效");
+            }
+            String code = stringValue(state.get("code"));
+            if (!codes.add(code)) {
+                throw new IllegalArgumentException("状态编码不能重复");
+            }
+            String stateType = stringValue(state.get("state_type"));
+            if (!List.of("in_progress", "paused", "terminal").contains(stateType)) {
+                throw new IllegalArgumentException("状态类型无效");
+            }
+            if ("terminal".equals(stateType)) {
+                hasTerminal = true;
+            }
+            Object allowWithdraw = state.get("allow_customer_withdraw");
+            if (Boolean.TRUE.equals(allowWithdraw) && !"in_progress".equals(stateType)) {
+                throw new IllegalArgumentException("仅进行中的状态允许客户撤回");
+            }
+        }
+        if (!hasTerminal) {
+            throw new IllegalArgumentException("状态流至少需要一个终态");
+        }
+        Object transitionsObj = flowMap.get("transitions");
+        List<?> transitions = transitionsObj instanceof List<?> list ? list : List.of();
+        Set<String> connected = new HashSet<>();
+        for (Object transitionObj : transitions) {
+            if (!(transitionObj instanceof Map<?, ?> transition)) {
+                throw new IllegalArgumentException("流转配置格式无效");
+            }
+            String from = stringValue(transition.get("from"));
+            String to = stringValue(transition.get("to"));
+            if (!codes.contains(from) || !codes.contains(to)) {
+                throw new IllegalArgumentException("流转目标状态不存在");
+            }
+            connected.add(from);
+            connected.add(to);
+        }
+        for (Object stateObj : states) {
+            Map<?, ?> state = (Map<?, ?>) stateObj;
+            String code = stringValue(state.get("code"));
+            String stateType = stringValue(state.get("state_type"));
+            if ("terminal".equals(stateType)) {
+                continue;
+            }
+            if (!connected.contains(code)) {
+                throw new IllegalArgumentException("存在孤立状态：" + code);
+            }
+        }
+    }
+
+    private static String stringValue(Object value) {
+        if (value == null || String.valueOf(value).isBlank()) {
+            throw new IllegalArgumentException("状态流格式无效");
+        }
+        return String.valueOf(value).trim();
+    }
+}

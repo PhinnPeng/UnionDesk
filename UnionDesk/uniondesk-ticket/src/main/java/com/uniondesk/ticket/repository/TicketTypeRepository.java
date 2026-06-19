@@ -34,12 +34,16 @@ public class TicketTypeRepository {
         mapper.insert(po);
     }
 
-    public void update(long id, long domainId, String name, String statusFlowConfig) {
-        mapper.update(id, domainId, name, statusFlowConfig);
+    public void update(long id, long domainId, String name, String statusFlowConfig, String formSchema, String status) {
+        mapper.update(id, domainId, name, statusFlowConfig, formSchema, status);
     }
 
     public int deleteByIdAndDomainId(long id, long domainId) {
         return mapper.deleteByIdAndDomainId(id, domainId);
+    }
+
+    public int countTicketsByTypeId(long domainId, long typeId) {
+        return mapper.countTicketsByTypeId(domainId, typeId);
     }
 
     public Long findFirstIdByDomainId(long domainId) {

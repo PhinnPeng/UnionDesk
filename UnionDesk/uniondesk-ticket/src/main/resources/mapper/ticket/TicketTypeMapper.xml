@@ -9,19 +9,21 @@
         <result property="code" column="code"/>
         <result property="name" column="name"/>
         <result property="statusFlowConfig" column="status_flow_config"/>
+        <result property="formSchema" column="form_schema"/>
+        <result property="status" column="status"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <select id="findByDomainId" resultMap="TicketTypePo">
-        SELECT id, business_domain_id, code, name, status_flow_config
+        SELECT id, business_domain_id, code, name, status_flow_config, form_schema, status
         FROM ticket_type
         WHERE business_domain_id = #{domainId}
         ORDER BY id ASC
     </select>
 
     <select id="findByIdAndDomainId" resultMap="TicketTypePo">
-        SELECT id, business_domain_id, code, name, status_flow_config
+        SELECT id, business_domain_id, code, name, status_flow_config, form_schema, status
         FROM ticket_type
         WHERE id = #{id} AND business_domain_id = #{domainId}
         LIMIT 1
@@ -30,17 +32,21 @@
     <insert id="insert" parameterType="com.uniondesk.ticket.entity.TicketTypePo"
             useGeneratedKeys="true" keyProperty="id">
         INSERT INTO ticket_type (
-            business_domain_id, code, name, status_flow_config, created_at, updated_at
+            business_domain_id, code, name, status_flow_config, form_schema, status, created_at, updated_at
         )
         VALUES (
-            #{businessDomainId}, #{code}, #{name}, #{statusFlowConfig},
+            #{businessDomainId}, #{code}, #{name}, #{statusFlowConfig}, #{formSchema}, #{status},
             CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
         )
     </insert>
 
     <update id="update">
         UPDATE ticket_type
-        SET name = #{name}, status_flow_config = #{statusFlowConfig}, updated_at = CURRENT_TIMESTAMP(3)
+        SET name = #{name},
+            status_flow_config = #{statusFlowConfig},
+            form_schema = #{formSchema},
+            status = #{status},
+            updated_at = CURRENT_TIMESTAMP(3)
         WHERE id = #{id} AND business_domain_id = #{domainId}
     </update>
 
@@ -55,6 +61,13 @@
         WHERE business_domain_id = #{domainId}
         ORDER BY id ASC
         LIMIT 1
+    </select>
+
+    <select id="countTicketsByTypeId" resultType="int">
+        SELECT COUNT(*)
+        FROM ticket
+        WHERE business_domain_id = #{domainId}
+          AND ticket_type_id = #{typeId}
     </select>
 
 </mapper>

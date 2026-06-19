@@ -69,6 +69,13 @@ public final class PermissionCodes {
     public static final String PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE = "platform.domain.control.customer.create";
     public static final String PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS =
             "platform.domain.control.customer.update-status";
+    public static final String PLATFORM_DOMAIN_CONTROL_MEMBER_READ = "platform.domain.control.member.read";
+    public static final String PLATFORM_DOMAIN_CONTROL_MEMBER_CREATE = "platform.domain.control.member.create";
+    public static final String PLATFORM_DOMAIN_CONTROL_MEMBER_UPDATE_ROLES =
+            "platform.domain.control.member.update_roles";
+    public static final String PLATFORM_DOMAIN_CONTROL_MEMBER_UPDATE_STATUS =
+            "platform.domain.control.member.update_status";
+    public static final String PLATFORM_DOMAIN_CONTROL_MEMBER_DELETE = "platform.domain.control.member.delete";
     public static final String PLATFORM_DOMAIN_ROLES_READ = "platform.domain.roles.read";
     public static final String PLATFORM_DOMAIN_ROLES_PERMISSIONS_READ = "platform.domain.roles.permissions.read";
     public static final String DOMAIN_INVITATION_CODE_READ = "domain.invitation_code.read";
@@ -94,6 +101,14 @@ public final class PermissionCodes {
             "platform.domain.control.blocked_word.create";
     public static final String PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE =
             "platform.domain.control.blocked_word.delete";
+    public static final String PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ =
+            "platform.domain.control.ticket_type.read";
+    public static final String PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_CREATE =
+            "platform.domain.control.ticket_type.create";
+    public static final String PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE =
+            "platform.domain.control.ticket_type.update";
+    public static final String PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_DELETE =
+            "platform.domain.control.ticket_type.delete";
     public static final String DOMAIN_CONFIG_READ = "domain.config.read";
     public static final String DOMAIN_CONFIG_UPDATE = "domain.config.update";
     public static final String PLATFORM_SYSTEM_CONFIG_READ = "platform.system_config.read";

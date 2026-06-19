@@ -31,6 +31,7 @@ import {
 	PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ,
 	PLATFORM_DOMAIN_CONTROL_OVERVIEW,
 	PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ,
+	PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ,
 	PLATFORM_DOMAIN_ROLES_READ,
 } from "../platform-domain-permissions";
 import { type DetailTabKey, parseDetailTab } from "./components/detail-shared";
@@ -42,6 +43,7 @@ function resolveEffectiveTab(
 	canViewOverview: boolean,
 	canViewCustomers: boolean,
 	canViewRoles: boolean,
+	canViewTickets: boolean,
 	canViewAuditLogs: boolean,
 	canViewLoginLogs: boolean,
 ): DetailTabKey {
@@ -52,6 +54,9 @@ function resolveEffectiveTab(
 		return canViewOverview ? "overview" : "basic";
 	}
 	if (activeTab === "roles" && !canViewRoles) {
+		return canViewOverview ? "overview" : "basic";
+	}
+	if (activeTab === "tickets" && !canViewTickets) {
 		return canViewOverview ? "overview" : "basic";
 	}
 	if (activeTab === "audit_logs" && !canViewAuditLogs) {
@@ -106,6 +111,7 @@ export default function PlatformDomainDetail() {
 	const canViewCustomers = hasPermission(PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ);
 	const canViewOverview = hasPermission(PLATFORM_DOMAIN_CONTROL_OVERVIEW);
 	const canViewRoles = hasPermission(PLATFORM_DOMAIN_ROLES_READ);
+	const canViewTickets = hasPermission(PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ);
 	const canViewAuditLogs = hasPermission(PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ);
 	const canViewLoginLogs = hasPermission(PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ);
 	const navigate = useNavigate();
@@ -186,6 +192,7 @@ export default function PlatformDomainDetail() {
 		canViewOverview,
 		canViewCustomers,
 		canViewRoles,
+		canViewTickets,
 		canViewAuditLogs,
 		canViewLoginLogs,
 	);
@@ -214,6 +221,9 @@ export default function PlatformDomainDetail() {
 			return;
 		}
 		if (tab === "roles" && !canViewRoles) {
+			return;
+		}
+		if (tab === "tickets" && !canViewTickets) {
 			return;
 		}
 		if (tab === "audit_logs" && !canViewAuditLogs) {

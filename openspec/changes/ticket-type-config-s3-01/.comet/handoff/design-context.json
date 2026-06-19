@@ -1,0 +1,28 @@
+{
+  "change": "ticket-type-config-s3-01",
+  "phase": "build",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh (manual fallback, Git Bash unavailable)",
+  "context_hash": "9c07eee3cace2bbcb2053340158b04991e13290777d1c0203f92ee496d6a4a23",
+  "design_doc": "docs/superpowers/specs/2026-06-17-ticket-type-config-s3-01-design.md",
+  "plan": "docs/superpowers/plans/2026-06-17-ticket-type-config-s3-01.md",
+  "files": [
+    {
+      "path": "openspec/changes/ticket-type-config-s3-01/proposal.md",
+      "sha256": "2922a985e1c37aec97bb8cfcce7ad2d13c6efb174298f1632a16fdfc6994cb1c"
+    },
+    {
+      "path": "openspec/changes/ticket-type-config-s3-01/design.md",
+      "sha256": "fcbf99b90f668eb03d61905940d1e5a362f6bfd64bb665d87c3aaf0423bd5504"
+    },
+    {
+      "path": "openspec/changes/ticket-type-config-s3-01/tasks.md",
+      "sha256": "4df1d87e72fd2b230ab0c8e9a1949dec59c13f2ffacfa81cbef70345b9d1b8c2"
+    },
+    {
+      "path": "openspec/changes/ticket-type-config-s3-01/specs/ticket-type-config/spec.md",
+      "sha256": "6e3ae5db08badb12f4bd8a29b16af7543d028e96ae202bb95da25034c62dc07a"
+    }
+  ]
+}

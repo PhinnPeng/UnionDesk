@@ -12,19 +12,22 @@ public final class TicketConfigDtos {
             String domain_id,
             String code,
             String name,
-            Object dynamic_fields,
+            Object status_flow,
+            Object form_schema,
             String status) {
     }
 
     public record CreateTicketTypeRequest(
             @NotBlank String code,
             @NotBlank String name,
-            Object dynamic_fields) {
+            Object status_flow,
+            Object form_schema) {
     }
 
     public record UpdateTicketTypeRequest(
             String name,
-            Object dynamic_fields,
+            Object status_flow,
+            Object form_schema,
             String status) {
     }
 

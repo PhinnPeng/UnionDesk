@@ -56,6 +56,12 @@ import type {
   DomainStaffCandidate,
   BlockedWord,
   BlockedWordBatchResult,
+  CreateDomainTicketTemplateBody,
+  CreateDomainTicketTypeBody,
+  DomainTicketTemplate,
+  DomainTicketType,
+  UpdateDomainTicketTemplateBody,
+  UpdateDomainTicketTypeBody,
   P0AttachmentPresignRequest,
   P0AttachmentPresignResponse,
   P0AttachmentLocalUploadResponse,
@@ -1448,6 +1454,86 @@ export async function createBlockedWordsBatch(domainId: string, words: string[])
 /** `DELETE /api/v1/admin/domains/{domainId}/blocked-words/{wordId}` */
 export async function deleteBlockedWord(domainId: string, wordId: string): Promise<void> {
   await api.delete(`/admin/domains/${encodeURIComponent(domainId)}/blocked-words/${encodeURIComponent(wordId)}`);
+}
+
+/** `GET /api/v1/admin/domains/{domainId}/ticket-types` */
+export async function fetchDomainTicketTypes(domainId: string): Promise<DomainTicketType[]> {
+  const response = await api.get<DomainTicketType[]>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-types`,
+  );
+  return unwrapApiResponse(response.data) ?? [];
+}
+
+/** `POST /api/v1/admin/domains/{domainId}/ticket-types` */
+export async function createDomainTicketType(
+  domainId: string,
+  body: CreateDomainTicketTypeBody,
+): Promise<DomainTicketType> {
+  const response = await api.post<DomainTicketType>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-types`,
+    body,
+  );
+  return unwrapApiResponse(response.data);
+}
+
+/** `PUT /api/v1/admin/domains/{domainId}/ticket-types/{typeId}` */
+export async function updateDomainTicketType(
+  domainId: string,
+  typeId: string,
+  body: UpdateDomainTicketTypeBody,
+): Promise<DomainTicketType> {
+  const response = await api.put<DomainTicketType>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-types/${encodeURIComponent(typeId)}`,
+    body,
+  );
+  return unwrapApiResponse(response.data);
+}
+
+/** `DELETE /api/v1/admin/domains/{domainId}/ticket-types/{typeId}` */
+export async function deleteDomainTicketType(domainId: string, typeId: string): Promise<void> {
+  await api.delete(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-types/${encodeURIComponent(typeId)}`,
+  );
+}
+
+/** `GET /api/v1/admin/domains/{domainId}/ticket-templates` */
+export async function fetchDomainTicketTemplates(domainId: string): Promise<DomainTicketTemplate[]> {
+  const response = await api.get<DomainTicketTemplate[]>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-templates`,
+  );
+  return unwrapApiResponse(response.data) ?? [];
+}
+
+/** `POST /api/v1/admin/domains/{domainId}/ticket-templates` */
+export async function createDomainTicketTemplate(
+  domainId: string,
+  body: CreateDomainTicketTemplateBody,
+): Promise<DomainTicketTemplate> {
+  const response = await api.post<DomainTicketTemplate>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-templates`,
+    body,
+  );
+  return unwrapApiResponse(response.data);
+}
+
+/** `PUT /api/v1/admin/domains/{domainId}/ticket-templates/{templateId}` */
+export async function updateDomainTicketTemplate(
+  domainId: string,
+  templateId: string,
+  body: UpdateDomainTicketTemplateBody,
+): Promise<DomainTicketTemplate> {
+  const response = await api.put<DomainTicketTemplate>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-templates/${encodeURIComponent(templateId)}`,
+    body,
+  );
+  return unwrapApiResponse(response.data);
+}
+
+/** `DELETE /api/v1/admin/domains/{domainId}/ticket-templates/{templateId}` */
+export async function deleteDomainTicketTemplate(domainId: string, templateId: string): Promise<void> {
+  await api.delete(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-templates/${encodeURIComponent(templateId)}`,
+  );
 }
 
 /** P0：`POST /api/v1/attachments/presign` */

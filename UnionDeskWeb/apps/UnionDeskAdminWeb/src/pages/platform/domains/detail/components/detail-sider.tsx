@@ -23,6 +23,7 @@ import {
 	PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ,
 	PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ,
 	PLATFORM_DOMAIN_CONTROL_OVERVIEW,
+	PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ,
 	PLATFORM_DOMAIN_ROLES_READ,
 } from "../../platform-domain-permissions";
 import { type DetailTabKey } from "./detail-shared";
@@ -63,6 +64,9 @@ export function DetailSider({ activeTab, onSelect }: DetailSiderProps) {
 				return false;
 			}
 			if (item.key === "blockwords" && !hasPermission(PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ)) {
+				return false;
+			}
+			if (item.key === "tickets" && !hasPermission(PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ)) {
 				return false;
 			}
 			if (item.key === "audit_logs" && !hasPermission(PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ)) {

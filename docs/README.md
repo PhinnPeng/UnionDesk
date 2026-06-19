@@ -25,7 +25,7 @@
 
 **协作约定：**
 
-- **迭代任务源**：[`product/backlog-stories.md`](product/backlog-stories.md)（当前承诺：**S2**，Committed 见 [`sprint-2-plan.md`](product/sprint-2-plan.md) §2，约 22 SP；S1 已签 off 2026-05-26）。
+- **迭代任务源**：[`product/backlog-stories.md`](product/backlog-stories.md)（当前承诺：**S3**，Committed 见 [`sprint-3-plan.md`](product/sprint-3-plan.md) §2；**US-S3-00 Done** 2026-06-17；S2 已签 off 2026-06-15）。
 - **数据库**：按 Sprint 增量；Flyway/DDL 为 L7，不作为 L3 规则来源。
 - **Agent 读文档顺序**：vision → prd → foundation-rules → backlog → 架构子文档。
 
@@ -42,7 +42,8 @@ docs/
 │   ├── backlog-stories.md            # L6 迭代任务源
 │   ├── sprint-0-plan.md
 │   ├── sprint-1-plan.md              # S1 执行计划（已签 off，2026-05-26）
-│   ├── sprint-2-plan.md              # S2 执行计划（E2 + 平台域超额 + UX-01）
+│   ├── sprint-2-plan.md              # S2 执行计划（已签 off，2026-06-15）
+│   ├── sprint-3-plan.md              # S3 执行计划（E3 工单闭环 + IAM 治理）
 │   └── implementation-inventory.md
 ├── architecture/
 │   ├── data-model.md

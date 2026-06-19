@@ -9,6 +9,8 @@ public class TicketTypePo {
     private String code;
     private String name;
     private String statusFlowConfig;
+    private String formSchema;
+    private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -50,6 +52,22 @@ public class TicketTypePo {
 
     public void setStatusFlowConfig(String statusFlowConfig) {
         this.statusFlowConfig = statusFlowConfig;
+    }
+
+    public String getFormSchema() {
+        return formSchema;
+    }
+
+    public void setFormSchema(String formSchema) {
+        this.formSchema = formSchema;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public LocalDateTime getCreatedAt() {

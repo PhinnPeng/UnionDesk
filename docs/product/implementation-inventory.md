@@ -2,6 +2,7 @@
 
 | 文档版本 | 日期 | 说明 |
 |:---|:---|:---|
+| 1.3 | 2026-06-17 | §4.5 IAM 角色—控制台绑定 Done（US-S3-00） |
 | 1.2 | 2026-05-26 | S2 Story 交叉引用（§3 平台域详情、§7 E2-00） |
 
 > 状态说明：**Done** = 前后端均可正常使用（含基本校验与权限）；**Partial** = 核心路径可用但缺边界 case / 依赖 demo 数据 / 缺独立页面；**Todo** = 未实现或为占位。
@@ -115,6 +116,7 @@
 | 当前用户权限快照 | — | `GET /api/v1/iam/me/permission-snapshot` | **Done** | 返回 user + roles + domains + menus + actions |
 | 当前用户菜单资源 | — | `GET /api/v1/iam/me/menu-resources` | **Done** | 前端 `isSendRoutingRequest = true` 启用后端动态路由 |
 | 动态路由注册 | `router/routes/config.ts` | `IamController` / `StaffController` | **Done** | 后端菜单 → 前端动态路由 → `AuthGuarded` 按钮级权限 |
+| 角色—控制台绑定 | — | `PermissionScopePolicy` + `AdminMenuService` + Flyway `V202606150001` | **Done** | **US-S3-00**；global/domain 权限包收敛；`admin`→`platform_admin` |
 | 跨域访问拒绝 | — | `US-S1-08`（Todo，**S1 暂缓**） | **Todo** | A 域身份访问 B 域数据暂未全面拦截；2026-05-26 不纳入 S1 Committed |
 
 **Flyway 相关**：菜单迁移 `V202605200004`～`006`（域菜单结构）、`V202605210001`（日志审计菜单）、`V202605220001`（五模块菜单精简）、`V202605220002`（菜单图标与按钮权限回填）。
@@ -203,5 +205,5 @@
 | 业务域首页/入口 | `/home`、`/platform/home` | IAM 快照 + 路由 | **Done** | **US-S2-E2-00**；`resolveHomePathFromActions` 三元规则 |
 | 系统用户/角色/菜单/部门 | `pages/system/menu`、`pages/system/role` 等 | IAM 域级 API | **Partial** | E2-00：`/system/menu`、`/system/role` 可打开；`/system/user` 等仍占位 |
 | 域内成员/客户/角色（business 端） | 根级模块（待扩） | 域 API | **Partial** | 平台侧见 §3 **US-S2-02～04** |
-| 工单类型设计 | — | `ticket_type` | **Todo** | **US-S2-E2-01 Stretch** |
+| 工单类型设计 | AdminWeb 域详情 Drawer | `ticket_type` + Flyway V202606170001 | **Done** | **US-S3-01**（承接 US-S2-E2-01） |
 | 域 SLA / 通知模板 | — | — | **Todo** | PRD §3.3.1，S3+ |

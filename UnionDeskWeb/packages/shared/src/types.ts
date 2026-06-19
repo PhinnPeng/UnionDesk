@@ -615,6 +615,73 @@ export type BlockedWordBatchResult = {
   skipped: { word: string; reason: string }[];
 };
 
+export type TicketStatusFlowState = {
+  code: string;
+  name: string;
+  state_type: "in_progress" | "paused" | "terminal";
+  allow_customer_withdraw?: boolean;
+  is_resolved?: boolean;
+  position?: { x: number; y: number };
+};
+
+export type TicketStatusFlow = {
+  states: TicketStatusFlowState[];
+  transitions: { from: string; to: string; label?: string }[];
+};
+
+export type DomainTicketType = {
+  id: string;
+  domain_id: string;
+  code: string;
+  name: string;
+  status: "active" | "disabled" | string;
+  status_flow: TicketStatusFlow | Record<string, unknown> | null;
+  form_schema: Record<string, unknown> | null;
+};
+
+export type DomainTicketTemplate = {
+  id: string;
+  domain_id: string;
+  name: string;
+  type: string;
+  type_id: string;
+  fields_snapshot?: unknown;
+  content?: string | null;
+  sort_order?: number | null;
+};
+
+export type CreateDomainTicketTypeBody = {
+  code: string;
+  name: string;
+  status_flow?: TicketStatusFlow | Record<string, unknown> | null;
+  form_schema?: Record<string, unknown> | null;
+};
+
+export type UpdateDomainTicketTypeBody = {
+  name?: string;
+  status?: string;
+  status_flow?: TicketStatusFlow | Record<string, unknown> | null;
+  form_schema?: Record<string, unknown> | null;
+};
+
+export type CreateDomainTicketTemplateBody = {
+  name: string;
+  type: string;
+  type_id?: string;
+  fields_snapshot?: unknown;
+  content?: string;
+  sort_order?: number;
+};
+
+export type UpdateDomainTicketTemplateBody = {
+  name?: string;
+  type?: string;
+  type_id?: string;
+  fields_snapshot?: unknown;
+  content?: string;
+  sort_order?: number;
+};
+
 export type P0DomainCustomer = {
   id: string;
   customer_account_id?: string | null;

@@ -2,6 +2,7 @@
 
 | 文档版本 | 日期 | 说明 |
 |:---|:---|:---|
+| 1.2 | 2026-06-17 | §3 Sprint 3：US-S3-00 Done（V202606150001） |
 | 1.1 | 2026-05-24 | 增加 §1.1/§1.2 基线快照与迁移备份（US-S0-07） |
 
 > **L5 定位**：按 Sprint / Story 登记**将变更哪些表/列**；**不写 SQL**。实现见 Flyway（L7）。逻辑实体见 [`data-model.md`](./data-model.md)（L4）与 [`foundation-rules.md`](../product/foundation-rules.md)（L3）。
@@ -112,8 +113,13 @@
 
 | Story ID | 表/列变更（计划） | Flyway 版本 | 状态 |
 |:---|:---|:---|:---|
-| US-S3-00 | `iam_role_permission` 混包清理；`user_global_role` bootstrap；`iam_admin_role_menu_relation` scope 对齐；无新表 | TBD | Todo |
-| US-S3-01 | 无表变更；`domain.ticket_type.*` 等菜单/按钮权限；域详情工单 Tab catalog | TBD | Todo |
+| US-S3-00 | `iam_role_permission` 混包清理；`user_global_role` bootstrap；`iam_admin_role_menu_relation` scope 对齐；无新表 | V202606150001 | Done |
+| US-S3-01 | `ticket_type.status`、`ticket_type.form_schema`；`platform.domain.control.ticket_type.*` 四码 + 域详情 catalog；预置 feedback/suggestion | V202606170001 | Done |
+| US-S3-01 | 工单类型 catalog/按钮 → super_admin、platform_admin 角色菜单与权限补绑 | V202606170002 | Done |
+| US-S3-01 | super_admin 同步 platform 全量菜单节点 + admin→platform_admin 补绑 | V202606170003 | Done |
+| US-S3-01 | 平台 scope 按钮 permission_code 与 Catalog 对齐（修复 super_admin 保存角色） | V202606170004 | Done |
+| US-S3-01 | P0 演示按钮 legacy domain/shared 码 → platform.* UI 门控 | V202606170005 | Done |
+| US-S3-01 | 员工管理 platform.domain.control.member.* + 按钮对齐 | V202606170006 | Done |
 | US-S3-02 | 无（注册 API 无表变更） | — | Todo |
 | US-S3-03 | 无 | — | Todo |
 | US-S3-04 | 无表变更；business scope 工单队列/详情菜单 + `ticket.*` 按钮权限 | TBD | Todo |

@@ -52,33 +52,48 @@ public class TicketConfigService {
     public TicketConfigDtos.TicketTypeView createTicketType(long domainId, TicketConfigDtos.CreateTicketTypeRequest request) {
         String code = requiredText(request.code(), "code");
         String name = requiredText(request.name(), "name");
-        Object dynamicFields = request.dynamic_fields();
+        Object statusFlow = request.status_flow() == null
+                ? DefaultStatusFlowProvider.defaultFlow(objectMapper)
+                : request.status_flow();
+        Map<String, Object> formSchema = FormSchemaValidator.mergeAndValidate(request.form_schema(), objectMapper);
+        StatusFlowValidator.validate(statusFlow);
         TicketTypePo po = new TicketTypePo();
         po.setBusinessDomainId(domainId);
         po.setCode(code);
         po.setName(name);
-        po.setStatusFlowConfig(toJson(dynamicFields));
+        po.setStatusFlowConfig(toJson(statusFlow));
+        po.setFormSchema(toJson(formSchema));
+        po.setStatus("active");
         ticketTypeRepository.save(po);
-        return new TicketConfigDtos.TicketTypeView(String.valueOf(po.getId()), String.valueOf(domainId), code, name, dynamicFields, "active");
+        return toTicketTypeView(po);
     }
 
     @Transactional
     public TicketConfigDtos.TicketTypeView updateTicketType(long domainId, long typeId, TicketConfigDtos.UpdateTicketTypeRequest request) {
         TicketTypePo existing = ticketTypeRepository.findRequiredByIdAndDomainId(typeId, domainId);
         String name = StringUtils.hasText(request.name()) ? request.name().trim() : existing.getName();
-        Object dynamicFields = request.dynamic_fields() == null ? readJsonObject(existing.getStatusFlowConfig()) : request.dynamic_fields();
-        ticketTypeRepository.update(typeId, domainId, name, toJson(dynamicFields));
-        return new TicketConfigDtos.TicketTypeView(
-                String.valueOf(existing.getId()),
-                String.valueOf(domainId),
-                existing.getCode(),
-                name,
-                dynamicFields,
-                "active");
+        Object statusFlow = request.status_flow() == null
+                ? readJsonObject(existing.getStatusFlowConfig())
+                : request.status_flow();
+        Map<String, Object> formSchema = FormSchemaValidator.mergeAndValidate(
+                request.form_schema() == null ? readJsonObject(existing.getFormSchema()) : request.form_schema(),
+                objectMapper);
+        String status = StringUtils.hasText(request.status()) ? request.status().trim() : existing.getStatus();
+        StatusFlowValidator.validate(statusFlow);
+        ticketTypeRepository.update(typeId, domainId, name, toJson(statusFlow), toJson(formSchema), status);
+        existing.setName(name);
+        existing.setStatusFlowConfig(toJson(statusFlow));
+        existing.setFormSchema(toJson(formSchema));
+        existing.setStatus(status);
+        return toTicketTypeView(existing);
     }
 
     @Transactional
     public void deleteTicketType(long domainId, long typeId) {
+        ticketTypeRepository.findRequiredByIdAndDomainId(typeId, domainId);
+        if (ticketTypeRepository.countTicketsByTypeId(domainId, typeId) > 0) {
+            throw new IllegalArgumentException("该工单类型已被使用，无法删除");
+        }
         int updated = ticketTypeRepository.deleteByIdAndDomainId(typeId, domainId);
         if (updated == 0) {
             throw new IllegalArgumentException("ticket type not found");
@@ -272,7 +287,8 @@ public class TicketConfigService {
                 po.getCode(),
                 po.getName(),
                 readJsonObject(po.getStatusFlowConfig()),
-                "active");
+                readJsonObject(po.getFormSchema()),
+                StringUtils.hasText(po.getStatus()) ? po.getStatus() : "active");
     }
 
     private TicketConfigDtos.TicketTemplateView toTicketTemplateView(TicketTemplatePo po) {

@@ -1,0 +1,15 @@
+workflow: full
+phase: build
+plan: docs/superpowers/plans/2026-06-17-ticket-type-config-s3-01.md
+isolation: branch
+build_mode: subagent-driven-development
+build_pause: null
+handoff_context: openspec/changes/ticket-type-config-s3-01/.comet/handoff/design-context.json
+handoff_hash: 9c07eee3cace2bbcb2053340158b04991e13290777d1c0203f92ee496d6a4a23
+verify_mode: full
+base_ref: ec8370a0efbc9aa9bcfc39954ddf38885a1fdb15
+design_doc: docs/superpowers/specs/2026-06-17-ticket-type-config-s3-01-design.md
+verify_result: null
+verification_report: null
+branch_status: null
+created_at: 2026-06-17

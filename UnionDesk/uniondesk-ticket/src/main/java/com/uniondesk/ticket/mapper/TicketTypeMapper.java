@@ -17,9 +17,13 @@ public interface TicketTypeMapper {
     void update(@Param("id") long id,
                 @Param("domainId") long domainId,
                 @Param("name") String name,
-                @Param("statusFlowConfig") String statusFlowConfig);
+                @Param("statusFlowConfig") String statusFlowConfig,
+                @Param("formSchema") String formSchema,
+                @Param("status") String status);
 
     int deleteByIdAndDomainId(@Param("id") long id, @Param("domainId") long domainId);
 
     Long findFirstIdByDomainId(@Param("domainId") long domainId);
+
+    int countTicketsByTypeId(@Param("domainId") long domainId, @Param("typeId") long typeId);
 }
