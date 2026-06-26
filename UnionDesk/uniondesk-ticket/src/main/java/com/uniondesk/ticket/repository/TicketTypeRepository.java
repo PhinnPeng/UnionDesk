@@ -22,6 +22,14 @@ public class TicketTypeRepository {
         return mapper.findByIdAndDomainId(id, domainId);
     }
 
+    public TicketTypePo findByDomainIdAndCode(long domainId, String code) {
+        return mapper.findByDomainIdAndCode(domainId, code);
+    }
+
+    public TicketTypePo findByDomainIdAndName(long domainId, String name) {
+        return mapper.findByDomainIdAndName(domainId, name);
+    }
+
     public TicketTypePo findRequiredByIdAndDomainId(long id, long domainId) {
         TicketTypePo po = mapper.findByIdAndDomainId(id, domainId);
         if (po == null) {
@@ -34,8 +42,16 @@ public class TicketTypeRepository {
         mapper.insert(po);
     }
 
-    public void update(long id, long domainId, String name, String statusFlowConfig, String formSchema, String status) {
-        mapper.update(id, domainId, name, statusFlowConfig, formSchema, status);
+    public void updateMetadata(long id, long domainId, String name, String description, String icon, String statusFlowConfig, String status) {
+        mapper.updateMetadata(id, domainId, name, description, icon, statusFlowConfig, status);
+    }
+
+    public void updateFormSchemaDraft(long id, long domainId, String formSchemaDraft) {
+        mapper.updateFormSchemaDraft(id, domainId, formSchemaDraft);
+    }
+
+    public void publishFormSchema(long id, long domainId, String formSchema, String formSchemaDraft) {
+        mapper.publishFormSchema(id, domainId, formSchema, formSchemaDraft);
     }
 
     public int deleteByIdAndDomainId(long id, long domainId) {

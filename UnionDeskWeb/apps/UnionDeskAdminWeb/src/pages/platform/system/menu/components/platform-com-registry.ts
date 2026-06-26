@@ -19,6 +19,7 @@ export const platformComRegistry: PlatformComRegistryItem[] = [
 	{ label: "平台管理/平台首页", value: "platform/home" },
 	{ label: "平台管理/业务域管理/业务域列表", value: "platform/domains" },
 	{ label: "平台管理/业务域管理/业务域控制台", value: "platform/domains/detail" },
+	{ label: "平台管理/业务域管理/工单类型配置", value: "platform/domains/ticket-type-config" },
 	{ label: "平台管理/业务域管理/域配置", value: "platform/domain-config" },
 	{ label: "平台管理/业务域管理/客户入域", value: "platform/domain-onboarding" },
 	{ label: "平台管理/平台用户", value: "platform/user" },

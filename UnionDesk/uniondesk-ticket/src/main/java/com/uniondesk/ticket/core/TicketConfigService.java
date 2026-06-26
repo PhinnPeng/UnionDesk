@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -52,19 +53,29 @@ public class TicketConfigService {
     public TicketConfigDtos.TicketTypeView createTicketType(long domainId, TicketConfigDtos.CreateTicketTypeRequest request) {
         String code = requiredText(request.code(), "code");
         String name = requiredText(request.name(), "name");
+        assertCodeUnique(domainId, code, null);
+        assertNameUnique(domainId, name, null);
         Object statusFlow = request.status_flow() == null
                 ? DefaultStatusFlowProvider.defaultFlow(objectMapper)
                 : request.status_flow();
         Map<String, Object> formSchema = FormSchemaValidator.mergeAndValidate(request.form_schema(), objectMapper);
+        String formSchemaJson = toJson(formSchema);
         StatusFlowValidator.validate(statusFlow);
         TicketTypePo po = new TicketTypePo();
         po.setBusinessDomainId(domainId);
         po.setCode(code);
         po.setName(name);
+        po.setDescription(trimToNull(request.description()));
+        po.setIcon(trimToNull(request.icon()));
         po.setStatusFlowConfig(toJson(statusFlow));
-        po.setFormSchema(toJson(formSchema));
+        po.setFormSchema(formSchemaJson);
+        po.setFormSchemaDraft(formSchemaJson);
         po.setStatus("active");
-        ticketTypeRepository.save(po);
+        try {
+            ticketTypeRepository.save(po);
+        } catch (DuplicateKeyException ex) {
+            throw translateTicketTypeDuplicate(ex);
+        }
         return toTicketTypeView(po);
     }
 
@@ -72,20 +83,46 @@ public class TicketConfigService {
     public TicketConfigDtos.TicketTypeView updateTicketType(long domainId, long typeId, TicketConfigDtos.UpdateTicketTypeRequest request) {
         TicketTypePo existing = ticketTypeRepository.findRequiredByIdAndDomainId(typeId, domainId);
         String name = StringUtils.hasText(request.name()) ? request.name().trim() : existing.getName();
+        assertNameUnique(domainId, name, typeId);
+        String description = request.description() == null ? existing.getDescription() : trimToNull(request.description());
+        String icon = request.icon() == null ? existing.getIcon() : trimToNull(request.icon());
         Object statusFlow = request.status_flow() == null
                 ? readJsonObject(existing.getStatusFlowConfig())
                 : request.status_flow();
-        Map<String, Object> formSchema = FormSchemaValidator.mergeAndValidate(
-                request.form_schema() == null ? readJsonObject(existing.getFormSchema()) : request.form_schema(),
-                objectMapper);
         String status = StringUtils.hasText(request.status()) ? request.status().trim() : existing.getStatus();
         StatusFlowValidator.validate(statusFlow);
-        ticketTypeRepository.update(typeId, domainId, name, toJson(statusFlow), toJson(formSchema), status);
+        try {
+            ticketTypeRepository.updateMetadata(typeId, domainId, name, description, icon, toJson(statusFlow), status);
+        } catch (DuplicateKeyException ex) {
+            throw translateTicketTypeDuplicate(ex);
+        }
         existing.setName(name);
+        existing.setDescription(description);
+        existing.setIcon(icon);
         existing.setStatusFlowConfig(toJson(statusFlow));
-        existing.setFormSchema(toJson(formSchema));
         existing.setStatus(status);
         return toTicketTypeView(existing);
+    }
+
+    @Transactional
+    public TicketConfigDtos.TicketTypeView saveFormSchemaDraft(long domainId, long typeId, Object schema) {
+        ticketTypeRepository.findRequiredByIdAndDomainId(typeId, domainId);
+        Map<String, Object> formSchema = FormSchemaValidator.mergeAndValidate(schema, objectMapper);
+        String formSchemaJson = toJson(formSchema);
+        ticketTypeRepository.updateFormSchemaDraft(typeId, domainId, formSchemaJson);
+        return toTicketTypeView(ticketTypeRepository.findRequiredByIdAndDomainId(typeId, domainId));
+    }
+
+    @Transactional
+    public TicketConfigDtos.TicketTypeView publishFormSchema(long domainId, long typeId) {
+        TicketTypePo existing = ticketTypeRepository.findRequiredByIdAndDomainId(typeId, domainId);
+        Object sourceSchema = StringUtils.hasText(existing.getFormSchemaDraft())
+                ? readJsonObject(existing.getFormSchemaDraft())
+                : readJsonObject(existing.getFormSchema());
+        Map<String, Object> formSchema = FormSchemaValidator.mergeAndValidate(sourceSchema, objectMapper);
+        String formSchemaJson = toJson(formSchema);
+        ticketTypeRepository.publishFormSchema(typeId, domainId, formSchemaJson, formSchemaJson);
+        return toTicketTypeView(ticketTypeRepository.findRequiredByIdAndDomainId(typeId, domainId));
     }
 
     @Transactional
@@ -286,8 +323,11 @@ public class TicketConfigService {
                 String.valueOf(po.getBusinessDomainId()),
                 po.getCode(),
                 po.getName(),
+                po.getDescription(),
+                po.getIcon(),
                 readJsonObject(po.getStatusFlowConfig()),
                 readJsonObject(po.getFormSchema()),
+                readJsonObject(po.getFormSchemaDraft()),
                 StringUtils.hasText(po.getStatus()) ? po.getStatus() : "active");
     }
 
@@ -421,6 +461,35 @@ public class TicketConfigService {
             throw new IllegalArgumentException(fieldName + " is required");
         }
         return value.trim();
+    }
+
+    private String trimToNull(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private void assertCodeUnique(long domainId, String code, Long excludeTypeId) {
+        TicketTypePo existing = ticketTypeRepository.findByDomainIdAndCode(domainId, code);
+        if (existing != null && (excludeTypeId == null || existing.getId() != excludeTypeId)) {
+            throw new IllegalArgumentException("该域下编码已存在");
+        }
+    }
+
+    private void assertNameUnique(long domainId, String name, Long excludeTypeId) {
+        TicketTypePo existing = ticketTypeRepository.findByDomainIdAndName(domainId, name);
+        if (existing != null && (excludeTypeId == null || existing.getId() != excludeTypeId)) {
+            throw new IllegalArgumentException("该域下名称已存在");
+        }
+    }
+
+    private IllegalArgumentException translateTicketTypeDuplicate(DuplicateKeyException ex) {
+        String message = ex.getMostSpecificCause() == null ? null : ex.getMostSpecificCause().getMessage();
+        if (message != null && message.contains("uk_ticket_type_domain_name")) {
+            return new IllegalArgumentException("该域下名称已存在", ex);
+        }
+        return new IllegalArgumentException("该域下编码已存在", ex);
     }
 
     private long parseLong(String value, String fieldName) {

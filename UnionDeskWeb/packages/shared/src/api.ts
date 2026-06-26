@@ -1489,6 +1489,30 @@ export async function updateDomainTicketType(
   return unwrapApiResponse(response.data);
 }
 
+/** `PUT /api/v1/admin/domains/{domainId}/ticket-types/{typeId}/form-schema/draft` */
+export async function saveDomainTicketTypeFormSchemaDraft(
+  domainId: string,
+  typeId: string,
+  form_schema: Record<string, unknown>,
+): Promise<DomainTicketType> {
+  const response = await api.put<DomainTicketType>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-types/${encodeURIComponent(typeId)}/form-schema/draft`,
+    { form_schema },
+  );
+  return unwrapApiResponse(response.data);
+}
+
+/** `POST /api/v1/admin/domains/{domainId}/ticket-types/{typeId}/form-schema/publish` */
+export async function publishDomainTicketTypeFormSchema(
+  domainId: string,
+  typeId: string,
+): Promise<DomainTicketType> {
+  const response = await api.post<DomainTicketType>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-types/${encodeURIComponent(typeId)}/form-schema/publish`,
+  );
+  return unwrapApiResponse(response.data);
+}
+
 /** `DELETE /api/v1/admin/domains/{domainId}/ticket-types/{typeId}` */
 export async function deleteDomainTicketType(domainId: string, typeId: string): Promise<void> {
   await api.delete(

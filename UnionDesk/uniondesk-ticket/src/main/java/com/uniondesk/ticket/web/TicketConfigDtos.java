@@ -12,23 +12,32 @@ public final class TicketConfigDtos {
             String domain_id,
             String code,
             String name,
+            String description,
+            String icon,
             Object status_flow,
             Object form_schema,
+            Object form_schema_draft,
             String status) {
     }
 
     public record CreateTicketTypeRequest(
             @NotBlank String code,
             @NotBlank String name,
+            String description,
+            String icon,
             Object status_flow,
             Object form_schema) {
     }
 
     public record UpdateTicketTypeRequest(
             String name,
+            String description,
+            String icon,
             Object status_flow,
-            Object form_schema,
             String status) {
+    }
+
+    public record SaveFormSchemaDraftRequest(Object form_schema) {
     }
 
     public record TicketTemplateView(

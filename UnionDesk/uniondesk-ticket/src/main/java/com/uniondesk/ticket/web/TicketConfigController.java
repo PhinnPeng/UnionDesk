@@ -50,6 +50,23 @@ public class TicketConfigController {
         return ticketConfigService.updateTicketType(domainId, typeId, request);
     }
 
+    @PutMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/form-schema/draft")
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE)
+    public TicketConfigDtos.TicketTypeView saveFormSchemaDraft(
+            @PathVariable("domain_id") long domainId,
+            @PathVariable("type_id") long typeId,
+            @Valid @RequestBody TicketConfigDtos.SaveFormSchemaDraftRequest request) {
+        return ticketConfigService.saveFormSchemaDraft(domainId, typeId, request.form_schema());
+    }
+
+    @PostMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/form-schema/publish")
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE)
+    public TicketConfigDtos.TicketTypeView publishFormSchema(
+            @PathVariable("domain_id") long domainId,
+            @PathVariable("type_id") long typeId) {
+        return ticketConfigService.publishFormSchema(domainId, typeId);
+    }
+
     @DeleteMapping("/admin/domains/{domain_id}/ticket-types/{type_id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_DELETE)

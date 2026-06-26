@@ -29,8 +29,8 @@ class TicketConfigControllerTests {
         MockMvc mockMvc = mockMvc();
         when(ticketConfigService.listTicketTypes(1L)).thenReturn(List.of(
                 new TicketConfigDtos.TicketTypeView(
-                        "11", "1", "default", "默认类型",
-                        Map.of("states", List.of()), Map.of("properties", Map.of()), "active")));
+                        "11", "1", "default", "默认类型", null, null,
+                        Map.of("states", List.of()), Map.of("properties", Map.of()), Map.of("properties", Map.of()), "active")));
 
         mockMvc.perform(get("/api/v1/admin/domains/1/ticket-types"))
                 .andExpect(status().isOk())

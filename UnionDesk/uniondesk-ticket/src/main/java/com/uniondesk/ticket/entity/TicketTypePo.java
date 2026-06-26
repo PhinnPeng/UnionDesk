@@ -8,8 +8,11 @@ public class TicketTypePo {
     private long businessDomainId;
     private String code;
     private String name;
+    private String description;
+    private String icon;
     private String statusFlowConfig;
     private String formSchema;
+    private String formSchemaDraft;
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -46,6 +49,22 @@ public class TicketTypePo {
         this.name = name;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getIcon() {
+        return icon;
+    }
+
+    public void setIcon(String icon) {
+        this.icon = icon;
+    }
+
     public String getStatusFlowConfig() {
         return statusFlowConfig;
     }
@@ -60,6 +79,14 @@ public class TicketTypePo {
 
     public void setFormSchema(String formSchema) {
         this.formSchema = formSchema;
+    }
+
+    public String getFormSchemaDraft() {
+        return formSchemaDraft;
+    }
+
+    public void setFormSchemaDraft(String formSchemaDraft) {
+        this.formSchemaDraft = formSchemaDraft;
     }
 
     public String getStatus() {

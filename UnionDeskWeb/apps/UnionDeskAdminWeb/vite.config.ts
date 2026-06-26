@@ -16,6 +16,10 @@ import svgrPlugin from "vite-plugin-svgr";
 
 import { author, dependencies, devDependencies, license, name, version } from "./package.json";
 
+function resolveDesignableAlias(subpath: string) {
+	return fileURLToPath(new URL(`./node_modules/@designable/${subpath}`, import.meta.url));
+}
+
 const __APP_INFO__ = {
 	pkg: { dependencies, devDependencies, name, version, license, author },
 	lastBuildTime: dayjs(new Date()).format("YYYY-MM-DD HH:mm:ss"),
@@ -28,9 +32,32 @@ export default defineConfig({
 
 	base: isDev ? "/" : "/react-antd-admin/",
 	resolve: {
+		dedupe: ["react", "react-dom", "@formily/reactive", "@formily/reactive-react"],
 		alias: {
 			"@uniondesk/shared": fileURLToPath(new URL("../../packages/shared/src/index.ts", import.meta.url)),
+			// 官方 @designable/* 包内部仍引用 @antd5-designable/*，统一指向同一构建
+			"@antd5-designable/designable-core": resolveDesignableAlias("core"),
+			"@antd5-designable/designable-react": resolveDesignableAlias("react"),
+			"@antd5-designable/designable-formily-antd": resolveDesignableAlias("formily-antd"),
+			"@antd5-designable/designable-formily-transformer": resolveDesignableAlias("formily-transformer"),
+			"@antd5-designable/designable-react-settings-form": resolveDesignableAlias("react-settings-form"),
+			"@antd5-designable/designable-formily-setters": resolveDesignableAlias("formily-setters"),
+			"@antd5-designable/designable-shared": resolveDesignableAlias("shared"),
+			// 强制 Designable 与主应用共用同一 React 实例（使用包目录以保留子路径解析）
+			react: fileURLToPath(new URL("./node_modules/react", import.meta.url)),
+			"react-dom": fileURLToPath(new URL("./node_modules/react-dom", import.meta.url)),
 		},
+	},
+	optimizeDeps: {
+		include: [
+			"react",
+			"react-dom",
+			"@designable/core",
+			"@designable/react",
+			"@designable/formily-antd",
+			"@designable/formily-transformer",
+			"@designable/react-settings-form",
+		],
 	},
 	plugins: [
 		vitePluginFakeServer({
@@ -143,8 +170,8 @@ export default defineConfig({
 					if (!normalizedId.includes("/node_modules/")) {
 						return undefined;
 					}
-					if (normalizedId.includes("/react/") || normalizedId.includes("/react-dom/") || normalizedId.includes("/react-router/")) {
-						return "react";
+					if (normalizedId.includes("/@designable/") || normalizedId.includes("/@antd5-designable/")) {
+						return "designable";
 					}
 					if (normalizedId.includes("/antd/") || normalizedId.includes("/@ant-design/icons/")) {
 						return "antd";

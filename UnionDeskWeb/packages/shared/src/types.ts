@@ -634,9 +634,12 @@ export type DomainTicketType = {
   domain_id: string;
   code: string;
   name: string;
+  description?: string | null;
+  icon?: string | null;
   status: "active" | "disabled" | string;
   status_flow: TicketStatusFlow | Record<string, unknown> | null;
   form_schema: Record<string, unknown> | null;
+  form_schema_draft?: Record<string, unknown> | null;
 };
 
 export type DomainTicketTemplate = {
@@ -653,15 +656,17 @@ export type DomainTicketTemplate = {
 export type CreateDomainTicketTypeBody = {
   code: string;
   name: string;
+  description?: string | null;
+  icon?: string | null;
   status_flow?: TicketStatusFlow | Record<string, unknown> | null;
-  form_schema?: Record<string, unknown> | null;
 };
 
 export type UpdateDomainTicketTypeBody = {
   name?: string;
+  description?: string | null;
+  icon?: string | null;
   status?: string;
   status_flow?: TicketStatusFlow | Record<string, unknown> | null;
-  form_schema?: Record<string, unknown> | null;
 };
 
 export type CreateDomainTicketTemplateBody = {

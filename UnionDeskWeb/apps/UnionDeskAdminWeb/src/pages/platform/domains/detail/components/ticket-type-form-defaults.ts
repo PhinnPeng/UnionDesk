@@ -1,29 +1,9 @@
 import type { TicketStatusFlow } from "@uniondesk/shared";
 
-export const DEFAULT_FORM_SCHEMA: Record<string, unknown> = {
-	type: "object",
-	properties: {
-		title: {
-			type: "string",
-			title: "标题",
-			"x-component": "Input",
-			"x-decorator": "FormItem",
-			required: true,
-			"x-system-field": true,
-			"x-index": 0,
-		},
-		description: {
-			type: "string",
-			title: "详细描述",
-			"x-component": "Input.TextArea",
-			"x-decorator": "FormItem",
-			required: true,
-			"x-component-props": { rows: 4, placeholder: "请描述您的问题或建议" },
-			"x-system-field": true,
-			"x-index": 1,
-		},
-	},
-};
+export {
+	DEFAULT_TICKET_FORM_SCHEMA as DEFAULT_FORM_SCHEMA,
+	mergeSystemFormSchema,
+} from "#src/components/formily-form-designer";
 
 export const DEFAULT_STATUS_FLOW: TicketStatusFlow = {
 	states: [
@@ -71,20 +51,12 @@ export function countFlowStates(flow: TicketStatusFlow | Record<string, unknown>
 	return Array.isArray(states) ? states.length : 0;
 }
 
-export function mergeSystemFormSchema(schema: Record<string, unknown> | null | undefined): Record<string, unknown> {
-	const base = structuredClone(DEFAULT_FORM_SCHEMA);
-	const customProperties = schema?.properties;
-	if (!customProperties || typeof customProperties !== "object") {
-		return base;
+export function isDraftUnpublished(
+	draft: Record<string, unknown> | null | undefined,
+	published: Record<string, unknown> | null | undefined,
+): boolean {
+	if (draft == null) {
+		return false;
 	}
-	const mergedProperties = {
-		...(base.properties as Record<string, unknown>),
-	};
-	for (const [key, value] of Object.entries(customProperties as Record<string, unknown>)) {
-		if (key === "title" || key === "description") {
-			continue;
-		}
-		mergedProperties[key] = value;
-	}
-	return { ...base, properties: mergedProperties };
+	return JSON.stringify(draft) !== JSON.stringify(published ?? null);
 }

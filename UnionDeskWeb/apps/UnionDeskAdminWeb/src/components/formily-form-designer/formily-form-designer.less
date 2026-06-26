@@ -1,0 +1,74 @@
+.formily-form-designer {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	min-height: calc(100vh - 240px);
+
+	&__hint {
+		flex-shrink: 0;
+	}
+
+	// 设计器固定浅色，不跟随控制台深浅色主题
+	&__canvas {
+		position: relative;
+		flex: 1;
+		min-height: 640px;
+		height: calc(100vh - 280px);
+		overflow: hidden;
+		color-scheme: light;
+		border: 1px solid #d9d9d9;
+		border-radius: 8px;
+		background: #fff;
+
+		.dn-app {
+			position: relative !important;
+			inset: auto !important;
+			width: 100% !important;
+			height: 100% !important;
+		}
+
+		.dn-main-panel-container {
+			flex: 1;
+			min-height: 0;
+			height: 100%;
+		}
+
+		.dn-main-panel {
+			flex: 1;
+			min-height: 0;
+			height: 100%;
+		}
+
+		.dn-main-panel-header {
+			flex-shrink: 0;
+			border-bottom: 1px solid #d9d9d9;
+		}
+	}
+
+	&__canvas .dn-workspace-panel {
+		flex: 1;
+		min-width: 0;
+	}
+
+	&__canvas .dn-composite-panel,
+	&__canvas .dn-settings-panel {
+		flex-shrink: 0;
+		height: 100%;
+	}
+
+	&__canvas .dn-pc-simulator,
+	&__canvas .dn-responsive-simulator,
+	&__canvas .dn-mobile-simulator-body {
+		background: #fff !important;
+	}
+
+	&__canvas .dn-pc-simulator {
+		padding: 24px;
+		box-sizing: border-box;
+		overflow: auto;
+	}
+
+	&__canvas .dn-resource-content {
+		background: #fff !important;
+	}
+}

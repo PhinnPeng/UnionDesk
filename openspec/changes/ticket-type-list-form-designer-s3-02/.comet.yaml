@@ -1,0 +1,19 @@
+﻿workflow: full
+phase: build
+isolation: branch
+build_mode: subagent-driven-development
+build_pause: null
+verify_mode: full
+verify_result: null
+verified_at: null
+archived: false
+branch_status: null
+created_at: 2026-06-19
+base_ref: b52a14495ebc452d7844424247157f33633caa6b
+plan: docs/superpowers/plans/2026-06-19-ticket-type-list-form-designer-s3-02.md
+design_doc: docs/superpowers/specs/2026-06-19-ticket-type-list-form-designer-design.md
+handoff_context: openspec/changes/ticket-type-list-form-designer-s3-02/.comet/handoff/design-context.json
+handoff_hash: f8ead76f062b954d84580a243a68f6627f8e8f882857201117bcaa218eabe1b4
+verification_report: null
+build_command: cd UnionDesk && mvn compile -q
+verify_command: cd UnionDesk && mvn test -pl uniondesk-app "-Dtest=TicketConfigServiceTests,FormSchemaValidatorTests" -q

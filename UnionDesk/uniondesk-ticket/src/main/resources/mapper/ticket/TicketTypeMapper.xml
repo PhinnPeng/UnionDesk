@@ -8,44 +8,81 @@
         <result property="businessDomainId" column="business_domain_id"/>
         <result property="code" column="code"/>
         <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="icon" column="icon"/>
         <result property="statusFlowConfig" column="status_flow_config"/>
         <result property="formSchema" column="form_schema"/>
+        <result property="formSchemaDraft" column="form_schema_draft"/>
         <result property="status" column="status"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
+    <sql id="TicketTypeColumns">
+        id, business_domain_id, code, name, description, icon, status_flow_config, form_schema, form_schema_draft, status
+    </sql>
+
     <select id="findByDomainId" resultMap="TicketTypePo">
-        SELECT id, business_domain_id, code, name, status_flow_config, form_schema, status
+        SELECT <include refid="TicketTypeColumns"/>
         FROM ticket_type
         WHERE business_domain_id = #{domainId}
         ORDER BY id ASC
     </select>
 
     <select id="findByIdAndDomainId" resultMap="TicketTypePo">
-        SELECT id, business_domain_id, code, name, status_flow_config, form_schema, status
+        SELECT <include refid="TicketTypeColumns"/>
         FROM ticket_type
         WHERE id = #{id} AND business_domain_id = #{domainId}
+        LIMIT 1
+    </select>
+
+    <select id="findByDomainIdAndCode" resultMap="TicketTypePo">
+        SELECT <include refid="TicketTypeColumns"/>
+        FROM ticket_type
+        WHERE business_domain_id = #{domainId} AND code = #{code}
+        LIMIT 1
+    </select>
+
+    <select id="findByDomainIdAndName" resultMap="TicketTypePo">
+        SELECT <include refid="TicketTypeColumns"/>
+        FROM ticket_type
+        WHERE business_domain_id = #{domainId} AND name = #{name}
         LIMIT 1
     </select>
 
     <insert id="insert" parameterType="com.uniondesk.ticket.entity.TicketTypePo"
             useGeneratedKeys="true" keyProperty="id">
         INSERT INTO ticket_type (
-            business_domain_id, code, name, status_flow_config, form_schema, status, created_at, updated_at
+            business_domain_id, code, name, description, icon, status_flow_config, form_schema, form_schema_draft, status, created_at, updated_at
         )
         VALUES (
-            #{businessDomainId}, #{code}, #{name}, #{statusFlowConfig}, #{formSchema}, #{status},
+            #{businessDomainId}, #{code}, #{name}, #{description}, #{icon}, #{statusFlowConfig}, #{formSchema}, #{formSchemaDraft}, #{status},
             CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
         )
     </insert>
 
-    <update id="update">
+    <update id="updateMetadata">
         UPDATE ticket_type
         SET name = #{name},
+            description = #{description},
+            icon = #{icon},
             status_flow_config = #{statusFlowConfig},
-            form_schema = #{formSchema},
             status = #{status},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+    </update>
+
+    <update id="updateFormSchemaDraft">
+        UPDATE ticket_type
+        SET form_schema_draft = #{formSchemaDraft},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+    </update>
+
+    <update id="publishFormSchema">
+        UPDATE ticket_type
+        SET form_schema = #{formSchema},
+            form_schema_draft = #{formSchemaDraft},
             updated_at = CURRENT_TIMESTAMP(3)
         WHERE id = #{id} AND business_domain_id = #{domainId}
     </update>

@@ -1,0 +1,26 @@
+{
+  "change": "ticket-type-list-form-designer-s3-02",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh (manual fallback, Git Bash unavailable)",
+  "context_hash": "f8ead76f062b954d84580a243a68f6627f8e8f882857201117bcaa218eabe1b4",
+  "files": [
+    {
+      "path": "openspec/changes/ticket-type-list-form-designer-s3-02/proposal.md",
+      "sha256": "a9703d99072dca856049835995b4aef25187a9ac53d2276bbee4bc1354d375ce"
+    },
+    {
+      "path": "openspec/changes/ticket-type-list-form-designer-s3-02/design.md",
+      "sha256": "cd38384768da9e8dfdb5865baffdf85b84fef9484d32d619bfd9d0291e1d2dd1"
+    },
+    {
+      "path": "openspec/changes/ticket-type-list-form-designer-s3-02/tasks.md",
+      "sha256": "d5ce01da4f61edd14aa97f9fc01b8481bdb5023ea96ee225a4d051834a6de586"
+    },
+    {
+      "path": "openspec/changes/ticket-type-list-form-designer-s3-02/specs/ticket-type-list-form-designer/spec.md",
+      "sha256": "c32f69571c81bd384cea48064ae68cb00348deb65ef4f1d6a89790ed14fb3193"
+    }
+  ]
+}

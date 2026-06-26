@@ -6,6 +6,9 @@ import { lazy } from "react";
 
 const TicketDetail = lazy(() => import("#src/pages/platform/ticket-detail"));
 const DomainDetail = lazy(() => import("#src/pages/platform/domains/detail"));
+const TicketTypeConfigRedirect = lazy(() => import("#src/pages/platform/domains/ticket-type-config"));
+const TicketTypeFlowConfig = lazy(() => import("#src/pages/platform/domains/ticket-type-config/flow"));
+const TicketFormDesign = lazy(() => import("#src/pages/common/form-design"));
 
 /**
  * 将内置平台页面包裹在 ContainerLayout 内，经 LayoutContent 渲染（侧栏、顶栏、页签）。
@@ -53,6 +56,36 @@ const routes: AppRouteRecordRaw[] = [
 			hideInMenu: true,
 			scope: "platform",
 			title: "业务域控制台",
+			currentActiveMenu: "/platform/domains",
+		},
+	}),
+	withPlatformLayout({
+		path: "/platform/domains/ticket/form-design/:domainId/:typeId",
+		Component: TicketFormDesign,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "表单设计",
+			currentActiveMenu: "/platform/domains",
+		},
+	}),
+	withPlatformLayout({
+		path: "/platform/domains/ticket-type-config/:domainId/:typeId/flow",
+		Component: TicketTypeFlowConfig,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "状态流配置",
+			currentActiveMenu: "/platform/domains",
+		},
+	}),
+	withPlatformLayout({
+		path: "/platform/domains/ticket-type-config/:domainId/:typeId",
+		Component: TicketTypeConfigRedirect,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "工单类型配置",
 			currentActiveMenu: "/platform/domains",
 		},
 	}),

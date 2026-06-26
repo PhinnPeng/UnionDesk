@@ -25,7 +25,7 @@ import {
 	componentKeyToCascaderValue,
 	joinComponentKey,
 } from "./platform-com-registry-utils";
-import { IconPicker } from "./icon-picker";
+import { IconPicker } from "#src/components/icon-picker";
 import { PERMISSION_CODE_LABELS } from "./permission-code-labels";
 
 type MenuFormValues = Partial<MenuItemType> & {
