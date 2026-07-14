@@ -1,6 +1,5 @@
 package com.uniondesk.ticket.core;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -9,16 +8,22 @@ import java.util.Set;
 @SuppressWarnings("unchecked")
 public final class StatusFlowValidator {
 
+    public static final String ANY_STATE_CODE = "*";
+
     private StatusFlowValidator() {
     }
 
     public static void validate(Object statusFlow) {
         if (!(statusFlow instanceof Map<?, ?> flowMap)) {
-            throw new IllegalArgumentException("状态流不能为空");
+            throw new IllegalArgumentException("状态流格式无效");
         }
         Object statesObj = flowMap.get("states");
-        if (!(statesObj instanceof List<?> states) || states.isEmpty()) {
-            throw new IllegalArgumentException("状态流不能为空");
+        if (!(statesObj instanceof List<?> states)) {
+            throw new IllegalArgumentException("状态流格式无效");
+        }
+        // 空工作流合法
+        if (states.isEmpty()) {
+            return;
         }
         Set<String> codes = new HashSet<>();
         boolean hasTerminal = false;
@@ -27,6 +32,9 @@ public final class StatusFlowValidator {
                 throw new IllegalArgumentException("状态流格式无效");
             }
             String code = stringValue(state.get("code"));
+            if (ANY_STATE_CODE.equals(code)) {
+                throw new IllegalArgumentException("状态编码不能为任意状态通配符");
+            }
             if (!codes.add(code)) {
                 throw new IllegalArgumentException("状态编码不能重复");
             }
@@ -54,10 +62,18 @@ public final class StatusFlowValidator {
             }
             String from = stringValue(transition.get("from"));
             String to = stringValue(transition.get("to"));
-            if (!codes.contains(from) || !codes.contains(to)) {
+            if (ANY_STATE_CODE.equals(to)) {
+                throw new IllegalArgumentException("目标状态不能为任意状态");
+            }
+            if (!ANY_STATE_CODE.equals(from) && !codes.contains(from)) {
+                throw new IllegalArgumentException("流转源状态不存在");
+            }
+            if (!codes.contains(to)) {
                 throw new IllegalArgumentException("流转目标状态不存在");
             }
-            connected.add(from);
+            if (!ANY_STATE_CODE.equals(from)) {
+                connected.add(from);
+            }
             connected.add(to);
         }
         for (Object stateObj : states) {

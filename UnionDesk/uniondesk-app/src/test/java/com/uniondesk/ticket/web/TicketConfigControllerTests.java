@@ -13,6 +13,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.uniondesk.ticket.core.TicketConfigService;
+import com.uniondesk.ticket.core.TicketAttributeService;
+import com.uniondesk.ticket.core.TicketTypeAttributeSlotService;
+import com.uniondesk.common.web.ApiResponseWrapper;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -23,6 +26,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class TicketConfigControllerTests {
 
     private final TicketConfigService ticketConfigService = mock(TicketConfigService.class);
+    private final TicketAttributeService ticketAttributeService = mock(TicketAttributeService.class);
+    private final TicketTypeAttributeSlotService ticketTypeAttributeSlotService = mock(TicketTypeAttributeSlotService.class);
 
     @Test
     void listTicketTypesReturnsRows() throws Exception {
@@ -30,12 +35,15 @@ class TicketConfigControllerTests {
         when(ticketConfigService.listTicketTypes(1L)).thenReturn(List.of(
                 new TicketConfigDtos.TicketTypeView(
                         "11", "1", "default", "默认类型", null, null,
-                        Map.of("states", List.of()), Map.of("properties", Map.of()), Map.of("properties", Map.of()), "active")));
+                        Map.of("states", List.of()), Map.of("properties", Map.of()), Map.of("properties", Map.of()),
+                        1, false, "active",
+                        List.of())));  // transition_rules
 
         mockMvc.perform(get("/api/v1/admin/domains/1/ticket-types"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].code").value("default"))
-                .andExpect(jsonPath("$[0].status").value("active"));
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.items[0].code").value("default"))
+                .andExpect(jsonPath("$.data.items[0].status").value("active"));
         verify(ticketConfigService).listTicketTypes(1L);
     }
 
@@ -65,8 +73,8 @@ class TicketConfigControllerTests {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value("21"))
-                .andExpect(jsonPath("$.type_id").value("11"));
+                .andExpect(jsonPath("$.data.id").value("21"))
+                .andExpect(jsonPath("$.data.type_id").value("11"));
         verify(ticketConfigService).createTicketTemplate(eq(1L), any());
     }
 
@@ -93,8 +101,8 @@ class TicketConfigControllerTests {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value("31"))
-                .andExpect(jsonPath("$.scope").value("ticket"));
+                .andExpect(jsonPath("$.data.id").value("31"))
+                .andExpect(jsonPath("$.data.scope").value("ticket"));
         verify(ticketConfigService).createQuickReply(eq(1L), any());
     }
 
@@ -122,8 +130,8 @@ class TicketConfigControllerTests {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value("5"))
-                .andExpect(jsonPath("$.is_default").value(true));
+                .andExpect(jsonPath("$.data.id").value("5"))
+                .andExpect(jsonPath("$.data.is_default").value(true));
         verify(ticketConfigService).updatePriorityLevel(eq(1L), eq(5L), any());
     }
 
@@ -137,6 +145,11 @@ class TicketConfigControllerTests {
     }
 
     private MockMvc mockMvc() {
-        return MockMvcBuilders.standaloneSetup(new TicketConfigController(ticketConfigService)).build();
+        return MockMvcBuilders.standaloneSetup(new TicketConfigController(
+                ticketConfigService,
+                ticketAttributeService,
+                ticketTypeAttributeSlotService))
+                .setControllerAdvice(new ApiResponseWrapper())
+                .build();
     }
 }

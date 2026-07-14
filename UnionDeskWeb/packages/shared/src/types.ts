@@ -624,22 +624,235 @@ export type TicketStatusFlowState = {
   position?: { x: number; y: number };
 };
 
+/** Assembled workflow graph. `transitions[].from` may be `*` (any state); `to` must be a concrete state code. */
 export type TicketStatusFlow = {
   states: TicketStatusFlowState[];
   transitions: { from: string; to: string; label?: string }[];
 };
 
 export type DomainTicketType = {
+	id: string;
+	domain_id: string;
+	code: string;
+	name: string;
+	description?: string | null;
+	icon?: string | null;
+	category?: string;
+	status: "active" | "disabled" | string;
+	status_flow: TicketStatusFlow | Record<string, unknown> | null;
+	form_schema: Record<string, unknown> | null;
+	form_schema_draft?: Record<string, unknown> | null;
+	form_schema_current_version_no?: number | null;
+	form_schema_has_unpublished?: boolean | null;
+	transition_rules?: TransitionRule[];
+};
+
+export type TransitionRule = {
+	id?: string;
+	from_state_code: string;
+	to_state_code: string;
+	step_name: string;
+	permission_mode: "none" | "members" | "roles";
+	member_ids: number[];
+	role_ids: number[];
+	required_slot_ids: string[];
+	attribute_updates: AttributeUpdateItem[];
+	sort_order?: number;
+};
+
+export type AttributeUpdateItem = {
+	slot_id: string;
+	value: unknown;
+	value_type: "string" | "number" | "boolean" | "date";
+};
+
+export type SaveTransitionRuleBody = {
+	from_state_code: string;
+	to_state_code: string;
+	step_name: string;
+	permission_mode: "none" | "members" | "roles";
+	member_ids?: number[];
+	role_ids?: number[];
+	required_slot_ids?: string[];
+	attribute_updates?: AttributeUpdateItem[];
+};
+
+export type DomainTicketFormSchemaVersionSummary = {
+  version_no: number;
+  is_current: boolean;
+  published_at?: string | null;
+  published_by?: string | null;
+};
+
+export type DomainTicketFormSchemaVersions = {
+  current_version_no?: number | null;
+  items: DomainTicketFormSchemaVersionSummary[];
+};
+
+export type DomainTicketFormSchemaVersionDetail = {
+  version_no: number;
+  form_schema: Record<string, unknown> | null;
+  published_at?: string | null;
+  published_by?: string | null;
+};
+
+export type TicketAttributeFieldType = "input" | "select" | "switch" | "date";
+
+export type TicketAttributeTypeConfig = {
+  format?: "text" | "email" | "phone" | "integer" | "decimal";
+  multiline?: boolean;
+  multiple?: boolean;
+  withTime?: boolean;
+  unit?: string;
+  options?: { label: string; value: string; color?: string }[];
+};
+
+export type TicketAttribute = {
   id: string;
-  domain_id: string;
+  scope: "platform" | "domain";
+  business_domain_id?: string | null;
+  name: string;
+  description: string;
+  field_type: TicketAttributeFieldType;
+  type_config: TicketAttributeTypeConfig;
+  status: "active" | "disabled" | string;
+  sort_order: number;
+  is_system: boolean;
+  source_attribute_id?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type TicketAttributeList = {
+  total: number;
+  items: TicketAttribute[];
+};
+
+export type TicketStatusDefinitionCategory = "not_started" | "in_progress" | "completed";
+export type TicketStatusDefinitionStateType = "in_progress" | "paused" | "terminal";
+
+export type TicketStatusDefinition = {
+  id: string;
+  scope: "platform" | "domain" | string;
   code: string;
   name: string;
-  description?: string | null;
-  icon?: string | null;
+  description: string;
+  category: TicketStatusDefinitionCategory;
+  state_type: TicketStatusDefinitionStateType;
   status: "active" | "disabled" | string;
+  sort_order: number;
+  is_system: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type TicketStatusDefinitionList = {
+  total: number;
+  items: TicketStatusDefinition[];
+};
+
+export type CreateTicketStatusDefinitionBody = {
+  name: string;
+  description?: string;
+  category: TicketStatusDefinitionCategory;
+  code?: string;
+};
+
+export type UpdateTicketStatusDefinitionBody = {
+  name?: string;
+  description?: string;
+  category?: TicketStatusDefinitionCategory;
+};
+
+export type CreateTicketAttributeBody = {
+  name: string;
+  description?: string;
+  field_type: TicketAttributeFieldType;
+  type_config?: TicketAttributeTypeConfig;
+};
+
+export type UpdateTicketAttributeBody = {
+  name?: string;
+  description?: string;
+  field_type?: TicketAttributeFieldType;
+  type_config?: TicketAttributeTypeConfig;
+  status?: string;
+};
+
+export type TicketAttributeSortOrderItem = {
+  id: number;
+  sort_order: number;
+};
+
+export type TicketAttributeSlotConfig = {
+  required?: boolean;
+  placeholder?: string;
+  visible_to_customer?: boolean;
+  default_value?: string;
+  display_name?: string;
+};
+
+export type TicketAttributeSlot = {
+  id: string;
+  ticket_type_id: string;
+  attribute_id: string;
+  attribute: TicketAttribute;
+  sort_order: number;
+  slot_config: TicketAttributeSlotConfig;
+  status: string;
+  is_system: boolean;
+  system_field_key?: string | null;
+};
+
+export type PlatformTicketType = {
+  id: string;
+  scope: "platform" | "domain" | string;
+  code: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  status: string;
+  sort_order: number;
+  is_system: boolean;
+  linked_domain_count: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type PlatformTicketTypeDetail = PlatformTicketType & {
   status_flow: TicketStatusFlow | Record<string, unknown> | null;
   form_schema: Record<string, unknown> | null;
   form_schema_draft?: Record<string, unknown> | null;
+  form_schema_current_version_no?: number | null;
+  form_schema_has_unpublished?: boolean | null;
+};
+
+export type PlatformTicketTypeList = {
+  total: number;
+  items: PlatformTicketType[];
+};
+
+export type CreatePlatformTicketTypeBody = {
+  code?: string;
+  name: string;
+  description?: string;
+  icon: string;
+  category?: string;
+  template_key?: string;
+};
+
+export type UpdatePlatformTicketTypeBody = {
+  name?: string;
+  description?: string;
+  icon?: string;
+  status?: string;
+  status_flow?: TicketStatusFlow | Record<string, unknown> | null;
+};
+
+export type PlatformTicketTypeSortOrderItem = {
+  id: number;
+  sort_order: number;
 };
 
 export type DomainTicketTemplate = {
@@ -662,11 +875,12 @@ export type CreateDomainTicketTypeBody = {
 };
 
 export type UpdateDomainTicketTypeBody = {
-  name?: string;
-  description?: string | null;
-  icon?: string | null;
-  status?: string;
-  status_flow?: TicketStatusFlow | Record<string, unknown> | null;
+	name?: string;
+	description?: string | null;
+	icon?: string | null;
+	status?: string;
+	status_flow?: TicketStatusFlow | Record<string, unknown> | null;
+	transition_rules?: SaveTransitionRuleBody[];
 };
 
 export type CreateDomainTicketTemplateBody = {

@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -15,14 +14,15 @@ import com.uniondesk.ticket.entity.TicketTypePo;
 import com.uniondesk.ticket.repository.QuickReplyTemplateRepository;
 import com.uniondesk.ticket.repository.TicketPriorityLevelRepository;
 import com.uniondesk.ticket.repository.TicketTemplateRepository;
+import com.uniondesk.ticket.repository.TicketTypeAttributeSlotRepository;
 import com.uniondesk.ticket.repository.TicketTypeRepository;
+import com.uniondesk.ticket.core.TicketTransitionRuleService;
 import com.uniondesk.ticket.web.TicketConfigDtos;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -65,6 +65,16 @@ class TicketConfigServiceTests {
     private QuickReplyTemplateRepository quickReplyTemplateRepository;
     @Mock
     private TicketPriorityLevelRepository ticketPriorityLevelRepository;
+    @Mock
+    private TicketFormSchemaService ticketFormSchemaService;
+    @Mock
+    private TicketTypeAttributeSlotService ticketTypeAttributeSlotService;
+    @Mock
+    private TicketTypeAttributeSlotRepository ticketTypeAttributeSlotRepository;
+    @Mock
+    private TicketTransitionRuleService transitionRuleService;
+    @Mock
+    private TicketTypeFlowService ticketTypeFlowService;
 
     private TicketConfigService ticketConfigService;
     private ObjectMapper objectMapper;
@@ -77,61 +87,64 @@ class TicketConfigServiceTests {
                 ticketTemplateRepository,
                 quickReplyTemplateRepository,
                 ticketPriorityLevelRepository,
+                ticketFormSchemaService,
+                ticketTypeAttributeSlotService,
+                ticketTypeAttributeSlotRepository,
+                transitionRuleService,
+                ticketTypeFlowService,
                 objectMapper);
     }
 
     @Test
-    void saveFormSchemaDraftOnlyUpdatesDraftColumn() throws Exception {
-        TicketTypePo existing = ticketTypePo(DEFAULT_SCHEMA_JSON, DEFAULT_SCHEMA_JSON);
-        TicketTypePo updated = ticketTypePo(DEFAULT_SCHEMA_JSON, DRAFT_WITH_CUSTOM_JSON);
+    void saveFormSchemaDraftDelegatesToFormSchemaService() throws Exception {
+        TicketTypePo existing = ticketTypePo();
         when(ticketTypeRepository.findRequiredByIdAndDomainId(TYPE_ID, DOMAIN_ID))
-                .thenReturn(existing, updated);
-
+                .thenReturn(existing);
+        when(ticketTypeFlowService.loadAssembled(DOMAIN_ID, TYPE_ID)).thenReturn(
+                new TicketConfigDtos.WorkflowConfigView(
+                        Map.of("states", List.of(), "transitions", List.of()),
+                        List.of()));
         Map<String, Object> draftSchema = objectMapper.readValue(DRAFT_WITH_CUSTOM_JSON, Map.class);
+        TicketFormSchemaService.FormSchemaAggregate aggregate = new TicketFormSchemaService.FormSchemaAggregate(
+                objectMapper.readValue(DEFAULT_SCHEMA_JSON, Map.class),
+                draftSchema,
+                1,
+                true);
+        when(ticketFormSchemaService.saveDraft(DOMAIN_ID, TYPE_ID, draftSchema)).thenReturn(aggregate);
 
         TicketConfigDtos.TicketTypeView result = ticketConfigService.saveFormSchemaDraft(DOMAIN_ID, TYPE_ID, draftSchema);
 
-        ArgumentCaptor<String> draftCaptor = ArgumentCaptor.forClass(String.class);
-        verify(ticketTypeRepository).updateFormSchemaDraft(eq(TYPE_ID), eq(DOMAIN_ID), draftCaptor.capture());
-        verify(ticketTypeRepository, never()).publishFormSchema(anyLong(), anyLong(), anyString(), anyString());
-        verify(ticketTypeRepository, never()).updateMetadata(anyLong(), anyLong(), anyString(), any(), any(), anyString(), anyString());
-        assertThat(draftCaptor.getValue()).contains("\"draftOnly\"");
+        verify(ticketFormSchemaService).saveDraft(DOMAIN_ID, TYPE_ID, draftSchema);
         assertThat(result.form_schema_draft()).isInstanceOf(Map.class);
+        assertThat(result.form_schema_has_unpublished()).isTrue();
     }
 
     @Test
-    void publishFormSchemaCopiesDraftToPublishedAndSyncsDraft() {
-        TicketTypePo existing = ticketTypePo(DEFAULT_SCHEMA_JSON, DRAFT_WITH_CUSTOM_JSON);
-        TicketTypePo published = ticketTypePo(DRAFT_WITH_CUSTOM_JSON, DRAFT_WITH_CUSTOM_JSON);
+    void publishFormSchemaDelegatesWithSchemaBody() throws Exception {
+        TicketTypePo existing = ticketTypePo();
         when(ticketTypeRepository.findRequiredByIdAndDomainId(TYPE_ID, DOMAIN_ID))
-                .thenReturn(existing, published);
+                .thenReturn(existing);
+        when(ticketTypeFlowService.loadAssembled(DOMAIN_ID, TYPE_ID)).thenReturn(
+                new TicketConfigDtos.WorkflowConfigView(
+                        Map.of("states", List.of(), "transitions", List.of()),
+                        List.of()));
+        Map<String, Object> draftSchema = objectMapper.readValue(DRAFT_WITH_CUSTOM_JSON, Map.class);
+        TicketFormSchemaService.FormSchemaAggregate aggregate = new TicketFormSchemaService.FormSchemaAggregate(
+                draftSchema,
+                draftSchema,
+                2,
+                false);
+        when(ticketFormSchemaService.publish(DOMAIN_ID, TYPE_ID, draftSchema, null)).thenReturn(aggregate);
 
-        ticketConfigService.publishFormSchema(DOMAIN_ID, TYPE_ID);
+        ticketConfigService.publishFormSchema(DOMAIN_ID, TYPE_ID, draftSchema);
 
-        ArgumentCaptor<String> publishedCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> draftCaptor = ArgumentCaptor.forClass(String.class);
-        verify(ticketTypeRepository).publishFormSchema(eq(TYPE_ID), eq(DOMAIN_ID), publishedCaptor.capture(), draftCaptor.capture());
-        assertThat(publishedCaptor.getValue()).contains("\"draftOnly\"");
-        assertThat(draftCaptor.getValue()).isEqualTo(publishedCaptor.getValue());
-    }
-
-    @Test
-    void publishFormSchemaIsIdempotentWhenDraftMissing() {
-        TicketTypePo existing = ticketTypePo(DEFAULT_SCHEMA_JSON, null);
-        when(ticketTypeRepository.findRequiredByIdAndDomainId(TYPE_ID, DOMAIN_ID))
-                .thenReturn(existing, existing);
-
-        ticketConfigService.publishFormSchema(DOMAIN_ID, TYPE_ID);
-        ticketConfigService.publishFormSchema(DOMAIN_ID, TYPE_ID);
-
-        verify(ticketTypeRepository, org.mockito.Mockito.times(2))
-                .publishFormSchema(eq(TYPE_ID), eq(DOMAIN_ID), anyString(), anyString());
+        verify(ticketFormSchemaService).publish(DOMAIN_ID, TYPE_ID, draftSchema, null);
     }
 
     @Test
     void createTicketTypeRejectsDuplicateCodeAndName() {
         when(ticketTypeRepository.findByDomainIdAndCode(DOMAIN_ID, "technical"))
-                .thenReturn(ticketTypePo(null, null));
+                .thenReturn(ticketTypePo());
 
         assertThatThrownBy(() -> ticketConfigService.createTicketType(
                 DOMAIN_ID,
@@ -141,7 +154,7 @@ class TicketConfigServiceTests {
 
         when(ticketTypeRepository.findByDomainIdAndCode(DOMAIN_ID, "technical")).thenReturn(null);
         when(ticketTypeRepository.findByDomainIdAndName(DOMAIN_ID, "技术支持"))
-                .thenReturn(ticketTypePo(null, null));
+                .thenReturn(ticketTypePo());
 
         assertThatThrownBy(() -> ticketConfigService.createTicketType(
                 DOMAIN_ID,
@@ -151,18 +164,37 @@ class TicketConfigServiceTests {
     }
 
     @Test
-    void updateTicketTypeDoesNotWriteFormSchemaColumns() {
-        TicketTypePo existing = ticketTypePo(DEFAULT_SCHEMA_JSON, DRAFT_WITH_CUSTOM_JSON);
+    void updateTicketTypeDoesNotTouchFormSchemaService() {
+        TicketTypePo existing = ticketTypePo();
         existing.setName("旧名称");
         when(ticketTypeRepository.findRequiredByIdAndDomainId(TYPE_ID, DOMAIN_ID)).thenReturn(existing);
         when(ticketTypeRepository.findByDomainIdAndName(DOMAIN_ID, "新名称")).thenReturn(null);
+        when(ticketTypeAttributeSlotService.computePluginRevision(TYPE_ID)).thenReturn(null);
+        when(ticketFormSchemaService.loadAggregate(eq(DOMAIN_ID), eq(TYPE_ID), any())).thenReturn(
+                new TicketFormSchemaService.FormSchemaAggregate(
+                        Map.of("type", "object"),
+                        Map.of("type", "object"),
+                        1,
+                        false));
+        when(ticketTypeFlowService.loadAssembled(DOMAIN_ID, TYPE_ID)).thenReturn(
+                new TicketConfigDtos.WorkflowConfigView(
+                        Map.of("states", List.of(), "transitions", List.of()),
+                        List.of()));
 
+        Map<String, Object> statusFlow = Map.of(
+                "states", List.of(Map.of(
+                        "code", "closed",
+                        "name", "已关闭",
+                        "state_type", "terminal",
+                        "allow_customer_withdraw", false)),
+                "transitions", List.of());
         TicketConfigDtos.UpdateTicketTypeRequest request = new TicketConfigDtos.UpdateTicketTypeRequest(
                 "新名称",
                 "描述",
                 "mdi:help",
-                Map.of("states", List.of(Map.of("code", "closed", "name", "已关闭", "state_type", "terminal", "allow_customer_withdraw", false)), "transitions", List.of()),
-                "disabled");
+                statusFlow,
+                "disabled",
+                List.of());
 
         TicketConfigDtos.TicketTypeView updated = ticketConfigService.updateTicketType(DOMAIN_ID, TYPE_ID, request);
 
@@ -172,26 +204,31 @@ class TicketConfigServiceTests {
                 eq("新名称"),
                 eq("描述"),
                 eq("mdi:help"),
-                anyString(),
                 eq("disabled"));
-        verify(ticketTypeRepository, never()).updateFormSchemaDraft(anyLong(), anyLong(), anyString());
-        verify(ticketTypeRepository, never()).publishFormSchema(anyLong(), anyLong(), anyString(), anyString());
+        verify(ticketTypeFlowService).replaceAll(eq(DOMAIN_ID), eq(TYPE_ID), eq(statusFlow), eq(List.of()));
+        verify(ticketFormSchemaService, never()).saveDraft(anyLong(), anyLong(), any());
+        verify(ticketFormSchemaService, never()).publish(anyLong(), anyLong(), any(), any());
         assertThat(updated.name()).isEqualTo("新名称");
-        assertThat(updated.description()).isEqualTo("描述");
-        assertThat(updated.icon()).isEqualTo("mdi:help");
         assertThat(updated.form_schema()).isNotNull();
-        assertThat(updated.form_schema_draft()).isNotNull();
     }
 
-    private TicketTypePo ticketTypePo(String formSchema, String formSchemaDraft) {
+    @Test
+    void deleteTicketTypeRemovesFormSchemaRows() {
+        when(ticketTypeRepository.findRequiredByIdAndDomainId(TYPE_ID, DOMAIN_ID)).thenReturn(ticketTypePo());
+        when(ticketTypeRepository.countTicketsByTypeId(DOMAIN_ID, TYPE_ID)).thenReturn(0);
+        when(ticketTypeRepository.deleteByIdAndDomainId(TYPE_ID, DOMAIN_ID)).thenReturn(1);
+
+        ticketConfigService.deleteTicketType(DOMAIN_ID, TYPE_ID);
+
+        verify(ticketFormSchemaService).deleteByTicketType(DOMAIN_ID, TYPE_ID);
+    }
+
+    private TicketTypePo ticketTypePo() {
         TicketTypePo po = new TicketTypePo();
         po.setId(TYPE_ID);
         po.setBusinessDomainId(DOMAIN_ID);
         po.setCode("default");
         po.setName("默认类型");
-        po.setStatusFlowConfig("{\"states\":[],\"transitions\":[]}");
-        po.setFormSchema(formSchema);
-        po.setFormSchemaDraft(formSchemaDraft);
         po.setStatus("active");
         return po;
     }

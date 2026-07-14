@@ -4,16 +4,23 @@ import java.time.LocalDateTime;
 
 public class TicketTypePo {
 
+    public static final String SCOPE_PLATFORM = "platform";
+    public static final String SCOPE_DOMAIN = "domain";
+    public static final String STATUS_ACTIVE = "active";
+    public static final String STATUS_DISABLED = "disabled";
+
     private long id;
-    private long businessDomainId;
+    private String scope;
+    private Long businessDomainId;
     private String code;
     private String name;
     private String description;
     private String icon;
-    private String statusFlowConfig;
-    private String formSchema;
-    private String formSchemaDraft;
+    private String category;
     private String status;
+    private int sortOrder;
+    private boolean system;
+    private Long sourceGlobalTypeId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -25,11 +32,19 @@ public class TicketTypePo {
         this.id = id;
     }
 
-    public long getBusinessDomainId() {
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
+    public Long getBusinessDomainId() {
         return businessDomainId;
     }
 
-    public void setBusinessDomainId(long businessDomainId) {
+    public void setBusinessDomainId(Long businessDomainId) {
         this.businessDomainId = businessDomainId;
     }
 
@@ -65,28 +80,12 @@ public class TicketTypePo {
         this.icon = icon;
     }
 
-    public String getStatusFlowConfig() {
-        return statusFlowConfig;
+    public String getCategory() {
+        return category;
     }
 
-    public void setStatusFlowConfig(String statusFlowConfig) {
-        this.statusFlowConfig = statusFlowConfig;
-    }
-
-    public String getFormSchema() {
-        return formSchema;
-    }
-
-    public void setFormSchema(String formSchema) {
-        this.formSchema = formSchema;
-    }
-
-    public String getFormSchemaDraft() {
-        return formSchemaDraft;
-    }
-
-    public void setFormSchemaDraft(String formSchemaDraft) {
-        this.formSchemaDraft = formSchemaDraft;
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public String getStatus() {
@@ -95,6 +94,30 @@ public class TicketTypePo {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public int getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
+    public boolean isSystem() {
+        return system;
+    }
+
+    public void setSystem(boolean system) {
+        this.system = system;
+    }
+
+    public Long getSourceGlobalTypeId() {
+        return sourceGlobalTypeId;
+    }
+
+    public void setSourceGlobalTypeId(Long sourceGlobalTypeId) {
+        this.sourceGlobalTypeId = sourceGlobalTypeId;
     }
 
     public LocalDateTime getCreatedAt() {

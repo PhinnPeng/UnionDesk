@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class TicketTypeRepository {
 
+    public static final int NO_PAGINATION_THRESHOLD = 100;
+
     private final TicketTypeMapper mapper;
 
     public TicketTypeRepository(TicketTypeMapper mapper) {
@@ -38,24 +40,74 @@ public class TicketTypeRepository {
         return po;
     }
 
+    public List<TicketTypePo> findAllPlatform(String keywordLike) {
+        return mapper.findByPlatform(keywordLike);
+    }
+
+    public long countPlatform(String keywordLike) {
+        return mapper.countByPlatform(keywordLike);
+    }
+
+    public List<TicketTypePo> findPagePlatform(String keywordLike, int limit, long offset) {
+        return mapper.findPageByPlatform(keywordLike, limit, offset);
+    }
+
+    public TicketTypePo findPlatformById(long id) {
+        return mapper.findPlatformById(id);
+    }
+
+    public TicketTypePo findRequiredPlatformById(long id) {
+        TicketTypePo po = mapper.findPlatformById(id);
+        if (po == null) {
+            throw new IllegalArgumentException("事项类型不存在");
+        }
+        return po;
+    }
+
+    public TicketTypePo findPlatformByCode(String code) {
+        return mapper.findPlatformByCode(code);
+    }
+
+    public TicketTypePo findPlatformByName(String name) {
+        return mapper.findPlatformByName(name);
+    }
+
+    public int nextSortOrderPlatform() {
+        Integer max = mapper.findMaxSortOrderPlatform();
+        return max == null ? 0 : max + 1;
+    }
+
+    public long countLinkedDomainsByGlobalTypeId(long globalTypeId) {
+        return mapper.countLinkedDomainsByGlobalTypeId(globalTypeId);
+    }
+
     public void save(TicketTypePo po) {
         mapper.insert(po);
     }
 
-    public void updateMetadata(long id, long domainId, String name, String description, String icon, String statusFlowConfig, String status) {
-        mapper.updateMetadata(id, domainId, name, description, icon, statusFlowConfig, status);
+    public void updateMetadata(long id, long domainId, String name, String description, String icon, String status) {
+        mapper.updateMetadata(id, domainId, name, description, icon, status);
     }
 
-    public void updateFormSchemaDraft(long id, long domainId, String formSchemaDraft) {
-        mapper.updateFormSchemaDraft(id, domainId, formSchemaDraft);
+    public void updatePlatformMetadata(
+            long id,
+            String name,
+            String description,
+            String icon,
+            String status) {
+        mapper.updatePlatformMetadata(id, name, description, icon, status);
     }
 
-    public void publishFormSchema(long id, long domainId, String formSchema, String formSchemaDraft) {
-        mapper.publishFormSchema(id, domainId, formSchema, formSchemaDraft);
+    public void updateSortOrder(long id, int sortOrder) {
+        mapper.updateSortOrder(id, sortOrder);
     }
 
     public int deleteByIdAndDomainId(long id, long domainId) {
         return mapper.deleteByIdAndDomainId(id, domainId);
+    }
+
+    public int deletePlatformById(long id) {
+        return mapper.deletePlatformById(id);
     }
 
     public int countTicketsByTypeId(long domainId, long typeId) {

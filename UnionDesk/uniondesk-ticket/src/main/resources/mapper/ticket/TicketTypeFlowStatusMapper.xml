@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.ticket.mapper.TicketTypeFlowStatusMapper">
+
+    <resultMap id="BaseResultMap" type="com.uniondesk.ticket.entity.TicketTypeFlowStatusPo">
+        <id column="id" property="id"/>
+        <result column="domain_id" property="domainId"/>
+        <result column="ticket_type_id" property="ticketTypeId"/>
+        <result column="state_code" property="stateCode"/>
+        <result column="name" property="name"/>
+        <result column="state_type" property="stateType"/>
+        <result column="allow_customer_withdraw" property="allowCustomerWithdraw"/>
+        <result column="is_resolved" property="resolved"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="source_status_id" property="sourceStatusId"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <select id="findByDomainIdAndTypeId" resultMap="BaseResultMap">
+        SELECT * FROM ticket_type_flow_status
+        WHERE domain_id = #{domainId}
+          AND ticket_type_id = #{ticketTypeId}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <insert id="batchInsert">
+        INSERT INTO ticket_type_flow_status (
+            domain_id, ticket_type_id, state_code, name, state_type,
+            allow_customer_withdraw, is_resolved, sort_order, source_status_id
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.domainId}, #{item.ticketTypeId}, #{item.stateCode}, #{item.name}, #{item.stateType},
+                #{item.allowCustomerWithdraw}, #{item.resolved}, #{item.sortOrder}, #{item.sourceStatusId}
+            )
+        </foreach>
+    </insert>
+
+    <delete id="deleteByDomainIdAndTypeId">
+        DELETE FROM ticket_type_flow_status
+        WHERE domain_id = #{domainId}
+          AND ticket_type_id = #{ticketTypeId}
+    </delete>
+
+</mapper>
