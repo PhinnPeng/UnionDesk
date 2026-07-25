@@ -62,8 +62,8 @@
             uc.username AS creator_name,
             uu.username AS updater_name
         FROM business_domain d
-        LEFT JOIN user_account uc ON uc.id = d.created_by
-        LEFT JOIN user_account uu ON uu.id = d.updated_by
+        LEFT JOIN staff_account uc ON uc.id = d.created_by
+        LEFT JOIN staff_account uu ON uu.id = d.updated_by
         <include refid="adminDomainWhere"/>
         ORDER BY d.id DESC
         LIMIT #{limit} OFFSET #{offset}
@@ -120,8 +120,8 @@
             uc.username AS creator_name,
             uu.username AS updater_name
         FROM business_domain d
-        LEFT JOIN user_account uc ON uc.id = d.created_by
-        LEFT JOIN user_account uu ON uu.id = d.updated_by
+        LEFT JOIN staff_account uc ON uc.id = d.created_by
+        LEFT JOIN staff_account uu ON uu.id = d.updated_by
         WHERE d.id = #{id}
           AND d.deleted_at IS NULL
         LIMIT 1

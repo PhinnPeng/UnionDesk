@@ -32,6 +32,7 @@ import com.uniondesk.ticket.repository.TicketRelationRepository;
 import com.uniondesk.ticket.repository.TicketReplyRepository;
 import com.uniondesk.ticket.repository.TicketRepository;
 import com.uniondesk.ticket.repository.TicketTemplateRepository;
+import com.uniondesk.ticket.repository.TicketTypeRepository;
 import com.uniondesk.ticket.repository.UserAccountRepository;
 import com.uniondesk.common.event.UnionDeskEventPublisher;
 import org.junit.jupiter.api.Disabled;
@@ -76,6 +77,10 @@ class TicketWorkflowTests {
     @Mock
     private StaffAccountRepository staffAccountRepository;
     @Mock
+    private TicketTypeRepository ticketTypeRepository;
+    @Mock
+    private TicketTypeAttributeSlotService ticketTypeAttributeSlotService;
+    @Mock
     private UnionDeskEventPublisher eventPublisher;
     @Mock
     private JdbcTemplate jdbcTemplate;
@@ -88,6 +93,9 @@ class TicketWorkflowTests {
 
     @Mock
     private AttachmentService attachmentService;
+
+    @Mock
+    private TicketWatcherService ticketWatcherService;
 
     private TicketService ticketService;
 
@@ -105,12 +113,15 @@ class TicketWorkflowTests {
                 userAccountRepository,
                 customerAccountRepository,
                 staffAccountRepository,
+                ticketTypeRepository,
+                ticketTypeAttributeSlotService,
                 new ObjectMapper(),
                 CLOCK,
                 notificationCenterService,
                 slaService,
                 attachmentService,
-                eventPublisher);
+                eventPublisher,
+                ticketWatcherService);
     }
 
     @Test

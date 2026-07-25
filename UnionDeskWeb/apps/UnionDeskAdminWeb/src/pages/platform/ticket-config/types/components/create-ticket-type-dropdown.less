@@ -1,0 +1,74 @@
+.create-ticket-type-dropdown__panel {
+	width: 360px;
+	padding: 12px 0 8px;
+	background: var(--ant-color-bg-container);
+	border-radius: 8px;
+	box-shadow: var(--ant-box-shadow-secondary);
+}
+
+.create-ticket-type-dropdown__header {
+	display: block;
+	padding: 0 16px 8px;
+	font-size: 12px;
+}
+
+.create-ticket-type-dropdown__options {
+	display: flex;
+	flex-direction: column;
+}
+
+.create-ticket-type-dropdown__option {
+	display: flex;
+	gap: 12px;
+	width: 100%;
+	padding: 12px 16px;
+	border: none;
+	background: transparent;
+	text-align: left;
+	cursor: pointer;
+	transition: background-color 0.2s;
+
+	&:hover {
+		background: var(--ant-color-fill-tertiary);
+	}
+}
+
+.create-ticket-type-dropdown__option-icon {
+	display: flex;
+	flex-shrink: 0;
+	align-items: flex-start;
+	padding-top: 2px;
+	font-size: 18px;
+}
+
+.create-ticket-type-dropdown__icon--simple {
+	color: #1677ff;
+}
+
+.create-ticket-type-dropdown__icon--standard {
+	color: #722ed1;
+}
+
+.create-ticket-type-dropdown__option-body {
+	min-width: 0;
+}
+
+.create-ticket-type-dropdown__option-title {
+	display: block;
+	margin-bottom: 4px;
+	font-size: 14px;
+}
+
+.create-ticket-type-dropdown__option-desc {
+	margin: 0 !important;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.create-ticket-type-dropdown__footer {
+	margin-top: 4px;
+	padding: 10px 16px 4px;
+	border-top: 1px solid var(--ant-color-border-secondary);
+	font-size: 12px;
+	line-height: 1.5;
+}

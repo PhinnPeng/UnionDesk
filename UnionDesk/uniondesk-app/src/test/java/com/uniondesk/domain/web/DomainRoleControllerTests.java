@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.uniondesk.common.web.ApiExceptionHandler;
+import com.uniondesk.common.web.ApiResponseWrapper;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -30,7 +31,7 @@ class DomainRoleControllerTests {
 
         mockMvc.perform(get("/api/v1/admin/domains/1/roles"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].code").value("domain_admin"));
+                .andExpect(jsonPath("$.data.items[0].code").value("domain_admin"));
     }
 
     @Test
@@ -47,7 +48,7 @@ class DomainRoleControllerTests {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.code").value("ops"));
+                .andExpect(jsonPath("$.data.code").value("ops"));
         verify(domainRoleService).createRole(eq(1L), any());
     }
 
@@ -64,7 +65,7 @@ class DomainRoleControllerTests {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("运营升级"));
+                .andExpect(jsonPath("$.data.name").value("运营升级"));
         verify(domainRoleService).updateRole(eq(1L), eq(22L), any());
     }
 
@@ -79,7 +80,7 @@ class DomainRoleControllerTests {
 
         mockMvc.perform(get("/api/v1/admin/domains/1/roles/22/permissions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.permission_items[0].code").value("domain:config"));
+                .andExpect(jsonPath("$.data.permission_items[0].code").value("domain:config"));
     }
 
     @Test
@@ -99,7 +100,7 @@ class DomainRoleControllerTests {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.permission_items[0].id").value(1));
+                .andExpect(jsonPath("$.data.permission_items[0].id").value(1));
         verify(domainRoleService).updateRolePermissions(eq(1L), eq(22L), any());
     }
 
@@ -132,16 +133,18 @@ class DomainRoleControllerTests {
 
         mockMvc.perform(get("/api/v1/admin/domains/1/permission-items"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].code").value("domain:config"));
+                .andExpect(jsonPath("$.data.items[0].code").value("domain:config"));
     }
 
     private MockMvc mockMvc() {
-        return MockMvcBuilders.standaloneSetup(new DomainRoleController(domainRoleService)).build();
+        return MockMvcBuilders.standaloneSetup(new DomainRoleController(domainRoleService))
+                .setControllerAdvice(new ApiResponseWrapper())
+                .build();
     }
 
     private MockMvc mockMvcWithAdvice() {
         return MockMvcBuilders.standaloneSetup(new DomainRoleController(domainRoleService))
-                .setControllerAdvice(new ApiExceptionHandler())
+                .setControllerAdvice(new ApiExceptionHandler(), new ApiResponseWrapper())
                 .build();
     }
 }

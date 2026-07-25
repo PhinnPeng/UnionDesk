@@ -5,6 +5,7 @@
 | 1.1 | 2026-05-26 | Sprint 1 已签 off（见 sprint-1-plan §11） |
 | 1.2 | 2026-06-15 | Sprint 2 已签 off（见 sprint-2-plan §10） |
 | 1.3 | 2026-06-17 | Sprint 3 进度：US-S3-00 Done |
+| 1.4 | 2026-07-19 | 员工身份遗留表物理拆除关闭 |
 
 > 权威 Story 见 [`../product/backlog-stories.md`](../product/backlog-stories.md)；实现清单见 [`../product/implementation-inventory.md`](../product/implementation-inventory.md)。
 
@@ -41,6 +42,7 @@
 
 | 项 | 计划/Story | 现状 | 处置 |
 |:---|:---|:---|:---|
+| 员工身份遗留表双路径 | Trellis `07-18-staff-identity-legacy-demolition` | 已切齐 `/admin/staff`；DROP `user_account` 等四表；seed 平台管理员 | **已关闭**（`V20260719100445` / `V20260719100446`） |
 | 客户注册完整 AC | US-S1-04 | 后端 `register` 存在；S1 不验收双字段/邀请完整 AC | **S3** US-S3-02 |
 | CustomerWeb 真实注册 | US-S1-05 | 客户端仍可能走 demo 路径 | **S3** US-S3-02/03 |
 | 跨域访问拒绝 FR-02 | US-S1-08 | 未系统化单测/联调 | **暂缓** → 后续迭代 |
@@ -70,3 +72,4 @@
 | 2026-06-15 | S2 签 off；§2 S2 结论；S2 已知偏差登记 |
 | 2026-06-16 | S3 规划草案；§3；偏差项指向 US-S3-xx |
 | 2026-06-17 | US-S3-00 Done；§3 进度更新；Flyway `V202606150001` |
+| 2026-07-19 | 员工身份遗留表物理拆除关闭；§4 登记；Flyway `V20260719100445`/`V20260719100446` |

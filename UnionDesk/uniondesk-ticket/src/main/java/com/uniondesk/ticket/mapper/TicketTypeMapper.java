@@ -41,12 +41,14 @@ public interface TicketTypeMapper {
                         @Param("domainId") long domainId,
                         @Param("name") String name,
                         @Param("description") String description,
+                        @Param("descriptionTemplateMd") String descriptionTemplateMd,
                         @Param("icon") String icon,
                         @Param("status") String status);
 
     void updatePlatformMetadata(@Param("id") long id,
                                 @Param("name") String name,
                                 @Param("description") String description,
+                                @Param("descriptionTemplateMd") String descriptionTemplateMd,
                                 @Param("icon") String icon,
                                 @Param("status") String status);
 

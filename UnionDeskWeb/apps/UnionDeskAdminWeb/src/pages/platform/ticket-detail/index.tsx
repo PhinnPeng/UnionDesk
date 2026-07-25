@@ -7,11 +7,14 @@ import {
 	fetchTicketDetail,
 	mergeAdminTicket,
 	replyAdminTicket,
+	replaceAdminTicketWatchers,
 	updateAdminTicketStatus,
 	assignAdminTicket,
 	type TicketDetailResult,
 } from "#src/api/platform/ticket";
 import { BasicContent } from "#src/components/basic-content";
+import { MemberPicker } from "#src/pages/platform/components/member-picker";
+import { PriorityBadge } from "#src/pages/platform/components/priority-badge";
 
 import { App, Button, Card, Descriptions, Divider, Empty, Form, Input, InputNumber, Modal, Select, Space, Tag, Timeline, Upload, Typography } from "antd";
 import type { UploadProps } from "antd";
@@ -61,10 +64,12 @@ export default function PlatformTicketDetail() {
 	const [attachmentIds, setAttachmentIds] = useState<Array<{ id: number, name: string }>>([]);
 	const [replyContent, setReplyContent] = useState("");
 	const [assignOpen, setAssignOpen] = useState(false);
+	const [watchersOpen, setWatchersOpen] = useState(false);
 	const [closeOpen, setCloseOpen] = useState(false);
 	const [mergeOpen, setMergeOpen] = useState(false);
 	const [replyForm] = Form.useForm();
 	const [assignForm] = Form.useForm();
+	const [watchersForm] = Form.useForm();
 	const [closeForm] = Form.useForm();
 	const [mergeForm] = Form.useForm();
 
@@ -187,6 +192,27 @@ export default function PlatformTicketDetail() {
 		}
 	};
 
+	const onReplaceWatchers = async () => {
+		if (!detail || !domainId || !ticketId) {
+			return;
+		}
+		const values = await watchersForm.validateFields().catch(() => null);
+		if (!values) {
+			return;
+		}
+		try {
+			await replaceAdminTicketWatchers(domainId, ticketId, {
+				watcherStaffAccountIds: values.watcherStaffAccountIds ?? [],
+			});
+			message.success("关注人已更新");
+			setWatchersOpen(false);
+			await loadDetail();
+		}
+		catch (error) {
+			message.error(error instanceof Error ? error.message : "更新关注人失败");
+		}
+	};
+
 	const onCloseTicket = async () => {
 		if (!detail || !domainId || !ticketId) {
 			return;
@@ -279,6 +305,17 @@ export default function PlatformTicketDetail() {
 						<Button onClick={() => setAssignOpen(true)} disabled={!detail || loading}>
 							指派
 						</Button>
+						<Button
+							onClick={() => {
+								watchersForm.setFieldsValue({
+									watcherStaffAccountIds: detail?.watcherStaffAccountIds ?? [],
+								});
+								setWatchersOpen(true);
+							}}
+							disabled={!detail || loading}
+						>
+							关注人
+						</Button>
 						<Button onClick={() => setCloseOpen(true)} disabled={!detail || loading}>
 							关闭
 						</Button>
@@ -297,7 +334,7 @@ export default function PlatformTicketDetail() {
 									<Descriptions.Item label="标题">{detail.ticket.title}</Descriptions.Item>
 									<Descriptions.Item label="类型">{detail.ticket.ticketTypeName}</Descriptions.Item>
 									<Descriptions.Item label="优先级">
-										<Tag color={detail.ticket.priority === "urgent" ? "red" : detail.ticket.priority === "high" ? "orange" : "blue"}>{detail.ticket.priority}</Tag>
+										<PriorityBadge code={detail.ticket.priority} />
 									</Descriptions.Item>
 									<Descriptions.Item label="状态"><Tag color="cyan">{detail.ticket.status}</Tag></Descriptions.Item>
 									<Descriptions.Item label="SLA 状态">{getSlaLabel(detail.ticket)}</Descriptions.Item>
@@ -398,6 +435,11 @@ export default function PlatformTicketDetail() {
 									</Descriptions.Item>
 									<Descriptions.Item label="客户 ID">{detail.ticket.customerId}</Descriptions.Item>
 									<Descriptions.Item label="处理人 ID">{detail.ticket.assignedTo ?? "-"}</Descriptions.Item>
+									<Descriptions.Item label="关注人">
+										{(detail.watcherStaffAccountIds?.length ?? 0) > 0
+											? detail.watcherStaffAccountIds!.join(", ")
+											: "-"}
+									</Descriptions.Item>
 									<Descriptions.Item label="回复数">{detail.ticket.replyCount}</Descriptions.Item>
 									<Descriptions.Item label="来源">{detail.ticket.source}</Descriptions.Item>
 									<Descriptions.Item label="结果">{detail.ticket.result ?? "-"}</Descriptions.Item>
@@ -430,8 +472,22 @@ export default function PlatformTicketDetail() {
 
 			<Modal title="指派工单" open={assignOpen} onCancel={() => setAssignOpen(false)} onOk={() => void onAssign()} destroyOnClose>
 				<Form form={assignForm} layout="vertical">
-					<Form.Item name="assigneeStaffAccountId" label="处理人 ID" rules={[{ required: true, message: "请输入处理人 ID" }]}>
-						<InputNumber className="w-full" min={1} />
+					<Form.Item name="assigneeStaffAccountId" label="处理人" rules={[{ required: true, message: "请选择处理人" }]}>
+						<MemberPicker domainId={domainId} />
+					</Form.Item>
+				</Form>
+			</Modal>
+
+			<Modal
+				title="设置关注人"
+				open={watchersOpen}
+				onCancel={() => setWatchersOpen(false)}
+				onOk={() => void onReplaceWatchers()}
+				destroyOnClose
+			>
+				<Form form={watchersForm} layout="vertical">
+					<Form.Item name="watcherStaffAccountIds" label="关注人">
+						<MemberPicker domainId={domainId} multiple />
 					</Form.Item>
 				</Form>
 			</Modal>

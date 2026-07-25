@@ -14,6 +14,7 @@
         <result column="role_ids" property="roleIdsJson"/>
         <result column="required_slot_ids" property="requiredSlotIdsJson"/>
         <result column="attribute_updates" property="attributeUpdatesJson"/>
+        <result column="additional_attributes" property="additionalAttributesJson"/>
         <result column="sort_order" property="sortOrder"/>
         <result column="created_at" property="createdAt"/>
         <result column="updated_at" property="updatedAt"/>
@@ -30,13 +31,13 @@
         INSERT INTO ticket_type_flow_transition (
             domain_id, ticket_type_id, from_state_code, to_state_code, step_name,
             permission_mode, member_ids, role_ids, required_slot_ids, attribute_updates,
-            sort_order
+            additional_attributes, sort_order
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (
                 #{item.domainId}, #{item.ticketTypeId}, #{item.fromStateCode}, #{item.toStateCode}, #{item.stepName},
                 #{item.permissionMode}, #{item.memberIdsJson}, #{item.roleIdsJson}, #{item.requiredSlotIdsJson}, #{item.attributeUpdatesJson},
-                #{item.sortOrder}
+                #{item.additionalAttributesJson}, #{item.sortOrder}
             )
         </foreach>
     </insert>

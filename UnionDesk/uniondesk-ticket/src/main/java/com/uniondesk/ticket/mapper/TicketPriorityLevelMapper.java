@@ -18,6 +18,8 @@ public interface TicketPriorityLevelMapper {
                 @Param("domainId") long domainId,
                 @Param("code") String code,
                 @Param("name") String name,
+                @Param("color") String color,
+                @Param("icon") String icon,
                 @Param("sortOrder") int sortOrder,
                 @Param("isDefault") int isDefault);
 

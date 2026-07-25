@@ -15,6 +15,7 @@ public final class TicketConfigDtos {
             String code,
             String name,
             String description,
+            String description_template_md,
             String icon,
             Object status_flow,
             Object form_schema,
@@ -29,6 +30,7 @@ public final class TicketConfigDtos {
             @NotBlank String code,
             @NotBlank String name,
             String description,
+            String description_template_md,
             String icon,
             Object status_flow,
             Object form_schema) {
@@ -37,6 +39,7 @@ public final class TicketConfigDtos {
     public record UpdateTicketTypeRequest(
             String name,
             String description,
+            String description_template_md,
             String icon,
             Object status_flow,
             String status,
@@ -124,9 +127,11 @@ public final class TicketConfigDtos {
     public record PriorityLevelView(
             String id,
             String domain_id,
+            String code,
             String name,
             String display_label,
             String color,
+            String icon,
             Integer sort_order,
             Boolean is_default) {
     }
@@ -153,6 +158,7 @@ public final class TicketConfigDtos {
             String code,
             String name,
             String description,
+            String description_template_md,
             String icon,
             String category,
             String status,
@@ -165,7 +171,8 @@ public final class TicketConfigDtos {
             Integer form_schema_current_version_no,
             Boolean form_schema_has_unpublished,
             String created_at,
-            String updated_at) {
+            String updated_at,
+            java.util.List<TransitionRuleView> transition_rules) {
     }
 
     public record PlatformTicketTypeListView(
@@ -185,9 +192,11 @@ public final class TicketConfigDtos {
     public record UpdatePlatformTicketTypeRequest(
             String name,
             String description,
+            String description_template_md,
             String icon,
             Object status_flow,
-            String status) {
+            String status,
+            java.util.List<SaveTransitionRuleRequest> transition_rules) {
     }
 
     public record ReorderPlatformTicketTypesRequest(
@@ -200,17 +209,21 @@ public final class TicketConfigDtos {
     }
 
     public record CreatePriorityLevelRequest(
+            String code,
             @NotBlank String name,
-            @NotBlank String display_label,
+            String display_label,
             String color,
+            String icon,
             Integer sort_order,
             Boolean is_default) {
     }
 
     public record UpdatePriorityLevelRequest(
+            String code,
             String name,
             String display_label,
             String color,
+            String icon,
             Integer sort_order,
             Boolean is_default) {
     }
@@ -248,13 +261,21 @@ public final class TicketConfigDtos {
             java.util.List<Long> member_ids,
             java.util.List<Long> role_ids,
             java.util.List<String> required_slot_ids,
-            java.util.List<AttributeUpdateItemView> attribute_updates) {
+            java.util.List<AttributeUpdateItemView> attribute_updates,
+            java.util.List<AdditionalAttributeItemView> additional_attributes) {
     }
 
     public record AttributeUpdateItemView(
             String slot_id,
             Object value,
             String value_type) {
+    }
+
+    public record AdditionalAttributeItemView(
+            String slot_id,
+            Boolean required,
+            String default_mode,
+            Object default_value) {
     }
 
     public record SaveTransitionRuleRequest(
@@ -265,13 +286,21 @@ public final class TicketConfigDtos {
             java.util.List<Long> member_ids,
             java.util.List<Long> role_ids,
             java.util.List<String> required_slot_ids,
-            java.util.List<AttributeUpdateItemRequest> attribute_updates) {
+            java.util.List<AttributeUpdateItemRequest> attribute_updates,
+            java.util.List<AdditionalAttributeItemRequest> additional_attributes) {
     }
 
     public record AttributeUpdateItemRequest(
             String slot_id,
             Object value,
             String value_type) {
+    }
+
+    public record AdditionalAttributeItemRequest(
+            String slot_id,
+            Boolean required,
+            String default_mode,
+            Object default_value) {
     }
 
     public record WorkflowConfigView(

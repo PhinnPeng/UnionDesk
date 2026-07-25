@@ -44,6 +44,7 @@ import com.uniondesk.ticket.repository.TicketRelationRepository;
 import com.uniondesk.ticket.repository.TicketReplyRepository;
 import com.uniondesk.ticket.repository.TicketRepository;
 import com.uniondesk.ticket.repository.TicketTemplateRepository;
+import com.uniondesk.ticket.repository.TicketTypeRepository;
 import com.uniondesk.ticket.repository.UserAccountRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,6 +77,10 @@ class TicketServiceTests {
     @Mock
     private StaffAccountRepository staffAccountRepository;
     @Mock
+    private TicketTypeRepository ticketTypeRepository;
+    @Mock
+    private TicketTypeAttributeSlotService ticketTypeAttributeSlotService;
+    @Mock
     private UnionDeskEventPublisher eventPublisher;
     @Mock
     private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
@@ -88,6 +93,9 @@ class TicketServiceTests {
 
     @Mock
     private AttachmentService attachmentService;
+
+    @Mock
+    private TicketWatcherService ticketWatcherService;
 
     private TicketService ticketService;
 
@@ -105,26 +113,28 @@ class TicketServiceTests {
                 userAccountRepository,
                 customerAccountRepository,
                 staffAccountRepository,
+                ticketTypeRepository,
+                ticketTypeAttributeSlotService,
                 new ObjectMapper(),
                 CLOCK,
                 notificationCenterService,
                 slaService,
                 attachmentService,
-                eventPublisher);
+                eventPublisher,
+                ticketWatcherService);
     }
 
     @Test
     void createCustomerTicketGeneratesDomainDatedNumberAndPersistsHistory() {
         UserContext context = new UserContext(1L, "customer", 1L, "sid-1", "ud-customer-web");
-        TicketService.CreateTicketCommand command = new TicketService.CreateTicketCommand(
-                11L,
+        TicketService.CreateTicketCommand command = new TicketService.CreateTicketCommand(11L,
                 "无法登录",
                 "请帮我看一下登录失败的原因",
                 Map.of("channel", "web"),
                 List.of(201L, 202L),
                 null,
                 null,
-                null);
+                null, null, List.of());
 
         when(jdbcTemplate.queryForObject(anyString(), eq(String.class), any()))
                 .thenAnswer(invocation -> {
@@ -174,15 +184,14 @@ class TicketServiceTests {
     @Test
     void createCustomerTicketAppliesTemplateFieldsAndHistory() {
         UserContext context = new UserContext(1L, "customer", 1L, "sid-1", "ud-customer-web");
-        TicketService.CreateTicketCommand command = new TicketService.CreateTicketCommand(
-                null,
+        TicketService.CreateTicketCommand command = new TicketService.CreateTicketCommand(null,
                 null,
                 null,
                 Map.of("channel", "web"),
                 List.of(301L),
                 88L,
                 null,
-                "portal");
+                "portal", null, List.of());
 
         when(jdbcTemplate.queryForObject(anyString(), eq(String.class), any()))
                 .thenAnswer(invocation -> {

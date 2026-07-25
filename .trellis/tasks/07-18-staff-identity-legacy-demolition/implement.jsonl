@@ -1,0 +1,8 @@
+{"file": "docs/superpowers/specs/2026-07-18-staff-identity-legacy-demolition-design.md", "reason": "Authoritative design for legacy identity demolition"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend pre-dev checklist and layer conventions"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Flyway naming, no FK, MyBatis patterns"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Module placement for IAM changes"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend pre-dev checklist"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Shared types and AdminWeb API client patterns"}
+{"file": "docs/architecture/data-model.md", "reason": "Target identity model vs legacy tables"}
+{"file": "AGENTS.md", "reason": "Project coding rules for FE/BE"}

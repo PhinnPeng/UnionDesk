@@ -45,4 +45,10 @@ public final class DomainRoleDtos {
     public record UpdateDomainRolePermissionRequest(
             @NotNull List<Long> permission_item_ids) {
     }
+
+    // --- ListView records for list endpoints ---
+
+    public record DomainRoleListView(long total, List<DomainRoleView> items) {}
+
+    public record PermissionItemListView(long total, List<PermissionItemView> items) {}
 }

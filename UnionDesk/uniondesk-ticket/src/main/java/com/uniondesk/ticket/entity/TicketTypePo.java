@@ -15,6 +15,7 @@ public class TicketTypePo {
     private String code;
     private String name;
     private String description;
+    private String descriptionTemplateMd;
     private String icon;
     private String category;
     private String status;
@@ -70,6 +71,14 @@ public class TicketTypePo {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getDescriptionTemplateMd() {
+        return descriptionTemplateMd;
+    }
+
+    public void setDescriptionTemplateMd(String descriptionTemplateMd) {
+        this.descriptionTemplateMd = descriptionTemplateMd;
     }
 
     public String getIcon() {

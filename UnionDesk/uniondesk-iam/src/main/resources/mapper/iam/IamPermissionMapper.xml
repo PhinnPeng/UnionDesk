@@ -26,20 +26,36 @@
     <select id="selectEffectiveGrants" resultMap="EffectivePermissionGrantPo">
         SELECT
             r.scope AS role_level,
-            b.binding_scope,
-            b.business_domain_id,
+            'global' AS binding_scope,
+            CAST(NULL AS UNSIGNED) AS business_domain_id,
             p.permission_scope
-        FROM iam_role_binding b
-        JOIN role r ON r.id = b.role_id
+        FROM staff_account_platform_role sapr
+        JOIN platform_role pr ON pr.id = sapr.platform_role_id
+        JOIN role r ON r.code = pr.code
         JOIN iam_role_permission rp ON rp.role_id = r.id
         JOIN iam_permission p ON p.id = rp.permission_id
-        WHERE b.user_id = #{userId}
-          AND b.status = 1
+        WHERE sapr.staff_account_id = #{userId}
           AND p.status = 1
           AND p.code IN
         <foreach collection="codes" item="code" open="(" separator="," close=")">#{code}</foreach>
-          AND (b.effective_from IS NULL OR b.effective_from &lt;= CURRENT_TIMESTAMP(3))
-          AND (b.effective_to IS NULL OR b.effective_to > CURRENT_TIMESTAMP(3))
+        UNION ALL
+        SELECT
+            r.scope AS role_level,
+            'domain' AS binding_scope,
+            dm.business_domain_id,
+            p.permission_scope
+        FROM domain_member dm
+        JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+        JOIN role r ON r.code = dr.code
+        JOIN iam_role_permission rp ON rp.role_id = r.id
+        JOIN iam_permission p ON p.id = rp.permission_id
+        WHERE dm.staff_account_id = #{userId}
+          AND dm.status = 'active'
+          AND dm.deleted_at IS NULL
+          AND p.status = 1
+          AND p.code IN
+        <foreach collection="codes" item="code" open="(" separator="," close=")">#{code}</foreach>
     </select>
 
     <delete id="deleteRolePermissionsByCatalog">

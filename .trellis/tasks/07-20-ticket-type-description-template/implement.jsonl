@@ -1,0 +1,4 @@
+{"file": "docs/superpowers/specs/2026-07-20-ticket-type-description-template-design.md", "reason": "Authoritative design"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend checklist"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Flyway conventions"}
+{"file": "AGENTS.md", "reason": "Project coding rules"}

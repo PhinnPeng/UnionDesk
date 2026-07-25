@@ -28,8 +28,8 @@ public class OrganizationController {
 
     @GetMapping
     @RequirePermission(PermissionCodes.PLATFORM_ORGANIZATION_READ)
-    public List<OrganizationDtos.OrganizationUnitView> listOrganizations() {
-        return organizationService.listOrganizations().stream()
+    public OrganizationDtos.OrganizationListView listOrganizations() {
+        List<OrganizationDtos.OrganizationUnitView> items = organizationService.listOrganizations().stream()
                 .map(unit -> new OrganizationDtos.OrganizationUnitView(
                         unit.id(),
                         unit.code(),
@@ -43,6 +43,7 @@ public class OrganizationController {
                         unit.remark(),
                         unit.createdAt()))
                 .toList();
+        return new OrganizationDtos.OrganizationListView(items.size(), items);
     }
 
     @PostMapping

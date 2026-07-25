@@ -96,6 +96,9 @@ GlobalRegistry.registerDesignerLocales({
 	},
 });
 
+/** 固定使用 Designable 简体中文，不随浏览器语言漂移 */
+GlobalRegistry.setDesignerLanguage("zh-CN");
+
 export const designableComponents: IDesignerComponents = {
 	Form,
 	Field,

@@ -5,7 +5,6 @@ import com.uniondesk.iam.entity.EffectivePermissionGrantPo;
 import com.uniondesk.iam.entity.IamResourcePo;
 import com.uniondesk.iam.entity.RolePo;
 import com.uniondesk.iam.entity.RoutePermissionPo;
-import com.uniondesk.iam.entity.UserAccountPo;
 import com.uniondesk.iam.entity.UserSummaryPo;
 import com.uniondesk.iam.mapper.BusinessDomainMapper;
 import com.uniondesk.iam.mapper.IamPermissionMapper;
@@ -13,7 +12,6 @@ import com.uniondesk.iam.mapper.IamResourceMapper;
 import com.uniondesk.iam.mapper.RoleMapper;
 import com.uniondesk.iam.mapper.RoleMapper.BusinessDomainSummary;
 import com.uniondesk.iam.mapper.UserAccountMapper;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
@@ -134,67 +132,6 @@ public class IamRepository {
 
     public List<Long> findActionResourceIdsByRole(int roleId) {
         return iamResourceMapper.selectActionResourceIdsByRole(roleId);
-    }
-
-    public List<UserAccountPo> findUsersByEmploymentStatus(boolean offboardedOnly) {
-        return userAccountMapper.selectByEmploymentStatus(offboardedOnly);
-    }
-
-    public Optional<UserAccountPo> findUserById(long id) {
-        return Optional.ofNullable(userAccountMapper.selectById(id));
-    }
-
-    public int updateUserSelective(long id, String username, String nickname, String mobile, String email,
-                                   String remark, String passwordHash, String accountType, Integer status) {
-        return userAccountMapper.updateSelective(id, username, nickname, mobile, email, remark, passwordHash, accountType, status);
-    }
-
-    public int offboardUser(long id, LocalDateTime offboardedAt, Long offboardedBy, String offboardReason) {
-        return userAccountMapper.offboard(id, offboardedAt, offboardedBy, offboardReason);
-    }
-
-    public int restoreUser(long id) {
-        return userAccountMapper.restore(id);
-    }
-
-    public int countTicketReferences(long userId) {
-        return userAccountMapper.countTicketReferences(userId);
-    }
-
-    public int countConsultationReferences(long userId) {
-        return userAccountMapper.countConsultationReferences(userId);
-    }
-
-    public void clearOffboardedBy(long userId) {
-        userAccountMapper.clearOffboardedBy(userId);
-    }
-
-    public void deleteUserDomainRoles(long userId) {
-        roleMapper.deleteUserDomainRoles(userId);
-    }
-
-    public void deleteUserGlobalRoles(long userId) {
-        roleMapper.deleteUserGlobalRoles(userId);
-    }
-
-    public void deleteUserOrganizations(long userId) {
-        userAccountMapper.deleteUserOrganizations(userId);
-    }
-
-    public void deleteLoginLogsByUsername(long userId) {
-        userAccountMapper.deleteLoginLogsByUsername(userId);
-    }
-
-    public void deleteSessions(long userId) {
-        userAccountMapper.deleteSessions(userId);
-    }
-
-    public void deleteUser(long userId) {
-        userAccountMapper.deleteById(userId);
-    }
-
-    public int revokeSessionsOnOffboard(long userId, LocalDateTime revokedAt) {
-        return userAccountMapper.revokeSessionsOnOffboard(userId, revokedAt);
     }
 
     public List<ApiGrantPo> findActionGrants(String roleCode, String clientCode) {

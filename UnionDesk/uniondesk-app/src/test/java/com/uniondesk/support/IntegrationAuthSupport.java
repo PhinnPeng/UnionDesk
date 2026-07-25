@@ -155,23 +155,8 @@ public final class IntegrationAuthSupport {
 
     /**
      * 为客户账号绑定 domain 级 customer 角色，使 ticket.create 等权限生效。
-     * IAM 绑定表仍引用 user_account，需同步桥接行（待 IAM FK 迁移后移除）。
      */
     public static void grantCustomerDomainPermissions(JdbcTemplate jdbcTemplate, long customerAccountId, long domainId) {
-        jdbcTemplate.update("""
-                        INSERT INTO user_account (id, username, mobile, email, password_hash, status, account_type)
-                        SELECT ca.id, ca.username, ca.phone, ca.email, ca.password_hash, 1, 'customer'
-                        FROM customer_account ca
-                        WHERE ca.id = ?
-                        ON DUPLICATE KEY UPDATE
-                            username = VALUES(username),
-                            mobile = VALUES(mobile),
-                            email = VALUES(email),
-                            password_hash = VALUES(password_hash),
-                            status = VALUES(status),
-                            account_type = VALUES(account_type)
-                        """,
-                customerAccountId);
         jdbcTemplate.update("""
                         INSERT INTO iam_role_binding (user_id, role_id, binding_scope, business_domain_id, status)
                         SELECT ?, r.id, 'domain', ?, 1

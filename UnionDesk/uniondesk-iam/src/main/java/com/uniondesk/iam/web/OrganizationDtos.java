@@ -2,6 +2,7 @@ package com.uniondesk.iam.web;
 
 import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public final class OrganizationDtos {
 
@@ -43,4 +44,8 @@ public final class OrganizationDtos {
             Integer status,
             String remark) {
     }
+
+    // --- ListView records for list endpoints ---
+
+    public record OrganizationListView(long total, List<OrganizationUnitView> items) {}
 }

@@ -5,10 +5,11 @@ export {
 	mergeSystemFormSchema,
 } from "#src/components/formily-form-designer";
 
-/** 新建/空工作流：无状态、无步骤 */
+/** 新建/空工作流：无状态、无步骤、无初始态 */
 export const EMPTY_STATUS_FLOW: TicketStatusFlow = {
 	states: [],
 	transitions: [],
+	initial_state_code: null,
 };
 
 /** @deprecated 使用 EMPTY_STATUS_FLOW；保留别名避免旧引用灌入三态假数据 */

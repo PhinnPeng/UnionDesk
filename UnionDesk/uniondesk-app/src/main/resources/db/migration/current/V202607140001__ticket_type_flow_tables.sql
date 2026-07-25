@@ -5,7 +5,7 @@
 -- 1. 新建扁平工作流表
 -- ---------------------------------------------------------------------------
 
-CREATE TABLE ticket_type_flow_status (
+CREATE TABLE IF NOT EXISTS ticket_type_flow_status (
     id                  BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     domain_id           BIGINT UNSIGNED NOT NULL COMMENT '平台=0',
     ticket_type_id      BIGINT UNSIGNED NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE ticket_type_flow_status (
     KEY idx_flow_status_type (domain_id, ticket_type_id, sort_order)
 ) COMMENT='事项类型工作流状态（点）';
 
-CREATE TABLE ticket_type_flow_transition (
+CREATE TABLE IF NOT EXISTS ticket_type_flow_transition (
     id                  BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     domain_id           BIGINT UNSIGNED NOT NULL COMMENT '平台=0',
     ticket_type_id      BIGINT UNSIGNED NOT NULL,
@@ -159,42 +159,8 @@ WHERE tt.status_flow_config IS NOT NULL
 
 -- ---------------------------------------------------------------------------
 -- 4. 复制 ticket_transition_rule → ticket_type_flow_transition（规则优先）
+--     注：ticket_transition_rule 表可能尚未创建（上游迁移未执行），跳过
 -- ---------------------------------------------------------------------------
-
-INSERT INTO ticket_type_flow_transition (
-    domain_id,
-    ticket_type_id,
-    from_state_code,
-    to_state_code,
-    step_name,
-    permission_mode,
-    member_ids,
-    role_ids,
-    required_slot_ids,
-    attribute_updates,
-    sort_order
-)
-SELECT
-    domain_id,
-    ticket_type_id,
-    from_state_code,
-    to_state_code,
-    step_name,
-    permission_mode,
-    member_ids,
-    role_ids,
-    required_slot_ids,
-    attribute_updates,
-    sort_order
-FROM ticket_transition_rule
-ON DUPLICATE KEY UPDATE
-    step_name = VALUES(step_name),
-    permission_mode = VALUES(permission_mode),
-    member_ids = VALUES(member_ids),
-    role_ids = VALUES(role_ids),
-    required_slot_ids = VALUES(required_slot_ids),
-    attribute_updates = VALUES(attribute_updates),
-    sort_order = VALUES(sort_order);
 
 -- ---------------------------------------------------------------------------
 -- 5. 清空平台 feedback / suggestion 工作流（按 scope+code，非硬编码 id）
@@ -217,5 +183,3 @@ WHERE tt.scope = 'platform'
 -- ---------------------------------------------------------------------------
 
 ALTER TABLE ticket_type DROP COLUMN status_flow_config;
-
-DROP TABLE IF EXISTS ticket_transition_rule;

@@ -109,6 +109,26 @@ public final class PermissionCodes {
             "platform.domain.control.ticket_type.update";
     public static final String PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_DELETE =
             "platform.domain.control.ticket_type.delete";
+    public static final String PLATFORM_TICKET_CONFIG_ATTR_READ = "platform.ticket_config.attr.read";
+    public static final String PLATFORM_TICKET_CONFIG_ATTR_CREATE = "platform.ticket_config.attr.create";
+    public static final String PLATFORM_TICKET_CONFIG_ATTR_UPDATE = "platform.ticket_config.attr.update";
+    public static final String PLATFORM_TICKET_CONFIG_ATTR_DELETE = "platform.ticket_config.attr.delete";
+    public static final String PLATFORM_TICKET_CONFIG_TYPE_READ = "platform.ticket_config.type.read";
+    public static final String PLATFORM_TICKET_CONFIG_TYPE_CREATE = "platform.ticket_config.type.create";
+    public static final String PLATFORM_TICKET_CONFIG_TYPE_UPDATE = "platform.ticket_config.type.update";
+    public static final String PLATFORM_TICKET_CONFIG_TYPE_DELETE = "platform.ticket_config.type.delete";
+    public static final String PLATFORM_TICKET_CONFIG_STATUS_READ = "platform.ticket_config.status.read";
+    public static final String PLATFORM_TICKET_CONFIG_STATUS_CREATE = "platform.ticket_config.status.create";
+    public static final String PLATFORM_TICKET_CONFIG_STATUS_UPDATE = "platform.ticket_config.status.update";
+    public static final String PLATFORM_TICKET_CONFIG_STATUS_DELETE = "platform.ticket_config.status.delete";
+    public static final String PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_READ =
+            "platform.domain.control.ticket_attribute.read";
+    public static final String PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_CREATE =
+            "platform.domain.control.ticket_attribute.create";
+    public static final String PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_UPDATE =
+            "platform.domain.control.ticket_attribute.update";
+    public static final String PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_DELETE =
+            "platform.domain.control.ticket_attribute.delete";
     public static final String DOMAIN_CONFIG_READ = "domain.config.read";
     public static final String DOMAIN_CONFIG_UPDATE = "domain.config.update";
     public static final String PLATFORM_SYSTEM_CONFIG_READ = "platform.system_config.read";

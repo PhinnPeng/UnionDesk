@@ -122,14 +122,14 @@ class DomainServiceBootstrapTests {
                 memberId);
         assertEquals("domain_create", source);
 
-        Integer globalSuperAdminCount = jdbcTemplate.queryForObject("""
+        Integer platformAdminCount = jdbcTemplate.queryForObject("""
                         SELECT COUNT(*)
-                        FROM user_global_role ugr
-                        JOIN role r ON r.id = ugr.role_id
-                        WHERE ugr.user_id = 2
-                          AND r.code = 'super_admin'
+                        FROM staff_account_platform_role sapr
+                        JOIN platform_role pr ON pr.id = sapr.platform_role_id
+                        WHERE sapr.staff_account_id = 2
+                          AND pr.code = 'platform_admin'
                         """,
                 Integer.class);
-        assertTrue(globalSuperAdminCount >= 1, "seed admin may already have global super_admin");
+        assertTrue(platformAdminCount != null && platformAdminCount >= 1, "seed admin should have platform_admin");
     }
 }

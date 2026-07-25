@@ -12,6 +12,7 @@ public class TicketTypeFlowStatusPo {
     private String stateType;
     private boolean allowCustomerWithdraw;
     private boolean resolved;
+    private boolean initial;
     private int sortOrder;
     private Long sourceStatusId;
     private LocalDateTime createdAt;
@@ -79,6 +80,14 @@ public class TicketTypeFlowStatusPo {
 
     public void setResolved(boolean resolved) {
         this.resolved = resolved;
+    }
+
+    public boolean isInitial() {
+        return initial;
+    }
+
+    public void setInitial(boolean initial) {
+        this.initial = initial;
     }
 
     public int getSortOrder() {

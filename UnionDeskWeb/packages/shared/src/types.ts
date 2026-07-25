@@ -628,6 +628,8 @@ export type TicketStatusFlowState = {
 export type TicketStatusFlow = {
   states: TicketStatusFlowState[];
   transitions: { from: string; to: string; label?: string }[];
+  /** Unique workflow entry state; null when states is empty. House icon in UI keys off this field. */
+  initial_state_code?: string | null;
 };
 
 export type DomainTicketType = {
@@ -636,6 +638,7 @@ export type DomainTicketType = {
 	code: string;
 	name: string;
 	description?: string | null;
+	description_template_md?: string | null;
 	icon?: string | null;
 	category?: string;
 	status: "active" | "disabled" | string;
@@ -657,6 +660,8 @@ export type TransitionRule = {
 	role_ids: number[];
 	required_slot_ids: string[];
 	attribute_updates: AttributeUpdateItem[];
+	/** 转换前附加属性（补录）；与 required_slot_ids 兼容同步 */
+	additional_attributes?: AdditionalAttributeItem[];
 	sort_order?: number;
 };
 
@@ -664,6 +669,13 @@ export type AttributeUpdateItem = {
 	slot_id: string;
 	value: unknown;
 	value_type: "string" | "number" | "boolean" | "date";
+};
+
+export type AdditionalAttributeItem = {
+	slot_id: string;
+	required: boolean;
+	default_mode: "keep" | "set";
+	default_value?: unknown;
 };
 
 export type SaveTransitionRuleBody = {
@@ -675,6 +687,7 @@ export type SaveTransitionRuleBody = {
 	role_ids?: number[];
 	required_slot_ids?: string[];
 	attribute_updates?: AttributeUpdateItem[];
+	additional_attributes?: AdditionalAttributeItem[];
 };
 
 export type DomainTicketFormSchemaVersionSummary = {
@@ -696,7 +709,7 @@ export type DomainTicketFormSchemaVersionDetail = {
   published_by?: string | null;
 };
 
-export type TicketAttributeFieldType = "input" | "select" | "switch" | "date";
+export type TicketAttributeFieldType = "input" | "select" | "switch" | "date" | "member";
 
 export type TicketAttributeTypeConfig = {
   format?: "text" | "email" | "phone" | "integer" | "decimal";
@@ -704,7 +717,9 @@ export type TicketAttributeTypeConfig = {
   multiple?: boolean;
   withTime?: boolean;
   unit?: string;
-  options?: { label: string; value: string; color?: string }[];
+  options?: { label: string; value: string; color?: string; icon?: string }[];
+  options_source?: "priority_levels";
+  scope_mode?: "auto" | "domain" | "platform";
 };
 
 export type TicketAttribute = {
@@ -718,6 +733,7 @@ export type TicketAttribute = {
   status: "active" | "disabled" | string;
   sort_order: number;
   is_system: boolean;
+  system_key?: string | null;
   source_attribute_id?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -821,11 +837,13 @@ export type PlatformTicketType = {
 };
 
 export type PlatformTicketTypeDetail = PlatformTicketType & {
+  description_template_md?: string | null;
   status_flow: TicketStatusFlow | Record<string, unknown> | null;
   form_schema: Record<string, unknown> | null;
   form_schema_draft?: Record<string, unknown> | null;
   form_schema_current_version_no?: number | null;
   form_schema_has_unpublished?: boolean | null;
+  transition_rules?: TransitionRule[];
 };
 
 export type PlatformTicketTypeList = {
@@ -845,9 +863,11 @@ export type CreatePlatformTicketTypeBody = {
 export type UpdatePlatformTicketTypeBody = {
   name?: string;
   description?: string;
+  description_template_md?: string | null;
   icon?: string;
   status?: string;
   status_flow?: TicketStatusFlow | Record<string, unknown> | null;
+  transition_rules?: SaveTransitionRuleBody[];
 };
 
 export type PlatformTicketTypeSortOrderItem = {
@@ -877,6 +897,7 @@ export type CreateDomainTicketTypeBody = {
 export type UpdateDomainTicketTypeBody = {
 	name?: string;
 	description?: string | null;
+	description_template_md?: string | null;
 	icon?: string | null;
 	status?: string;
 	status_flow?: TicketStatusFlow | Record<string, unknown> | null;

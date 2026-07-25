@@ -278,15 +278,14 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                         .header("Authorization", IntegrationAuthSupport.bearer(customerToken))
                         .header("X-UD-Client-Code", IntegrationAuthSupport.CUSTOMER_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new TicketService.CreateTicketCommand(
-                                ticketTypeId,
+                        .content(objectMapper.writeValueAsString(new TicketService.CreateTicketCommand(ticketTypeId,
                                 title,
                                 description,
                                 Map.of("channel", "web"),
                                 List.of(),
                                 null,
                                 null,
-                                "web"))))
+                                "web", null, List.of()))))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()

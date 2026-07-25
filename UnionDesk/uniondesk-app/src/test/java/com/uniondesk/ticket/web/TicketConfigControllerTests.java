@@ -34,7 +34,7 @@ class TicketConfigControllerTests {
         MockMvc mockMvc = mockMvc();
         when(ticketConfigService.listTicketTypes(1L)).thenReturn(List.of(
                 new TicketConfigDtos.TicketTypeView(
-                        "11", "1", "default", "默认类型", null, null,
+                        "11", "1", "default", "默认类型", null, null, null,
                         Map.of("states", List.of()), Map.of("properties", Map.of()), Map.of("properties", Map.of()),
                         1, false, "active",
                         List.of())));  // transition_rules
@@ -112,9 +112,11 @@ class TicketConfigControllerTests {
         when(ticketConfigService.updatePriorityLevel(eq(1L), eq(5L), any())).thenReturn(new TicketConfigDtos.PriorityLevelView(
                 "5",
                 "1",
+                "high",
                 "高",
                 "高",
                 "#ff0000",
+                "high",
                 30,
                 true));
 

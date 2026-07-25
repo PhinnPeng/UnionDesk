@@ -22,6 +22,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/api/v1")
 public class TicketController {
 
+    // --- ListView records for list endpoints ---
+
+    public record TicketListView(long total, List<TicketService.TicketRow> items) {}
+
+    public record TicketHistoryListView(long total, List<TicketService.TicketHistoryRow> items) {}
+
     private final TicketService ticketService;
 
     public TicketController(TicketService ticketService) {
@@ -39,11 +45,12 @@ public class TicketController {
 
     @GetMapping("/domains/{domain_id}/tickets/my")
     @RequirePermission(PermissionCodes.TICKET_VIEW_SELF)
-    public List<TicketService.TicketRow> listCustomerTickets(
+    public TicketListView listCustomerTickets(
             @PathVariable("domain_id") long domainId,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "100") int limit) {
-        return ticketService.listCustomerTickets(domainId, requireCurrent().userId(), status, limit);
+        List<TicketService.TicketRow> items = ticketService.listCustomerTickets(domainId, requireCurrent().userId(), status, limit);
+        return new TicketListView(items.size(), items);
     }
 
     @GetMapping("/domains/{domain_id}/tickets/my/{ticket_id}")
@@ -74,11 +81,12 @@ public class TicketController {
 
     @GetMapping("/admin/domains/{domain_id}/tickets")
     @RequirePermission(PermissionCodes.TICKET_VIEW_DOMAIN_ALL)
-    public List<TicketService.TicketRow> listAdminTickets(
+    public TicketListView listAdminTickets(
             @PathVariable("domain_id") long domainId,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "100") int limit) {
-        return ticketService.listTickets(domainId, status, limit);
+        List<TicketService.TicketRow> items = ticketService.listTickets(domainId, status, limit);
+        return new TicketListView(items.size(), items);
     }
 
     @GetMapping("/admin/domains/{domain_id}/tickets/{ticket_id}")
@@ -107,6 +115,15 @@ public class TicketController {
         return ticketService.assignTicket(requireCurrent(), domainId, ticketId, request);
     }
 
+    @PostMapping("/admin/domains/{domain_id}/tickets/{ticket_id}/watchers")
+    @RequirePermission(PermissionCodes.TICKET_ASSIGN)
+    public TicketService.TicketActionResult replaceTicketWatchers(
+            @PathVariable("domain_id") long domainId,
+            @PathVariable("ticket_id") long ticketId,
+            @Valid @RequestBody TicketService.ReplaceWatchersCommand request) {
+        return ticketService.replaceTicketWatchers(requireCurrent(), domainId, ticketId, request);
+    }
+
     @PostMapping("/admin/domains/{domain_id}/tickets/{ticket_id}/replies")
     @RequirePermission(PermissionCodes.TICKET_REPLY)
     public TicketService.TicketActionResult replyAdminTicket(
@@ -127,10 +144,11 @@ public class TicketController {
 
     @GetMapping("/admin/domains/{domain_id}/tickets/{ticket_id}/history")
     @RequirePermission(PermissionCodes.TICKET_VIEW_DOMAIN_ALL)
-    public List<TicketService.TicketHistoryRow> listTicketHistory(
+    public TicketHistoryListView listTicketHistory(
             @PathVariable("domain_id") long domainId,
             @PathVariable("ticket_id") long ticketId) {
-        return ticketService.listTicketHistory(domainId, ticketId);
+        List<TicketService.TicketHistoryRow> items = ticketService.listTicketHistory(domainId, ticketId);
+        return new TicketHistoryListView(items.size(), items);
     }
 
     @PostMapping("/admin/domains/{domain_id}/tickets/{ticket_id}/merge")

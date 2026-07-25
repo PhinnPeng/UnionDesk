@@ -14,7 +14,6 @@ import { ConfirmPopover } from "#src/components/confirm-popover";
 import { IconPicker } from "#src/components/icon-picker";
 import { TableSearchForm } from "#src/components/table-search-form";
 import { resolveMenuIcon } from "#src/icons/resolve-menu-icon";
-import { buildFormDesignPath } from "#src/pages/common/form-design";
 import { appScopes } from "#src/router/extra-info/app-scope";
 import { openAppScopeTab } from "#src/utils/tabbar-utils";
 
@@ -25,39 +24,38 @@ import {
 	PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE,
 } from "../../platform-domain-permissions";
 
-import { EditOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import {
 	App,
 	Button,
 	Card,
-	Col,
 	Empty,
 	Form,
 	Input,
 	Modal,
-	Row,
 	Select,
 	Space,
+	Switch,
 	Table,
 	Tag,
 	Tabs,
+	Tooltip,
 	Typography,
 } from "antd";
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { DetailTicketAttributes } from "./detail-ticket-attributes";
 import { TicketTemplateModal } from "./ticket-template-modal";
-import { countFlowStates, countFormFields, isDraftUnpublished } from "./ticket-type-form-defaults";
+import { isDraftUnpublished } from "./ticket-type-form-defaults";
 
-const { Title, Paragraph, Text } = Typography;
+import styles from "./detail-tickets.module.less";
+
+const { Title, Text } = Typography;
 
 export interface DetailTicketsProps {
 	domainId: string;
-}
-
-interface TicketTypeSearchValues {
-	keyword?: string;
 }
 
 interface TicketTemplateSearchValues {
@@ -65,20 +63,19 @@ interface TicketTemplateSearchValues {
 	type_id?: string;
 }
 
-interface TicketTypesPanelProps {
-	domainId: string;
-	loading: boolean;
-	dataSource: DomainTicketType[];
-	keyword: string;
-	onSearch: (values: TicketTypeSearchValues) => void;
-	onResetSearch: () => void;
-	onRefresh: () => void;
-	onCreate: () => void;
+interface TicketTypeActionHandlers {
 	onEdit: (ticketType: DomainTicketType) => void;
-	onFormDesign: (ticketType: DomainTicketType) => void;
-	onFlowConfig: (ticketType: DomainTicketType) => void;
+	onConfig: (ticketType: DomainTicketType) => void;
 	onToggleStatus: (ticketType: DomainTicketType) => void;
 	onDelete: (ticketType: DomainTicketType) => void;
+}
+
+interface TicketTypesPanelProps {
+	loading: boolean;
+	dataSource: DomainTicketType[];
+	onRefresh: () => void;
+	onCreate: () => void;
+	handlers: TicketTypeActionHandlers;
 }
 
 interface TicketTemplatesPanelProps {
@@ -94,163 +91,169 @@ interface TicketTemplatesPanelProps {
 	onCreate: () => void;
 }
 
-function TicketTypeCard({
-	record,
-	onEdit,
-	onFormDesign,
-	onFlowConfig,
-	onToggleStatus,
-	onDelete,
-}: {
-	record: DomainTicketType;
-	onEdit: (ticketType: DomainTicketType) => void;
-	onFormDesign: (ticketType: DomainTicketType) => void;
-	onFlowConfig: (ticketType: DomainTicketType) => void;
-	onToggleStatus: (ticketType: DomainTicketType) => void;
-	onDelete: (ticketType: DomainTicketType) => void;
-}) {
-	const schemaForCount = record.form_schema_draft ?? record.form_schema;
-	const unpublished = isDraftUnpublished(record.form_schema_draft, record.form_schema);
-
+function TicketTypeIcon({ icon }: { icon?: string | null }) {
 	return (
-		<Card hoverable className="h-full">
-			<div className="flex flex-col items-center gap-3 text-center">
-				<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-colorFillTertiary text-2xl">
-					{record.icon?.trim()
-						? resolveMenuIcon(record.icon, { fontSize: 28 })
-						: <span className="text-colorTextQuaternary">—</span>}
-				</div>
-				<div className="w-full">
-					<div className="flex flex-wrap items-center justify-center gap-2">
-						<Text strong>{record.name}</Text>
-						<Tag color={record.status === "active" ? "success" : "default"}>
-							{record.status === "active" ? "启用" : "停用"}
-						</Tag>
-						{unpublished ? <Tag color="warning">未发布</Tag> : null}
-					</div>
-					<Text type="secondary" className="text-xs">{record.code}</Text>
-				</div>
-				{record.description?.trim() ? (
-					<Paragraph
-						type="secondary"
-						className="!mb-0 line-clamp-2 w-full text-xs"
-						ellipsis={{ rows: 2 }}
-					>
-						{record.description}
-					</Paragraph>
-				) : (
-					<Text type="secondary" className="text-xs">暂无描述</Text>
-				)}
-				<div className="flex gap-4 text-xs text-colorTextSecondary">
-					<span>字段 {countFormFields(schemaForCount)}</span>
-					<span>状态 {countFlowStates(record.status_flow)}</span>
-				</div>
-				<Space wrap className="justify-center">
-					<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE} fallback={null}>
-						<Button size="small" type="primary" onClick={() => onFormDesign(record)}>
-							表单设计
-						</Button>
-						<Button size="small" icon={<EditOutlined />} onClick={() => onEdit(record)}>
-							编辑
-						</Button>
-						<Button size="small" onClick={() => onFlowConfig(record)}>
-							状态流
-						</Button>
-						<Button size="small" onClick={() => void onToggleStatus(record)}>
-							{record.status === "active" ? "停用" : "启用"}
-						</Button>
-					</AuthGuarded>
-					<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_DELETE} fallback={null}>
-						<ConfirmPopover
-							title="确认删除该工单类型？"
-							description="若已有工单引用此类型将无法删除。"
-							onConfirm={() => onDelete(record)}
-						>
-							<Button size="small" danger>
-								删除
-							</Button>
-						</ConfirmPopover>
-					</AuthGuarded>
-				</Space>
-			</div>
-		</Card>
+		<div className={styles.typeIcon}>
+			{icon?.trim()
+				? resolveMenuIcon(icon, { fontSize: 20 })
+				: <span className="text-colorTextQuaternary">—</span>}
+		</div>
 	);
 }
 
-function TicketTypesPanel({
-	domainId: _domainId,
-	loading,
-	dataSource,
-	keyword,
-	onSearch,
-	onResetSearch,
-	onRefresh,
-	onCreate,
-	onEdit,
-	onFormDesign,
-	onFlowConfig,
-	onToggleStatus,
-	onDelete,
-}: TicketTypesPanelProps) {
-	return (
-		<div className="flex flex-col gap-4">
-			<Card
-				bordered={false}
-				title={(
-					<Space>
-						<SearchOutlined />
-						<span>筛选条件</span>
-					</Space>
-				)}
-			>
-				<TableSearchForm<TicketTypeSearchValues>
-					loading={loading}
-					initialValues={{ keyword }}
-					onFinish={onSearch}
-					onReset={onResetSearch}
-				>
-					<Form.Item name="keyword" label="关键字">
-						<Input allowClear placeholder="编码或名称" disabled={loading} />
-					</Form.Item>
-				</TableSearchForm>
-			</Card>
-
-			<Card
-				bordered={false}
-				title="工单列表"
-				extra={(
-					<Space>
-						<Button icon={<ReloadOutlined />} onClick={onRefresh}>
-							刷新
-						</Button>
-						<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_CREATE} fallback={null}>
-							<Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
-								新建类型
+function useTicketTypeColumns(handlers: TicketTypeActionHandlers): TableColumnsType<DomainTicketType> {
+	return useMemo(() => [
+		{
+			title: "事项类型名称",
+			width: "26%",
+			ellipsis: true,
+			render: (_, record) => {
+				const unpublished = record.form_schema_has_unpublished
+					?? isDraftUnpublished(record.form_schema_draft, record.form_schema);
+				return (
+					<div className={styles.nameCell}>
+						<TicketTypeIcon icon={record.icon} />
+						<div className={styles.nameMeta}>
+							<div className={styles.nameTitleRow}>
+								<Text strong ellipsis={{ tooltip: record.name }}>{record.name}</Text>
+								{unpublished ? <Tag color="warning">未发布</Tag> : null}
+							</div>
+						</div>
+					</div>
+				);
+			},
+		},
+		{
+			title: "描述",
+			width: "38%",
+			ellipsis: true,
+			render: (_, record) => {
+				const text = record.description?.trim() || "暂无描述";
+				return (
+					<Text type="secondary" ellipsis={{ tooltip: text }}>
+						{text}
+					</Text>
+				);
+			},
+		},
+		{
+			title: "状态",
+			width: "12%",
+			align: "center",
+			render: (_, record) => {
+				const active = record.status === "active";
+				return (
+					<div className={styles.statusCell}>
+						<AuthGuarded
+							auth={PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE}
+							fallback={(
+								<Tooltip title={active ? "停用" : "启用"}>
+									<Switch size="small" checked={active} disabled />
+								</Tooltip>
+							)}
+						>
+							<Tooltip title={active ? "停用" : "启用"}>
+								<Switch
+									size="small"
+									checked={active}
+									onChange={() => void handlers.onToggleStatus(record)}
+								/>
+							</Tooltip>
+						</AuthGuarded>
+					</div>
+				);
+			},
+		},
+		{
+			title: "操作",
+			width: "24%",
+			align: "center",
+			render: (_, record) => (
+				<div className={styles.actionsCell}>
+					<Space size={4}>
+						<Tooltip title="配置">
+							<Button
+								type="link"
+								size="small"
+								icon={<EditOutlined />}
+								onClick={() => handlers.onConfig(record)}
+							>
+								配置
 							</Button>
+						</Tooltip>
+						<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE} fallback={null}>
+							<Tooltip title="编辑">
+								<Button
+									type="text"
+									size="small"
+									icon={<EditOutlined />}
+									onClick={() => handlers.onEdit(record)}
+								/>
+							</Tooltip>
+						</AuthGuarded>
+						<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_DELETE} fallback={null}>
+							<ConfirmPopover
+								title="确认删除该事项类型？"
+								description="若已有工单引用此类型将无法删除。"
+								onConfirm={() => handlers.onDelete(record)}
+							>
+								<Tooltip title="删除">
+									<Button type="text" size="small" danger icon={<DeleteOutlined />} />
+								</Tooltip>
+							</ConfirmPopover>
 						</AuthGuarded>
 					</Space>
-				)}
-			>
-				{dataSource.length === 0 && !loading ? (
-					<Empty description="暂无工单类型" />
-				) : (
-					<Row gutter={[16, 16]} justify="center">
-						{dataSource.map(record => (
-							<Col key={record.id} xs={24} sm={12} md={10} lg={8} xl={6}>
-								<TicketTypeCard
-									record={record}
-									onEdit={onEdit}
-									onFormDesign={onFormDesign}
-									onFlowConfig={onFlowConfig}
-									onToggleStatus={onToggleStatus}
-									onDelete={onDelete}
-								/>
-							</Col>
-						))}
-					</Row>
-				)}
-			</Card>
-		</div>
+				</div>
+			),
+		},
+	], [handlers]);
+}
+
+function TicketTypesPanel({
+	loading,
+	dataSource,
+	onRefresh,
+	onCreate,
+	handlers,
+}: TicketTypesPanelProps) {
+	const columns = useTicketTypeColumns(handlers);
+
+	return (
+		<Card
+			bordered={false}
+			title={(
+				<div className={styles.listTitle}>
+					<span className={styles.listTitleBar} />
+					<span>事项类型</span>
+				</div>
+			)}
+			extra={(
+				<Space>
+					<Button icon={<ReloadOutlined />} onClick={onRefresh}>
+						刷新
+					</Button>
+					<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_CREATE} fallback={null}>
+						<Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
+							新建事项类型
+						</Button>
+					</AuthGuarded>
+				</Space>
+			)}
+		>
+			<Table<DomainTicketType>
+				rowKey="id"
+				loading={loading}
+				columns={columns}
+				dataSource={dataSource}
+				pagination={false}
+				tableLayout="fixed"
+				className={styles.typesTable}
+				rowClassName={record => record.status === "active" ? "" : styles.rowDisabled}
+				locale={{
+					emptyText: <Empty description="暂无事项类型" />,
+				}}
+			/>
+		</Card>
 	);
 }
 
@@ -307,7 +310,7 @@ function TicketTemplatesPanel({
 
 			<Card
 				bordered={false}
-				title="工单模板列表"
+				title="事项模板列表"
 				extra={(
 					<Space>
 						<Button icon={<ReloadOutlined />} onClick={onRefresh}>
@@ -334,7 +337,7 @@ function TicketTemplatesPanel({
 					locale={{
 						emptyText: (
 							<Empty
-								description={ticketTypes.length === 0 ? "请先创建工单类型" : "暂无工单模板"}
+								description={ticketTypes.length === 0 ? "请先创建事项类型" : "暂无事项模板"}
 							/>
 						),
 					}}
@@ -347,13 +350,12 @@ function TicketTemplatesPanel({
 export function DetailTickets({ domainId }: DetailTicketsProps) {
 	const { message, modal } = App.useApp();
 	const navigate = useNavigate();
-	const [activeSubTab, setActiveSubTab] = useState<"types" | "templates">("types");
+	const [activeSubTab, setActiveSubTab] = useState<"types" | "attributes" | "templates">("types");
 	const [templatesLoaded, setTemplatesLoaded] = useState(false);
 	const [loadingTypes, setLoadingTypes] = useState(false);
 	const [loadingTemplates, setLoadingTemplates] = useState(false);
 	const [ticketTypes, setTicketTypes] = useState<DomainTicketType[]>([]);
 	const [templates, setTemplates] = useState<DomainTicketTemplate[]>([]);
-	const [typeKeyword, setTypeKeyword] = useState("");
 	const [templateKeyword, setTemplateKeyword] = useState("");
 	const [templateTypeId, setTemplateTypeId] = useState<string | undefined>();
 	const [createOpen, setCreateOpen] = useState(false);
@@ -413,18 +415,6 @@ export function DetailTickets({ domainId }: DetailTicketsProps) {
 		}
 	}, [activeSubTab, loadTemplates, templatesLoaded]);
 
-	const filteredTypes = useMemo(() => {
-		const trimmed = typeKeyword.trim().toLowerCase();
-		if (!trimmed) {
-			return ticketTypes;
-		}
-		return ticketTypes.filter(item =>
-			item.code.toLowerCase().includes(trimmed)
-			|| item.name.toLowerCase().includes(trimmed)
-			|| (item.description ?? "").toLowerCase().includes(trimmed),
-		);
-	}, [typeKeyword, ticketTypes]);
-
 	const filteredTemplates = useMemo(() => {
 		const trimmed = templateKeyword.trim().toLowerCase();
 		return templates.filter((item) => {
@@ -438,23 +428,12 @@ export function DetailTickets({ domainId }: DetailTicketsProps) {
 		});
 	}, [templateKeyword, templateTypeId, templates]);
 
-	const openFormDesignTab = useCallback((ticketType: DomainTicketType) => {
-		const path = buildFormDesignPath(domainId, ticketType.id);
+	const openConfigTab = useCallback((ticketType: DomainTicketType) => {
+		const path = `/platform/domains/ticket-type-config/${encodeURIComponent(domainId)}/${encodeURIComponent(ticketType.id)}`;
 		openAppScopeTab(appScopes.platform, navigate, path, {
 			key: path,
-			label: "表单设计",
-			newTabTitle: `表单设计 - ${ticketType.name}`,
-			closable: true,
-			draggable: true,
-		});
-	}, [domainId, navigate]);
-
-	const openFlowConfigTab = useCallback((ticketType: DomainTicketType) => {
-		const path = `/platform/domains/ticket-type-config/${encodeURIComponent(domainId)}/${encodeURIComponent(ticketType.id)}/flow`;
-		openAppScopeTab(appScopes.platform, navigate, path, {
-			key: path,
-			label: "状态流",
-			newTabTitle: `状态流 - ${ticketType.name}`,
+			label: "事项类型配置",
+			newTabTitle: `事项类型配置 - ${ticketType.name}`,
 			closable: true,
 			draggable: true,
 		});
@@ -472,16 +451,16 @@ export function DetailTickets({ domainId }: DetailTicketsProps) {
 				description: values.description?.trim() || null,
 				icon: values.icon?.trim() || null,
 			});
-			message.success("工单类型已创建");
+			message.success("事项类型已创建");
 			setCreateOpen(false);
 			createForm.resetFields();
 			await loadTicketTypes();
 			modal.confirm({
-				title: "是否进入表单设计？",
-				content: "创建成功，可立即配置该类型的表单字段。",
-				okText: "进入表单设计",
+				title: "是否进入配置？",
+				content: "创建成功，可立即配置该类型的属性、工作流与描述模板。",
+				okText: "进入配置",
 				cancelText: "留在列表",
-				onOk: () => openFormDesignTab(created),
+				onOk: () => openConfigTab(created),
 			});
 		}
 		catch (error) {
@@ -519,7 +498,7 @@ export function DetailTickets({ domainId }: DetailTicketsProps) {
 				icon: values.icon?.trim() || null,
 				status: values.status,
 			});
-			message.success("工单类型已更新");
+			message.success("事项类型已更新");
 			setEditOpen(false);
 			setEditingType(null);
 			editForm.resetFields();
@@ -538,20 +517,34 @@ export function DetailTickets({ domainId }: DetailTicketsProps) {
 
 	const handleToggleStatus = async (ticketType: DomainTicketType) => {
 		const nextStatus = ticketType.status === "active" ? "disabled" : "active";
-		try {
-			await updateDomainTicketType(domainId, ticketType.id, { status: nextStatus });
-			message.success(nextStatus === "active" ? "已启用" : "已停用");
-			await loadTicketTypes();
+		const doToggle = async () => {
+			try {
+				await updateDomainTicketType(domainId, ticketType.id, { status: nextStatus });
+				message.success(nextStatus === "active" ? "已启用" : "已停用");
+				await loadTicketTypes();
+			}
+			catch (error) {
+				message.error(toErrorMessage(error));
+			}
+		};
+		if (nextStatus === "disabled") {
+			modal.confirm({
+				title: "确认停用该事项类型？",
+				content: `事项类型「${ticketType.name}」停用后将无法在业务域中使用。`,
+				okText: "确认停用",
+				cancelText: "取消",
+				onOk: doToggle,
+			});
 		}
-		catch (error) {
-			message.error(toErrorMessage(error));
+		else {
+			void doToggle();
 		}
 	};
 
 	const handleDeleteType = async (ticketType: DomainTicketType) => {
 		try {
 			await deleteDomainTicketType(domainId, ticketType.id);
-			message.success("工单类型已删除");
+			message.success("事项类型已删除");
 			await loadTicketTypes();
 			if (templatesLoaded) {
 				await loadTemplates();
@@ -571,6 +564,13 @@ export function DetailTickets({ domainId }: DetailTicketsProps) {
 		catch (error) {
 			message.error(toErrorMessage(error));
 		}
+	};
+
+	const typeHandlers: TicketTypeActionHandlers = {
+		onEdit: handleOpenEdit,
+		onConfig: openConfigTab,
+		onToggleStatus: handleToggleStatus,
+		onDelete: handleDeleteType,
 	};
 
 	const templateColumns: TableColumnsType<DomainTicketTemplate> = [
@@ -614,37 +614,34 @@ export function DetailTickets({ domainId }: DetailTicketsProps) {
 		<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ}>
 			<div>
 				<Title level={5} className="!mb-4">
-					工单配置
+					事项管理
 				</Title>
 				<Tabs
 					type="card"
 					activeKey={activeSubTab}
-					onChange={key => setActiveSubTab(key as "types" | "templates")}
+					onChange={key => setActiveSubTab(key as "types" | "attributes" | "templates")}
 					items={[
 						{
 							key: "types",
-							label: "工单列表",
+							label: "事项类型",
 							children: (
 								<TicketTypesPanel
-									domainId={domainId}
 									loading={loadingTypes}
-									dataSource={filteredTypes}
-									keyword={typeKeyword}
-									onSearch={values => setTypeKeyword(values.keyword ?? "")}
-									onResetSearch={() => setTypeKeyword("")}
+									dataSource={ticketTypes}
 									onRefresh={() => void loadTicketTypes()}
 									onCreate={() => setCreateOpen(true)}
-									onEdit={handleOpenEdit}
-									onFormDesign={openFormDesignTab}
-									onFlowConfig={openFlowConfigTab}
-									onToggleStatus={handleToggleStatus}
-									onDelete={handleDeleteType}
+									handlers={typeHandlers}
 								/>
 							),
 						},
 						{
+							key: "attributes",
+							label: "事项属性",
+							children: <DetailTicketAttributes domainId={domainId} />,
+						},
+						{
 							key: "templates",
-							label: "工单模板",
+							label: "事项模板",
 							children: (
 								<TicketTemplatesPanel
 									loading={loadingTemplates}
@@ -673,7 +670,7 @@ export function DetailTickets({ domainId }: DetailTicketsProps) {
 				/>
 
 				<Modal
-					title="新建工单类型"
+					title="新建事项类型"
 					open={createOpen}
 					confirmLoading={creating}
 					okText="创建"
@@ -702,7 +699,7 @@ export function DetailTickets({ domainId }: DetailTicketsProps) {
 				</Modal>
 
 				<Modal
-					title="编辑工单类型"
+					title="基础编辑"
 					open={editOpen}
 					confirmLoading={editing}
 					okText="保存"

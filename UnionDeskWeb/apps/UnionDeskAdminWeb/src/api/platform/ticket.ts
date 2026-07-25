@@ -59,6 +59,7 @@ export interface TicketDetailResult {
 	ticket: TicketRow
 	replies: TicketReplyRow[]
 	history: TicketHistoryRow[]
+	watcherStaffAccountIds?: number[]
 }
 
 export interface ReplyTicketCommand {
@@ -75,6 +76,10 @@ export interface ClaimTicketCommand {
 export interface AssignTicketCommand {
 	version: number
 	assigneeStaffAccountId: number
+}
+
+export interface ReplaceWatchersCommand {
+	watcherStaffAccountIds: number[]
 }
 
 export interface ChangeTicketStatusCommand {
@@ -114,6 +119,17 @@ export function claimAdminTicket(domainId: number, ticketId: number, payload: Cl
 
 export function assignAdminTicket(domainId: number, ticketId: number, payload: AssignTicketCommand): Promise<{ id: number }> {
 	return requestBackendJson<{ id: number }>(withDomainPath(domainId, ticketId, "/assign"), {
+		method: "POST",
+		json: payload,
+	});
+}
+
+export function replaceAdminTicketWatchers(
+	domainId: number,
+	ticketId: number,
+	payload: ReplaceWatchersCommand,
+): Promise<{ id: number }> {
+	return requestBackendJson<{ id: number }>(withDomainPath(domainId, ticketId, "/watchers"), {
 		method: "POST",
 		json: payload,
 	});

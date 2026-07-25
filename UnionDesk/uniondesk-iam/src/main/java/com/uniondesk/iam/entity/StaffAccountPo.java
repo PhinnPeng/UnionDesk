@@ -1,5 +1,7 @@
 package com.uniondesk.iam.entity;
 
+import java.time.LocalDateTime;
+
 public class StaffAccountPo {
 
     private Long id;
@@ -11,6 +13,10 @@ public class StaffAccountPo {
     private String phone;
     private String email;
     private String status;
+    private String employmentStatus;
+    private LocalDateTime offboardedAt;
+    private Long offboardedBy;
+    private String offboardReason;
     private String source;
     private Integer authVersion;
     private String passwordHash;
@@ -33,6 +39,14 @@ public class StaffAccountPo {
     public void setEmail(String email) { this.email = email; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getEmploymentStatus() { return employmentStatus; }
+    public void setEmploymentStatus(String employmentStatus) { this.employmentStatus = employmentStatus; }
+    public LocalDateTime getOffboardedAt() { return offboardedAt; }
+    public void setOffboardedAt(LocalDateTime offboardedAt) { this.offboardedAt = offboardedAt; }
+    public Long getOffboardedBy() { return offboardedBy; }
+    public void setOffboardedBy(Long offboardedBy) { this.offboardedBy = offboardedBy; }
+    public String getOffboardReason() { return offboardReason; }
+    public void setOffboardReason(String offboardReason) { this.offboardReason = offboardReason; }
     public String getSource() { return source; }
     public void setSource(String source) { this.source = source; }
     public Integer getAuthVersion() { return authVersion; }

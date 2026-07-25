@@ -60,7 +60,7 @@ export function TicketTemplateModal({
 		const values = await form.validateFields();
 		const selectedType = ticketTypes.find(item => item.id === values.type_id);
 		if (!selectedType) {
-			message.warning("请选择关联工单类型");
+			message.warning("请选择关联事项类型");
 			return;
 		}
 		try {
@@ -94,7 +94,7 @@ export function TicketTemplateModal({
 
 	return (
 		<Modal
-			title={template ? "编辑工单模板" : "新建工单模板"}
+			title={template ? "编辑事项模板" : "新建事项模板"}
 			open={open}
 			okText={template ? "保存" : "创建"}
 			cancelText="取消"
@@ -112,12 +112,12 @@ export function TicketTemplateModal({
 				</Form.Item>
 				<Form.Item
 					name="type_id"
-					label="关联工单类型"
-					rules={[{ required: true, message: "请选择工单类型" }]}
+					label="关联事项类型"
+					rules={[{ required: true, message: "请选择事项类型" }]}
 				>
 					<Select
 						options={ticketTypes.map(item => ({ value: item.id, label: `${item.name}（${item.code}）` }))}
-						placeholder="选择工单类型"
+						placeholder="选择事项类型"
 					/>
 				</Form.Item>
 				<Form.Item name="content" label="模板内容">

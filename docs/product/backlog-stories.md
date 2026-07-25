@@ -432,6 +432,22 @@
 - **DB 增量**: Flyway `V202606170001`（`ticket_type.status`/`form_schema` + platform 四码 + catalog；见 increment-plan §3）
 - **备注**: 承接 **US-S2-E2-01** Stretch；openspec `ticket-type-config-s3-01`（2026-06-17）
 
+### US-S3-01a 平台事项类型属性插槽增强
+
+- **Epic**: E2 / E3 | **Sprint**: S3+ | **SP**: 3 | **状态**: Done
+- **角色**: 平台管理员（平台域 → 事项类型配置 → 属性 Tab）
+- **故事**: 作为平台管理员，我希望在事项类型属性插槽表中拖拽排序、编辑显示名/占位符/默认值，并区分系统属性不可删，以便更高效配置提单表单且默认值写入 Formily 快照。
+- **AC**:
+  1. 平台布局（`layout="platform"`）属性表左侧恢复拖拽手柄；系统标题/描述固定行灰色不可拖，分隔行提示「以上属性不可排序」。
+  2. 非系统行支持表格内拖拽排序；同时保留「属性排序」抽屉（`CreationSortDrawer`），与表格拖拽并存。
+  3. 操作列：**编辑**（全部行）+ **删除**（仅非 `is_system`）；必填/是否显示保留行内 Switch；列名使用「是否必填」「是否显示」。
+  4. 编辑弹窗字段：显示名称、占位符、默认值；默认值列只读展示，不可行内编辑。
+  5. `default_value` 存 JSON `{ mode, value }`；本期仅 `literal`（含开关 boolean、日期字面量）；读兼容旧纯字符串；`expression` 预留，后端本期忽略。
+  6. `FormSnapshotBuilder` 解析 literal 默认值写入 Formily `default`；expression 模式不写入。
+- **规则**: TR-02（配置层）；与 US-S3-01 Formily 快照一致
+- **DB 增量**: 无（复用 `ticket_type_attribute_slot.slot_config`）
+- **后续**: 全局 `expression` 模式 UI（AutoComplete + 后端求值）；系统 title/description 字段默认值写入 system field builder
+
 ### US-S3-02 客户注册与 CustomerWeb 入域
 
 - **Epic**: E3 | **Sprint**: S3 | **SP**: 4 | **状态**: Todo

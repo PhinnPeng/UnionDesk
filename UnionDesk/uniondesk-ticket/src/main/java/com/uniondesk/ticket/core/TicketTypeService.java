@@ -122,19 +122,26 @@ public class TicketTypeService {
         String description = request.description() == null
                 ? existing.getDescription()
                 : trimToEmpty(request.description());
+        String descriptionTemplateMd = request.description_template_md() == null
+                ? existing.getDescriptionTemplateMd()
+                : trimToNull(request.description_template_md());
         String icon = request.icon() == null ? existing.getIcon() : requiredText(request.icon(), "icon");
         String status = StringUtils.hasText(request.status()) ? request.status().trim() : existing.getStatus();
         try {
-            ticketTypeRepository.updatePlatformMetadata(typeId, name, description, icon, status);
+            ticketTypeRepository.updatePlatformMetadata(typeId, name, description, descriptionTemplateMd, icon, status);
         }
         catch (DuplicateKeyException ex) {
             throw translatePlatformDuplicate(ex);
         }
-        if (request.status_flow() != null) {
-            ticketTypeFlowService.replaceAll(0L, typeId, request.status_flow(), null);
+        if (request.status_flow() != null || request.transition_rules() != null) {
+            Object statusFlow = request.status_flow() != null
+                    ? request.status_flow()
+                    : ticketTypeFlowService.loadStatusFlow(0L, typeId);
+            ticketTypeFlowService.replaceAll(0L, typeId, statusFlow, request.transition_rules());
         }
         existing.setName(name);
         existing.setDescription(description);
+        existing.setDescriptionTemplateMd(descriptionTemplateMd);
         existing.setIcon(icon);
         existing.setStatus(status);
         return toView(existing);
@@ -190,25 +197,28 @@ public class TicketTypeService {
                 po.getId(),
                 pluginRevision);
         Integer currentVersionNo = aggregate.currentVersionNo() > 0 ? aggregate.currentVersionNo() : null;
+        TicketConfigDtos.WorkflowConfigView workflow = ticketTypeFlowService.loadAssembled(0L, po.getId());
         return new TicketConfigDtos.PlatformTicketTypeDetailView(
                 String.valueOf(po.getId()),
                 po.getScope(),
                 po.getCode(),
                 po.getName(),
                 po.getDescription(),
+                po.getDescriptionTemplateMd(),
                 po.getIcon(),
                 po.getCategory(),
                 po.getStatus(),
                 po.getSortOrder(),
                 po.isSystem(),
                 ticketTypeRepository.countLinkedDomainsByGlobalTypeId(po.getId()),
-                ticketTypeFlowService.loadStatusFlow(0L, po.getId()),
+                workflow.status_flow(),
                 aggregate.publishedSchema(),
                 aggregate.draftSchema(),
                 currentVersionNo,
                 aggregate.hasUnpublished(),
                 toDateTimeString(po.getCreatedAt()),
-                toDateTimeString(po.getUpdatedAt()));
+                toDateTimeString(po.getUpdatedAt()),
+                workflow.transition_rules());
     }
 
     private Object readJsonObject(String json) {
@@ -308,6 +318,13 @@ public class TicketTypeService {
     private String trimToEmpty(String value) {
         if (!StringUtils.hasText(value)) {
             return "";
+        }
+        return value.trim();
+    }
+
+    private String trimToNull(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
         }
         return value.trim();
     }

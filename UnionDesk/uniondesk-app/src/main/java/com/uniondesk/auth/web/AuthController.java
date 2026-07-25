@@ -131,10 +131,11 @@ public class AuthController {
 
     @GetMapping("/online-sessions")
     @RequirePermission(PermissionCodes.PLATFORM_USER_READ)
-    public List<AuthDtos.OnlineSessionView> listOnlineSessions(@RequestParam(defaultValue = "100") int limit) {
-        return authService.listOnlineSessions(limit).stream()
+    public AuthDtos.OnlineSessionListView listOnlineSessions(@RequestParam(defaultValue = "100") int limit) {
+        List<AuthDtos.OnlineSessionView> items = authService.listOnlineSessions(limit).stream()
                 .map(this::toOnlineSessionView)
                 .toList();
+        return new AuthDtos.OnlineSessionListView(items.size(), items);
     }
 
     @PostMapping("/online-sessions/{sid}/revoke")

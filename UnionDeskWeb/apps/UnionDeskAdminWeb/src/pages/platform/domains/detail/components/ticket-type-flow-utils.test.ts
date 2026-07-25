@@ -42,6 +42,7 @@ describe("ticket-type-flow-utils", () => {
 		const restored = graphToStatusFlow(graph.nodes, graph.edges);
 		expect(restored.states.map(state => state.code)).toEqual(["pending", "processing", "closed"]);
 		expect(restored.transitions).toEqual(SAMPLE_STATUS_FLOW.transitions);
+		expect(restored.initial_state_code).toBe("pending");
 		expect(restored.states[0]?.position).toEqual(graph.nodes[0]?.position);
 	});
 });

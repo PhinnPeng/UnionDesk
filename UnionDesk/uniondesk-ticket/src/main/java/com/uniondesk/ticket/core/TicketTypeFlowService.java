@@ -103,6 +103,11 @@ public class TicketTypeFlowService {
         if (!(statesObj instanceof List<?> states) || states.isEmpty()) {
             return List.of();
         }
+        Object initialObj = flowMap.get(StatusFlowValidator.INITIAL_STATE_CODE_KEY);
+        String initialStateCode = initialObj == null ? null : String.valueOf(initialObj).trim();
+        if (initialStateCode != null && initialStateCode.isEmpty()) {
+            initialStateCode = null;
+        }
         List<TicketTypeFlowStatusPo> result = new ArrayList<>();
         int index = 0;
         for (Object stateObj : states) {
@@ -118,6 +123,7 @@ public class TicketTypeFlowService {
             po.setStateType(stringValue(state.get("state_type")));
             po.setAllowCustomerWithdraw(Boolean.TRUE.equals(state.get("allow_customer_withdraw")));
             po.setResolved(Boolean.TRUE.equals(state.get("is_resolved")));
+            po.setInitial(initialStateCode != null && initialStateCode.equals(code));
             po.setSortOrder(index++);
             Object sourceId = state.get("source_status_id");
             if (sourceId instanceof Number number) {
@@ -156,12 +162,46 @@ public class TicketTypeFlowService {
                     : TicketTypeFlowTransitionPo.PERMISSION_MODE_NONE);
             po.setMemberIdsJson(toJson(rule.member_ids()));
             po.setRoleIdsJson(toJson(rule.role_ids()));
-            po.setRequiredSlotIdsJson(toJson(rule.required_slot_ids()));
+            List<TicketConfigDtos.AdditionalAttributeItemRequest> additional =
+                    normalizeAdditionalAttributes(rule);
+            po.setAdditionalAttributesJson(toJson(additional));
+            if (!additional.isEmpty()) {
+                po.setRequiredSlotIdsJson(toJson(additional.stream()
+                        .filter(item -> Boolean.TRUE.equals(item.required()))
+                        .map(TicketConfigDtos.AdditionalAttributeItemRequest::slot_id)
+                        .toList()));
+            }
+            else {
+                po.setRequiredSlotIdsJson(toJson(rule.required_slot_ids()));
+            }
             po.setAttributeUpdatesJson(toJson(rule.attribute_updates()));
             po.setSortOrder(index++);
             result.add(po);
         }
         return result;
+    }
+
+    /**
+     * Prefer explicit additional_attributes; otherwise hydrate from required_slot_ids.
+     */
+    private List<TicketConfigDtos.AdditionalAttributeItemRequest> normalizeAdditionalAttributes(
+            TicketConfigDtos.SaveTransitionRuleRequest rule) {
+        if (rule.additional_attributes() != null && !rule.additional_attributes().isEmpty()) {
+            return rule.additional_attributes().stream()
+                    .map(item -> new TicketConfigDtos.AdditionalAttributeItemRequest(
+                            item.slot_id(),
+                            Boolean.TRUE.equals(item.required()),
+                            item.default_mode() != null ? item.default_mode() : "keep",
+                            item.default_value()))
+                    .toList();
+        }
+        if (rule.required_slot_ids() == null || rule.required_slot_ids().isEmpty()) {
+            return List.of();
+        }
+        return rule.required_slot_ids().stream()
+                .map(slotId -> new TicketConfigDtos.AdditionalAttributeItemRequest(
+                        slotId, true, "keep", null))
+                .toList();
     }
 
     @SuppressWarnings("unchecked")
@@ -203,6 +243,7 @@ public class TicketTypeFlowService {
             po.setRoleIdsJson("[]");
             po.setRequiredSlotIdsJson("[]");
             po.setAttributeUpdatesJson("[]");
+            po.setAdditionalAttributesJson("[]");
             po.setSortOrder(index++);
             result.add(po);
         }
@@ -214,6 +255,7 @@ public class TicketTypeFlowService {
             List<TicketTypeFlowTransitionPo> transitions) {
         Map<String, Object> flow = new LinkedHashMap<>();
         List<Map<String, Object>> stateMaps = new ArrayList<>();
+        String initialStateCode = null;
         for (TicketTypeFlowStatusPo status : statuses) {
             Map<String, Object> state = new LinkedHashMap<>();
             state.put("code", status.getStateCode());
@@ -222,6 +264,12 @@ public class TicketTypeFlowService {
             state.put("allow_customer_withdraw", status.isAllowCustomerWithdraw());
             state.put("is_resolved", status.isResolved());
             stateMaps.add(state);
+            if (status.isInitial() && initialStateCode == null) {
+                initialStateCode = status.getStateCode();
+            }
+        }
+        if (initialStateCode == null && !statuses.isEmpty()) {
+            initialStateCode = statuses.get(0).getStateCode();
         }
         List<Map<String, Object>> transitionMaps = new ArrayList<>();
         for (TicketTypeFlowTransitionPo transition : transitions) {
@@ -232,6 +280,7 @@ public class TicketTypeFlowService {
         }
         flow.put("states", stateMaps);
         flow.put("transitions", transitionMaps);
+        flow.put(StatusFlowValidator.INITIAL_STATE_CODE_KEY, initialStateCode);
         return flow;
     }
 
@@ -240,6 +289,15 @@ public class TicketTypeFlowService {
     }
 
     private TicketConfigDtos.TransitionRuleView toRuleView(TicketTypeFlowTransitionPo po) {
+        List<String> requiredSlotIds = parseStringList(po.getRequiredSlotIdsJson());
+        List<TicketConfigDtos.AdditionalAttributeItemView> additional =
+                parseAdditionalAttributes(po.getAdditionalAttributesJson());
+        if (additional.isEmpty() && !requiredSlotIds.isEmpty()) {
+            additional = requiredSlotIds.stream()
+                    .map(slotId -> new TicketConfigDtos.AdditionalAttributeItemView(
+                            slotId, true, "keep", null))
+                    .toList();
+        }
         return new TicketConfigDtos.TransitionRuleView(
                 String.valueOf(po.getId()),
                 po.getFromStateCode(),
@@ -248,8 +306,9 @@ public class TicketTypeFlowService {
                 po.getPermissionMode(),
                 parseLongList(po.getMemberIdsJson()),
                 parseLongList(po.getRoleIdsJson()),
-                parseStringList(po.getRequiredSlotIdsJson()),
-                parseAttributeUpdates(po.getAttributeUpdatesJson()));
+                requiredSlotIds,
+                parseAttributeUpdates(po.getAttributeUpdatesJson()),
+                additional);
     }
 
     private String toJson(Object value) {
@@ -302,6 +361,33 @@ public class TicketTypeFlowService {
                     m.get("value"),
                     (String) m.get("value_type")
             )).toList();
+        }
+        catch (JsonProcessingException e) {
+            return List.of();
+        }
+    }
+
+    private List<TicketConfigDtos.AdditionalAttributeItemView> parseAdditionalAttributes(String json) {
+        if (!StringUtils.hasText(json)) {
+            return List.of();
+        }
+        try {
+            List<Map<String, Object>> list = objectMapper.readValue(json, new TypeReference<List<Map<String, Object>>>() {
+            });
+            return list.stream().map(m -> {
+                Object requiredObj = m.get("required");
+                boolean required = requiredObj instanceof Boolean b
+                        ? b
+                        : Boolean.parseBoolean(String.valueOf(requiredObj));
+                String mode = m.get("default_mode") != null
+                        ? String.valueOf(m.get("default_mode"))
+                        : "keep";
+                return new TicketConfigDtos.AdditionalAttributeItemView(
+                        (String) m.get("slot_id"),
+                        required,
+                        mode,
+                        m.get("default_value"));
+            }).toList();
         }
         catch (JsonProcessingException e) {
             return List.of();

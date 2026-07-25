@@ -13,6 +13,9 @@ import { useTranslation } from "react-i18next";
 import { RouterProvider } from "react-router/dom";
 
 import { syncAuthStoreToSharedApi } from "#src/api/sync-shared-session";
+import { goLogin } from "#src/utils/request/go-login";
+
+import { setUnauthorizedHandler } from "@uniondesk/shared";
 
 import { router } from "./router";
 import { customAntdDarkTheme, customAntdLightTheme } from "./styles/theme/antd/antd-theme";
@@ -39,6 +42,12 @@ export default function App() {
 
 	useEffect(() => {
 		syncAuthStoreToSharedApi();
+		setUnauthorizedHandler(() => {
+			goLogin();
+		});
+		return () => {
+			setUnauthorizedHandler(null);
+		};
 	}, []);
 
 	/**

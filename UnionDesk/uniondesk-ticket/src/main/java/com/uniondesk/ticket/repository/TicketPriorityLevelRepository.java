@@ -34,8 +34,8 @@ public class TicketPriorityLevelRepository {
         mapper.insert(po);
     }
 
-    public void update(long id, long domainId, String code, String name, int sortOrder, int isDefault) {
-        mapper.update(id, domainId, code, name, sortOrder, isDefault);
+    public void update(long id, long domainId, String code, String name, String color, String icon, int sortOrder, int isDefault) {
+        mapper.update(id, domainId, code, name, color, icon, sortOrder, isDefault);
     }
 
     public int deleteByIdAndDomainId(long id, long domainId) {

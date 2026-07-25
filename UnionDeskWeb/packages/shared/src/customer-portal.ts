@@ -75,6 +75,8 @@ export type CustomerPortalInboxMessage = {
 export type CustomerPortalTypeOption = {
   id: string;
   name: string;
+  description_template_md?: string | null;
+  has_description_slot?: boolean;
 };
 
 type CustomerPortalState = {
@@ -150,9 +152,24 @@ const STORAGE_KEY = "uniondesk.customer.portal-state.v1";
 const ACCOUNT_SESSION_ROLE = "customer";
 
 const ticketTypes: CustomerPortalTypeOption[] = [
-  { id: "technical", name: "技术支持" },
-  { id: "account", name: "账号问题" },
-  { id: "billing", name: "费用与发票" }
+  {
+    id: "technical",
+    name: "技术支持",
+    has_description_slot: true,
+    description_template_md: "## 问题现象\n\n## 复现步骤\n\n## 期望结果\n",
+  },
+  {
+    id: "account",
+    name: "账号问题",
+    has_description_slot: true,
+    description_template_md: null,
+  },
+  {
+    id: "billing",
+    name: "费用与发票",
+    has_description_slot: false,
+    description_template_md: "## 账单信息\n\n（无 description 槽位时不应预填）\n",
+  },
 ];
 
 let cachedState: CustomerPortalState | null = null;

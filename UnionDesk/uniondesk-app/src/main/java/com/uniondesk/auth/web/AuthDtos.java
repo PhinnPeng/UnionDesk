@@ -215,4 +215,8 @@ public final class AuthDtos {
             List<String> roles,
             List<String> permissions) {
     }
+
+    // --- ListView records for list endpoints ---
+
+    public record OnlineSessionListView(long total, List<OnlineSessionView> items) {}
 }

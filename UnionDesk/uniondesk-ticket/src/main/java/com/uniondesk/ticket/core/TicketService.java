@@ -17,6 +17,7 @@ import com.uniondesk.ticket.entity.TicketPo;
 import com.uniondesk.ticket.entity.TicketRelationPo;
 import com.uniondesk.ticket.entity.TicketReplyPo;
 import com.uniondesk.ticket.entity.TicketTemplatePo;
+import com.uniondesk.ticket.entity.TicketTypePo;
 import com.uniondesk.ticket.entity.UserAccountPo;
 import com.uniondesk.ticket.repository.AuditLogRepository;
 import com.uniondesk.ticket.repository.CustomerAccountRepository;
@@ -28,11 +29,14 @@ import com.uniondesk.ticket.repository.TicketRelationRepository;
 import com.uniondesk.ticket.repository.TicketReplyRepository;
 import com.uniondesk.ticket.repository.TicketRepository;
 import com.uniondesk.ticket.repository.TicketTemplateRepository;
+import com.uniondesk.ticket.repository.TicketTypeRepository;
 import com.uniondesk.ticket.repository.UserAccountRepository;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.dao.DuplicateKeyException;
@@ -56,12 +60,15 @@ public class TicketService {
     private final UserAccountRepository userAccountRepository;
     private final CustomerAccountRepository customerAccountRepository;
     private final StaffAccountRepository staffAccountRepository;
+    private final TicketTypeRepository ticketTypeRepository;
+    private final TicketTypeAttributeSlotService ticketTypeAttributeSlotService;
     private final ObjectMapper objectMapper;
     private final Clock clock;
     private final NotificationCenterService notificationCenterService;
     private final SlaService slaService;
     private final AttachmentService attachmentService;
     private final UnionDeskEventPublisher eventPublisher;
+    private final TicketWatcherService ticketWatcherService;
 
     public TicketService(
             TicketRepository ticketRepository,
@@ -75,12 +82,15 @@ public class TicketService {
             UserAccountRepository userAccountRepository,
             CustomerAccountRepository customerAccountRepository,
             StaffAccountRepository staffAccountRepository,
+            TicketTypeRepository ticketTypeRepository,
+            TicketTypeAttributeSlotService ticketTypeAttributeSlotService,
             ObjectMapper objectMapper,
             Clock clock,
             NotificationCenterService notificationCenterService,
             SlaService slaService,
             AttachmentService attachmentService,
-            UnionDeskEventPublisher eventPublisher) {
+            UnionDeskEventPublisher eventPublisher,
+            TicketWatcherService ticketWatcherService) {
         this.ticketRepository = ticketRepository;
         this.ticketReplyRepository = ticketReplyRepository;
         this.ticketHistoryRepository = ticketHistoryRepository;
@@ -92,23 +102,42 @@ public class TicketService {
         this.userAccountRepository = userAccountRepository;
         this.customerAccountRepository = customerAccountRepository;
         this.staffAccountRepository = staffAccountRepository;
+        this.ticketTypeRepository = ticketTypeRepository;
+        this.ticketTypeAttributeSlotService = ticketTypeAttributeSlotService;
         this.objectMapper = objectMapper;
         this.clock = clock;
         this.notificationCenterService = notificationCenterService;
         this.slaService = slaService;
         this.attachmentService = attachmentService;
         this.eventPublisher = eventPublisher;
+        this.ticketWatcherService = ticketWatcherService;
     }
 
     @Transactional
     public TicketSubmissionResult createCustomerTicket(UserContext context, long businessDomainId, CreateTicketCommand command) {
         DomainRow domain = loadDomain(businessDomainId);
         String ticketNo = nextTicketNo(domain.id(), domain.code());
-        String priority = resolvePriority(businessDomainId, command.priority());
+        PeeledFormValues peeled = peelSystemFormValues(command);
+        String resolvedDescription = resolveDescriptionFromTypeTemplate(
+                businessDomainId,
+                command.ticketTypeId(),
+                peeled.description() != null ? peeled.description() : command.description());
+        String priority = resolvePriority(businessDomainId, peeled.priority());
         String source = StringUtils.hasText(command.source()) ? command.source().trim() : "web";
-        String customFieldsJson = serializeJson(command.dynamicData());
+        String customFieldsJson = serializeJson(peeled.dynamicData());
         TicketTemplateRow template = command.templateId() == null ? null : loadTicketTemplate(businessDomainId, command.templateId());
-        TicketContent content = mergeTemplate(command, template, priority, customFieldsJson);
+        CreateTicketCommand peeledCommand = new CreateTicketCommand(
+                command.ticketTypeId(),
+                peeled.title() != null ? peeled.title() : command.title(),
+                resolvedDescription,
+                peeled.dynamicData(),
+                command.attachmentIds(),
+                command.templateId(),
+                priority,
+                command.source(),
+                peeled.assigneeStaffAccountId(),
+                peeled.watcherStaffAccountIds());
+        TicketContent content = mergeTemplate(peeledCommand, template, priority, customFieldsJson);
 
         TicketPo ticketPo = new TicketPo();
         ticketPo.setTicketNo(ticketNo);
@@ -122,6 +151,10 @@ public class TicketService {
         ticketPo.setCustomFields(content.customFieldsJson());
         ticketPo.setSlaFirstResponseDeadline(content.slaFirstResponseDeadline());
         ticketPo.setSlaResolutionDeadline(content.slaResolutionDeadline());
+        if (peeledCommand.assigneeStaffAccountId() != null) {
+            ticketPo.setAssignedTo(peeledCommand.assigneeStaffAccountId());
+            ticketPo.setAssigneeStaffAccountId(peeledCommand.assigneeStaffAccountId());
+        }
         ticketRepository.save(ticketPo);
 
         long ticketId = ticketPo.getId() == 0 ? ticketRepository.findIdByTicketNo(ticketNo) : ticketPo.getId();
@@ -132,6 +165,9 @@ public class TicketService {
 
         if (!content.attachmentIds().isEmpty()) {
             attachmentService.linkAttachmentsToTicket(ticketId, content.attachmentIds(), "public");
+        }
+        if (!peeledCommand.watcherStaffAccountIds().isEmpty()) {
+            ticketWatcherService.replaceWatchers(ticketId, peeledCommand.watcherStaffAccountIds());
         }
 
         slaService.applyOnCreate(businessDomainId, ticketId, content.ticketTypeId());
@@ -338,7 +374,31 @@ public class TicketService {
     @Transactional(readOnly = true)
     public TicketDetailResult getTicketDetail(long businessDomainId, long ticketId) {
         TicketRow ticket = loadTicketRow(businessDomainId, ticketId);
-        return new TicketDetailResult(ticket, listTicketReplies(businessDomainId, ticketId), listTicketHistory(businessDomainId, ticketId));
+        return new TicketDetailResult(
+                ticket,
+                listTicketReplies(businessDomainId, ticketId),
+                listTicketHistory(businessDomainId, ticketId),
+                ticketWatcherService.listStaffIds(ticketId));
+    }
+
+    @Transactional
+    public TicketActionResult replaceTicketWatchers(
+            UserContext context,
+            long businessDomainId,
+            long ticketId,
+            ReplaceWatchersCommand command) {
+        requireStaff(context);
+        loadTicketRow(businessDomainId, ticketId);
+        ticketWatcherService.replaceWatchers(ticketId, command.watcherStaffAccountIds());
+        recordHistory(
+                ticketId,
+                businessDomainId,
+                "watchers_replace",
+                null,
+                null,
+                context,
+                Map.of("watcher_staff_account_ids", command.watcherStaffAccountIds()));
+        return new TicketActionResult(ticketId);
     }
 
     @Transactional(readOnly = true)
@@ -486,6 +546,22 @@ public class TicketService {
         return domainCode + "-" + day + "-" + sequence;
     }
 
+    private String resolveDescriptionFromTypeTemplate(long domainId, Long ticketTypeId, String currentDescription) {
+        if (StringUtils.hasText(currentDescription) || ticketTypeId == null || ticketTypeId <= 0L) {
+            return currentDescription;
+        }
+        TicketTypePo type = ticketTypeRepository.findByIdAndDomainId(ticketTypeId, domainId);
+        if (type == null || !StringUtils.hasText(type.getDescriptionTemplateMd())) {
+            return currentDescription;
+        }
+        boolean hasDescriptionSlot = ticketTypeAttributeSlotService.listSlots(domainId, ticketTypeId).stream()
+                .anyMatch(slot -> "description".equals(slot.system_field_key()));
+        if (!hasDescriptionSlot) {
+            return currentDescription;
+        }
+        return type.getDescriptionTemplateMd();
+    }
+
     private String resolvePriority(long businessDomainId, String requestedPriority) {
         if (StringUtils.hasText(requestedPriority)) {
             return requestedPriority.trim();
@@ -598,6 +674,82 @@ public class TicketService {
         }
     }
 
+    private PeeledFormValues peelSystemFormValues(CreateTicketCommand command) {
+        Map<String, Object> dynamic = new LinkedHashMap<>(command.dynamicData());
+        String title = command.title();
+        String description = command.description();
+        String priority = command.priority();
+        Long assignee = command.assigneeStaffAccountId();
+        List<Long> watchers = new ArrayList<>(command.watcherStaffAccountIds());
+
+        Object titleValue = dynamic.remove("title");
+        if (!StringUtils.hasText(title) && titleValue != null) {
+            title = String.valueOf(titleValue);
+        }
+        Object descriptionValue = dynamic.remove("description");
+        if (!StringUtils.hasText(description) && descriptionValue != null) {
+            description = String.valueOf(descriptionValue);
+        }
+        Object priorityValue = dynamic.remove("priority");
+        if (!StringUtils.hasText(priority) && priorityValue != null) {
+            priority = String.valueOf(priorityValue);
+        }
+        Object assigneeValue = dynamic.remove("assignee");
+        if (assignee == null) {
+            assignee = parseLong(assigneeValue);
+        }
+        Object watchersValue = dynamic.remove("watchers");
+        if (watchers.isEmpty()) {
+            watchers = parseLongList(watchersValue);
+        }
+        return new PeeledFormValues(title, description, priority, assignee, watchers, dynamic);
+    }
+
+    private Long parseLong(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        String text = String.valueOf(value).trim();
+        if (!StringUtils.hasText(text)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(text);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("成员字段值无效");
+        }
+    }
+
+    private List<Long> parseLongList(Object value) {
+        if (value == null) {
+            return List.of();
+        }
+        if (value instanceof List<?> list) {
+            List<Long> result = new ArrayList<>();
+            for (Object item : list) {
+                Long parsed = parseLong(item);
+                if (parsed != null) {
+                    result.add(parsed);
+                }
+            }
+            return result;
+        }
+        Long single = parseLong(value);
+        return single == null ? List.of() : List.of(single);
+    }
+
+    private record PeeledFormValues(
+            String title,
+            String description,
+            String priority,
+            Long assigneeStaffAccountId,
+            List<Long> watcherStaffAccountIds,
+            Map<String, Object> dynamicData) {
+    }
+
     private String normalize(String value) {
         return value == null ? "" : value.trim().toLowerCase();
     }
@@ -696,11 +848,16 @@ public class TicketService {
             List<Long> attachmentIds,
             Long templateId,
             String priority,
-            String source) {
+            String source,
+            Long assigneeStaffAccountId,
+            List<Long> watcherStaffAccountIds) {
 
         public CreateTicketCommand {
             attachmentIds = attachmentIds == null ? List.of() : List.copyOf(attachmentIds);
             dynamicData = dynamicData == null ? Map.of() : Map.copyOf(dynamicData);
+            watcherStaffAccountIds = watcherStaffAccountIds == null
+                    ? List.of()
+                    : List.copyOf(watcherStaffAccountIds);
         }
     }
 
@@ -720,13 +877,29 @@ public class TicketService {
     public record TicketDetailResult(
             TicketRow ticket,
             List<TicketReplyRow> replies,
-            List<TicketHistoryRow> history) {
+            List<TicketHistoryRow> history,
+            List<Long> watcherStaffAccountIds) {
+
+        public TicketDetailResult {
+            watcherStaffAccountIds = watcherStaffAccountIds == null
+                    ? List.of()
+                    : List.copyOf(watcherStaffAccountIds);
+        }
     }
 
     public record ClaimTicketCommand(long version) {
     }
 
     public record AssignTicketCommand(long version, long assigneeStaffAccountId) {
+    }
+
+    public record ReplaceWatchersCommand(List<Long> watcherStaffAccountIds) {
+
+        public ReplaceWatchersCommand {
+            watcherStaffAccountIds = watcherStaffAccountIds == null
+                    ? List.of()
+                    : List.copyOf(watcherStaffAccountIds);
+        }
     }
 
     public record ReplyTicketCommand(long version, String content, Long quickReplyTemplateId, List<Long> attachmentIds) {

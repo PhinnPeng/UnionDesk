@@ -13,6 +13,10 @@
         <result property="phone" column="phone"/>
         <result property="email" column="email"/>
         <result property="status" column="status"/>
+        <result property="employmentStatus" column="employment_status"/>
+        <result property="offboardedAt" column="offboarded_at"/>
+        <result property="offboardedBy" column="offboarded_by"/>
+        <result property="offboardReason" column="offboard_reason"/>
         <result property="source" column="source"/>
         <result property="authVersion" column="auth_version"/>
     </resultMap>
@@ -27,7 +31,8 @@
     </resultMap>
 
     <sql id="staffColumns">
-        id, subject_id, username, real_name, nickname, avatar_url, phone, email, status, source, auth_version
+        id, subject_id, username, real_name, nickname, avatar_url, phone, email, status,
+        employment_status, offboarded_at, offboarded_by, offboard_reason, source, auth_version
     </sql>
 
     <select id="selectAll" resultMap="StaffAccountPo">
@@ -41,10 +46,10 @@
     <insert id="insert" parameterType="com.uniondesk.iam.entity.StaffAccountPo" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO staff_account (
             subject_id, username, real_name, nickname, avatar_url, phone, email, password_hash,
-            must_change_password, status, source, auth_version, password_changed_at, created_at, updated_at
+            must_change_password, status, employment_status, source, auth_version, password_changed_at, created_at, updated_at
         )
         VALUES (#{subjectId}, #{username}, #{realName}, #{nickname}, NULL, #{phone}, #{email}, #{passwordHash},
-                0, 'active', 'local', 1, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
+                0, 'active', 'active', 'local', 1, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
     </insert>
 
     <update id="updateSelective">
@@ -64,6 +69,28 @@
 
     <update id="updateStatus">
         UPDATE staff_account SET status = #{status}, updated_at = CURRENT_TIMESTAMP(3) WHERE id = #{id}
+    </update>
+
+    <update id="offboard">
+        UPDATE staff_account
+        SET employment_status = 'offboarded',
+            status = 'disabled',
+            offboarded_at = #{offboardedAt},
+            offboarded_by = #{offboardedBy},
+            offboard_reason = #{offboardReason},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id}
+    </update>
+
+    <update id="restoreEmployment">
+        UPDATE staff_account
+        SET employment_status = 'active',
+            status = 'active',
+            offboarded_at = NULL,
+            offboarded_by = NULL,
+            offboard_reason = NULL,
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id}
     </update>
 
     <select id="selectPresentationById" resultMap="StaffAccountPresentationPo">
@@ -92,7 +119,23 @@
           AND dm.deleted_at IS NULL
           AND dm.status = 'active'
           AND sa.status = 'active'
+          AND sa.employment_status &lt;&gt; 'offboarded'
           AND dm.staff_account_id &lt;&gt; #{excludeStaffAccountId}
     </select>
+
+    <select id="selectOrganizationIds" resultType="java.lang.Long">
+        SELECT organization_id FROM staff_organization
+        WHERE staff_account_id = #{staffAccountId}
+        ORDER BY organization_id
+    </select>
+
+    <delete id="deleteOrganizations">
+        DELETE FROM staff_organization WHERE staff_account_id = #{staffAccountId}
+    </delete>
+
+    <insert id="insertOrganization">
+        INSERT INTO staff_organization (staff_account_id, organization_id, created_at)
+        VALUES (#{staffAccountId}, #{organizationId}, CURRENT_TIMESTAMP(3))
+    </insert>
 
 </mapper>

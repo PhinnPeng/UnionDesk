@@ -17,6 +17,7 @@ public final class DefaultStatusFlowProvider {
         Map<String, Object> flow = new LinkedHashMap<>();
         flow.put("states", List.of());
         flow.put("transitions", List.of());
+        flow.put(StatusFlowValidator.INITIAL_STATE_CODE_KEY, null);
         return flow;
     }
 

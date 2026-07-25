@@ -19,7 +19,7 @@
     </select>
 
     <select id="selectUsernameById" resultType="java.lang.String">
-        SELECT username FROM user_account WHERE id = #{id} LIMIT 1
+        SELECT username FROM staff_account WHERE id = #{id} LIMIT 1
     </select>
 
     <select id="selectIdByUsername" resultType="java.lang.Long">

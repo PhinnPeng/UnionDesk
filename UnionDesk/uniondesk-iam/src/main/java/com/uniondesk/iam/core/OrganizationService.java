@@ -144,7 +144,7 @@ public class OrganizationService {
             return;
         }
         if (organizationRepository.countUserAccountById(leaderUserId) == 0) {
-            throw new IllegalArgumentException("负责人不存在");
+            throw new IllegalArgumentException("负责人员工不存在");
         }
     }
 

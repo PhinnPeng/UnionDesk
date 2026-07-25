@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.ticket.mapper.TicketTypeAttributeSlotMapper">
+
+    <resultMap id="TicketTypeAttributeSlotPo" type="com.uniondesk.ticket.entity.TicketTypeAttributeSlotPo">
+        <id property="id" column="id"/>
+        <result property="ticketTypeId" column="ticket_type_id"/>
+        <result property="attributeId" column="attribute_id"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="slotConfig" column="slot_config"/>
+        <result property="status" column="status"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="updatedBy" column="updated_by"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="SlotColumns">
+        id, ticket_type_id, attribute_id, sort_order, slot_config, status,
+        created_by, updated_by, created_at, updated_at
+    </sql>
+
+    <select id="findByTicketTypeId" resultMap="TicketTypeAttributeSlotPo">
+        SELECT <include refid="SlotColumns"/>
+        FROM ticket_type_attribute
+        WHERE ticket_type_id = #{ticketTypeId}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="findById" resultMap="TicketTypeAttributeSlotPo">
+        SELECT <include refid="SlotColumns"/>
+        FROM ticket_type_attribute
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="findByTypeAndAttribute" resultMap="TicketTypeAttributeSlotPo">
+        SELECT <include refid="SlotColumns"/>
+        FROM ticket_type_attribute
+        WHERE ticket_type_id = #{ticketTypeId}
+          AND attribute_id = #{attributeId}
+        LIMIT 1
+    </select>
+
+    <select id="findMaxSortOrder" resultType="java.lang.Integer">
+        SELECT MAX(sort_order) FROM ticket_type_attribute WHERE ticket_type_id = #{ticketTypeId}
+    </select>
+
+    <insert id="insert" parameterType="com.uniondesk.ticket.entity.TicketTypeAttributeSlotPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ticket_type_attribute (
+            ticket_type_id, attribute_id, sort_order, slot_config, status,
+            created_by, updated_by, created_at, updated_at
+        )
+        VALUES (
+            #{ticketTypeId}, #{attributeId}, #{sortOrder}, #{slotConfig}, #{status},
+            #{createdBy}, #{updatedBy}, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
+        )
+    </insert>
+
+    <update id="updateSlotConfig">
+        UPDATE ticket_type_attribute
+        SET slot_config = #{slotConfig},
+            updated_by = #{updatedBy},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateSortOrder">
+        UPDATE ticket_type_attribute
+        SET sort_order = #{sortOrder},
+            updated_by = #{updatedBy},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM ticket_type_attribute WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByTicketTypeId">
+        DELETE FROM ticket_type_attribute WHERE ticket_type_id = #{ticketTypeId}
+    </delete>
+
+    <select id="countByAttributeId" resultType="int">
+        SELECT COUNT(1) FROM ticket_type_attribute WHERE attribute_id = #{attributeId}
+    </select>
+
+</mapper>

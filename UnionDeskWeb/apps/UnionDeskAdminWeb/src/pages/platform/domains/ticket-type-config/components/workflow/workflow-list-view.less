@@ -1,0 +1,333 @@
+// 工作流列表视图 — Ant Design Token 适配深/浅色
+
+.workflow-list-container {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	height: 100%;
+	overflow: auto;
+	padding: 0 24px 16px;
+	color: var(--ant-color-text);
+
+	.workflow-list-empty {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 48px 0;
+	}
+
+	.list-search-bar {
+		display: flex;
+		justify-content: flex-end;
+		padding: 0 0 4px;
+	}
+
+	.state-card {
+		background: var(--ant-color-bg-container);
+		border: 1px solid var(--ant-color-border-secondary);
+		border-radius: 6px;
+		overflow: hidden;
+		transition: box-shadow 0.2s ease, opacity 0.2s ease;
+
+		&.dragging {
+			opacity: 0.5;
+			box-shadow: var(--ant-box-shadow-secondary, 0 8px 24px rgb(0 0 0 / 12%));
+			z-index: 10;
+		}
+
+		&:not(.dragging):hover {
+			box-shadow: var(--ant-box-shadow-tertiary, 0 2px 8px rgb(0 0 0 / 6%));
+		}
+
+		.state-card-header {
+			display: flex;
+			align-items: center;
+			gap: 4px;
+			height: 48px;
+			padding: 0 12px;
+			background: var(--ant-color-fill-quaternary);
+			border-bottom: 1px solid var(--ant-color-border-secondary);
+			border-radius: 0;
+
+			.drag-handle {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				width: 20px;
+				height: 20px;
+				cursor: grab;
+				color: var(--ant-color-text-quaternary);
+				font-size: 14px;
+				margin-right: 4px;
+				flex-shrink: 0;
+				transition: color 0.2s ease;
+
+				&:hover {
+					color: var(--ant-color-text-secondary);
+				}
+
+				&:active {
+					cursor: grabbing;
+				}
+			}
+
+			.state-card-more {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				width: 24px;
+				height: 24px;
+				cursor: pointer;
+				color: var(--ant-color-text-quaternary);
+				font-size: 14px;
+				border-radius: 3px;
+				transition: color 0.2s ease, background 0.2s ease;
+				flex-shrink: 0;
+
+				&:hover {
+					color: var(--ant-color-text-secondary);
+					background: var(--ant-color-fill-quaternary);
+				}
+			}
+
+			.state-card-title {
+				font-size: 16px;
+				font-weight: 500;
+				line-height: 24px;
+				color: var(--ant-color-text);
+			}
+
+			.initial-state-tag {
+				display: flex;
+				align-items: center;
+				padding: 0 10px;
+				font-size: 12px;
+				color: var(--ant-color-text-secondary);
+				background: var(--ant-color-bg-container);
+				border: 1px solid var(--ant-color-border);
+				border-radius: 10px;
+				margin-left: 4px;
+				height: 20px;
+			}
+
+			.state-card-type {
+				font-size: 12px;
+				color: var(--ant-color-text-secondary);
+				margin-left: 4px;
+			}
+
+			.state-card-header-spacer {
+				flex: 1;
+			}
+
+			.state-card-delete {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				width: 24px;
+				height: 24px;
+				cursor: pointer;
+				color: var(--ant-color-text-quaternary);
+				font-size: 14px;
+
+				&:hover {
+					color: var(--ant-color-error);
+				}
+			}
+		}
+
+		.state-card-body {
+			padding: 0;
+			background: var(--ant-color-bg-container);
+
+			.no-steps {
+				padding: 16px 12px;
+				font-size: 13px;
+				color: var(--ant-color-text-quaternary);
+				text-align: center;
+			}
+
+			.transfer-box-wrapper {
+				display: flex;
+				background: transparent;
+				border-radius: 0;
+			}
+
+			.transfer-box {
+				display: block;
+				width: 100%;
+			}
+
+			.transfer-header {
+				display: flex;
+				align-items: center;
+				height: 40px;
+				background: transparent;
+				border-radius: 0;
+
+				.col {
+					font-size: 12px;
+					color: var(--ant-color-text-tertiary);
+					display: flex;
+					align-items: center;
+
+					&.col-name {
+						flex: 0 0 auto;
+						width: 200px;
+						padding: 0 8px 0 24px;
+					}
+
+					&.col-status {
+						flex: 0 0 auto;
+						width: 140px;
+						padding: 0 8px;
+					}
+
+					&.col-arrow {
+						flex: 0 0 auto;
+						width: 91px;
+						padding: 0 8px;
+					}
+
+					&.col-authority {
+						flex: 1 0 auto;
+						padding: 0 8px 0 45px;
+					}
+				}
+			}
+
+			.transfer-step {
+				display: flex;
+				align-items: center;
+				height: 48px;
+				background: transparent;
+				border-radius: 0;
+				cursor: pointer;
+				transition: background 0.15s ease, opacity 0.2s ease;
+
+				.transfer-step__menu-trigger {
+					display: flex;
+					align-items: center;
+					width: 100%;
+					height: 100%;
+					min-width: 0;
+				}
+
+				&:hover {
+					background: var(--ant-color-fill-quaternary);
+
+					.step-drag-handle {
+						opacity: 1;
+					}
+				}
+
+				&.dragging {
+					opacity: 0.5;
+					background: var(--ant-color-primary-bg);
+
+					.step-drag-handle {
+						opacity: 1;
+					}
+				}
+
+				.col {
+					display: flex;
+					align-items: center;
+
+					&.col-name {
+						flex: 0 0 auto;
+						width: 200px;
+						padding: 0 8px;
+						gap: 6px;
+
+						.step-drag-handle {
+							display: flex;
+							align-items: center;
+							justify-content: center;
+							width: 16px;
+							height: 16px;
+							cursor: grab;
+							color: var(--ant-color-text-quaternary);
+							font-size: 12px;
+							flex-shrink: 0;
+							opacity: 0;
+							transition: color 0.2s ease, opacity 0.2s ease;
+
+							&:hover {
+								color: var(--ant-color-text-secondary);
+							}
+
+							&:active {
+								cursor: grabbing;
+							}
+						}
+
+						.step-text {
+							font-size: 14px;
+							font-weight: 500;
+							color: var(--ant-color-text);
+							overflow: hidden;
+							text-overflow: ellipsis;
+							white-space: nowrap;
+						}
+					}
+
+					&.col-status {
+						flex: 0 0 auto;
+						width: 140px;
+						padding: 0 8px;
+					}
+
+					&.col-arrow {
+						flex: 0 0 auto;
+						width: 91px;
+						padding: 0 8px;
+					}
+
+					&.col-authority {
+						flex: 1 0 auto;
+						padding: 0 8px 0 45px;
+						justify-content: space-between;
+
+						.authority-text {
+							font-size: 14px;
+							color: var(--ant-color-text-secondary);
+						}
+
+						.trash-icon {
+							display: flex;
+							align-items: center;
+							justify-content: center;
+							width: 24px;
+							height: 24px;
+							cursor: pointer;
+							color: var(--ant-color-text-quaternary);
+							font-size: 14px;
+
+							&:hover {
+								color: var(--ant-color-error);
+							}
+						}
+					}
+				}
+			}
+
+			.transfer-add {
+				display: flex;
+				align-items: center;
+				height: 44px;
+
+				.add-btn {
+					font-size: 14px;
+					color: var(--ant-color-primary);
+					cursor: pointer;
+					padding: 0 0 0 24px;
+
+					&:hover {
+						opacity: 0.8;
+					}
+				}
+			}
+		}
+	}
+}

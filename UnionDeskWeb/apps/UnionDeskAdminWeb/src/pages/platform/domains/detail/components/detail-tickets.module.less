@@ -1,0 +1,67 @@
+.listTitle {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: 600;
+}
+
+.listTitleBar {
+	display: inline-block;
+	width: 3px;
+	height: 16px;
+	border-radius: 2px;
+	background: var(--ant-color-primary);
+}
+
+.typeIcon {
+	display: flex;
+	height: 40px;
+	width: 40px;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	border-radius: 10px;
+	border: 1px solid color-mix(in srgb, var(--ant-color-primary) 25%, transparent);
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--ant-color-primary) 18%, transparent),
+		color-mix(in srgb, var(--ant-color-primary) 6%, transparent)
+	);
+	box-shadow: 0 0 16px color-mix(in srgb, var(--ant-color-primary) 22%, transparent);
+	font-size: 20px;
+	color: var(--ant-color-primary);
+}
+
+.nameCell {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}
+
+.nameMeta {
+	min-width: 0;
+}
+
+.nameTitleRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+}
+
+.typesTable {
+	width: 100%;
+}
+
+.statusCell,
+.actionsCell {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.rowDisabled {
+	opacity: 0.72;
+}

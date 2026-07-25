@@ -24,7 +24,7 @@
         SELECT
             l.id,
             l.subject_id,
-            COALESCE(ua.nickname, ca.nickname, sa.real_name, sa.username, ca.username, l.login_name, 'system') AS operator_name,
+            COALESCE(sa.real_name, sa.nickname, sa.username, ca.nickname, ca.username, l.login_name, 'system') AS operator_name,
             l.business_domain_id,
             bd.name AS domain_name,
             l.login_name,
@@ -37,7 +37,6 @@
             l.fail_reason,
             l.created_at
         FROM login_log l
-        LEFT JOIN user_account ua ON ua.username = l.login_name
         LEFT JOIN staff_account sa ON sa.subject_id = l.subject_id
         LEFT JOIN customer_account ca ON ca.subject_id = l.subject_id
         LEFT JOIN business_domain bd ON bd.id = l.business_domain_id
@@ -46,7 +45,6 @@
     <sql id="loginLogCountSelect">
         SELECT COUNT(*)
         FROM login_log l
-        LEFT JOIN user_account ua ON ua.username = l.login_name
         LEFT JOIN staff_account sa ON sa.subject_id = l.subject_id
         LEFT JOIN customer_account ca ON ca.subject_id = l.subject_id
         LEFT JOIN business_domain bd ON bd.id = l.business_domain_id
@@ -73,10 +71,9 @@
                 AND l.result = #{result}
             </if>
             <if test="keyword != null and keyword != ''">
-                AND (ua.username LIKE CONCAT('%', #{keyword}, '%')
-                     OR ua.mobile LIKE CONCAT('%', #{keyword}, '%')
-                     OR ua.email LIKE CONCAT('%', #{keyword}, '%')
-                     OR sa.username LIKE CONCAT('%', #{keyword}, '%')
+                AND (sa.username LIKE CONCAT('%', #{keyword}, '%')
+                     OR sa.phone LIKE CONCAT('%', #{keyword}, '%')
+                     OR sa.email LIKE CONCAT('%', #{keyword}, '%')
                      OR ca.username LIKE CONCAT('%', #{keyword}, '%')
                      OR ca.nickname LIKE CONCAT('%', #{keyword}, '%')
                      OR l.login_name LIKE CONCAT('%', #{keyword}, '%'))
@@ -85,12 +82,11 @@
                 AND l.ip LIKE CONCAT('%', #{ip}, '%')
             </if>
             <if test="username != null and username != ''">
-                AND (ua.username LIKE CONCAT('%', #{username}, '%')
+                AND (sa.username LIKE CONCAT('%', #{username}, '%')
                      OR l.login_name LIKE CONCAT('%', #{username}, '%'))
             </if>
             <if test="nickname != null and nickname != ''">
-                AND (ua.nickname LIKE CONCAT('%', #{nickname}, '%')
-                     OR sa.real_name LIKE CONCAT('%', #{nickname}, '%')
+                AND (sa.real_name LIKE CONCAT('%', #{nickname}, '%')
                      OR sa.nickname LIKE CONCAT('%', #{nickname}, '%')
                      OR ca.nickname LIKE CONCAT('%', #{nickname}, '%'))
             </if>

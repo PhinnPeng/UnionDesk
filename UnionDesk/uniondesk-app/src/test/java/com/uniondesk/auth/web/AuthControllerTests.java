@@ -41,8 +41,8 @@ class AuthControllerTests {
 
         mockMvc.perform(post("/api/v1/auth/captcha/challenge"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.challengeId").value("challenge-1"))
-                .andExpect(jsonPath("$.expiresInSeconds").value(120));
+                .andExpect(jsonPath("$.data.challengeId").value("challenge-1"))
+                .andExpect(jsonPath("$.data.expiresInSeconds").value(120));
     }
 
     @Test
@@ -67,8 +67,8 @@ class AuthControllerTests {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.captchaToken").value("captcha-token-1"))
-                .andExpect(jsonPath("$.expiresInSeconds").value(120));
+                .andExpect(jsonPath("$.data.captchaToken").value("captcha-token-1"))
+                .andExpect(jsonPath("$.data.expiresInSeconds").value(120));
     }
 
     @Test
@@ -119,9 +119,9 @@ class AuthControllerTests {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("access-token-1"))
-                .andExpect(jsonPath("$.refreshToken").value("refresh-token-1"))
-                .andExpect(jsonPath("$.accountId").value(101));
+                .andExpect(jsonPath("$.data.accessToken").value("access-token-1"))
+                .andExpect(jsonPath("$.data.refreshToken").value("refresh-token-1"))
+                .andExpect(jsonPath("$.data.accountId").value(101));
     }
 
     @Test
@@ -162,8 +162,8 @@ class AuthControllerTests {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.channel").value("email"))
-                .andExpect(jsonPath("$.hint").value("c***@uniondesk.local"));
+                .andExpect(jsonPath("$.data.channel").value("email"))
+                .andExpect(jsonPath("$.data.hint").value("c***@uniondesk.local"));
     }
 
     @Test
@@ -191,11 +191,11 @@ class AuthControllerTests {
 
         mockMvc.perform(get("/api/v1/auth/session"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId").value(2))
-                .andExpect(jsonPath("$.role").value("super_admin"))
-                .andExpect(jsonPath("$.businessDomainId").value(10))
-                .andExpect(jsonPath("$.sid").value("sid-123"))
-                .andExpect(jsonPath("$.clientCode").value("ud-admin-web"));
+                .andExpect(jsonPath("$.data.userId").value(2))
+                .andExpect(jsonPath("$.data.role").value("super_admin"))
+                .andExpect(jsonPath("$.data.businessDomainId").value(10))
+                .andExpect(jsonPath("$.data.sid").value("sid-123"))
+                .andExpect(jsonPath("$.data.clientCode").value("ud-admin-web"));
     }
 
     @Test
@@ -238,10 +238,10 @@ class AuthControllerTests {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.captchaEnabled").value(true))
-                .andExpect(jsonPath("$.wechatLoginEnabled").value(true))
-                .andExpect(jsonPath("$.captchaHint").value("captcha-hint"))
-                .andExpect(jsonPath("$.wechatHint").value("wechat-hint"));
+                .andExpect(jsonPath("$.data.captchaEnabled").value(true))
+                .andExpect(jsonPath("$.data.wechatLoginEnabled").value(true))
+                .andExpect(jsonPath("$.data.captchaHint").value("captcha-hint"))
+                .andExpect(jsonPath("$.data.wechatHint").value("wechat-hint"));
         verify(authService).updateConfig(any());
     }
 
@@ -268,8 +268,8 @@ class AuthControllerTests {
                         .contentType("application/json")
                         .content("{\"captchaEnabled\":true}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.captchaEnabled").value(true))
-                .andExpect(jsonPath("$.wechatLoginEnabled").value(true));
+                .andExpect(jsonPath("$.data.captchaEnabled").value(true))
+                .andExpect(jsonPath("$.data.wechatLoginEnabled").value(true));
         verify(authService).updateConfig(any());
     }
 
@@ -297,10 +297,10 @@ class AuthControllerTests {
 
         mockMvc.perform(get("/api/v1/auth/online-sessions").param("limit", "25"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].sid").value("sid-1"))
-                .andExpect(jsonPath("$[0].username").value("customer"))
-                .andExpect(jsonPath("$[0].clientCode").value("ud-customer-web"))
-                .andExpect(jsonPath("$[0].sessionStatus").value("active"));
+                .andExpect(jsonPath("$.data.items[0].sid").value("sid-1"))
+                .andExpect(jsonPath("$.data.items[0].username").value("customer"))
+                .andExpect(jsonPath("$.data.items[0].clientCode").value("ud-customer-web"))
+                .andExpect(jsonPath("$.data.items[0].sessionStatus").value("active"));
     }
 
     @Test
@@ -339,10 +339,10 @@ class AuthControllerTests {
                         .contentType("application/json")
                         .content("{\"refreshToken\":\"old-refresh-token\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("new-access"))
-                .andExpect(jsonPath("$.refreshToken").value("new-refresh"))
-                .andExpect(jsonPath("$.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.expiresInSeconds").value(86400));
+                .andExpect(jsonPath("$.data.accessToken").value("new-access"))
+                .andExpect(jsonPath("$.data.refreshToken").value("new-refresh"))
+                .andExpect(jsonPath("$.data.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.data.expiresInSeconds").value(86400));
     }
 
     @Test
@@ -376,10 +376,10 @@ class AuthControllerTests {
 
         mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId").value(1))
-                .andExpect(jsonPath("$.username").value("customer"))
-                .andExpect(jsonPath("$.role").value("customer"))
-                .andExpect(jsonPath("$.roles[0]").value("customer"));
+                .andExpect(jsonPath("$.data.userId").value(1))
+                .andExpect(jsonPath("$.data.username").value("customer"))
+                .andExpect(jsonPath("$.data.role").value("customer"))
+                .andExpect(jsonPath("$.data.roles[0]").value("customer"));
     }
 
     @Test
@@ -404,9 +404,9 @@ class AuthControllerTests {
                         .contentType("application/json")
                         .content("{\"password\":\"admin123\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.stepUpToken").value("step-up-token-1"))
-                .andExpect(jsonPath("$.mode").value("session_15m"))
-                .andExpect(jsonPath("$.expiresInSeconds").value(900));
+                .andExpect(jsonPath("$.data.stepUpToken").value("step-up-token-1"))
+                .andExpect(jsonPath("$.data.mode").value("session_15m"))
+                .andExpect(jsonPath("$.data.expiresInSeconds").value(900));
     }
 
     @Test
@@ -425,7 +425,7 @@ class AuthControllerTests {
 
     private MockMvc mockMvc(AuthService authService, AuthCaptchaService authCaptchaService) {
         return MockMvcBuilders.standaloneSetup(new AuthController(authService, authCaptchaService))
-                .setControllerAdvice(new com.uniondesk.common.web.ApiExceptionHandler())
+                .setControllerAdvice(new com.uniondesk.common.web.ApiExceptionHandler(), new com.uniondesk.common.web.ApiResponseWrapper())
                 .build();
     }
 }

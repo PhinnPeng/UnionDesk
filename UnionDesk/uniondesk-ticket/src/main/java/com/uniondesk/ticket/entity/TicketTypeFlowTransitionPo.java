@@ -20,6 +20,7 @@ public class TicketTypeFlowTransitionPo {
     private String roleIdsJson;
     private String requiredSlotIdsJson;
     private String attributeUpdatesJson;
+    private String additionalAttributesJson;
     private int sortOrder;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -110,6 +111,14 @@ public class TicketTypeFlowTransitionPo {
 
     public void setAttributeUpdatesJson(String attributeUpdatesJson) {
         this.attributeUpdatesJson = attributeUpdatesJson;
+    }
+
+    public String getAdditionalAttributesJson() {
+        return additionalAttributesJson;
+    }
+
+    public void setAdditionalAttributesJson(String additionalAttributesJson) {
+        this.additionalAttributesJson = additionalAttributesJson;
     }
 
     public int getSortOrder() {

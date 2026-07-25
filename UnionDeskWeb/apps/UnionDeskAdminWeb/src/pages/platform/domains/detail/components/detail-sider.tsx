@@ -42,7 +42,7 @@ const NAV_ITEMS: { key: DetailTabKey; label: string; icon: React.ReactNode }[] =
 	{ key: "roles", label: "角色管理", icon: <SafetyCertificateOutlined /> },
 	{ key: "customers", label: "客户管理", icon: <IdcardOutlined /> },
 	{ key: "onboarding", label: "入域管理", icon: <UserAddOutlined /> },
-	{ key: "tickets", label: "工单管理", icon: <FormOutlined /> },
+	{ key: "tickets", label: "事项管理", icon: <FormOutlined /> },
 	{ key: "blockwords", label: "屏蔽词库", icon: <StopOutlined /> },
 	{ key: "notifications", label: "通知配置", icon: <BellOutlined /> },
 	{ key: "config", label: "参数配置", icon: <SettingOutlined /> },

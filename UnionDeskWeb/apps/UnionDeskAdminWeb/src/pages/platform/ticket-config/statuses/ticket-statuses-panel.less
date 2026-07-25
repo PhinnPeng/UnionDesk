@@ -1,0 +1,40 @@
+.ticket-statuses-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.ticket-statuses-panel__header {
+	padding-inline: 4px;
+}
+
+.ticket-statuses-panel__title {
+	margin-bottom: 4px !important;
+}
+
+.ticket-statuses-panel__subtitle {
+	margin-bottom: 0 !important;
+}
+
+.ticket-statuses-panel__toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.ticket-statuses-panel__search {
+	max-width: 320px;
+}
+
+@media (max-width: 768px) {
+	.ticket-statuses-panel__toolbar {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.ticket-statuses-panel__search {
+		max-width: none;
+	}
+}

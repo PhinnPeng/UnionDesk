@@ -403,8 +403,10 @@ public class AdminMenuService {
                     && !NODE_TYPE_CATALOG.equals(parent.nodeType())) {
                 throw new IllegalArgumentException("菜单节点的父级必须是目录或菜单节点");
             }
-            if (NODE_TYPE_CATALOG.equals(normalizedNodeType) && !NODE_TYPE_CATALOG.equals(parent.nodeType())) {
-                throw new IllegalArgumentException("目录节点的父级必须是目录节点");
+            if (NODE_TYPE_CATALOG.equals(normalizedNodeType)
+                    && !NODE_TYPE_CATALOG.equals(parent.nodeType())
+                    && !NODE_TYPE_MENU.equals(parent.nodeType())) {
+                throw new IllegalArgumentException("目录节点的父级必须是目录或菜单节点");
             }
             if (normalizedScope == null) {
                 normalizedScope = parent.scope();

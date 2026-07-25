@@ -2,7 +2,9 @@ package com.uniondesk.iam.core;
 
 import com.uniondesk.iam.entity.StaffAccountPo;
 import com.uniondesk.iam.repository.StaffAccountRepository;
-import java.util.ArrayList;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -17,17 +19,25 @@ import org.springframework.util.StringUtils;
 @Service
 public class StaffAccountService {
 
+    private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+
     private final StaffAccountRepository staffAccountRepository;
     private final IdentitySubjectService identitySubjectService;
+    private final PlatformRoleService platformRoleService;
     private final PasswordEncoder passwordEncoder;
+    private final Clock clock;
 
     public StaffAccountService(
             StaffAccountRepository staffAccountRepository,
             IdentitySubjectService identitySubjectService,
-            PasswordEncoder passwordEncoder) {
+            PlatformRoleService platformRoleService,
+            PasswordEncoder passwordEncoder,
+            Clock clock) {
         this.staffAccountRepository = staffAccountRepository;
         this.identitySubjectService = identitySubjectService;
+        this.platformRoleService = platformRoleService;
         this.passwordEncoder = passwordEncoder;
+        this.clock = clock;
     }
 
     public List<StaffAccount> listAll() {
@@ -65,6 +75,10 @@ public class StaffAccountService {
             throw new IllegalStateException("员工账号创建失败");
         }
         bindDomainMemberships(po.getId(), command.businessDomainIds(), command.roleCodes());
+        bindPlatformRoles(po.getId(), command.roleCodes());
+        if (command.organizationIds() != null) {
+            staffAccountRepository.replaceOrganizations(po.getId(), command.organizationIds());
+        }
         return findById(po.getId()).orElseThrow(() -> new IllegalStateException("员工账号创建失败"));
     }
 
@@ -88,20 +102,52 @@ public class StaffAccountService {
             List<String> roleCodes = command.roleCodes() != null ? command.roleCodes() : listDomainRoleCodes(staffAccountId);
             List<Long> domainIds = command.businessDomainIds() != null ? command.businessDomainIds() : listBusinessDomainIds(staffAccountId);
             bindDomainMemberships(staffAccountId, domainIds, roleCodes);
+            if (command.roleCodes() != null) {
+                bindPlatformRoles(staffAccountId, command.roleCodes());
+            }
+        }
+        if (command.organizationIds() != null) {
+            staffAccountRepository.replaceOrganizations(staffAccountId, command.organizationIds());
         }
         return findById(staffAccountId).orElseThrow(() -> new IllegalArgumentException("员工账号不存在"));
     }
 
     @Transactional
     public StaffAccount disable(long staffAccountId) {
+        StaffAccount existing = findById(staffAccountId).orElseThrow(() -> new IllegalArgumentException("员工账号不存在"));
+        if ("offboarded".equalsIgnoreCase(existing.employmentStatus())) {
+            throw new IllegalArgumentException("已离职员工请使用恢复后再停用");
+        }
         staffAccountRepository.updateStatus(staffAccountId, "disabled");
         staffAccountRepository.revokeActiveSessions(staffAccountId, "staff_disabled");
         return findById(staffAccountId).orElseThrow(() -> new IllegalArgumentException("员工账号不存在"));
     }
 
     @Transactional
+    public StaffAccount offboard(long staffAccountId, long operatorStaffId, String reason) {
+        StaffAccount existing = findById(staffAccountId).orElseThrow(() -> new IllegalArgumentException("员工账号不存在"));
+        if ("offboarded".equalsIgnoreCase(existing.employmentStatus())) {
+            return existing;
+        }
+        platformRoleService.validateStaffStatusChange(staffAccountId, "offboarded");
+        LocalDateTime now = LocalDateTime.now(clock);
+        staffAccountRepository.offboard(
+                staffAccountId,
+                now,
+                operatorStaffId > 0 ? operatorStaffId : null,
+                StringUtils.hasText(reason) ? reason.trim() : null);
+        staffAccountRepository.revokeActiveSessions(staffAccountId, "staff_offboarded");
+        return findById(staffAccountId).orElseThrow(() -> new IllegalArgumentException("员工账号不存在"));
+    }
+
+    @Transactional
     public StaffAccount restore(long staffAccountId) {
-        staffAccountRepository.updateStatus(staffAccountId, "active");
+        StaffAccount existing = findById(staffAccountId).orElseThrow(() -> new IllegalArgumentException("员工账号不存在"));
+        if ("offboarded".equalsIgnoreCase(existing.employmentStatus())) {
+            staffAccountRepository.restoreEmployment(staffAccountId);
+        } else {
+            staffAccountRepository.updateStatus(staffAccountId, "active");
+        }
         return findById(staffAccountId).orElseThrow(() -> new IllegalArgumentException("员工账号不存在"));
     }
 
@@ -111,6 +157,25 @@ public class StaffAccountService {
 
     public List<String> listDomainRoleCodes(long staffAccountId) {
         return staffAccountRepository.findDomainRoleCodes(staffAccountId);
+    }
+
+    public List<Long> listOrganizationIds(long staffAccountId) {
+        return staffAccountRepository.findOrganizationIds(staffAccountId);
+    }
+
+    private void bindPlatformRoles(long staffAccountId, List<String> roleCodes) {
+        if (roleCodes == null || roleCodes.isEmpty()) {
+            return;
+        }
+        List<String> platformCodes = roleCodes.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .filter(code -> platformRoleService.getPlatformRoleIdByCode(code) != null)
+                .distinct()
+                .toList();
+        if (!platformCodes.isEmpty()) {
+            platformRoleService.assignPlatformRoles(staffAccountId, platformCodes);
+        }
     }
 
     private void bindDomainMemberships(long staffAccountId, List<Long> businessDomainIds, List<String> roleCodes) {
@@ -124,7 +189,11 @@ public class StaffAccountService {
         Set<String> codes = new LinkedHashSet<>(roleCodes.stream()
                 .filter(StringUtils::hasText)
                 .map(String::trim)
+                .filter(code -> platformRoleService.getPlatformRoleIdByCode(code) == null)
                 .toList());
+        if (codes.isEmpty()) {
+            return;
+        }
         for (Long domainId : domainIds) {
             ensureDomainExists(domainId);
             long memberId = ensureDomainMember(domainId, staffAccountId);
@@ -154,6 +223,9 @@ public class StaffAccountService {
     }
 
     private StaffAccount toStaffAccount(StaffAccountPo po) {
+        String employmentStatus = StringUtils.hasText(po.getEmploymentStatus())
+                ? po.getEmploymentStatus()
+                : "active";
         return new StaffAccount(
                 po.getId(),
                 po.getSubjectId(),
@@ -164,6 +236,10 @@ public class StaffAccountService {
                 po.getPhone(),
                 po.getEmail(),
                 po.getStatus(),
+                employmentStatus,
+                po.getOffboardedAt() == null ? null : po.getOffboardedAt().format(ISO_FORMATTER),
+                po.getOffboardedBy(),
+                po.getOffboardReason(),
                 po.getSource(),
                 po.getAuthVersion() == null ? 0 : po.getAuthVersion());
     }
@@ -196,6 +272,10 @@ public class StaffAccountService {
             String phone,
             String email,
             String status,
+            String employmentStatus,
+            String offboardedAt,
+            Long offboardedBy,
+            String offboardReason,
             String source,
             int authVersion) {
     }
@@ -208,7 +288,8 @@ public class StaffAccountService {
             String email,
             String password,
             List<String> roleCodes,
-            List<Long> businessDomainIds) {
+            List<Long> businessDomainIds,
+            List<Long> organizationIds) {
     }
 
     public record UpdateStaffCommand(
@@ -220,6 +301,7 @@ public class StaffAccountService {
             String password,
             Integer status,
             List<String> roleCodes,
-            List<Long> businessDomainIds) {
+            List<Long> businessDomainIds,
+            List<Long> organizationIds) {
     }
 }

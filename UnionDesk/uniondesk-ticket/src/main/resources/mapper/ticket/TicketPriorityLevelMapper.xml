@@ -8,6 +8,8 @@
         <result property="businessDomainId" column="business_domain_id"/>
         <result property="code" column="code"/>
         <result property="name" column="name"/>
+        <result property="color" column="color"/>
+        <result property="icon" column="icon"/>
         <result property="sortOrder" column="sort_order"/>
         <result property="isDefault" column="is_default"/>
         <result property="status" column="status"/>
@@ -16,14 +18,14 @@
     </resultMap>
 
     <select id="findByDomainId" resultMap="TicketPriorityLevelPo">
-        SELECT id, business_domain_id, name, sort_order, is_default
+        SELECT id, business_domain_id, code, name, color, icon, sort_order, is_default, status
         FROM ticket_priority_level
         WHERE business_domain_id = #{domainId}
         ORDER BY sort_order ASC, id ASC
     </select>
 
     <select id="findByIdAndDomainId" resultMap="TicketPriorityLevelPo">
-        SELECT id, business_domain_id, name, sort_order, is_default, status
+        SELECT id, business_domain_id, code, name, color, icon, sort_order, is_default, status
         FROM ticket_priority_level
         WHERE id = #{id} AND business_domain_id = #{domainId}
         LIMIT 1
@@ -32,18 +34,23 @@
     <insert id="insert" parameterType="com.uniondesk.ticket.entity.TicketPriorityLevelPo"
             useGeneratedKeys="true" keyProperty="id">
         INSERT INTO ticket_priority_level (
-            business_domain_id, code, name, sort_order, is_default, status, created_at, updated_at
+            business_domain_id, code, name, color, icon, sort_order, is_default, status, created_at, updated_at
         )
         VALUES (
-            #{businessDomainId}, #{code}, #{name}, #{sortOrder},
+            #{businessDomainId}, #{code}, #{name}, #{color}, #{icon}, #{sortOrder},
             #{isDefault}, 'active', CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
         )
     </insert>
 
     <update id="update">
         UPDATE ticket_priority_level
-        SET code = #{code}, name = #{name}, sort_order = #{sortOrder},
-            is_default = #{isDefault}, updated_at = CURRENT_TIMESTAMP(3)
+        SET code = #{code},
+            name = #{name},
+            color = #{color},
+            icon = #{icon},
+            sort_order = #{sortOrder},
+            is_default = #{isDefault},
+            updated_at = CURRENT_TIMESTAMP(3)
         WHERE id = #{id} AND business_domain_id = #{domainId}
     </update>
 

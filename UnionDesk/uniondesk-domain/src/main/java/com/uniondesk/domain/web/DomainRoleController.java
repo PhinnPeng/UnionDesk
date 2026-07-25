@@ -28,8 +28,9 @@ public class DomainRoleController {
 
     @GetMapping("/roles")
     @RequirePermission(PermissionCodes.DOMAIN_ROLE_READ)
-    public List<DomainRoleDtos.DomainRoleView> listRoles(@PathVariable("domainId") long domainId) {
-        return domainRoleService.listRoles(domainId);
+    public DomainRoleDtos.DomainRoleListView listRoles(@PathVariable("domainId") long domainId) {
+        List<DomainRoleDtos.DomainRoleView> items = domainRoleService.listRoles(domainId);
+        return new DomainRoleDtos.DomainRoleListView(items.size(), items);
     }
 
     @PostMapping("/roles")
@@ -78,7 +79,8 @@ public class DomainRoleController {
 
     @GetMapping("/permission-items")
     @RequirePermission(PermissionCodes.DOMAIN_ROLE_READ)
-    public List<DomainRoleDtos.PermissionItemView> listPermissionItems(@PathVariable("domainId") long domainId) {
-        return domainRoleService.listPermissionItems(domainId);
+    public DomainRoleDtos.PermissionItemListView listPermissionItems(@PathVariable("domainId") long domainId) {
+        List<DomainRoleDtos.PermissionItemView> items = domainRoleService.listPermissionItems(domainId);
+        return new DomainRoleDtos.PermissionItemListView(items.size(), items);
     }
 }

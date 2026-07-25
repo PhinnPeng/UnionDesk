@@ -2,42 +2,128 @@ import type { CreateIamUserPayload, IamUser, UpdateIamUserPayload } from "@union
 
 import { requestBackendJson } from "#src/api/backend";
 
-export function fetchPlatformUsers(organizationId?: number): Promise<IamUser[]> {
-	const query = organizationId != null ? `?organizationId=${organizationId}` : "";
-	return requestBackendJson<IamUser[]>(`v1/iam/users${query}`);
+type StaffAccountApi = {
+	id: number
+	username: string
+	real_name?: string | null
+	nickname?: string | null
+	phone?: string | null
+	mobile?: string | null
+	email?: string | null
+	status: number
+	employmentStatus: string
+	accountType?: string
+	roleCodes?: string[]
+	businessDomainIds?: number[]
+	organizationIds?: number[]
+	platformRoles?: string[]
+	offboardedAt?: string | null
+	offboardedBy?: number | null
+	offboardReason?: string | null
+};
+
+type StaffPageResult = {
+	total: number
+	list: StaffAccountApi[]
+};
+
+function toIamUser(staff: StaffAccountApi): IamUser {
+	const mobile = staff.mobile ?? staff.phone ?? "";
+	return {
+		id: staff.id,
+		username: staff.username,
+		mobile,
+		email: staff.email ?? null,
+		remark: staff.real_name ?? staff.nickname ?? null,
+		accountType: staff.accountType ?? "admin",
+		status: staff.status,
+		employmentStatus: staff.employmentStatus,
+		roleCodes: staff.roleCodes ?? staff.platformRoles ?? [],
+		businessDomainIds: staff.businessDomainIds ?? [],
+		organizationIds: staff.organizationIds ?? [],
+		offboardedAt: staff.offboardedAt ?? null,
+		offboardedBy: staff.offboardedBy ?? null,
+		offboardReason: staff.offboardReason ?? null,
+	};
 }
 
-export function fetchPlatformOffboardPoolUsers(): Promise<IamUser[]> {
-	return requestBackendJson<IamUser[]>("v1/iam/users/offboard-pool");
+function toCreateStaffBody(data: CreateIamUserPayload) {
+	return {
+		username: data.username,
+		phone: data.mobile,
+		email: data.email,
+		password: data.password,
+		accountType: data.accountType,
+		roleCodes: data.roleCodes,
+		businessDomainIds: data.businessDomainIds,
+		organizationIds: data.organizationIds ?? [],
+		real_name: data.remark ?? undefined,
+	};
 }
 
-export function fetchCreatePlatformUser(data: CreateIamUserPayload): Promise<IamUser> {
-	return requestBackendJson<IamUser>("v1/iam/users", {
+function toUpdateStaffBody(data: UpdateIamUserPayload) {
+	return {
+		username: data.username,
+		phone: data.mobile,
+		email: data.email,
+		password: data.password,
+		accountType: data.accountType,
+		roleCodes: data.roleCodes,
+		businessDomainIds: data.businessDomainIds,
+		organizationIds: data.organizationIds,
+		status: data.status,
+		real_name: data.remark ?? undefined,
+	};
+}
+
+export async function fetchPlatformUsers(organizationId?: number): Promise<IamUser[]> {
+	const params = new URLSearchParams({
+		page: "1",
+		page_size: "1000",
+	});
+	if (organizationId != null) {
+		params.set("organizationId", String(organizationId));
+	}
+	const page = await requestBackendJson<StaffPageResult>(`v1/admin/staff?${params.toString()}`);
+	return (page.list ?? []).map(toIamUser);
+}
+
+export async function fetchPlatformOffboardPoolUsers(): Promise<IamUser[]> {
+	const page = await requestBackendJson<StaffPageResult>("v1/admin/staff?status=offboarded&page=1&page_size=1000");
+	return (page.list ?? []).map(toIamUser);
+}
+
+export async function fetchCreatePlatformUser(data: CreateIamUserPayload): Promise<IamUser> {
+	const created = await requestBackendJson<StaffAccountApi>("v1/admin/staff", {
 		method: "POST",
-		json: data,
+		json: toCreateStaffBody(data),
 	});
+	return toIamUser(created);
 }
 
-export function fetchUpdatePlatformUser(id: number, data: UpdateIamUserPayload): Promise<IamUser> {
-	return requestBackendJson<IamUser>(`v1/iam/users/${id}`, {
+export async function fetchUpdatePlatformUser(id: number, data: UpdateIamUserPayload): Promise<IamUser> {
+	const updated = await requestBackendJson<StaffAccountApi>(`v1/admin/staff/${id}`, {
 		method: "PUT",
-		json: data,
+		json: toUpdateStaffBody(data),
 	});
+	return toIamUser(updated);
 }
 
-export function fetchOffboardPlatformUser(id: number, reason?: string): Promise<IamUser> {
-	return requestBackendJson<IamUser>(`v1/iam/users/${id}/offboard`, {
+export async function fetchOffboardPlatformUser(id: number, reason?: string): Promise<IamUser> {
+	const updated = await requestBackendJson<StaffAccountApi>(`v1/admin/staff/${id}/offboard`, {
 		method: "POST",
 		json: {
 			reason,
 		},
 	});
+	return toIamUser(updated);
 }
 
-export function fetchRestorePlatformUser(id: number): Promise<IamUser> {
-	return requestBackendJson<IamUser>(`v1/iam/users/${id}/restore`, {
+export async function fetchRestorePlatformUser(id: number): Promise<IamUser> {
+	const updated = await requestBackendJson<StaffAccountApi>(`v1/admin/staff/${id}/restore`, {
 		method: "POST",
 	});
+	return toIamUser(updated);
 }
 
 export interface AdminPermissionCodeView {

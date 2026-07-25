@@ -63,7 +63,7 @@ export default function PlatformTicketTypeFlowConfig() {
 				setStatusFlow((found.status_flow as TicketStatusFlow | null) ?? DEFAULT_STATUS_FLOW);
 			}
 			else {
-				message.error("未找到该工单类型");
+				message.error("未找到该事项类型");
 			}
 		}
 		catch (error) {
@@ -83,7 +83,7 @@ export default function PlatformTicketTypeFlowConfig() {
 		if (!pagePath || !ticketType?.name) {
 			return;
 		}
-		setTableTitle(appScopes.platform, pagePath, `状态流 - ${ticketType.name}`);
+		setTableTitle(appScopes.platform, pagePath, `状态管理 - ${ticketType.name}`);
 		return () => {
 			resetTableTitle(appScopes.platform, pagePath);
 		};
@@ -97,7 +97,7 @@ export default function PlatformTicketTypeFlowConfig() {
 		try {
 			const saved = await updateDomainTicketType(domainId, typeId, { status_flow: statusFlow });
 			setTicketType(saved);
-			message.success("状态流已保存");
+			message.success("状态管理已保存");
 		}
 		catch (error) {
 			message.error(toErrorMessage(error));
@@ -113,23 +113,23 @@ export default function PlatformTicketTypeFlowConfig() {
 				<div className="flex flex-col gap-4">
 					<div className="flex items-center gap-3">
 						<Button type="text" icon={<ArrowLeftOutlined />} onClick={backToTickets}>
-							返回工单列表
+							返回事项列表
 						</Button>
 						<Title level={5} className="!mb-0">
-							{ticketType ? `状态流：${ticketType.name}` : "状态流配置"}
+							{ticketType ? `状态管理：${ticketType.name}` : "状态管理"}
 						</Title>
 					</div>
 
 					{!domainId || !typeId ? (
-						<Empty description="缺少业务域或工单类型 ID" />
+						<Empty description="缺少业务域或事项类型 ID" />
 					) : loading ? (
 						<div className="flex justify-center py-16">
 							<Spin />
 						</div>
 					) : !ticketType ? (
-						<Empty description="未找到工单类型">
+						<Empty description="未找到事项类型">
 							<Button type="primary" onClick={backToTickets}>
-								返回工单列表
+								返回事项列表
 							</Button>
 						</Empty>
 					) : (

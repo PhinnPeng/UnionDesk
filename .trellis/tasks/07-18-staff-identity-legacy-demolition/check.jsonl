@@ -1,0 +1,4 @@
+{"file": "docs/superpowers/specs/2026-07-18-staff-identity-legacy-demolition-design.md", "reason": "Acceptance and DoD for verification"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend test and review bar"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend lint/typecheck bar"}
+{"file": "docs/architecture/data-model.md", "reason": "Confirm legacy section can be closed"}

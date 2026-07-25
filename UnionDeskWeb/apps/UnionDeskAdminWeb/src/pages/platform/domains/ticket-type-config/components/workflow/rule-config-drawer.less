@@ -1,0 +1,154 @@
+.step-settings-drawer {
+	.ant-drawer-body {
+		padding: 16px 20px 24px;
+	}
+
+	.ant-drawer-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 12px 20px;
+	}
+}
+
+.step-settings {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.step-settings__intro {
+	margin: 0;
+	color: var(--ant-color-text-secondary);
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.step-settings__section-label {
+	display: block;
+	margin-bottom: 8px;
+	color: var(--ant-color-text);
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.step-settings__transition {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.step-settings__transition-arrow {
+	color: var(--ant-color-text-secondary);
+	font-size: 13px;
+}
+
+.step-settings__any-state {
+	display: inline-block;
+	padding: 3px 8px;
+	border-radius: 3px;
+	background: var(--ant-color-fill-quaternary);
+	color: var(--ant-color-text-secondary);
+	font-size: 13px;
+	line-height: 18px;
+}
+
+.step-settings__rules-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.step-settings__rules-title {
+	margin: 0;
+	color: var(--ant-color-text);
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.step-settings__rules-desc {
+	margin: 4px 0 0;
+	color: var(--ant-color-text-secondary);
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.step-settings__rules-empty {
+	padding: 24px 12px;
+	border: 1px dashed var(--ant-color-border);
+	border-radius: 6px;
+	background: var(--ant-color-fill-quaternary);
+	color: var(--ant-color-text-secondary);
+	font-size: 13px;
+	line-height: 1.6;
+	text-align: center;
+}
+
+.step-settings__rule-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.step-settings__rule-card {
+	border: 1px solid var(--ant-color-border-secondary);
+	border-radius: 8px;
+	background: var(--ant-color-bg-container);
+	overflow: hidden;
+}
+
+.step-settings__rule-card-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 10px 12px;
+	cursor: pointer;
+	user-select: none;
+}
+
+.step-settings__rule-card-header:hover {
+	background: var(--ant-color-fill-quaternary);
+}
+
+.step-settings__rule-card-title {
+	margin: 0;
+	color: var(--ant-color-text);
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.step-settings__rule-card-summary {
+	margin: 4px 0 0;
+	color: var(--ant-color-text-secondary);
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.step-settings__rule-card-actions {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+}
+
+.step-settings__rule-card-body {
+	padding: 0 12px 12px;
+	border-top: 1px solid var(--ant-color-border-secondary);
+}
+
+.step-rule-editor {
+	padding-top: 12px;
+}
+
+.step-rule-editor__add {
+	margin-top: 8px;
+	width: 100%;
+}
+
+.step-settings__delete {
+	padding: 0;
+	height: auto;
+}

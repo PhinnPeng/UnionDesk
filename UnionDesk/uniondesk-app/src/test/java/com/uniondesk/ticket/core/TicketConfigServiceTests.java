@@ -148,7 +148,7 @@ class TicketConfigServiceTests {
 
         assertThatThrownBy(() -> ticketConfigService.createTicketType(
                 DOMAIN_ID,
-                new TicketConfigDtos.CreateTicketTypeRequest("technical", "技术支持", null, null, null, null)))
+                new TicketConfigDtos.CreateTicketTypeRequest("technical", "技术支持", null, null, null, null, null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("该域下编码已存在");
 
@@ -158,7 +158,7 @@ class TicketConfigServiceTests {
 
         assertThatThrownBy(() -> ticketConfigService.createTicketType(
                 DOMAIN_ID,
-                new TicketConfigDtos.CreateTicketTypeRequest("technical", "技术支持", null, null, null, null)))
+                new TicketConfigDtos.CreateTicketTypeRequest("technical", "技术支持", null, null, null, null, null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("该域下名称已存在");
     }
@@ -187,10 +187,12 @@ class TicketConfigServiceTests {
                         "name", "已关闭",
                         "state_type", "terminal",
                         "allow_customer_withdraw", false)),
-                "transitions", List.of());
+                "transitions", List.of(),
+                "initial_state_code", "closed");
         TicketConfigDtos.UpdateTicketTypeRequest request = new TicketConfigDtos.UpdateTicketTypeRequest(
                 "新名称",
                 "描述",
+                null,
                 "mdi:help",
                 statusFlow,
                 "disabled",
@@ -203,6 +205,7 @@ class TicketConfigServiceTests {
                 eq(DOMAIN_ID),
                 eq("新名称"),
                 eq("描述"),
+                eq(null),
                 eq("mdi:help"),
                 eq("disabled"));
         verify(ticketTypeFlowService).replaceAll(eq(DOMAIN_ID), eq(TYPE_ID), eq(statusFlow), eq(List.of()));

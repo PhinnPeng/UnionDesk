@@ -66,12 +66,12 @@ class AdminPermissionCatalogTests {
     }
 
     @Test
-    void userCreateRouteUsesDomainUserCreatePermission() {
-        assertThat(AdminPermissionCatalog.findByRequest("POST", "/api/v1/iam/users"))
+    void staffCreateRouteUsesPlatformUserCreatePermission() {
+        assertThat(AdminPermissionCatalog.findByRequest("POST", "/api/v1/admin/staff"))
                 .hasValueSatisfying(permission -> {
-                    assertThat(permission.code()).isEqualTo(PermissionCodes.DOMAIN_USER_CREATE);
-                    assertThat(permission.name()).isEqualTo("Create domain user");
-                    assertThat(permission.permissionScope()).isEqualTo("domain");
+                    assertThat(permission.code()).isEqualTo(PermissionCodes.PLATFORM_USER_CREATE);
+                    assertThat(permission.name()).isEqualTo("Create platform user");
+                    assertThat(permission.permissionScope()).isEqualTo("platform");
                 });
     }
 

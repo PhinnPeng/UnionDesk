@@ -238,4 +238,20 @@ public final class IamDtos {
     public record OffboardUserRequest(
             String reason) {
     }
+
+    // --- ListView records for list endpoints ---
+
+    public record ResourceListView(long total, List<ResourceView> items) {}
+
+    public record AdminPermissionCodeListView(long total, List<AdminPermissionCodeView> items) {}
+
+    public record RoleListView(long total, List<RoleView> items) {}
+
+    public record UserAccountListView(long total, List<UserAccountView> items) {}
+
+    // --- Menu tree view records ---
+
+    public record MenuTreeResultView(
+            List<MenuTreeNodeView> platform,
+            List<MenuTreeNodeView> business) {}
 }

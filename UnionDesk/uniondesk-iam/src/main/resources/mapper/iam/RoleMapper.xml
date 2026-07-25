@@ -48,19 +48,30 @@
     </select>
 
     <select id="countUserGlobalRoleBindings" resultType="int">
-        SELECT COUNT(*) FROM user_global_role WHERE role_id = #{roleId}
+        SELECT COUNT(*)
+        FROM staff_account_platform_role sapr
+        JOIN platform_role pr ON pr.id = sapr.platform_role_id
+        JOIN role r ON r.code = pr.code
+        WHERE r.id = #{roleId}
     </select>
 
     <select id="countUserDomainRoleBindings" resultType="int">
-        SELECT COUNT(*) FROM user_domain_role WHERE role_id = #{roleId}
+        SELECT COUNT(*)
+        FROM domain_member_role dmr
+        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+        JOIN role r ON r.code = dr.code
+        WHERE r.id = #{roleId}
     </select>
 
     <delete id="deleteUserGlobalRoles">
-        DELETE FROM user_global_role WHERE user_id = #{userId}
+        DELETE FROM staff_account_platform_role WHERE staff_account_id = #{userId}
     </delete>
 
     <delete id="deleteUserDomainRoles">
-        DELETE FROM user_domain_role WHERE user_id = #{userId}
+        DELETE dmr
+        FROM domain_member_role dmr
+        JOIN domain_member dm ON dm.id = dmr.domain_member_id
+        WHERE dm.staff_account_id = #{userId}
     </delete>
 
     <delete id="deleteUserRoleBindings">
@@ -68,11 +79,25 @@
     </delete>
 
     <insert id="insertUserGlobalRole">
-        INSERT INTO user_global_role (user_id, role_id) VALUES (#{userId}, #{roleId})
+        INSERT INTO staff_account_platform_role (staff_account_id, platform_role_id, created_at)
+        SELECT #{userId}, pr.id, CURRENT_TIMESTAMP(3)
+        FROM platform_role pr
+        JOIN role r ON r.code = pr.code
+        WHERE r.id = #{roleId}
+        ON DUPLICATE KEY UPDATE created_at = VALUES(created_at)
     </insert>
 
     <insert id="insertUserDomainRole">
-        INSERT INTO user_domain_role (user_id, role_id, business_domain_id) VALUES (#{userId}, #{roleId}, #{businessDomainId})
+        INSERT INTO domain_member_role (domain_member_id, domain_role_id, created_at)
+        SELECT dm.id, dr.id, CURRENT_TIMESTAMP(3)
+        FROM domain_member dm
+        JOIN domain_role dr ON dr.business_domain_id = dm.business_domain_id
+        JOIN role r ON r.code = dr.code
+        WHERE dm.staff_account_id = #{userId}
+          AND dm.business_domain_id = #{businessDomainId}
+          AND r.id = #{roleId}
+          AND dm.deleted_at IS NULL
+        ON DUPLICATE KEY UPDATE created_at = VALUES(created_at)
     </insert>
 
     <insert id="insertRoleBindingGlobal">
@@ -86,34 +111,57 @@
     </insert>
 
     <select id="selectUserRoleCodes" resultType="java.lang.String">
-        SELECT DISTINCT r.code
-        FROM role r
-        JOIN (
-            SELECT role_id FROM user_global_role WHERE user_id = #{userId}
+        SELECT DISTINCT code FROM (
+            SELECT pr.code AS code
+            FROM staff_account_platform_role sapr
+            JOIN platform_role pr ON pr.id = sapr.platform_role_id
+            WHERE sapr.staff_account_id = #{userId}
             UNION
-            SELECT role_id FROM user_domain_role WHERE user_id = #{userId}
-        ) rs ON rs.role_id = r.id
-        ORDER BY r.code
+            SELECT dr.code AS code
+            FROM domain_member dm
+            JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+            JOIN domain_role dr ON dr.id = dmr.domain_role_id
+            WHERE dm.staff_account_id = #{userId}
+              AND dm.status = 'active'
+              AND dm.deleted_at IS NULL
+        ) roles
+        ORDER BY code
     </select>
 
     <select id="selectUserRoleCodesByClientAdmin" resultType="java.lang.String">
-        SELECT DISTINCT r.code
-        FROM role r
-        JOIN (
-            SELECT role_id FROM user_global_role WHERE user_id = #{userId}
+        SELECT DISTINCT code FROM (
+            SELECT pr.code AS code
+            FROM staff_account_platform_role sapr
+            JOIN platform_role pr ON pr.id = sapr.platform_role_id
+            WHERE sapr.staff_account_id = #{userId}
             UNION
-            SELECT role_id FROM user_domain_role WHERE user_id = #{userId}
-        ) ur ON ur.role_id = r.id
+            SELECT dr.code AS code
+            FROM domain_member dm
+            JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+            JOIN domain_role dr ON dr.id = dmr.domain_role_id
+            WHERE dm.staff_account_id = #{userId}
+              AND dm.status = 'active'
+              AND dm.deleted_at IS NULL
+        ) roles
     </select>
 
     <select id="selectUserRoleCodesByClientOther" resultType="java.lang.String">
         SELECT DISTINCT r.code
         FROM role r
         JOIN (
-            SELECT role_id FROM user_global_role WHERE user_id = #{userId}
+            SELECT pr.code AS code
+            FROM staff_account_platform_role sapr
+            JOIN platform_role pr ON pr.id = sapr.platform_role_id
+            WHERE sapr.staff_account_id = #{userId}
             UNION
-            SELECT role_id FROM user_domain_role WHERE user_id = #{userId}
-        ) ur ON ur.role_id = r.id
+            SELECT dr.code AS code
+            FROM domain_member dm
+            JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+            JOIN domain_role dr ON dr.id = dmr.domain_role_id
+            WHERE dm.staff_account_id = #{userId}
+              AND dm.status = 'active'
+              AND dm.deleted_at IS NULL
+        ) ur ON ur.code = r.code
         JOIN iam_role_resource irr ON irr.role_id = r.id
         JOIN iam_resource ir ON ir.id = irr.resource_id
         WHERE ir.status = 1
@@ -126,18 +174,22 @@
     </select>
 
     <select id="selectUserDomainIds" resultType="java.lang.Long">
-        SELECT DISTINCT business_domain_id FROM user_domain_role WHERE user_id = #{userId} ORDER BY business_domain_id
+        SELECT DISTINCT business_domain_id
+        FROM domain_member
+        WHERE staff_account_id = #{userId}
+          AND deleted_at IS NULL
+        ORDER BY business_domain_id
     </select>
 
     <select id="countProtectedRoleHoldersExcluding" resultType="int">
-        SELECT COUNT(DISTINCT ugr.user_id)
-        FROM user_global_role ugr
-        JOIN role r ON r.id = ugr.role_id
-        JOIN user_account ua ON ua.id = ugr.user_id
-        WHERE r.code = #{roleCode}
-          AND ugr.user_id &lt;&gt; #{userId}
-          AND ua.status = 1
-          AND ua.employment_status &lt;&gt; 'offboarded'
+        SELECT COUNT(DISTINCT sa.id)
+        FROM staff_account_platform_role sapr
+        JOIN platform_role pr ON pr.id = sapr.platform_role_id
+        JOIN staff_account sa ON sa.id = sapr.staff_account_id
+        WHERE pr.code = #{roleCode}
+          AND sapr.staff_account_id &lt;&gt; #{userId}
+          AND sa.status = 'active'
+          AND sa.employment_status &lt;&gt; 'offboarded'
     </select>
 
     <select id="selectDomainSummariesForSuperAdmin" resultMap="BusinessDomainSummary">
@@ -146,11 +198,13 @@
 
     <select id="selectDomainSummariesForUser" resultMap="BusinessDomainSummary">
         SELECT DISTINCT d.id, d.code, d.name
-        FROM user_domain_role udr
-        JOIN role r ON r.id = udr.role_id
-        JOIN business_domain d ON d.id = udr.business_domain_id
-        WHERE udr.user_id = #{userId}
-          AND r.code IN
+        FROM domain_member dm
+        JOIN domain_member_role dmr ON dmr.domain_member_id = dm.id
+        JOIN domain_role dr ON dr.id = dmr.domain_role_id
+        JOIN business_domain d ON d.id = dm.business_domain_id
+        WHERE dm.staff_account_id = #{userId}
+          AND dm.deleted_at IS NULL
+          AND dr.code IN
         <foreach collection="roleCodes" item="code" open="(" separator="," close=")">#{code}</foreach>
         ORDER BY d.id
     </select>

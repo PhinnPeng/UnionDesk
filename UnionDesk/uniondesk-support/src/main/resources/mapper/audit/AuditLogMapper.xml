@@ -23,7 +23,7 @@
             a.id,
             a.business_domain_id,
             a.operator_subject_id,
-            COALESCE(ua.username, s.phone, 'system') AS operator_name,
+            COALESCE(sa.username, s.phone, 'system') AS operator_name,
             a.operator_actor_type,
             a.target,
             a.action,
@@ -34,7 +34,7 @@
             als.client_ip AS ip
         FROM audit_log a
         LEFT JOIN identity_subject s ON s.id = a.operator_subject_id
-        LEFT JOIN user_account ua ON ua.id = a.operator_subject_id
+        LEFT JOIN staff_account sa ON sa.subject_id = a.operator_subject_id
         LEFT JOIN auth_login_session als ON als.sid = a.request_id
     </sql>
 
@@ -42,7 +42,7 @@
         SELECT COUNT(*)
         FROM audit_log a
         LEFT JOIN identity_subject s ON s.id = a.operator_subject_id
-        LEFT JOIN user_account ua ON ua.id = a.operator_subject_id
+        LEFT JOIN staff_account sa ON sa.subject_id = a.operator_subject_id
         LEFT JOIN auth_login_session als ON als.sid = a.request_id
     </sql>
 
@@ -52,7 +52,7 @@
                 AND a.business_domain_id = #{domainId}
             </if>
             <if test="operator != null and operator != ''">
-                AND (ua.username LIKE CONCAT('%', #{operator}, '%')
+                AND (sa.username LIKE CONCAT('%', #{operator}, '%')
                      OR s.phone LIKE CONCAT('%', #{operator}, '%')
                      OR a.operator_actor_type LIKE CONCAT('%', #{operator}, '%')
                      OR CAST(a.operator_subject_id AS CHAR) LIKE CONCAT('%', #{operator}, '%'))

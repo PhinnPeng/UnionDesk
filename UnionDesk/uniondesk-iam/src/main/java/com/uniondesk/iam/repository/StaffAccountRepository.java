@@ -5,6 +5,7 @@ import com.uniondesk.iam.mapper.BusinessDomainMapper;
 import com.uniondesk.iam.mapper.DomainMemberMapper;
 import com.uniondesk.iam.mapper.DomainRoleMapper;
 import com.uniondesk.iam.mapper.StaffAccountMapper;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
@@ -49,6 +50,14 @@ public class StaffAccountRepository {
         return staffAccountMapper.updateStatus(id, status);
     }
 
+    public int offboard(long id, LocalDateTime offboardedAt, Long offboardedBy, String offboardReason) {
+        return staffAccountMapper.offboard(id, offboardedAt, offboardedBy, offboardReason);
+    }
+
+    public int restoreEmployment(long id) {
+        return staffAccountMapper.restoreEmployment(id);
+    }
+
     public int revokeActiveSessions(long userId, String revokedReason) {
         return staffAccountMapper.revokeActiveSessions(userId, revokedReason);
     }
@@ -59,6 +68,22 @@ public class StaffAccountRepository {
 
     public List<String> findDomainRoleCodes(long staffAccountId) {
         return domainMemberMapper.selectRoleCodes(staffAccountId);
+    }
+
+    public List<Long> findOrganizationIds(long staffAccountId) {
+        return staffAccountMapper.selectOrganizationIds(staffAccountId);
+    }
+
+    public void replaceOrganizations(long staffAccountId, List<Long> organizationIds) {
+        staffAccountMapper.deleteOrganizations(staffAccountId);
+        if (organizationIds == null || organizationIds.isEmpty()) {
+            return;
+        }
+        for (Long organizationId : organizationIds) {
+            if (organizationId != null) {
+                staffAccountMapper.insertOrganization(staffAccountId, organizationId);
+            }
+        }
     }
 
     public Optional<Long> findDomainMemberId(long domainId, long staffAccountId) {

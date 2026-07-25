@@ -48,15 +48,14 @@ class SlaTimingEngineTest extends IntegrationTestSupport {
         TicketService.TicketSubmissionResult result = ticketService.createCustomerTicket(
                 customerContext(domainId),
                 domainId,
-                new TicketService.CreateTicketCommand(
-                        ticketTypeId,
+                new TicketService.CreateTicketCommand(ticketTypeId,
                         "SLA deadline check",
                         "请验证首响和解决截止时间",
                         Map.of("source", "integration-test"),
                         List.of(),
                         null,
                         "normal",
-                        "web"));
+                        "web", null, List.of()));
 
         TicketSnapshot ticket = loadTicket(result.id());
         assertThat(ticket.status()).isEqualTo("open");
@@ -76,15 +75,14 @@ class SlaTimingEngineTest extends IntegrationTestSupport {
         TicketService.TicketSubmissionResult result = ticketService.createCustomerTicket(
                 customerContext(domainId),
                 domainId,
-                new TicketService.CreateTicketCommand(
-                        ticketTypeId,
+                new TicketService.CreateTicketCommand(ticketTypeId,
                         "首响追踪",
                         "请验证领取后首响时间写入",
                         Map.of(),
                         List.of(),
                         null,
                         "normal",
-                        "web"));
+                        "web", null, List.of()));
 
         long version = loadTicket(result.id()).version();
         ticketService.claimTicket(agentContext(domainId), domainId, result.id(), new TicketService.ClaimTicketCommand(version));
@@ -106,15 +104,14 @@ class SlaTimingEngineTest extends IntegrationTestSupport {
         TicketService.TicketSubmissionResult result = ticketService.createCustomerTicket(
                 customerContext(domainId),
                 domainId,
-                new TicketService.CreateTicketCommand(
-                        ticketTypeId,
+                new TicketService.CreateTicketCommand(ticketTypeId,
                         "关闭追踪",
                         "请验证关闭时解决时间写入",
                         Map.of(),
                         List.of(),
                         null,
                         "normal",
-                        "web"));
+                        "web", null, List.of()));
 
         long ticketId = result.id();
         long claimVersion = loadTicket(ticketId).version();
@@ -144,15 +141,14 @@ class SlaTimingEngineTest extends IntegrationTestSupport {
         TicketService.TicketSubmissionResult result = ticketService.createCustomerTicket(
                 customerContext(domainId),
                 domainId,
-                new TicketService.CreateTicketCommand(
-                        ticketTypeId,
+                new TicketService.CreateTicketCommand(ticketTypeId,
                         "SLA 违约判断",
                         "请验证违约动作会提升优先级",
                         Map.of(),
                         List.of(),
                         null,
                         "normal",
-                        "web"));
+                        "web", null, List.of()));
 
         LocalDateTime now = LocalDateTime.now(clock);
         jdbcTemplate.update("""

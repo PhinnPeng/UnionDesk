@@ -1,0 +1,469 @@
+// 工作流矩阵 — Ant Design Token 适配深/浅色
+
+@row-header-width: 165px;
+@col-width: 136px;
+@state-card-width: 120px;
+@row-height: 73px;
+@matrix-row-border-width: 2px;
+
+.workflow-matrix-container {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	min-width: 0;
+	min-height: 0;
+	overflow: hidden;
+	background: var(--ant-color-bg-layout);
+	margin-left: 24px;
+	box-sizing: border-box;
+
+	.workflow-matrix-scroll {
+		flex: 1;
+		width: 100%;
+		overflow: auto;
+		min-height: 0;
+		background: var(--ant-color-bg-layout);
+		box-sizing: border-box;
+	}
+
+	.workflow-matrix-table {
+		display: flex;
+		flex-direction: column;
+		width: max-content;
+		min-width: 100%;
+	}
+
+	.workflow-matrix-empty {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 48px 0;
+	}
+}
+
+.matrix-header-row,
+.matrix-sortable-row,
+.matrix-any-row {
+	display: grid;
+	grid-template-columns: var(--matrix-grid-columns, @row-header-width repeat(3, @col-width));
+	width: max-content;
+	min-width: 100%;
+	box-sizing: border-box;
+	background: var(--ant-color-primary-bg);
+	position: relative;
+
+	&::after {
+		content: "";
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: @matrix-row-border-width;
+		background: var(--ant-color-border-secondary);
+		pointer-events: none;
+		z-index: 5;
+	}
+
+	.matrix-line__corner,
+	.matrix-line__col {
+		border-bottom: none;
+	}
+}
+
+.matrix-header-row {
+	position: sticky;
+	top: 0;
+	z-index: 3;
+}
+
+.matrix-any-row {
+	border-top: 1px dashed var(--ant-color-border-secondary);
+}
+
+.matrix-line__corner {
+	position: sticky;
+	top: 0;
+	left: 0;
+	z-index: 4;
+	height: @row-height;
+	min-height: @row-height;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	padding: 10px 12px;
+	background: var(--ant-color-primary-bg);
+	box-sizing: border-box;
+	border-right: 1px solid var(--ant-color-border-secondary);
+	overflow: hidden;
+
+	&::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: linear-gradient(
+			to bottom right,
+			transparent calc(50% - 0.5px),
+			var(--ant-color-border-secondary) calc(50% - 0.5px),
+			var(--ant-color-border-secondary) calc(50% + 0.5px),
+			transparent calc(50% + 0.5px)
+		);
+	}
+}
+
+.matrix-line__corner-label {
+	position: relative;
+	z-index: 1;
+	font-size: 12px;
+	line-height: 16px;
+	color: var(--ant-color-text-tertiary);
+
+	&--start {
+		align-self: flex-start;
+	}
+
+	&--end {
+		align-self: flex-end;
+	}
+}
+
+.matrix-line__col {
+	min-height: @row-height;
+	display: flex;
+	align-items: stretch;
+	box-sizing: border-box;
+	border-right: 1px solid var(--ant-color-border-secondary);
+	overflow: hidden;
+	background: transparent;
+
+	&--header-state {
+		position: sticky;
+		top: 0;
+		z-index: 3;
+		padding: 0;
+		background: var(--ant-color-primary-bg);
+	}
+
+	&--row-header {
+		position: sticky;
+		left: 0;
+		z-index: 2;
+		padding: 0;
+		background: var(--ant-color-primary-bg);
+		border-right: 1px solid var(--ant-color-border-secondary);
+	}
+
+	&--step {
+		padding: 8px;
+		justify-content: center;
+		background: transparent;
+	}
+
+	&--any-label {
+		position: sticky;
+		left: 0;
+		bottom: 0;
+		z-index: 2;
+		align-items: center;
+		justify-content: flex-start;
+		padding-left: 12px;
+		background: var(--ant-color-primary-bg);
+		border-right: 1px solid var(--ant-color-border-secondary);
+	}
+
+	&.is-diagonal {
+		background: transparent;
+	}
+}
+
+.matrix-line__any-label {
+	font-size: 13px;
+	color: var(--ant-color-text-tertiary);
+	font-style: italic;
+}
+
+.matrix-sortable-row {
+	box-sizing: border-box;
+
+	&.is-dragging {
+		z-index: 1;
+	}
+}
+
+.matrix-state-cell {
+	display: flex;
+	width: 100%;
+	height: 100%;
+	min-height: @row-height;
+	box-sizing: border-box;
+	overflow: hidden;
+
+	&--overlay {
+		width: @row-header-width;
+		box-shadow: var(--ant-box-shadow-secondary, 0 6px 16px rgb(0 0 0 / 12%));
+		cursor: grabbing;
+
+		.matrix-state-cell__inner--row {
+			background: var(--ant-color-bg-container);
+		}
+	}
+
+	&--replacement-source {
+		min-height: @row-height;
+	}
+
+	&__inner {
+		position: relative;
+		display: flex;
+		align-items: center;
+		width: 100%;
+		height: 100%;
+		min-height: @row-height;
+		box-sizing: border-box;
+		background: transparent;
+
+		&--header {
+			justify-content: center;
+		}
+	}
+
+	&__initial-badge {
+		position: absolute;
+		top: 6px;
+		left: 6px;
+		z-index: 2;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		background: var(--ant-color-primary-bg);
+		color: var(--ant-color-primary);
+		font-size: 10px;
+		line-height: 1;
+		box-shadow: 0 0 0 1px var(--ant-color-primary-border);
+	}
+
+	&__drag {
+		position: absolute;
+		left: 6px;
+		top: 50%;
+		transform: translateY(-50%);
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 18px;
+		height: 18px;
+		color: var(--ant-color-text-quaternary);
+		font-size: 16px;
+		line-height: 1;
+		cursor: grab;
+		opacity: 1;
+
+		&--visible {
+			opacity: 1;
+		}
+
+		&:active {
+			cursor: grabbing;
+		}
+	}
+
+	&__label-wrap {
+		display: flex;
+		flex: 1;
+		align-items: center;
+		justify-content: center;
+		min-width: 0;
+		padding: 0 26px 0 28px;
+	}
+
+	&__actions {
+		position: absolute;
+		right: 4px;
+		top: 50%;
+		transform: translateY(-50%);
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 24px;
+		height: 24px;
+		opacity: 0;
+		transition: opacity 0.2s ease;
+	}
+
+	&--row:hover &__actions {
+		opacity: 1;
+	}
+
+	&__action-trigger {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 18px;
+		height: 18px;
+		font-size: 16px;
+		line-height: 1;
+		color: var(--ant-color-text-quaternary);
+		cursor: pointer;
+		border-radius: 3px;
+		transition: color 0.2s ease, background 0.2s ease;
+
+		&:hover {
+			color: var(--ant-color-text-secondary);
+			background: var(--ant-color-fill-quaternary);
+		}
+	}
+}
+
+.matrix-step-cell {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: @state-card-width;
+	height: 55px;
+	box-sizing: border-box;
+
+	&--diagonal {
+		width: 100%;
+		background: transparent;
+	}
+
+	&--empty {
+		cursor: default;
+
+		&.is-editable {
+			cursor: pointer;
+		}
+	}
+
+	&--no-rule,
+	&--configured {
+		cursor: pointer;
+	}
+
+	&__add-symbol {
+		font-size: 24px;
+		font-weight: 500;
+		line-height: 1;
+		color: var(--ant-color-text-quaternary);
+		transition: opacity 0.15s ease, visibility 0.15s ease;
+	}
+
+	&__add-text {
+		font-size: 12px;
+		color: var(--ant-color-text-secondary);
+		white-space: nowrap;
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity 0.15s ease, visibility 0.15s ease;
+	}
+
+	&--empty.is-editable:hover &__add-symbol {
+		opacity: 0;
+		visibility: hidden;
+	}
+
+	&--empty.is-editable:hover &__add-text {
+		opacity: 1;
+		visibility: visible;
+	}
+
+	&__card {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		justify-content: center;
+		width: @state-card-width;
+		height: 55px;
+		padding: 8px 12px;
+		border-radius: 3px;
+		box-sizing: border-box;
+		transition: border-color 0.2s ease, background 0.2s ease;
+
+		&.has-flow-line::before {
+			content: "";
+			position: absolute;
+			left: -8px;
+			top: 50%;
+			width: 8px;
+			height: 1px;
+			background: var(--ant-color-border);
+		}
+
+		&.has-flow-line::after {
+			content: "";
+			position: absolute;
+			top: -8px;
+			left: 50%;
+			width: 1px;
+			height: 8px;
+			background: var(--ant-color-border);
+		}
+
+		&--no-rule {
+			background: var(--ant-color-bg-container);
+			border: 1px solid transparent;
+
+			&:hover {
+				border-color: var(--ant-color-border);
+			}
+		}
+
+		&--empty {
+			position: relative;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: var(--ant-color-bg-container);
+			border: 1px solid transparent;
+
+			.matrix-step-cell__add-symbol,
+			.matrix-step-cell__add-text {
+				position: absolute;
+				inset: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+
+			&:hover {
+				border-color: var(--ant-color-border);
+				background: var(--ant-color-primary-bg);
+			}
+		}
+
+		&--configured {
+			background: var(--ant-color-bg-container);
+			border: 1px solid var(--ant-color-border);
+
+			&:hover {
+				border-color: var(--ant-color-primary);
+			}
+		}
+	}
+
+	&__name {
+		font-size: 13px;
+		font-weight: 500;
+		color: var(--ant-color-text);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 100%;
+		line-height: 18px;
+	}
+
+	&__hint {
+		margin-top: 2px;
+		font-size: 12px;
+		color: var(--ant-color-text-quaternary);
+		line-height: 16px;
+	}
+}

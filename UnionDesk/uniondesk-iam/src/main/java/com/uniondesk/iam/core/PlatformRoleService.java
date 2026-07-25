@@ -8,8 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 平台角色管理服务（遗留 staff_account_platform_role 表）。
- * IAM 读路径以 {@code user_global_role} 为准；本服务待后续 change 收敛。
+ * 平台角色管理服务（{@code staff_account_platform_role}）。
  */
 @Service
 public class PlatformRoleService {
@@ -90,6 +89,7 @@ public class PlatformRoleService {
             JOIN platform_role pr ON sapr.platform_role_id = pr.id
             WHERE pr.code = 'platform_admin'
               AND sa.status = 'active'
+              AND sa.employment_status <> 'offboarded'
               AND sa.id != ?
             """)
             .param(staffAccountId)
@@ -211,11 +211,14 @@ public class PlatformRoleService {
             .list();
     }
 
-    private Long getPlatformRoleIdByCode(String code) {
+    public Long getPlatformRoleIdByCode(String code) {
+        if (code == null || code.isBlank()) {
+            return null;
+        }
         return jdbcClient.sql("""
             SELECT id FROM platform_role WHERE code = ?
             """)
-            .param(code)
+            .param(code.trim())
             .query(Long.class)
             .optional()
             .orElse(null);

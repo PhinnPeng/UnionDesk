@@ -269,6 +269,7 @@ export function Detail({
 				fieldProps={{
 					showSearch: true,
 					autoClearSearchValue: true,
+					changeOnSelect: true,
 					fieldNames: { label: "name", value: "id", children: "children" },
 				}}
 				request={async () => handleTree(flatParentMenus)}

@@ -46,6 +46,7 @@ const mocks = vi.hoisted(() => {
 		accessState,
 		preferencesState,
 		pathname: "/",
+		search: "",
 		navigate: vi.fn(),
 		fetchUserInfoAndRoutes: vi.fn().mockResolvedValue({
 			userInfo: authState.user,
@@ -131,7 +132,7 @@ vi.mock("react-router", async () => {
 		Navigate: ({ to }: { to: string }) => <div data-testid="navigate">{to}</div>,
 		useLocation: () => ({
 			pathname: mocks.pathname,
-			search: "",
+			search: mocks.search,
 		}),
 		useNavigate: () => mocks.navigate,
 		matchRoutes: () => [],
@@ -143,6 +144,7 @@ import { AuthGuard } from "./auth-guard";
 describe("AuthGuard", () => {
 	beforeEach(() => {
 		mocks.pathname = "/";
+		mocks.search = "";
 		mocks.accessState.isAccessChecked = false;
 		mocks.userState.id = 2;
 		mocks.userState.actions = [];
@@ -244,6 +246,42 @@ describe("AuthGuard", () => {
 		await waitFor(() => {
 			expect(screen.getByTestId("navigate")).toHaveTextContent("/platform/home");
 		});
+	});
+
+	it("honors safe redirect query when logged-in user is on the login page", async () => {
+		mocks.pathname = "/login";
+		mocks.search = `?redirect=${encodeURIComponent("/platform/ticket-config?section=types")}`;
+		mocks.userState.actions = ["platform.menu.read"];
+
+		render(
+			<AuthGuard>
+				<div>child</div>
+			</AuthGuard>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("navigate")).toHaveTextContent("/platform/ticket-config?section=types");
+		});
+	});
+
+	it("encodes current path into login redirect when unauthenticated", async () => {
+		mocks.authState.token = "";
+		mocks.pathname = "/platform/ticket-config";
+		mocks.search = "?section=types";
+
+		render(
+			<AuthGuard>
+				<div>child</div>
+			</AuthGuard>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("navigate")).toHaveTextContent(
+				`/login?redirect=${encodeURIComponent("/platform/ticket-config?section=types")}`,
+			);
+		});
+
+		mocks.authState.token = "token";
 	});
 
 	it("clears stale session and redirects to login when permission snapshot returns 401", async () => {

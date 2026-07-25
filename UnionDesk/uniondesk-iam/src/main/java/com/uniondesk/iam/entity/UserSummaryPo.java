@@ -1,7 +1,7 @@
 package com.uniondesk.iam.entity;
 
 /**
- * 用户摘要投影（user_account 查询结果）
+ * 用户摘要投影（staff_account 查询结果）
  */
 public class UserSummaryPo {
 

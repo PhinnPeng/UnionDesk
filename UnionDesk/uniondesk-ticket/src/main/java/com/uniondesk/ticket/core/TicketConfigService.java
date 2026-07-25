@@ -17,6 +17,7 @@ import com.uniondesk.ticket.web.TicketConfigDtos;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -84,6 +85,7 @@ public class TicketConfigService {
         po.setCode(code);
         po.setName(name);
         po.setDescription(trimToNull(request.description()));
+        po.setDescriptionTemplateMd(trimToNull(request.description_template_md()));
         po.setIcon(trimToNull(request.icon()));
         po.setStatus(TicketTypePo.STATUS_ACTIVE);
         po.setSortOrder(0);
@@ -106,10 +108,13 @@ public class TicketConfigService {
         String name = StringUtils.hasText(request.name()) ? request.name().trim() : existing.getName();
         assertNameUnique(domainId, name, typeId);
         String description = request.description() == null ? existing.getDescription() : trimToNull(request.description());
+        String descriptionTemplateMd = request.description_template_md() == null
+                ? existing.getDescriptionTemplateMd()
+                : trimToNull(request.description_template_md());
         String icon = request.icon() == null ? existing.getIcon() : trimToNull(request.icon());
         String status = StringUtils.hasText(request.status()) ? request.status().trim() : existing.getStatus();
         try {
-            ticketTypeRepository.updateMetadata(typeId, domainId, name, description, icon, status);
+            ticketTypeRepository.updateMetadata(typeId, domainId, name, description, descriptionTemplateMd, icon, status);
         } catch (DuplicateKeyException ex) {
             throw translateTicketTypeDuplicate(ex);
         }
@@ -121,6 +126,7 @@ public class TicketConfigService {
         }
         existing.setName(name);
         existing.setDescription(description);
+        existing.setDescriptionTemplateMd(descriptionTemplateMd);
         existing.setIcon(icon);
         existing.setStatus(status);
         return toTicketTypeView(existing);
@@ -302,27 +308,27 @@ public class TicketConfigService {
     @Transactional
     public TicketConfigDtos.PriorityLevelView createPriorityLevel(long domainId, TicketConfigDtos.CreatePriorityLevelRequest request) {
         String label = resolvePriorityLabel(request.name(), request.display_label());
+        String code = StringUtils.hasText(request.code())
+                ? request.code().trim().toLowerCase(Locale.ROOT)
+                : label.toLowerCase(Locale.ROOT);
         int sortOrder = request.sort_order() == null ? 0 : request.sort_order();
         boolean isDefault = Boolean.TRUE.equals(request.is_default());
+        String color = resolvePriorityColor(code, request.color());
+        String icon = resolvePriorityIcon(code, request.icon());
         if (isDefault) {
             ticketPriorityLevelRepository.clearDefaults(domainId);
         }
         TicketPriorityLevelPo po = new TicketPriorityLevelPo();
         po.setBusinessDomainId(domainId);
-        po.setCode(label);
+        po.setCode(code);
         po.setName(label);
+        po.setColor(color);
+        po.setIcon(icon);
         po.setSortOrder(sortOrder);
         po.setIsDefault(isDefault);
         po.setStatus("active");
         ticketPriorityLevelRepository.save(po);
-        return new TicketConfigDtos.PriorityLevelView(
-                String.valueOf(po.getId()),
-                String.valueOf(domainId),
-                label,
-                label,
-                request.color(),
-                sortOrder,
-                isDefault);
+        return toPriorityLevelView(po);
     }
 
     @Transactional
@@ -331,20 +337,24 @@ public class TicketConfigService {
         String label = StringUtils.hasText(request.display_label())
                 ? request.display_label().trim()
                 : (StringUtils.hasText(request.name()) ? request.name().trim() : existing.getName());
+        String code = StringUtils.hasText(request.code())
+                ? request.code().trim().toLowerCase(Locale.ROOT)
+                : existing.getCode();
         int sortOrder = request.sort_order() == null ? existing.getSortOrder() : request.sort_order();
         boolean isDefault = request.is_default() == null ? existing.getIsDefault() : request.is_default();
+        String color = resolvePriorityColor(code, request.color() != null ? request.color() : existing.getColor());
+        String icon = resolvePriorityIcon(code, request.icon() != null ? request.icon() : existing.getIcon());
         if (isDefault) {
             ticketPriorityLevelRepository.clearDefaultsExcept(domainId, levelId);
         }
-        ticketPriorityLevelRepository.update(levelId, domainId, label, label, sortOrder, isDefault ? 1 : 0);
-        return new TicketConfigDtos.PriorityLevelView(
-                String.valueOf(existing.getId()),
-                String.valueOf(domainId),
-                label,
-                label,
-                request.color(),
-                sortOrder,
-                isDefault);
+        ticketPriorityLevelRepository.update(levelId, domainId, code, label, color, icon, sortOrder, isDefault ? 1 : 0);
+        existing.setCode(code);
+        existing.setName(label);
+        existing.setColor(color);
+        existing.setIcon(icon);
+        existing.setSortOrder(sortOrder);
+        existing.setIsDefault(isDefault);
+        return toPriorityLevelView(existing);
     }
 
     @Transactional
@@ -376,6 +386,7 @@ public class TicketConfigService {
                 po.getCode(),
                 po.getName(),
                 po.getDescription(),
+                po.getDescriptionTemplateMd(),
                 po.getIcon(),
                 workflow.status_flow(),
                 aggregate.publishedSchema(),
@@ -414,11 +425,35 @@ public class TicketConfigService {
         return new TicketConfigDtos.PriorityLevelView(
                 String.valueOf(po.getId()),
                 String.valueOf(po.getBusinessDomainId()),
+                po.getCode(),
                 po.getName(),
                 po.getName(),
-                null,
+                po.getColor(),
+                po.getIcon(),
                 po.getSortOrder(),
                 po.getIsDefault());
+    }
+
+    private static String resolvePriorityColor(String code, String requested) {
+        if (StringUtils.hasText(requested) && requested.trim().matches("^#[0-9A-Fa-f]{6}$")) {
+            return requested.trim().toLowerCase(Locale.ROOT);
+        }
+        return switch (code == null ? "" : code.toLowerCase(Locale.ROOT)) {
+            case "urgent" -> "#f5222d";
+            case "high" -> "#fa8c16";
+            case "low" -> "#8c8c8c";
+            default -> "#1677ff";
+        };
+    }
+
+    private static String resolvePriorityIcon(String code, String requested) {
+        if (StringUtils.hasText(requested)) {
+            return requested.trim().toLowerCase(Locale.ROOT);
+        }
+        return switch (code == null ? "" : code.toLowerCase(Locale.ROOT)) {
+            case "urgent", "high", "low", "normal" -> code.toLowerCase(Locale.ROOT);
+            default -> "normal";
+        };
     }
 
     private long findDefaultTicketTypeId(long domainId) {

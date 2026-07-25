@@ -6,9 +6,15 @@ import { lazy } from "react";
 
 const TicketDetail = lazy(() => import("#src/pages/platform/ticket-detail"));
 const DomainDetail = lazy(() => import("#src/pages/platform/domains/detail"));
-const TicketTypeConfigRedirect = lazy(() => import("#src/pages/platform/domains/ticket-type-config"));
+const TicketTypeConfigPage = lazy(() => import("#src/pages/platform/domains/ticket-type-config"));
 const TicketTypeFlowConfig = lazy(() => import("#src/pages/platform/domains/ticket-type-config/flow"));
 const TicketFormDesign = lazy(() => import("#src/pages/common/form-design"));
+const TicketTypeAttributes = lazy(() => import("#src/pages/platform/domains/ticket-type-attributes"));
+const PlatformTicketConfig = lazy(() => import("#src/pages/platform/ticket-config"));
+const TicketConfigTypes = lazy(() => import("#src/pages/platform/ticket-config/types"));
+const PlatformTicketTypeConfig = lazy(() => import("#src/pages/platform/ticket-config/types/config"));
+const TicketConfigAttributes = lazy(() => import("#src/pages/platform/ticket-config/attributes"));
+const TicketConfigStatuses = lazy(() => import("#src/pages/platform/ticket-config/statuses"));
 
 /**
  * 将内置平台页面包裹在 ContainerLayout 内，经 LayoutContent 渲染（侧栏、顶栏、页签）。
@@ -81,12 +87,72 @@ const routes: AppRouteRecordRaw[] = [
 	}),
 	withPlatformLayout({
 		path: "/platform/domains/ticket-type-config/:domainId/:typeId",
-		Component: TicketTypeConfigRedirect,
+		Component: TicketTypeConfigPage,
 		handle: {
 			hideInMenu: true,
 			scope: "platform",
-			title: "工单类型配置",
+			title: "事项类型配置",
 			currentActiveMenu: "/platform/domains",
+		},
+	}),
+	withPlatformLayout({
+		path: "/platform/domains/ticket-type-attributes/:domainId/:typeId",
+		Component: TicketTypeAttributes,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "属性编排",
+			currentActiveMenu: "/platform/domains",
+		},
+	}),
+	withPlatformLayout({
+		path: "/platform/ticket-config",
+		Component: PlatformTicketConfig,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "事项配置",
+			currentActiveMenu: "/platform/ticket-config",
+		},
+	}),
+	withPlatformLayout({
+		path: "/platform/ticket-config/attributes",
+		Component: TicketConfigAttributes,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "事项属性",
+			currentActiveMenu: "/platform/ticket-config",
+		},
+	}),
+	withPlatformLayout({
+		path: "/platform/ticket-config/types/:typeId",
+		Component: PlatformTicketTypeConfig,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "事项类型配置",
+			currentActiveMenu: "/platform/ticket-config",
+		},
+	}),
+	withPlatformLayout({
+		path: "/platform/ticket-config/types",
+		Component: TicketConfigTypes,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "事项类型",
+			currentActiveMenu: "/platform/ticket-config",
+		},
+	}),
+	withPlatformLayout({
+		path: "/platform/ticket-config/statuses",
+		Component: TicketConfigStatuses,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "事项状态",
+			currentActiveMenu: "/platform/ticket-config",
 		},
 	}),
 ];

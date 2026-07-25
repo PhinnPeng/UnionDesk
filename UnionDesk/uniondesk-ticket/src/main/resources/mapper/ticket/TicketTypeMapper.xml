@@ -10,6 +10,7 @@
         <result property="code" column="code"/>
         <result property="name" column="name"/>
         <result property="description" column="description"/>
+        <result property="descriptionTemplateMd" column="description_template_md"/>
         <result property="icon" column="icon"/>
         <result property="category" column="category"/>
         <result property="status" column="status"/>
@@ -21,7 +22,7 @@
     </resultMap>
 
     <sql id="TicketTypeColumns">
-        id, scope, business_domain_id, code, name, description, icon, category, status,
+        id, scope, business_domain_id, code, name, description, description_template_md, icon, category, status,
         sort_order, is_system, source_global_type_id, created_at, updated_at
     </sql>
 
@@ -115,11 +116,11 @@
     <insert id="insert" parameterType="com.uniondesk.ticket.entity.TicketTypePo"
             useGeneratedKeys="true" keyProperty="id">
         INSERT INTO ticket_type (
-            scope, business_domain_id, code, name, description, icon, category, status,
+            scope, business_domain_id, code, name, description, description_template_md, icon, category, status,
             sort_order, is_system, source_global_type_id, created_at, updated_at
         )
         VALUES (
-            #{scope}, #{businessDomainId}, #{code}, #{name}, #{description}, #{icon},
+            #{scope}, #{businessDomainId}, #{code}, #{name}, #{description}, #{descriptionTemplateMd}, #{icon},
             COALESCE(#{category}, 'transaction'), #{status},
             #{sortOrder}, #{system}, #{sourceGlobalTypeId},
             CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
@@ -130,6 +131,7 @@
         UPDATE ticket_type
         SET name = #{name},
             description = #{description},
+            description_template_md = #{descriptionTemplateMd},
             icon = #{icon},
             status = #{status},
             updated_at = CURRENT_TIMESTAMP(3)
@@ -140,6 +142,7 @@
         UPDATE ticket_type
         SET name = #{name},
             description = #{description},
+            description_template_md = #{descriptionTemplateMd},
             icon = #{icon},
             status = #{status},
             updated_at = CURRENT_TIMESTAMP(3)

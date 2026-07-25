@@ -32,7 +32,7 @@
             o.created_at
         FROM platform_organization o
         LEFT JOIN platform_organization parent ON parent.id = o.parent_id
-        LEFT JOIN user_account leader ON leader.id = o.leader_user_id
+        LEFT JOIN staff_account leader ON leader.id = o.leader_user_id
     </sql>
 
     <select id="selectAll" resultMap="OrganizationPo">
@@ -94,19 +94,20 @@
     </select>
 
     <select id="selectUserOrganizationIds" resultType="java.lang.Long">
-        SELECT organization_id FROM user_organization WHERE user_id = #{userId} ORDER BY organization_id
+        SELECT organization_id FROM staff_organization WHERE staff_account_id = #{userId} ORDER BY organization_id
     </select>
 
     <delete id="deleteUserOrganizations">
-        DELETE FROM user_organization WHERE user_id = #{userId}
+        DELETE FROM staff_organization WHERE staff_account_id = #{userId}
     </delete>
 
     <insert id="insertUserOrganization">
-        INSERT INTO user_organization (user_id, organization_id) VALUES (#{userId}, #{organizationId})
+        INSERT INTO staff_organization (staff_account_id, organization_id, created_at)
+        VALUES (#{userId}, #{organizationId}, CURRENT_TIMESTAMP(3))
     </insert>
 
     <select id="countUserAccountById" resultType="int">
-        SELECT COUNT(*) FROM user_account WHERE id = #{id}
+        SELECT COUNT(*) FROM staff_account WHERE id = #{id}
     </select>
 
 </mapper>

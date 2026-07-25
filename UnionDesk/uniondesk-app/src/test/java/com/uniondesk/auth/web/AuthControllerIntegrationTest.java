@@ -56,7 +56,7 @@ class AuthControllerIntegrationTest {
     void testLoginConfigWithoutAuthentication() throws Exception {
         mockMvc.perform(get("/api/v1/auth/login-config"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.captchaEnabled").exists());
+                .andExpect(jsonPath("$.data.captchaEnabled").exists());
     }
 
     @Test
@@ -76,10 +76,10 @@ class AuthControllerIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(loginRequest))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").exists())
-                .andExpect(jsonPath("$.refreshToken").exists())
-                .andExpect(jsonPath("$.portalType").value("staff"))
-                .andExpect(jsonPath("$.subjectId").exists());
+                .andExpect(jsonPath("$.data.accessToken").exists())
+                .andExpect(jsonPath("$.data.refreshToken").exists())
+                .andExpect(jsonPath("$.data.portalType").value("staff"))
+                .andExpect(jsonPath("$.data.subjectId").exists());
 
         String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
                 .header("X-UD-Client-Code", "ud-admin-web")
@@ -90,14 +90,14 @@ class AuthControllerIntegrationTest {
                 .getResponse()
                 .getContentAsString();
         JsonNode loginJson = objectMapper.readTree(loginResponse);
-        String accessToken = loginJson.get("accessToken").asText();
+        String accessToken = loginJson.get("data").get("accessToken").asText();
 
         mockMvc.perform(get("/api/v1/auth/me")
                         .header("X-UD-Client-Code", "ud-admin-web")
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.platformRoles").isArray())
-                .andExpect(jsonPath("$.platformRoles[0]").value("platform_admin"));
+                .andExpect(jsonPath("$.data.platformRoles").isArray())
+                .andExpect(jsonPath("$.data.platformRoles[0]").value("platform_admin"));
     }
 
     @Test
@@ -123,7 +123,7 @@ class AuthControllerIntegrationTest {
 
         // 解析 JSON 提取 refreshToken（驼峰命名）
         JsonNode jsonNode = objectMapper.readTree(loginResponse);
-        String refreshToken = jsonNode.get("refreshToken").asText();
+        String refreshToken = jsonNode.get("data").get("refreshToken").asText();
 
         // 使用 refreshToken 刷新（使用驼峰命名）
         String refreshRequest = String.format("""
@@ -136,9 +136,9 @@ class AuthControllerIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(refreshRequest))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").exists())
-                .andExpect(jsonPath("$.refreshToken").exists())
-                .andExpect(jsonPath("$.tokenType").value("Bearer"));
+                .andExpect(jsonPath("$.data.accessToken").exists())
+                .andExpect(jsonPath("$.data.refreshToken").exists())
+                .andExpect(jsonPath("$.data.tokenType").value("Bearer"));
     }
 
     @Test
@@ -190,6 +190,6 @@ class AuthControllerIntegrationTest {
     void testLoginConfigWithoutTokenReturnsOk() throws Exception {
         mockMvc.perform(get("/api/v1/auth/login-config"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.captchaEnabled").exists());
+                .andExpect(jsonPath("$.data.captchaEnabled").exists());
     }
 }

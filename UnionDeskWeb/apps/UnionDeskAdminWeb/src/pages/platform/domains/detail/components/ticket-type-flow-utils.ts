@@ -51,5 +51,9 @@ export function graphToStatusFlow(nodes: Node<FlowNodeData>[], edges: Edge[]): T
 		to: edge.target,
 		label: typeof edge.label === "string" ? edge.label : undefined,
 	}));
-	return { states, transitions };
+	return {
+		states,
+		transitions,
+		initial_state_code: states.length > 0 ? states[0]!.code : null,
+	};
 }

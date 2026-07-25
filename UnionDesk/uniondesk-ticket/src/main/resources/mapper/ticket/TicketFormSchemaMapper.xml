@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.ticket.mapper.TicketFormSchemaMapper">
+
+    <resultMap id="TicketFormSchemaPo" type="com.uniondesk.ticket.entity.TicketFormSchemaPo">
+        <id property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="ticketTypeId" column="ticket_type_id"/>
+        <result property="recordType" column="record_type"/>
+        <result property="versionNo" column="version_no"/>
+        <result property="formSchema" column="form_schema"/>
+        <result property="pluginRevision" column="plugin_revision"/>
+        <result property="publishedBy" column="published_by"/>
+        <result property="publishedAt" column="published_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="TicketFormSchemaColumns">
+        id, business_domain_id, ticket_type_id, record_type, version_no, form_schema, plugin_revision,
+        published_by, published_at, created_at, updated_at
+    </sql>
+
+    <select id="findDraftByTicketTypeId" resultMap="TicketFormSchemaPo">
+        SELECT <include refid="TicketFormSchemaColumns"/>
+        FROM ticket_form_schema
+        WHERE ticket_type_id = #{ticketTypeId}
+          AND business_domain_id = #{domainId}
+          AND record_type = 'draft'
+          AND version_no = 0
+        LIMIT 1
+    </select>
+
+    <select id="findLatestPublishedByTicketTypeId" resultMap="TicketFormSchemaPo">
+        SELECT <include refid="TicketFormSchemaColumns"/>
+        FROM ticket_form_schema
+        WHERE ticket_type_id = #{ticketTypeId}
+          AND business_domain_id = #{domainId}
+          AND record_type = 'published'
+        ORDER BY version_no DESC
+        LIMIT 1
+    </select>
+
+    <select id="findPublishedByVersionNo" resultMap="TicketFormSchemaPo">
+        SELECT <include refid="TicketFormSchemaColumns"/>
+        FROM ticket_form_schema
+        WHERE ticket_type_id = #{ticketTypeId}
+          AND business_domain_id = #{domainId}
+          AND record_type = 'published'
+          AND version_no = #{versionNo}
+        LIMIT 1
+    </select>
+
+    <select id="listPublishedByTicketTypeId" resultMap="TicketFormSchemaPo">
+        SELECT <include refid="TicketFormSchemaColumns"/>
+        FROM ticket_form_schema
+        WHERE ticket_type_id = #{ticketTypeId}
+          AND business_domain_id = #{domainId}
+          AND record_type = 'published'
+        ORDER BY version_no DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findMaxPublishedVersionNo" resultType="java.lang.Integer">
+        SELECT MAX(version_no)
+        FROM ticket_form_schema
+        WHERE ticket_type_id = #{ticketTypeId}
+          AND business_domain_id = #{domainId}
+          AND record_type = 'published'
+    </select>
+
+    <insert id="insert" parameterType="com.uniondesk.ticket.entity.TicketFormSchemaPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ticket_form_schema (
+            business_domain_id, ticket_type_id, record_type, version_no, form_schema, plugin_revision,
+            published_by, published_at, created_at, updated_at
+        )
+        VALUES (
+            #{businessDomainId}, #{ticketTypeId}, #{recordType}, #{versionNo}, #{formSchema}, #{pluginRevision},
+            #{publishedBy}, #{publishedAt}, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
+        )
+    </insert>
+
+    <update id="updateDraftSchema">
+        UPDATE ticket_form_schema
+        SET form_schema = #{formSchema},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE ticket_type_id = #{ticketTypeId}
+          AND business_domain_id = #{domainId}
+          AND record_type = 'draft'
+          AND version_no = 0
+    </update>
+
+    <update id="updateDraftMaterialized">
+        UPDATE ticket_form_schema
+        SET form_schema = #{formSchema},
+            plugin_revision = #{pluginRevision},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE ticket_type_id = #{ticketTypeId}
+          AND business_domain_id = #{domainId}
+          AND record_type = 'draft'
+          AND version_no = 0
+    </update>
+
+    <delete id="deleteByTicketTypeId">
+        DELETE FROM ticket_form_schema
+        WHERE ticket_type_id = #{ticketTypeId}
+          AND business_domain_id = #{domainId}
+    </delete>
+
+    <delete id="deletePublishedByVersionNo">
+        DELETE FROM ticket_form_schema
+        WHERE ticket_type_id = #{ticketTypeId}
+          AND business_domain_id = #{domainId}
+          AND record_type = 'published'
+          AND version_no = #{versionNo}
+    </delete>
+
+</mapper>

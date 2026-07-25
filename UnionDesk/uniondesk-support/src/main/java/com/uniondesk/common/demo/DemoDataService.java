@@ -90,7 +90,7 @@ public class DemoDataService {
     }
 
     public long defaultCustomerId() {
-        return requiredLong("SELECT id FROM user_account WHERE id = 1 LIMIT 1");
+        return requiredLong("SELECT id FROM customer_account WHERE id = 1 LIMIT 1");
     }
 
     public DashboardResponse dashboard(Long businessDomainId) {

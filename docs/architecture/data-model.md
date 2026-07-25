@@ -10,7 +10,7 @@
 
 > **文档定位（L4）**：本文档为**逻辑数据模型**（L4），描述逻辑实体、命名与隔离约定；**非** Flyway 导出快照。与 [`product/foundation-rules.md`](../product/foundation-rules.md)（L3）同步。  
 > **与 PRD**：[`product/prd.md`](../product/prd.md) §5 为概念简表；物理变更按 Sprint 登记 [`database-increment-plan.md`](./database-increment-plan.md)（L5），DDL 见 Flyway（L7）。  
-> 下文表结构描述**以 Flyway 已落库为准**（含过渡期 `user_account` 等）；与 L3 目标态不一致时，以 L3 + Backlog 为准并登记偏差。
+> 下文表结构描述**以 Flyway 已落库为准**；身份真相源为 `identity_subject` / `staff_account` / `domain_member_role`（遗留 `user_account` 等已物理拆除）。
 
 1. 支持多业务域隔离，统一使用 `business_domain_id` 作为域范围字段。
 2. 支持平台管理端与业务端共用同一套 IAM、登录与审计体系。
@@ -57,16 +57,17 @@
 - `staff_account`：员工登录账号。`username`（登录账号）、`real_name`（真实姓名）、`nickname`（昵称）、`avatar_url`；**不写 DB 外键**，引用 `identity_subject` 由业务层校验。
 - `customer_account`：客户登录账号。`username`、`nickname`（原 `display_name`）；同上无 FK。
 - `domain_member`：员工入域关系；展示列 `domain_nickname` / `domain_avatar_url` / `domain_contact_*`；域内展示昵称链见 Design Doc §4.8。
-- `domain_member_role`：域 RBAC 唯一写入路径（`user_domain_role` 停写）。
+- `domain_member_role`：域 RBAC 唯一写入路径。
 - `staff_account_platform_role`：平台级角色绑定。
+- `staff_organization`：员工组织归属（替代已拆除的 `user_organization`）。
+- `staff_account.employment_status` / `offboarded_*`：离职语义与 `status=disabled`（停用）分离。
 
-### 3.3 用户与角色（Legacy 过渡期）
+### 3.3 用户与角色
 
-- `user_account`：**停写**（不 INSERT）；登录不 fallback；只读兼容旧数据直至归档。
-- `platform_organization`：平台内部组织树，和 `business_domain` 分开维护，用于承接平台部门、负责人和组织排序。
+- 平台员工生命周期唯一入口：`/api/v1/admin/staff*`（已删除 `/api/v1/iam/users*`）。
+- `platform_organization`：平台内部组织树，和 `business_domain` 分开维护；负责人与成员归属指向 `staff_account`。
 - `role`：角色定义表，当前角色包含 `customer`、`agent`、`domain_admin`、`super_admin`、`platform_admin`、`security_auditor`；目标态中 `platform_admin` 为平台级最高权限，`super_admin` 作为业务域最高角色使用（产品称「所有人」，每域唯一；**不单独设 `owner_id` 列**，由 `domain_member_role` + `super_admin` 表达）。
-- `user_global_role`：全局角色绑定表（Legacy）。
-- `user_domain_role`：业务域角色绑定表（**停写**；读路径迁移至 `domain_member_role`）。
+- 已拆除：`user_account`、`user_global_role`、`user_domain_role`、`user_organization`（见 Flyway `V20260719100446`）。
 - `customer_business_domain_access`：客户业务域可见/申请关系表（已废弃，用 `domain_customer`）。
 
 ### 3.4 权限与平台菜单
@@ -99,7 +100,7 @@
 
 ## 4. 关键索引
 
-1. `user_account`：`username`、`mobile`、`email`、`status`、`employment_status`
+1. `staff_account`：`username`、`phone`、`email`、`status`、`employment_status`
 2. `platform_organization`：`parent_id, order_no, id`、`status`
 3. `auth_login_session`：`user_id, session_status, expires_at`
 4. `login_log`：`sid, created_at`、`subject_id, created_at`、`event_type, created_at`、`client_code, created_at`
@@ -119,7 +120,7 @@
 2. 数据库和历史迁移里保留了部分旧的菜单种子命名和预留项，后续需要统一口径。
 3. 当前前端入口可见性仍按管理员角色快照控制，但数据库里已经准备好 `platform.*` 权限模型。
 4. `system/user` 和 `system/dept` 目前仍是骨架页，文档不要把它们写成成品页。
-5. `platform_organization` 已补正式表结构并提供平台组织只读接口，当前还没有把 `user_account` 和组织归属关系打通。
+5. `platform_organization` 与 `staff_organization` 承接平台部门与员工归属；列表支持 `organizationId` 筛选。
 6. 导入导出、公告、日志、屏蔽词、知识库目前还没有正式表结构，后续再按模块追加。
 
 ---

@@ -17,9 +17,9 @@
     <select id="selectStaffByIdentifier" resultMap="LoginAccountPo">
         SELECT
             id, username, phone AS mobile, email, password_hash,
-            CASE WHEN status = 'active' THEN 1 ELSE 0 END AS status,
+            CASE WHEN status = 'active' AND employment_status &lt;&gt; 'offboarded' THEN 1 ELSE 0 END AS status,
             'staff' AS account_type,
-            status AS employment_status
+            employment_status
         FROM staff_account
         WHERE LOWER(${column}) = LOWER(#{identifier})
         LIMIT 1
@@ -39,9 +39,9 @@
     <select id="selectStaffById" resultMap="LoginAccountPo">
         SELECT
             id, username, phone AS mobile, email, password_hash,
-            CASE WHEN status = 'active' THEN 1 ELSE 0 END AS status,
+            CASE WHEN status = 'active' AND employment_status &lt;&gt; 'offboarded' THEN 1 ELSE 0 END AS status,
             'staff' AS account_type,
-            status AS employment_status
+            employment_status
         FROM staff_account
         WHERE id = #{id}
         LIMIT 1

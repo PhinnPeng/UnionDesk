@@ -95,7 +95,7 @@ public class AuthVersionService {
         return switch (accountType) {
             case "staff" -> "staff_account";
             case "customer" -> "customer_account";
-            default -> "user_account"; // 兼容旧表
+            default -> throw new IllegalArgumentException("不支持的账号类型：" + accountType);
         };
     }
 

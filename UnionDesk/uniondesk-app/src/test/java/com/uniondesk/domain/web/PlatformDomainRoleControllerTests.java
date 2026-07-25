@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.uniondesk.domain.core.DomainRoleService;
+import com.uniondesk.common.web.ApiResponseWrapper;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,7 +25,7 @@ class PlatformDomainRoleControllerTests {
 
         mockMvc.perform(get("/api/v1/admin/domains/1/platform-roles"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].code").value("domain_admin"));
+                .andExpect(jsonPath("$.data.items[0].code").value("domain_admin"));
         verify(domainRoleService).listRoles(1L);
     }
 
@@ -39,11 +40,13 @@ class PlatformDomainRoleControllerTests {
 
         mockMvc.perform(get("/api/v1/admin/domains/1/platform-roles/22/permissions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.permission_items[0].code").value("domain:config"));
+                .andExpect(jsonPath("$.data.permission_items[0].code").value("domain:config"));
         verify(domainRoleService).getRolePermissions(1L, 22L);
     }
 
     private MockMvc mockMvc() {
-        return MockMvcBuilders.standaloneSetup(new PlatformDomainRoleController(domainRoleService)).build();
+        return MockMvcBuilders.standaloneSetup(new PlatformDomainRoleController(domainRoleService))
+                .setControllerAdvice(new ApiResponseWrapper())
+                .build();
     }
 }

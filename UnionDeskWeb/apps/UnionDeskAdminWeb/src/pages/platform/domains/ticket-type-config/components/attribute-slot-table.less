@@ -1,0 +1,101 @@
+.attribute-slot-table {
+	.ant-table {
+		background: transparent;
+	}
+
+	.ant-table-thead > tr > th {
+		background: var(--ant-color-fill-quaternary) !important;
+		color: var(--ant-color-text-secondary);
+		font-size: 13px;
+		font-weight: 500;
+	}
+
+	.ant-table-thead > tr > th::before {
+		display: none !important;
+	}
+
+	.ant-table-tbody > tr > td {
+		border-bottom: 1px solid var(--ant-color-border-secondary);
+	}
+
+	.ant-table-tbody > tr:last-child > td {
+		border-bottom: none;
+	}
+
+	.ant-table-tbody > tr.system-row {
+		background-color: var(--ant-color-fill-alter);
+	}
+
+	.ant-table-tbody > tr.system-row:hover > td {
+		background-color: var(--ant-color-fill-alter) !important;
+	}
+
+	.ant-table-tbody > tr:hover > td {
+		background: var(--ant-color-fill-quaternary) !important;
+	}
+
+	.ant-table-cell {
+		padding: 12px 16px !important;
+	}
+
+	&__name-cell {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.drag-handle-cell {
+		padding: 0 !important;
+		text-align: center;
+		font-size: 12px;
+	}
+
+	&__divider-row td {
+		padding: 8px 0 !important;
+		background: transparent !important;
+		border-bottom: none !important;
+	}
+
+	&__divider-text {
+		display: block;
+		text-align: center;
+		color: var(--ant-color-text-quaternary);
+		font-size: 12px;
+
+		&::before,
+		&::after {
+			content: "";
+			display: inline-block;
+			width: 48px;
+			height: 1px;
+			background: var(--ant-color-border-secondary);
+			vertical-align: middle;
+			margin: 0 10px;
+		}
+	}
+
+	&__drag-handle {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--ant-color-text-secondary);
+		font-size: 14px;
+		cursor: move;
+
+		&--fixed {
+			color: var(--ant-color-text-quaternary);
+			cursor: not-allowed;
+		}
+	}
+
+	&__default-value {
+		font-size: 13px;
+	}
+
+	&__actions {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		white-space: nowrap;
+	}
+}

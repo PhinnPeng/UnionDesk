@@ -2,6 +2,7 @@ package com.uniondesk.iam.mapper;
 
 import com.uniondesk.iam.entity.StaffAccountPo;
 import com.uniondesk.iam.entity.StaffAccountPresentationPo;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -26,6 +27,13 @@ public interface StaffAccountMapper {
 
     int updateStatus(@Param("id") long id, @Param("status") String status);
 
+    int offboard(@Param("id") long id,
+                 @Param("offboardedAt") LocalDateTime offboardedAt,
+                 @Param("offboardedBy") Long offboardedBy,
+                 @Param("offboardReason") String offboardReason);
+
+    int restoreEmployment(@Param("id") long id);
+
     StaffAccountPresentationPo selectPresentationById(@Param("id") long id);
 
     int revokeActiveSessions(@Param("userId") long userId, @Param("revokedReason") String revokedReason);
@@ -33,4 +41,10 @@ public interface StaffAccountMapper {
     int countActiveStaffByDomainRole(@Param("businessDomainId") long businessDomainId,
                                      @Param("roleCode") String roleCode,
                                      @Param("excludeStaffAccountId") long excludeStaffAccountId);
+
+    List<Long> selectOrganizationIds(@Param("staffAccountId") long staffAccountId);
+
+    int deleteOrganizations(@Param("staffAccountId") long staffAccountId);
+
+    int insertOrganization(@Param("staffAccountId") long staffAccountId, @Param("organizationId") long organizationId);
 }

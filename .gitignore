@@ -16,6 +16,10 @@ logs/
 tmp/
 *.log
 
+# Stale exported MyBatis XML / exploded boot junk (must not shadow module resources)
+UnionDesk/mapper/
+UnionDesk/BOOT-INF/
+
 # Frontend local-only files
 node_modules/
 dist/

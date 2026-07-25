@@ -70,7 +70,7 @@ class AdminMenuRequiredMenuIntegrationTest {
     @Test
     void superAdminPermissionSnapshotIncludesPlatformHome() {
         Long adminUserId = jdbcTemplate.queryForObject(
-                "SELECT id FROM user_account WHERE username = 'admin' LIMIT 1",
+                "SELECT id FROM staff_account WHERE username = 'admin' LIMIT 1",
                 Long.class);
 
         assertThat(adminUserId).isNotNull();
@@ -207,7 +207,7 @@ class AdminMenuRequiredMenuIntegrationTest {
                 .getResponse()
                 .getContentAsString();
 
-        return objectMapper.readTree(loginResponse).path("accessToken").asText();
+        return objectMapper.readTree(loginResponse).path("data").path("accessToken").asText();
     }
 
     private Set<String> extractSnapshotRoutes(JsonNode menusNode) {

@@ -35,7 +35,7 @@ public class TicketTypeRepository {
     public TicketTypePo findRequiredByIdAndDomainId(long id, long domainId) {
         TicketTypePo po = mapper.findByIdAndDomainId(id, domainId);
         if (po == null) {
-            throw new IllegalArgumentException("ticket type not found");
+            throw new IllegalArgumentException("事项类型不存在");
         }
         return po;
     }
@@ -85,17 +85,25 @@ public class TicketTypeRepository {
         mapper.insert(po);
     }
 
-    public void updateMetadata(long id, long domainId, String name, String description, String icon, String status) {
-        mapper.updateMetadata(id, domainId, name, description, icon, status);
+    public void updateMetadata(
+            long id,
+            long domainId,
+            String name,
+            String description,
+            String descriptionTemplateMd,
+            String icon,
+            String status) {
+        mapper.updateMetadata(id, domainId, name, description, descriptionTemplateMd, icon, status);
     }
 
     public void updatePlatformMetadata(
             long id,
             String name,
             String description,
+            String descriptionTemplateMd,
             String icon,
             String status) {
-        mapper.updatePlatformMetadata(id, name, description, icon, status);
+        mapper.updatePlatformMetadata(id, name, description, descriptionTemplateMd, icon, status);
     }
 
     public void updateSortOrder(long id, int sortOrder) {

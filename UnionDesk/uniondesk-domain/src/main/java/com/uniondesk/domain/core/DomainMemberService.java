@@ -126,7 +126,8 @@ public class DomainMemberService {
                 request.email(),
                 request.password(),
                 roleCodes,
-                List.of(domainId)));
+                List.of(domainId),
+                List.of()));
         long memberId = requireMemberId(domainId, created.id());
         return getMember(domainId, memberId);
     }

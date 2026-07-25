@@ -11,8 +11,8 @@
     </select>
 
     <select id="selectPhoneByUserId" resultType="java.lang.String">
-        SELECT COALESCE(NULLIF(mobile, ''), #{fallback})
-        FROM user_account
+        SELECT COALESCE(NULLIF(phone, ''), #{fallback})
+        FROM staff_account
         WHERE id = #{userId}
         LIMIT 1
     </select>

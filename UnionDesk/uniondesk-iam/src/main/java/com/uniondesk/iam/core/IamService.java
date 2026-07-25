@@ -21,13 +21,11 @@ import java.util.function.Supplier;
 import com.uniondesk.iam.entity.EffectivePermissionGrantPo;
 import com.uniondesk.iam.entity.IamResourcePo;
 import com.uniondesk.iam.entity.RolePo;
-import com.uniondesk.iam.entity.UserAccountPo;
 import com.uniondesk.iam.entity.UserSummaryPo;
 import com.uniondesk.iam.mapper.RoleMapper.BusinessDomainSummary;
 import com.uniondesk.iam.repository.IamRepository;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -36,29 +34,22 @@ import org.springframework.util.StringUtils;
 public class IamService {
 
     private static final Duration CACHE_TTL = Duration.ofSeconds(30);
-    private static final List<String> PROTECTED_ROLE_CODES = List.of("platform_admin", "super_admin");
 
     private final IamRepository iamRepository;
     private final Clock clock;
-    private final PasswordEncoder passwordEncoder;
     private final AdminMenuService adminMenuService;
     private final PermissionScopePolicy permissionScopePolicy;
-    private final OrganizationService organizationService;
     private final Map<String, CacheEntry<List<IamResource>>> menuResourceCache = new ConcurrentHashMap<>();
 
     public IamService(
             IamRepository iamRepository,
             Clock clock,
-            PasswordEncoder passwordEncoder,
             AdminMenuService adminMenuService,
-            PermissionScopePolicy permissionScopePolicy,
-            OrganizationService organizationService) {
+            PermissionScopePolicy permissionScopePolicy) {
         this.iamRepository = iamRepository;
         this.clock = clock;
-        this.passwordEncoder = passwordEncoder;
         this.adminMenuService = adminMenuService;
         this.permissionScopePolicy = permissionScopePolicy;
-        this.organizationService = organizationService;
     }
 
     public boolean hasAnyPermission(UserContext context, List<String> permissionCodes) {
@@ -469,118 +460,6 @@ public class IamService {
         return loadRolePermissions(roleId);
     }
 
-    public List<UserAccount> listUsers(boolean offboardedOnly, Long organizationId) {
-        final List<Long> targetOrgIds;
-        if (organizationId != null) {
-            targetOrgIds = organizationService.collectDescendantOrgIds(organizationId);
-        } else {
-            targetOrgIds = List.of();
-        }
-        List<UserAccount> users = iamRepository.findUsersByEmploymentStatus(offboardedOnly).stream()
-                .map(po -> toUserAccount(po, listUserRoleCodes(po.getId()), listUserDomainIds(po.getId()),
-                        listUserOrganizationIdsOrEmpty(po.getId())))
-                .toList();
-        return users.stream()
-                .filter(user -> targetOrgIds.isEmpty() || user.organizationIds().stream().anyMatch(targetOrgIds::contains))
-                .toList();
-    }
-
-    @Transactional
-    public UserAccount createUser(CreateUserCommand command) {
-        String accountType = normalize(command.accountType(), "accountType").toLowerCase();
-        if ("admin".equals(accountType)) {
-            throw new IllegalArgumentException("请使用 /api/v1/admin/staff 创建员工账号");
-        }
-        if ("customer".equals(accountType)) {
-            throw new IllegalArgumentException("请使用客户注册或域客户 API 创建客户账号");
-        }
-        throw new IllegalArgumentException("unsupported account type");
-    }
-
-    @Transactional
-    public UserAccount updateUser(long userId, UpdateUserCommand command) {
-        UserAccount existing = loadUser(userId).orElseThrow(() -> new IllegalArgumentException("user not found"));
-        if (command.username() != null || command.nickname() != null || command.mobile() != null
-                || command.email() != null || command.remark() != null || command.password() != null
-                || command.accountType() != null || command.status() != null) {
-            if (command.accountType() != null) {
-                String accountType = normalize(command.accountType(), "accountType").toLowerCase();
-                if (!List.of("admin", "customer").contains(accountType)) {
-                    throw new IllegalArgumentException("unsupported account type");
-                }
-            }
-            try {
-                iamRepository.updateUserSelective(
-                        userId,
-                        command.username() != null ? normalize(command.username(), "username") : null,
-                        command.nickname() != null ? (StringUtils.hasText(command.nickname()) ? command.nickname().trim() : null) : null,
-                        command.mobile() != null ? normalize(command.mobile(), "mobile") : null,
-                        command.email() != null ? (StringUtils.hasText(command.email()) ? command.email().trim() : null) : null,
-                        command.remark() != null ? normalizeOptional(command.remark()) : null,
-                        command.password() != null ? passwordEncoder.encode(normalize(command.password(), "password")) : null,
-                        command.accountType() != null ? normalize(command.accountType(), "accountType").toLowerCase() : null,
-                        command.status());
-            } catch (DuplicateKeyException ex) {
-                throw new IllegalArgumentException("username/mobile/email already exists");
-            }
-        }
-        if (command.roleCodes() != null || command.businessDomainIds() != null || command.organizationIds() != null) {
-            List<String> roleCodes = command.roleCodes() != null
-                    ? command.roleCodes().stream().filter(StringUtils::hasText).map(String::trim).toList()
-                    : existing.roleCodes();
-            List<Long> businessDomainIds = command.businessDomainIds() != null
-                    ? command.businessDomainIds().stream().filter(Objects::nonNull).distinct().toList()
-                    : existing.businessDomainIds();
-            List<Long> organizationIds = command.organizationIds() != null
-                    ? command.organizationIds().stream().filter(Objects::nonNull).distinct().toList()
-                    : existing.organizationIds();
-            replaceUserRoleBindings(userId, roleCodes, businessDomainIds);
-            organizationService.replaceUserOrganizations(userId, organizationIds);
-        }
-        return loadUser(userId).orElseThrow(() -> new IllegalArgumentException("user not found"));
-    }
-
-    @Transactional
-    public UserAccount offboardUser(long userId, long operatorUserId, String reason) {
-        UserAccount existing = loadUser(userId).orElseThrow(() -> new IllegalArgumentException("user not found"));
-        if ("offboarded".equals(existing.employmentStatus())) {
-            return existing;
-        }
-        guardLastProtectedRoleHolder(userId);
-        LocalDateTime now = LocalDateTime.now(clock);
-        iamRepository.offboardUser(userId, now, operatorUserId, StringUtils.hasText(reason) ? reason.trim() : null);
-        iamRepository.revokeSessionsOnOffboard(userId, now);
-        return loadUser(userId).orElseThrow(() -> new IllegalArgumentException("user not found"));
-    }
-
-    @Transactional
-    public UserAccount restoreUser(long userId) {
-        UserAccount existing = loadUser(userId).orElseThrow(() -> new IllegalArgumentException("user not found"));
-        if ("active".equals(existing.employmentStatus())) {
-            return existing;
-        }
-        iamRepository.restoreUser(userId);
-        return loadUser(userId).orElseThrow(() -> new IllegalArgumentException("user not found"));
-    }
-
-    @Transactional
-    public void deleteUserPermanently(long userId) {
-        UserAccount existing = loadUser(userId).orElseThrow(() -> new IllegalArgumentException("user not found"));
-        if (!"offboarded".equals(existing.employmentStatus())) {
-            throw new IllegalArgumentException("user must be offboarded before permanent delete");
-        }
-        if (iamRepository.countTicketReferences(userId) > 0 || iamRepository.countConsultationReferences(userId) > 0) {
-            throw new IllegalArgumentException("user has ticket/consultation references and cannot be deleted");
-        }
-        iamRepository.clearOffboardedBy(userId);
-        iamRepository.deleteUserDomainRoles(userId);
-        iamRepository.deleteUserGlobalRoles(userId);
-        iamRepository.deleteUserOrganizations(userId);
-        iamRepository.deleteLoginLogsByUsername(userId);
-        iamRepository.deleteSessions(userId);
-        iamRepository.deleteUser(userId);
-    }
-
     public void evictAuthorizationCache() {
         menuResourceCache.clear();
     }
@@ -614,83 +493,6 @@ public class IamService {
         return new UserSummary(po.getId(), po.getUsername(), po.getMobile(), po.getEmail());
     }
 
-    private List<String> listUserRoleCodes(long userId) {
-        List<String> roleCodes = new ArrayList<>(iamRepository.findUserRoleCodes(userId));
-        roleCodes.sort(Comparator.comparingInt(IamService::rolePriority));
-        return roleCodes;
-    }
-
-    private List<Long> listUserOrganizationIdsOrEmpty(long userId) {
-        try {
-            List<Long> organizationIds = organizationService.listUserOrganizationIds(userId);
-            return organizationIds == null ? List.of() : organizationIds;
-        } catch (DataAccessException ex) {
-            // Organization links are optional for reads; missing relation data should not
-            // prevent the platform user list from rendering.
-            return List.of();
-        }
-    }
-
-    private void guardLastProtectedRoleHolder(long userId) {
-        List<String> currentRoles = listUserRoleCodes(userId);
-        for (String protectedRole : PROTECTED_ROLE_CODES) {
-            if (currentRoles.contains(protectedRole)) {
-                guardLastProtectedRoleHolder(userId, protectedRole);
-            }
-        }
-    }
-
-    private void guardLastProtectedRoleHolder(long userId, String roleCode) {
-        if (iamRepository.countProtectedRoleHoldersExcluding(roleCode, userId) == 0) {
-            throw new IllegalArgumentException("cannot remove the last " + roleCode);
-        }
-    }
-
-    private List<Long> listUserDomainIds(long userId) {
-        return iamRepository.findUserDomainIds(userId);
-    }
-
-    public Optional<UserAccount> loadUser(long userId) {
-        return iamRepository.findUserById(userId)
-                .map(po -> toUserAccount(po, listUserRoleCodes(userId), listUserDomainIds(userId),
-                        listUserOrganizationIdsOrEmpty(userId)));
-    }
-
-    private void replaceUserRoleBindings(long userId, List<String> roleCodes, List<Long> businessDomainIds) {
-        if (roleCodes == null || roleCodes.isEmpty()) {
-            throw new IllegalArgumentException("roleCodes is required");
-        }
-        List<String> currentRoles = listUserRoleCodes(userId);
-        Set<String> newRoleSet = new LinkedHashSet<>(roleCodes);
-        for (String protectedRole : PROTECTED_ROLE_CODES) {
-            if (currentRoles.contains(protectedRole) && !newRoleSet.contains(protectedRole)) {
-                guardLastProtectedRoleHolder(userId, protectedRole);
-            }
-        }
-        Map<String, RoleDefinition> roleMap = loadRoleDefinitions(roleCodes);
-        Set<Long> domainIds = businessDomainIds == null ? Set.of() : new LinkedHashSet<>(businessDomainIds);
-        boolean hasDomainRole = roleMap.values().stream().anyMatch(role -> "domain".equals(role.scope()));
-        if (hasDomainRole && domainIds.isEmpty()) {
-            throw new IllegalArgumentException("domain scoped roles require businessDomainIds");
-        }
-        ensureDomainsExist(domainIds);
-        iamRepository.deleteUserGlobalRoles(userId);
-        iamRepository.deleteUserDomainRoles(userId);
-        iamRepository.deleteUserRoleBindings(userId);
-        for (RoleDefinition role : roleMap.values()) {
-            if ("global".equals(role.scope())) {
-                iamRepository.insertUserGlobalRole(userId, role.id());
-                iamRepository.insertRoleBindingGlobal(userId, role.id());
-                continue;
-            }
-            for (Long domainId : domainIds) {
-                iamRepository.insertUserDomainRole(userId, role.id(), domainId);
-                iamRepository.insertRoleBindingDomain(userId, role.id(), domainId);
-            }
-        }
-        evictAuthorizationCache();
-    }
-
     private Map<String, RoleDefinition> loadRoleDefinitions(List<String> roleCodes) {
         List<String> normalizedCodes = roleCodes.stream().map(code -> normalize(code, "roleCode")).distinct().toList();
         List<RoleDefinition> definitions = iamRepository.findRolesByCodes(normalizedCodes).stream()
@@ -704,15 +506,6 @@ public class IamService {
             byCode.put(definition.code(), definition);
         }
         return byCode;
-    }
-
-    private void ensureDomainsExist(Set<Long> domainIds) {
-        if (domainIds.isEmpty()) {
-            return;
-        }
-        if (iamRepository.countDomainsByIds(new ArrayList<>(domainIds)) != domainIds.size()) {
-            throw new IllegalArgumentException("business domain not found");
-        }
     }
 
     private void ensureResourceIdsExist(Set<Long> resourceIds) {
@@ -895,25 +688,6 @@ public class IamService {
         return new DomainSummary(summary.id(), summary.code(), summary.name());
     }
 
-    private UserAccount toUserAccount(UserAccountPo po, List<String> roleCodes, List<Long> domainIds, List<Long> orgIds) {
-        return new UserAccount(
-                po.getId(),
-                po.getUsername(),
-                po.getNickname(),
-                po.getMobile(),
-                po.getEmail(),
-                po.getRemark(),
-                po.getAccountType(),
-                po.getStatus() == null ? 0 : po.getStatus(),
-                po.getEmploymentStatus(),
-                po.getOffboardedAt() == null ? null : po.getOffboardedAt().toString(),
-                po.getOffboardedBy(),
-                po.getOffboardReason(),
-                roleCodes,
-                domainIds,
-                orgIds);
-    }
-
     private EffectivePermissionGrant toEffectivePermissionGrant(EffectivePermissionGrantPo po) {
         return new EffectivePermissionGrant(
                 po.getRoleLevel(),
@@ -927,10 +701,6 @@ public class IamService {
             throw new IllegalArgumentException(fieldName + " is required");
         }
         return value.trim();
-    }
-
-    private String normalizeOptional(String value) {
-        return StringUtils.hasText(value) ? value.trim() : null;
     }
 
     private static int rolePriority(String role) {
@@ -1103,51 +873,6 @@ public class IamService {
             int roleId,
             List<Long> menuResourceIds,
             List<Long> actionResourceIds) {
-    }
-
-    public record UserAccount(
-            long id,
-            String username,
-            String nickname,
-            String mobile,
-            String email,
-            String remark,
-            String accountType,
-            int status,
-            String employmentStatus,
-            String offboardedAt,
-            Long offboardedBy,
-            String offboardReason,
-            List<String> roleCodes,
-            List<Long> businessDomainIds,
-            List<Long> organizationIds) {
-    }
-
-    public record CreateUserCommand(
-            String username,
-            String nickname,
-            String mobile,
-            String email,
-            String remark,
-            String password,
-            String accountType,
-            List<String> roleCodes,
-            List<Long> businessDomainIds,
-            List<Long> organizationIds) {
-    }
-
-    public record UpdateUserCommand(
-            String username,
-            String nickname,
-            String mobile,
-            String email,
-            String remark,
-            String password,
-            String accountType,
-            List<String> roleCodes,
-            List<Long> businessDomainIds,
-            Integer status,
-            List<Long> organizationIds) {
     }
 
     public record UserSummary(

@@ -4,10 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uniondesk.ticket.entity.TicketAttributePo;
+import com.uniondesk.ticket.entity.TicketPriorityLevelPo;
 import com.uniondesk.ticket.entity.TicketTypeAttributeSlotPo;
 import com.uniondesk.ticket.entity.TicketTypePo;
 import com.uniondesk.ticket.repository.TicketAttributeRepository;
 import com.uniondesk.ticket.repository.TicketFormSchemaRepository;
+import com.uniondesk.ticket.repository.TicketPriorityLevelRepository;
 import com.uniondesk.ticket.repository.TicketTypeAttributeSlotRepository;
 import com.uniondesk.ticket.repository.TicketTypeRepository;
 import com.uniondesk.ticket.web.TicketAttributeDtos;
@@ -38,6 +40,7 @@ public class TicketTypeAttributeSlotService {
     private final TicketTypeAttributeSlotRepository slotRepository;
     private final TicketFormSchemaService ticketFormSchemaService;
     private final TicketTypeFlowService ticketTypeFlowService;
+    private final TicketPriorityLevelRepository ticketPriorityLevelRepository;
     private final ObjectMapper objectMapper;
 
     public TicketTypeAttributeSlotService(
@@ -46,12 +49,14 @@ public class TicketTypeAttributeSlotService {
             TicketTypeAttributeSlotRepository slotRepository,
             TicketFormSchemaService ticketFormSchemaService,
             TicketTypeFlowService ticketTypeFlowService,
+            TicketPriorityLevelRepository ticketPriorityLevelRepository,
             ObjectMapper objectMapper) {
         this.ticketTypeRepository = ticketTypeRepository;
         this.ticketAttributeRepository = ticketAttributeRepository;
         this.slotRepository = slotRepository;
         this.ticketFormSchemaService = ticketFormSchemaService;
         this.ticketTypeFlowService = ticketTypeFlowService;
+        this.ticketPriorityLevelRepository = ticketPriorityLevelRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -157,17 +162,36 @@ public class TicketTypeAttributeSlotService {
         boolean simpleTicket = "simple_ticket".equals(normalizedTemplate);
         int sortOrder = 0;
         if (!simpleTicket) {
-            TicketAttributePo title = requirePlatformSystemAttribute("标题");
-            insertSeedSlot(typeId, title, sortOrder++, true, operatorId);
+            TicketAttributePo title = requirePlatformSystemAttributeByKey("title", "标题");
+            insertSeedSlot(typeId, title, sortOrder++, true, true, operatorId);
         }
-        TicketAttributePo description = requirePlatformSystemAttribute("描述");
-        insertSeedSlot(typeId, description, sortOrder, true, operatorId);
+        TicketAttributePo description = requirePlatformSystemAttributeByKey("description", "描述");
+        insertSeedSlot(typeId, description, sortOrder++, true, true, operatorId);
+        TicketAttributePo priority = requirePlatformSystemAttributeByKey("priority", "优先级");
+        insertSeedSlot(typeId, priority, sortOrder++, true, true, operatorId);
+        TicketAttributePo assignee = ticketAttributeRepository.findPlatformBySystemKey("assignee");
+        if (assignee == null) {
+            assignee = ticketAttributeRepository.findPlatformByName("处理人");
+        }
+        if (assignee != null && assignee.isSystem()) {
+            insertSeedSlot(typeId, assignee, sortOrder++, false, false, operatorId);
+        }
+        TicketAttributePo watchers = ticketAttributeRepository.findPlatformBySystemKey("watchers");
+        if (watchers == null) {
+            watchers = ticketAttributeRepository.findPlatformByName("关注人");
+        }
+        if (watchers != null && watchers.isSystem()) {
+            insertSeedSlot(typeId, watchers, sortOrder++, false, false, operatorId);
+        }
     }
 
-    private TicketAttributePo requirePlatformSystemAttribute(String name) {
-        TicketAttributePo attribute = ticketAttributeRepository.findPlatformByName(name);
+    private TicketAttributePo requirePlatformSystemAttributeByKey(String systemKey, String fallbackName) {
+        TicketAttributePo attribute = ticketAttributeRepository.findPlatformBySystemKey(systemKey);
+        if (attribute == null) {
+            attribute = ticketAttributeRepository.findPlatformByName(fallbackName);
+        }
         if (attribute == null || !attribute.isSystem()) {
-            throw new IllegalStateException("缺少平台系统属性：" + name);
+            throw new IllegalStateException("缺少平台系统属性：" + fallbackName);
         }
         return attribute;
     }
@@ -177,12 +201,14 @@ public class TicketTypeAttributeSlotService {
             TicketAttributePo attribute,
             int sortOrder,
             boolean required,
+            boolean visibleToCustomer,
             Long operatorId) {
         if (slotRepository.findByTypeAndAttribute(typeId, attribute.getId()) != null) {
             return;
         }
         Map<String, Object> config = defaultSlotConfig();
         config.put("required", required);
+        config.put("visible_to_customer", visibleToCustomer);
         TicketTypeAttributeSlotPo po = new TicketTypeAttributeSlotPo();
         po.setTicketTypeId(typeId);
         po.setAttributeId(attribute.getId());
@@ -357,16 +383,75 @@ public class TicketTypeAttributeSlotService {
     }
 
     private Map<String, Object> buildSnapshot(TicketTypePo type) {
+        List<Map<String, Object>> priorityOptions = resolvePriorityOptions(type);
         List<FormSnapshotBuilder.SlotContext> contexts = new ArrayList<>();
         for (TicketTypeAttributeSlotPo slot : slotRepository.findByTicketTypeId(type.getId())) {
             TicketAttributePo attribute = ticketAttributeRepository.findById(slot.getAttributeId());
             if (attribute == null) {
                 continue;
             }
-            contexts.add(new FormSnapshotBuilder.SlotContext(slot, attribute));
+            contexts.add(new FormSnapshotBuilder.SlotContext(slot, enrichPriorityAttribute(attribute, priorityOptions)));
         }
         String category = type.getCategory() == null ? "transaction" : type.getCategory();
         return FormSnapshotBuilder.build(category, contexts, objectMapper);
+    }
+
+    private List<Map<String, Object>> resolvePriorityOptions(TicketTypePo type) {
+        Long domainId = type.getBusinessDomainId();
+        if (domainId == null) {
+            return FormSnapshotBuilder.standardPriorityOptions();
+        }
+        List<TicketPriorityLevelPo> levels = ticketPriorityLevelRepository.findByDomainId(domainId).stream()
+                .filter(level -> "active".equalsIgnoreCase(level.getStatus()))
+                .sorted(java.util.Comparator.comparingInt(TicketPriorityLevelPo::getSortOrder))
+                .toList();
+        if (levels.isEmpty()) {
+            return FormSnapshotBuilder.standardPriorityOptions();
+        }
+        List<Map<String, Object>> options = new ArrayList<>();
+        for (TicketPriorityLevelPo level : levels) {
+            Map<String, Object> option = new LinkedHashMap<>();
+            option.put("label", level.getName());
+            option.put("value", level.getCode());
+            if (StringUtils.hasText(level.getColor())) {
+                option.put("color", level.getColor());
+            }
+            if (StringUtils.hasText(level.getIcon())) {
+                option.put("icon", level.getIcon());
+            }
+            options.add(option);
+        }
+        return options;
+    }
+
+    private TicketAttributePo enrichPriorityAttribute(
+            TicketAttributePo attribute,
+            List<Map<String, Object>> priorityOptions) {
+        if (!"priority".equals(FormSnapshotBuilder.systemFieldKeyForAttribute(attribute))) {
+            return attribute;
+        }
+        Map<String, Object> typeConfig = readJsonMap(attribute.getTypeConfig());
+        if (!"priority_levels".equals(String.valueOf(typeConfig.getOrDefault("options_source", "")))) {
+            return attribute;
+        }
+        Map<String, Object> enriched = new LinkedHashMap<>(typeConfig);
+        enriched.put("options", priorityOptions);
+        TicketAttributePo copy = new TicketAttributePo();
+        copy.setId(attribute.getId());
+        copy.setScope(attribute.getScope());
+        copy.setBusinessDomainId(attribute.getBusinessDomainId());
+        copy.setName(attribute.getName());
+        copy.setDescription(attribute.getDescription());
+        copy.setFieldType(attribute.getFieldType());
+        copy.setTypeConfig(toJson(enriched));
+        copy.setStatus(attribute.getStatus());
+        copy.setSortOrder(attribute.getSortOrder());
+        copy.setSystem(attribute.isSystem());
+        copy.setSystemKey(attribute.getSystemKey());
+        copy.setSourceAttributeId(attribute.getSourceAttributeId());
+        copy.setCreatedAt(attribute.getCreatedAt());
+        copy.setUpdatedAt(attribute.getUpdatedAt());
+        return copy;
     }
 
     public Map<String, Object> buildPlatformSnapshot(TicketTypePo type) {
@@ -438,9 +523,11 @@ public class TicketTypeAttributeSlotService {
         }
         String category = type.getCategory() == null ? "transaction" : type.getCategory();
         if ("feedback".equalsIgnoreCase(category)) {
-            return "description".equals(systemFieldKey);
+            return "description".equals(systemFieldKey) || "priority".equals(systemFieldKey);
         }
-        return "title".equals(systemFieldKey) || "description".equals(systemFieldKey);
+        return "title".equals(systemFieldKey)
+                || "description".equals(systemFieldKey)
+                || "priority".equals(systemFieldKey);
     }
 
     private TicketAttributeDtos.AttributeSlotView systemSlotViewFromAttribute(
@@ -461,6 +548,7 @@ public class TicketTypeAttributeSlotService {
                 attribute.getStatus(),
                 attribute.getSortOrder(),
                 attribute.isSystem(),
+                attribute.getSystemKey(),
                 attribute.getSourceAttributeId() == null ? null : String.valueOf(attribute.getSourceAttributeId()),
                 attribute.getCreatedAt() == null ? null : attribute.getCreatedAt().toString(),
                 attribute.getUpdatedAt() == null ? null : attribute.getUpdatedAt().toString());
@@ -494,6 +582,7 @@ public class TicketTypeAttributeSlotService {
                 TicketAttributePo.STATUS_ACTIVE,
                 sortOrder,
                 true,
+                fieldKey,
                 null,
                 null,
                 null);
@@ -524,6 +613,7 @@ public class TicketTypeAttributeSlotService {
                 attribute.getStatus(),
                 attribute.getSortOrder(),
                 attribute.isSystem(),
+                attribute.getSystemKey(),
                 attribute.getSourceAttributeId() == null ? null : String.valueOf(attribute.getSourceAttributeId()),
                 attribute.getCreatedAt() == null ? null : attribute.getCreatedAt().toString(),
                 attribute.getUpdatedAt() == null ? null : attribute.getUpdatedAt().toString());
@@ -612,6 +702,7 @@ public class TicketTypeAttributeSlotService {
                 type.getCode(),
                 type.getName(),
                 type.getDescription(),
+                type.getDescriptionTemplateMd(),
                 type.getIcon(),
                 workflow.status_flow(),
                 aggregate.publishedSchema(),

@@ -85,7 +85,7 @@ export function DetailOverview({ domain, onNavigateTab }: DetailOverviewProps) {
 					高频运营向导
 				</Title>
 				<Space wrap>
-					<Button onClick={() => onNavigateTab("tickets")}>工单管理</Button>
+					<Button onClick={() => onNavigateTab("tickets")}>事项管理</Button>
 					<Button onClick={() => onNavigateTab("onboarding")}>入域管理</Button>
 					<Button onClick={() => onNavigateTab("members")}>人员管理</Button>
 					{canViewCustomers ? (

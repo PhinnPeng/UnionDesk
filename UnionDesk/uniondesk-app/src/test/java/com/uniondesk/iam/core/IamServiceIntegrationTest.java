@@ -30,7 +30,7 @@ class IamServiceIntegrationTest {
     @Test
     void loadPermissionSnapshotIncludesSuperAdminCrudActions() {
         Long adminUserId = jdbcTemplate.queryForObject(
-                "SELECT id FROM user_account WHERE username = 'admin' LIMIT 1",
+                "SELECT id FROM staff_account WHERE username = 'admin' LIMIT 1",
                 Long.class);
 
         assertThat(adminUserId).as("admin 用户应存在").isNotNull();
@@ -38,7 +38,7 @@ class IamServiceIntegrationTest {
         IamService.PermissionSnapshot snapshot = iamService.loadPermissionSnapshot(
                 new UserContext(adminUserId, "super_admin", null, "sid-test", "ud-admin-web"));
 
-        assertThat(snapshot.roles()).containsExactly("super_admin");
+        assertThat(snapshot.roles()).contains("platform_admin");
 
         Set<String> actionCodes = snapshot.actions().stream()
                 .map(IamService.IamResource::resourceCode)

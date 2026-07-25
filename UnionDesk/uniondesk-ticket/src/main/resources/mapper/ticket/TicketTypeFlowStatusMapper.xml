@@ -11,6 +11,7 @@
         <result column="state_type" property="stateType"/>
         <result column="allow_customer_withdraw" property="allowCustomerWithdraw"/>
         <result column="is_resolved" property="resolved"/>
+        <result column="is_initial" property="initial"/>
         <result column="sort_order" property="sortOrder"/>
         <result column="source_status_id" property="sourceStatusId"/>
         <result column="created_at" property="createdAt"/>
@@ -27,12 +28,12 @@
     <insert id="batchInsert">
         INSERT INTO ticket_type_flow_status (
             domain_id, ticket_type_id, state_code, name, state_type,
-            allow_customer_withdraw, is_resolved, sort_order, source_status_id
+            allow_customer_withdraw, is_resolved, is_initial, sort_order, source_status_id
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (
                 #{item.domainId}, #{item.ticketTypeId}, #{item.stateCode}, #{item.name}, #{item.stateType},
-                #{item.allowCustomerWithdraw}, #{item.resolved}, #{item.sortOrder}, #{item.sourceStatusId}
+                #{item.allowCustomerWithdraw}, #{item.resolved}, #{item.initial}, #{item.sortOrder}, #{item.sourceStatusId}
             )
         </foreach>
     </insert>

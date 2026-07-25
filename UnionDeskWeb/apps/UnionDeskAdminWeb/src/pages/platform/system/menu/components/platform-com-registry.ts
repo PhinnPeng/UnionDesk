@@ -37,6 +37,10 @@ export const platformComRegistry: PlatformComRegistryItem[] = [
 	{ label: "平台管理/日志审计/操作日志", value: "platform/log/operation-log" },
 	{ label: "平台管理/工单详情", value: "platform/ticket-detail" },
 	{ label: "平台管理/组织配置", value: "platform/org-config" },
+	{ label: "平台管理/事项配置", value: "platform/ticket-config" },
+	{ label: "平台管理/事项配置/事项属性", value: "platform/ticket-config/attributes" },
+	{ label: "平台管理/事项配置/事项类型", value: "platform/ticket-config/types" },
+	{ label: "平台管理/事项配置/事项状态", value: "platform/ticket-config/statuses" },
 
 	{ label: "个人中心/个人资料", value: "personal-center/my-profile" },
 	{ label: "个人中心/设置", value: "personal-center/settings" },

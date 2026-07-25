@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.auth.core.UserContextHolder;
 import com.uniondesk.common.web.ApiExceptionHandler;
+import com.uniondesk.common.web.ApiResponseWrapper;
 import com.uniondesk.iam.core.OrganizationService;
 import com.uniondesk.iam.core.PermissionCodes;
 import com.uniondesk.iam.core.RequirePermission;
@@ -57,17 +58,17 @@ class OrganizationControllerTests {
                         LocalDateTime.of(2026, 5, 15, 8, 5))));
         MockMvc mockMvc = MockMvcBuilders
                 .standaloneSetup(new OrganizationController(organizationService))
-                .setControllerAdvice(new ApiExceptionHandler())
+                .setControllerAdvice(new ApiExceptionHandler(), new ApiResponseWrapper())
                 .build();
         UserContextHolder.set(new UserContext(1L, "super_admin", null, "sid-1", "ud-admin-web"));
 
         mockMvc.perform(get("/api/v1/iam/organizations"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].code").value("platform-root"))
-                .andExpect(jsonPath("$[0].name").value("平台组织"))
-                .andExpect(jsonPath("$[1].parentId").value(1))
-                .andExpect(jsonPath("$[1].parentName").value("平台组织"))
-                .andExpect(jsonPath("$[1].leaderName").value("admin"));
+                .andExpect(jsonPath("$.data.items[0].code").value("platform-root"))
+                .andExpect(jsonPath("$.data.items[0].name").value("平台组织"))
+                .andExpect(jsonPath("$.data.items[1].parentId").value(1))
+                .andExpect(jsonPath("$.data.items[1].parentName").value("平台组织"))
+                .andExpect(jsonPath("$.data.items[1].leaderName").value("admin"));
     }
 
     @Test

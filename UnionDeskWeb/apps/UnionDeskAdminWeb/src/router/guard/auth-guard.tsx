@@ -18,6 +18,7 @@ import { usePreferencesStore } from "#src/store/preferences";
 import { useUserStore } from "#src/store/user";
 
 import { isUnauthorizedHttpError } from "#src/utils/http-request-error";
+import { buildLoginRedirectSearch, getSafeRedirect } from "#src/utils/safe-redirect";
 
 import { useEffect, useRef } from "react";
 import { matchRoutes, Navigate, useLocation, useNavigate } from "react-router";
@@ -148,7 +149,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
 	if (!isLogin) {
 		if (pathname !== loginPath) {
-			const redirectPath = pathname.length > 1 ? `${loginPath}?redirect=${pathname}${search}` : loginPath;
+			const redirectPath = `${loginPath}${buildLoginRedirectSearch(pathname, search)}`;
 			return <Navigate to={redirectPath} replace />;
 		}
 		return children;
@@ -156,7 +157,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
 	if (pathname === loginPath) {
 		if (isLogin) {
-			return <Navigate to={resolveBackHomePath()} replace />;
+			const redirect = getSafeRedirect(new URLSearchParams(search).get("redirect"));
+			return <Navigate to={redirect ?? resolveBackHomePath()} replace />;
 		}
 		return children;
 	}

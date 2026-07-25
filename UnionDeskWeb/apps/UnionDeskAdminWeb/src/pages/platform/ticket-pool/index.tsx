@@ -1,6 +1,7 @@
 import type { AdminDomain, P0AdminTicketListItem } from "@uniondesk/shared";
 
 import { BasicContent } from "#src/components/basic-content";
+import { PriorityBadge } from "#src/pages/platform/components/priority-badge";
 
 import { claimP0AdminTicket, fetchP0AdminDomainTicketsPage, fetchAdminDomainsPage, toErrorMessage } from "@uniondesk/shared";
 import { App, Alert, Button, Card, Select, Space, Table, Tag } from "antd";
@@ -75,7 +76,7 @@ export default function PlatformTicketPool() {
 			width: 120,
 			render: s => <Tag>{s}</Tag>,
 		},
-		{ title: "优先级", dataIndex: "priority", width: 100, render: v => v ?? "-" },
+		{ title: "优先级", dataIndex: "priority", width: 100, render: v => <PriorityBadge code={v} /> },
 		{ title: "受理人", dataIndex: "assignee_name", width: 120, render: v => v ?? "-" },
 		{ title: "创建时间", dataIndex: "created_at", width: 180 },
 		{

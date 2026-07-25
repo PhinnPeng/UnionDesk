@@ -11,8 +11,8 @@
     </resultMap>
 
     <select id="findById" resultMap="UserAccountPo">
-        SELECT id, mobile, email, username
-        FROM user_account
+        SELECT id, phone AS mobile, email, username
+        FROM staff_account
         WHERE id = #{id}
         LIMIT 1
     </select>

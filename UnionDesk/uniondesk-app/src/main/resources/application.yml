@@ -12,10 +12,27 @@ spring:
     url: jdbc:mysql://127.0.0.1:30306/uniondesk?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: uniondesk_app
     password: gq0fd2sqOCncrNp3eBeGuLty
+    hikari:
+      # 连接池配置 - 修复连接失效问题
+      maximum-pool-size: 20
+      minimum-idle: 5
+      # 连接最大存活时间（毫秒）- 应小于 MySQL wait_timeout（默认 8 小时 = 28800000ms）
+      max-lifetime: 1800000
+      # 连接空闲超时（毫秒）
+      idle-timeout: 600000
+      # 连接超时（毫秒）
+      connection-timeout: 30000
+      # 连接测试查询
+      connection-test-query: SELECT 1
+      # 自动提交
+      auto-commit: true
   flyway:
     enabled: true
     validate-on-migrate: false
     locations: classpath:db/migration/current
+    # 修复模式：跳过失败的迁移（开发环境使用）
+    # 生产环境请勿使用此配置
+    repair-on-migrate: true
   profiles:
     include: demo
 

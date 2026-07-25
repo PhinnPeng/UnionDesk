@@ -1,0 +1,29 @@
+.creation-sort-drawer {
+	&__hint {
+		display: block;
+		margin-bottom: 16px;
+	}
+
+	&__item {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	&__handle {
+		cursor: move;
+		color: var(--ant-color-text-quaternary);
+		touch-action: none;
+
+		&--disabled {
+			cursor: default;
+			color: var(--ant-color-text-quaternary);
+		}
+	}
+
+	&__footer {
+		display: flex;
+		justify-content: flex-end;
+		gap: 8px;
+	}
+}

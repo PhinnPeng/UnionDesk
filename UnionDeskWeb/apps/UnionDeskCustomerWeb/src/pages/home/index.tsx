@@ -118,6 +118,17 @@ export default function HomePage() {
                     value: type.id,
                     label: type.name
                   }))}
+                  onChange={(typeId: string) => {
+                    const selected = portal.ticketTypes.find((type) => type.id === typeId);
+                    const currentDescription = form.getFieldValue("description");
+                    if (
+                      selected?.has_description_slot === true
+                      && selected?.description_template_md
+                      && !String(currentDescription ?? "").trim()
+                    ) {
+                      form.setFieldsValue({ description: selected.description_template_md });
+                    }
+                  }}
                 />
               </Form.Item>
               <Form.Item label="标题" name="title" rules={[{ required: true, message: "请输入标题" }]}>

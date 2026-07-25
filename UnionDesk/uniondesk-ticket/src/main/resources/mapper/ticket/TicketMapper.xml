@@ -38,13 +38,13 @@
             useGeneratedKeys="true" keyProperty="id">
         INSERT INTO ticket (
             ticket_no, business_domain_id, customer_id, ticket_type_id, title, description,
-            status, priority, source, assigned_to, custom_fields, version, result,
+            status, priority, source, assigned_to, assignee_staff_account_id, custom_fields, version, result,
             sla_first_response_deadline, sla_resolution_deadline, sla_first_responded_at,
             sla_resolved_at, sla_status, sla_paused_duration, sla_pause_started_at
         )
         VALUES (
             #{ticketNo}, #{businessDomainId}, #{customerId}, #{ticketTypeId}, #{title}, #{description},
-            'open', #{priority}, #{source}, NULL, #{customFields}, 1, NULL,
+            'open', #{priority}, #{source}, #{assignedTo}, #{assigneeStaffAccountId}, #{customFields}, 1, NULL,
             #{slaFirstResponseDeadline}, #{slaResolutionDeadline}, NULL,
             NULL, 'tracking', 0, NULL
         )

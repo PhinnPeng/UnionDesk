@@ -24,8 +24,9 @@ public class PlatformDomainRoleController {
 
     @GetMapping
     @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_ROLES_READ)
-    public List<DomainRoleDtos.DomainRoleView> listPlatformDomainRoles(@PathVariable("domainId") long domainId) {
-        return domainRoleService.listRoles(domainId);
+    public DomainRoleDtos.DomainRoleListView listPlatformDomainRoles(@PathVariable("domainId") long domainId) {
+        List<DomainRoleDtos.DomainRoleView> items = domainRoleService.listRoles(domainId);
+        return new DomainRoleDtos.DomainRoleListView(items.size(), items);
     }
 
     @GetMapping("/{roleId}/permissions")

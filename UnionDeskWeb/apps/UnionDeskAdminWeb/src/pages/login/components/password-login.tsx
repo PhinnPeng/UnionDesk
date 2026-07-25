@@ -5,6 +5,8 @@ import { BasicButton } from "#src/components/basic-button";
 import { PASSWORD_RULES, USERNAME_RULES } from "#src/constants/rules";
 import { useAuthStore } from "#src/store/auth";
 import { resolveBackHomePath } from "#src/router/extra-info/app-scope";
+import { getSafeRedirect } from "#src/utils/safe-redirect";
+import { resolveRequestErrorMessage } from "#src/utils/resolve-request-error";
 
 import { Button, Form, Input, message, Space } from "antd";
 import { use, useEffect, useState } from "react";
@@ -13,7 +15,6 @@ import { useNavigate, useSearchParams } from "react-router";
 
 import { FormModeContext } from "../form-mode-context";
 import { LoginCaptcha } from "./login-captcha";
-import { resolveRequestErrorMessage } from "#src/utils/resolve-request-error";
 
 import { buildPasswordLoginPayload } from "../utils";
 
@@ -86,8 +87,8 @@ export function PasswordLogin() {
 			await login(buildPasswordLoginPayload(values, captchaToken));
 			messageLoadingApi?.destroy();
 			window.$message?.success(t("authority.loginSuccess"));
-			const redirect = searchParams.get("redirect")?.trim();
-			navigate(redirect && redirect.length > 0 ? redirect : resolveBackHomePath(), { replace: true });
+			const redirect = getSafeRedirect(searchParams.get("redirect"));
+			navigate(redirect ?? resolveBackHomePath(), { replace: true });
 		}
 		catch (error) {
 			messageLoadingApi?.destroy();

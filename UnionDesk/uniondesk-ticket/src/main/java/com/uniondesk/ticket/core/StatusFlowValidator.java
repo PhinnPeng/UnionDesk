@@ -4,11 +4,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.util.StringUtils;
 
 @SuppressWarnings("unchecked")
 public final class StatusFlowValidator {
 
     public static final String ANY_STATE_CODE = "*";
+    public static final String INITIAL_STATE_CODE_KEY = "initial_state_code";
 
     private StatusFlowValidator() {
     }
@@ -21,10 +23,27 @@ public final class StatusFlowValidator {
         if (!(statesObj instanceof List<?> states)) {
             throw new IllegalArgumentException("状态流格式无效");
         }
-        // 空工作流合法
+        Object initialObj = flowMap.get(INITIAL_STATE_CODE_KEY);
+        String initialStateCode = initialObj == null ? null : String.valueOf(initialObj).trim();
+        if (initialStateCode != null && initialStateCode.isEmpty()) {
+            initialStateCode = null;
+        }
+
+        // 空工作流合法，且不得带初始状态
         if (states.isEmpty()) {
+            if (StringUtils.hasText(initialStateCode)) {
+                throw new IllegalArgumentException("空工作流不能指定初始状态");
+            }
             return;
         }
+
+        if (!StringUtils.hasText(initialStateCode)) {
+            throw new IllegalArgumentException("请指定初始状态");
+        }
+        if (ANY_STATE_CODE.equals(initialStateCode)) {
+            throw new IllegalArgumentException("初始状态不能为任意状态通配符");
+        }
+
         Set<String> codes = new HashSet<>();
         boolean hasTerminal = false;
         for (Object stateObj : states) {
@@ -50,12 +69,15 @@ public final class StatusFlowValidator {
                 throw new IllegalArgumentException("仅进行中的状态允许客户撤回");
             }
         }
+        if (!codes.contains(initialStateCode)) {
+            throw new IllegalArgumentException("初始状态不存在于工作流中");
+        }
         if (!hasTerminal) {
             throw new IllegalArgumentException("状态流至少需要一个终态");
         }
         Object transitionsObj = flowMap.get("transitions");
         List<?> transitions = transitionsObj instanceof List<?> list ? list : List.of();
-        Set<String> connected = new HashSet<>();
+        // 允许孤立状态（未参与任何边）；连通性留给业务流转时再约束
         for (Object transitionObj : transitions) {
             if (!(transitionObj instanceof Map<?, ?> transition)) {
                 throw new IllegalArgumentException("流转配置格式无效");
@@ -70,21 +92,6 @@ public final class StatusFlowValidator {
             }
             if (!codes.contains(to)) {
                 throw new IllegalArgumentException("流转目标状态不存在");
-            }
-            if (!ANY_STATE_CODE.equals(from)) {
-                connected.add(from);
-            }
-            connected.add(to);
-        }
-        for (Object stateObj : states) {
-            Map<?, ?> state = (Map<?, ?>) stateObj;
-            String code = stringValue(state.get("code"));
-            String stateType = stringValue(state.get("state_type"));
-            if ("terminal".equals(stateType)) {
-                continue;
-            }
-            if (!connected.contains(code)) {
-                throw new IllegalArgumentException("存在孤立状态：" + code);
             }
         }
     }
