@@ -51,6 +51,7 @@ import type {
   P0InboxPageResponse,
   P0AdminTicketListItem,
   P0InvitationCode,
+  CreateP0InvitationCodePayload,
   P0DomainCustomer,
   P0BatchCreateDomainCustomersResult,
   DomainRole,
@@ -1077,17 +1078,99 @@ export async function markP0InboxMessageRead(messageId: string): Promise<void> {
   }
 }
 
+function normalizeP0InvitationCode(raw: Record<string, unknown>): P0InvitationCode {
+  return {
+    id: String(raw.id ?? ""),
+    domain_id: String(raw.domain_id ?? raw.business_domain_id ?? raw.businessDomainId ?? ""),
+    code: String(raw.code ?? ""),
+    channel: raw.channel != null ? String(raw.channel) : null,
+    expires_at: raw.expires_at != null
+      ? String(raw.expires_at)
+      : raw.expiresAt != null
+        ? String(raw.expiresAt)
+        : null,
+    max_uses: raw.max_uses != null
+      ? Number(raw.max_uses)
+      : raw.maxUses != null
+        ? Number(raw.maxUses)
+        : null,
+    used_count: raw.used_count != null
+      ? Number(raw.used_count)
+      : raw.usedCount != null
+        ? Number(raw.usedCount)
+        : 0,
+    status: raw.status != null ? String(raw.status) : null,
+    created_at: raw.created_at != null
+      ? String(raw.created_at)
+      : raw.createdAt != null
+        ? String(raw.createdAt)
+        : null,
+  };
+}
+
 /** P0：`GET .../invitation-codes`；404 返回空 */
-export async function fetchP0InvitationCodes(domainId: string): Promise<P0PageResult<P0InvitationCode>> {
+export async function fetchP0InvitationCodes(
+  domainId: string,
+  params?: { page?: number; page_size?: number },
+): Promise<P0PageResult<P0InvitationCode>> {
   try {
-    const response = await api.get<P0PageResult<P0InvitationCode>>(
-      `/admin/domains/${encodeURIComponent(domainId)}/invitation-codes`
+    const response = await api.get<P0PageResult<Record<string, unknown>>>(
+      `/admin/domains/${encodeURIComponent(domainId)}/invitation-codes`,
+      {
+        params: {
+          page: params?.page ?? 1,
+          page_size: params?.page_size ?? 20,
+        },
+      },
     );
-    return unwrapApiResponse(response.data);
+    const data = unwrapApiResponse(response.data);
+    return {
+      total: data.total ?? 0,
+      list: Array.isArray(data.list)
+        ? data.list.map(item => normalizeP0InvitationCode(item))
+        : [],
+    };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
       return { total: 0, list: [] };
     }
+    throw toError(error);
+  }
+}
+
+/** `POST .../invitation-codes` */
+export async function createP0InvitationCode(
+  domainId: string,
+  payload: CreateP0InvitationCodePayload,
+): Promise<P0InvitationCode> {
+  try {
+    const body: Record<string, unknown> = {};
+    if (payload.channel != null && String(payload.channel).trim()) {
+      body.channel = String(payload.channel).trim();
+    }
+    if (payload.expires_at != null && String(payload.expires_at).trim()) {
+      body.expires_at = String(payload.expires_at).trim();
+    }
+    if (payload.max_uses != null) {
+      body.max_uses = payload.max_uses;
+    }
+    const response = await api.post<Record<string, unknown>>(
+      `/admin/domains/${encodeURIComponent(domainId)}/invitation-codes`,
+      body,
+    );
+    return normalizeP0InvitationCode(unwrapApiResponse(response.data) as Record<string, unknown>);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** `DELETE .../invitation-codes/{codeId}` */
+export async function deleteP0InvitationCode(domainId: string, codeId: string): Promise<void> {
+  try {
+    await api.delete(
+      `/admin/domains/${encodeURIComponent(domainId)}/invitation-codes/${encodeURIComponent(codeId)}`,
+    );
+  } catch (error) {
     throw toError(error);
   }
 }

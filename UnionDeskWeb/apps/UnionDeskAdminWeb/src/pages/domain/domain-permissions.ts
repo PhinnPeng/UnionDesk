@@ -22,6 +22,8 @@ export const DOMAIN_MEMBER_UPDATE_STATUS = "domain.member.update_status";
 export const DOMAIN_MEMBER_DELETE = "domain.member.delete";
 
 export const DOMAIN_INVITATION_CODE_READ = "domain.invitation_code.read";
+export const DOMAIN_INVITATION_CODE_CREATE = "domain.invitation_code.create";
+export const DOMAIN_INVITATION_CODE_DELETE = "domain.invitation_code.delete";
 
 export const DOMAIN_TICKET_TYPE_READ = "domain.ticket_type.read";
 export const DOMAIN_TICKET_TYPE_CREATE = "domain.ticket_type.create";

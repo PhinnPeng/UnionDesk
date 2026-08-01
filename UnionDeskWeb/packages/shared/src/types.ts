@@ -577,6 +577,12 @@ export type P0InvitationCode = {
   created_at?: string | null;
 };
 
+export type CreateP0InvitationCodePayload = {
+  channel?: string | null;
+  expires_at?: string | null;
+  max_uses?: number | null;
+};
+
 export type DomainRole = {
   id: string;
   business_domain_id: string;
