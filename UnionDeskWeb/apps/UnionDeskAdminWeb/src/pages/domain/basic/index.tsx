@@ -92,6 +92,15 @@ export default function DomainBasicPage() {
 				if (!cancelled) {
 					setDomain(data);
 					form.setFieldsValue(buildFormValues(data));
+					// 表单读实时域详情，侧栏读登录快照；进入本页时对齐侧栏展示名，避免改名后仍显示旧名
+					const numericId = resolveNumericDomainId(data.id);
+					if (numericId != null) {
+						useAuthStore.getState().patchAccessibleDomain({
+							id: numericId,
+							name: data.name,
+							code: data.code,
+						});
+					}
 				}
 			}
 			catch (error) {
