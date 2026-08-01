@@ -8,6 +8,7 @@ import {
 
 import StepUpModal from "#src/components/step-up-modal";
 import { useAuth } from "#src/hooks/use-auth";
+import { useAuthStore } from "#src/store/auth";
 
 import { CheckCircleOutlined, DeleteOutlined, StopOutlined } from "@ant-design/icons";
 import { App, Button, Form, Input, Modal, Tooltip, Typography } from "antd";
@@ -120,6 +121,14 @@ export function DetailBaseinfo({ domain, onSaved, onDeleted }: DetailBaseinfoPro
 				description: values.description?.trim() || undefined,
 			});
 			message.success("已更新业务信息");
+			const numericId = resolveNumericDomainId(updated.id);
+			if (numericId != null) {
+				useAuthStore.getState().patchAccessibleDomain({
+					id: numericId,
+					name: updated.name,
+					code: updated.code,
+				});
+			}
 			onSaved(updated);
 		}
 		catch (error) {

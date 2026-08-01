@@ -68,6 +68,9 @@ interface AuthAction {
 
 	setDefaultDomain: (domainId: number) => Promise<void>
 
+	/** 更新侧栏业务域列表中某一项的展示字段（如改名后） */
+	patchAccessibleDomain: (patch: { id: number, name?: string, code?: string, status?: number | null }) => void
+
 };
 
 
@@ -278,6 +281,28 @@ export const useAuthStore = create<AuthType & AuthAction>()(
 
 			}));
 
+		},
+
+		patchAccessibleDomain: (patch) => {
+			if (!Number.isSafeInteger(patch.id) || patch.id <= 0) {
+				return;
+			}
+			set((state) => {
+				const list = state.accessibleDomains ?? [];
+				const next = list.map((domain) => {
+					if (domain.id !== patch.id) {
+						return domain;
+					}
+					return {
+						...domain,
+						...(patch.name !== undefined ? { name: patch.name } : {}),
+						...(patch.code !== undefined ? { code: patch.code } : {}),
+						...(patch.status !== undefined ? { status: patch.status } : {}),
+					};
+				});
+				const changed = next.some((domain, index) => domain !== list[index]);
+				return changed ? { ...state, accessibleDomains: next } : state;
+			});
 		},
 
 

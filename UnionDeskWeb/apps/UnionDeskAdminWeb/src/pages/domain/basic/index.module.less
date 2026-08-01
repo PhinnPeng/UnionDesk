@@ -1,5 +1,91 @@
-.formFooterActions {
+.page {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: 100%;
+	max-width: 880px;
+	margin: 0 auto;
+}
+
+.formStack {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.pageHeader {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.pageTitle {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 1.35;
+	color: var(--ant-color-text);
+}
+
+.pageDesc {
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--ant-color-text-secondary);
+}
+
+.settingsCard {
+	border-radius: 12px;
+	box-shadow:
+		0 1px 2px 0 rgb(0 0 0 / 3%),
+		0 4px 16px -4px rgb(0 0 0 / 6%);
+}
+
+.cardTitle {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ant-color-text);
+}
+
+.cardDesc {
+	margin: 4px 0 0;
+	font-size: 12px;
+	line-height: 1.5;
+	color: var(--ant-color-text-secondary);
+}
+
+.formActions {
 	display: flex;
 	justify-content: flex-end;
-	margin-top: 24px;
+	align-items: center;
+	gap: 12px;
+	padding: 4px 0 8px;
+}
+
+.brandRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 20px;
+	align-items: flex-start;
+}
+
+.brandLogo {
+	flex: 0 0 auto;
+}
+
+.brandFields {
+	flex: 1 1 240px;
+	min-width: 0;
+}
+
+.identityStack {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.stateCenter {
+	display: flex;
+	justify-content: center;
+	padding: 64px 0;
 }
