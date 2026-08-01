@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useLocation } from "react-router";
 
-import { getAppScopeByPath } from "#src/router/extra-info/app-scope";
+import { getAppScopeByPath } from "#src/router/extra-info/app-scope-core";
 
 /**
  * 根据当前路由判断应用域。

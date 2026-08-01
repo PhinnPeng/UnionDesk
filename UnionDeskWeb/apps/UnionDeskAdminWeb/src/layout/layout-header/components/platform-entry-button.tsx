@@ -1,37 +1,41 @@
 import type { ButtonProps } from "antd";
 
+import { switchAppScope } from "#src/api/user";
 import { BasicButton } from "#src/components/basic-button";
-import type { AppRouteRecordRaw } from "#src/router/types";
+import { hideLoading } from "#src/plugins/hide-loading";
+import { showLoading } from "#src/plugins/loading";
+import { appScopes } from "#src/router/extra-info/app-scope";
 import { useUserStore } from "#src/store/user";
-import { hasBusinessDomainAccess } from "#src/utils/access/business-domain";
 import { cn } from "#src/utils/cn";
 
 import { AppstoreOutlined, RollbackOutlined } from "@ant-design/icons";
+import { App } from "antd";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
-import { businessHomePath, platformHomePath } from "#src/router/extra-info";
-const EMPTY_MENUS: AppRouteRecordRaw[] = [];
-
 export function PlatformEntryButton({ className, ...restProps }: ButtonProps) {
+	const { message } = App.useApp();
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
 	const platformAccess = useUserStore(state => state.platformAccess);
-	const menus = useUserStore(state => state.menus);
 	const businessDomainAccess = useUserStore(state => state.businessDomainAccess);
-
-	if (!platformAccess) {
-		return null;
-	}
+	const [switching, setSwitching] = useState(false);
 
 	const isPlatformRoute = pathname.startsWith("/platform");
-	const hasBusinessAccess = typeof businessDomainAccess === "boolean"
-		? businessDomainAccess
-		: hasBusinessDomainAccess(menus ?? EMPTY_MENUS);
-	if (isPlatformRoute && !hasBusinessAccess) {
+	const hasBusinessAccess = Boolean(businessDomainAccess);
+
+	if (isPlatformRoute) {
+		if (!hasBusinessAccess) {
+			return null;
+		}
+	}
+	else if (!platformAccess) {
 		return null;
 	}
+
 	const label = isPlatformRoute ? "返回业务端" : "平台管理";
-	const targetPath = isPlatformRoute ? businessHomePath : platformHomePath;
+	const targetScope = isPlatformRoute ? appScopes.business : appScopes.platform;
+	const loadingMessage = isPlatformRoute ? "正在返回业务端…" : "正在进入平台管理…";
 
 	return (
 		<BasicButton
@@ -39,15 +43,28 @@ export function PlatformEntryButton({ className, ...restProps }: ButtonProps) {
 			type="text"
 			aria-label={label}
 			title={label}
+			loading={switching}
+			disabled={switching || restProps.disabled}
 			className={cn(className, "rounded-full px-[11px]")}
 			icon={isPlatformRoute ? <RollbackOutlined /> : <AppstoreOutlined />}
 			onClick={(event) => {
 				restProps.onClick?.(event);
-				if (isPlatformRoute) {
-					window.location.assign(targetPath);
+				if (switching) {
 					return;
 				}
-				navigate(targetPath);
+				setSwitching(true);
+				showLoading(loadingMessage);
+				void switchAppScope(targetScope)
+					.then((targetPath) => {
+						navigate(targetPath);
+					})
+					.catch((error) => {
+						hideLoading();
+						message.error(error instanceof Error ? error.message : "切换控制台失败");
+					})
+					.finally(() => {
+						setSwitching(false);
+					});
 			}}
 		>
 			{label}

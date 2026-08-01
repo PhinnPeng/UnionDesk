@@ -1,8 +1,8 @@
 import type { MenuItemType } from "#src/layout/layout-menu/types";
 import type { AppRouteRecordRaw } from "#src/router/types";
-import type { AppScope } from "#src/router/extra-info/app-scope";
+import type { AppScope } from "#src/router/extra-info/app-scope-core";
 
-import { appScopes, isPlatformRoutePath } from "#src/router/extra-info/app-scope";
+import { appScopes, isPlatformRoutePath } from "#src/router/extra-info/app-scope-core";
 import { resolveMenuIcon } from "#src/icons/resolve-menu-icon";
 import { isString } from "#src/utils/is";
 
@@ -39,7 +39,10 @@ export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[], scop
 
 		const label = item.handle?.title;
 		const externalLink = item?.handle?.externalLink;
-		const iconName = isString(item?.handle?.icon) ? item.handle.icon.trim() : undefined;
+		const rawIcon = item?.handle?.icon;
+		const iconName = isString(rawIcon) ? rawIcon.trim() : undefined;
+		// 后端菜单多为图标名字符串；静态路由可能已是 React 节点，勿覆盖为占位符
+		const menuIcon = iconName ? resolveMenuIcon(iconName) : (rawIcon ?? resolveMenuIcon(undefined));
 
 		const menuItem: MenuItemType = {
 			key: item.path!,
@@ -62,7 +65,6 @@ export function generateMenuItemsFromRoutes(routeList: AppRouteRecordRaw[], scop
 				),
 		};
 
-		const menuIcon = resolveMenuIcon(iconName);
 		if (menuIcon) {
 			menuItem.icon = menuIcon;
 		}

@@ -75,6 +75,8 @@ class TicketConfigServiceTests {
     private TicketTransitionRuleService transitionRuleService;
     @Mock
     private TicketTypeFlowService ticketTypeFlowService;
+    @Mock
+    private PlatformTicketTypeCopyService platformTicketTypeCopyService;
 
     private TicketConfigService ticketConfigService;
     private ObjectMapper objectMapper;
@@ -92,6 +94,7 @@ class TicketConfigServiceTests {
                 ticketTypeAttributeSlotRepository,
                 transitionRuleService,
                 ticketTypeFlowService,
+                platformTicketTypeCopyService,
                 objectMapper);
     }
 

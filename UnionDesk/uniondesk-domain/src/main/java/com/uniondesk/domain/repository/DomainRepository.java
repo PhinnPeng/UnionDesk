@@ -73,6 +73,10 @@ public class DomainRepository {
         return businessDomainMapper.softDelete(id, updatedBy);
     }
 
+    public int updateAppliedTeamTemplate(long id, long templateId, int templateVersion, Long updatedBy) {
+        return businessDomainMapper.updateAppliedTeamTemplate(id, templateId, templateVersion, updatedBy);
+    }
+
     public void insertAuditLog(AuditLogPo po) {
         auditLogMapper.insert(po);
     }

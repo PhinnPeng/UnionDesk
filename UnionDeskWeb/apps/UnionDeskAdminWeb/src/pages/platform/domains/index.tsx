@@ -149,7 +149,7 @@ export default function PlatformBusinessDomains() {
 							<Input placeholder="请输入业务域编码或名称" allowClear disabled={loading} />
 						</Form.Item>
 						<Form.Item name="createdRange" label="创建时间">
-							<RangePicker className="w-full" showTime disabled={loading} />
+							<RangePicker className="w-full" showTime disabled={loading} allowEmpty={[true, true]} />
 						</Form.Item>
 					</TableSearchForm>
 				</Card>

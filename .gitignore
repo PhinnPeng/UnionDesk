@@ -38,3 +38,6 @@ UnionDesk/target/backup-classes/
 
 # S0 closure tracker (local only)
 .codex-tmp/
+
+# Brainstorm companion / local AI session artifacts
+.superpowers/

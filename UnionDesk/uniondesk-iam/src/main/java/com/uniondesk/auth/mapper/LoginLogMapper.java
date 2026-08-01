@@ -14,4 +14,6 @@ public interface LoginLogMapper {
     List<LoginLogPo> selectRecentByEventType(@Param("eventType") String eventType, @Param("limit") int limit);
 
     Long selectSubjectIdByCustomerAccountId(@Param("customerAccountId") long customerAccountId);
+
+    Long selectSubjectIdByStaffAccountId(@Param("staffAccountId") long staffAccountId);
 }

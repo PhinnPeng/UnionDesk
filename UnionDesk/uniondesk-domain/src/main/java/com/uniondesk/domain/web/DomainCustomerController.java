@@ -29,7 +29,10 @@ public class DomainCustomerController {
     }
 
     @GetMapping("/customers/{customerId}")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ,
+            PermissionCodes.DOMAIN_CUSTOMER_READ
+    })
     public DomainCustomerDtos.DomainCustomerView getCustomer(
             @PathVariable long domainId,
             @PathVariable long customerId) {
@@ -37,7 +40,10 @@ public class DomainCustomerController {
     }
 
     @GetMapping("/customers")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ,
+            PermissionCodes.DOMAIN_CUSTOMER_READ
+    })
     public PageResult<DomainCustomerDtos.DomainCustomerView> listCustomers(
             @PathVariable long domainId,
             @RequestParam(defaultValue = "1") int page,
@@ -49,7 +55,10 @@ public class DomainCustomerController {
 
     @PostMapping("/customers")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE,
+            PermissionCodes.DOMAIN_CUSTOMER_CREATE
+    })
     public DomainCustomerDtos.DomainCustomerView addCustomer(
             @PathVariable long domainId,
             @Valid @RequestBody DomainCustomerDtos.CreateDomainCustomerRequest request) {
@@ -58,7 +67,10 @@ public class DomainCustomerController {
 
     @PostMapping("/customers/manual")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE,
+            PermissionCodes.DOMAIN_CUSTOMER_CREATE
+    })
     public DomainCustomerDtos.DomainCustomerView addCustomerManual(
             @PathVariable long domainId,
             @Valid @RequestBody DomainCustomerDtos.CreateDomainCustomerManualRequest request) {
@@ -67,7 +79,10 @@ public class DomainCustomerController {
 
     @PostMapping("/customers/from-staff")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE,
+            PermissionCodes.DOMAIN_CUSTOMER_CREATE
+    })
     public DomainCustomerDtos.BatchCreateDomainCustomersResult addCustomersFromStaff(
             @PathVariable long domainId,
             @Valid @RequestBody DomainCustomerDtos.CreateDomainCustomersFromStaffRequest request) {
@@ -75,7 +90,10 @@ public class DomainCustomerController {
     }
 
     @RequestMapping(path = "/customers/{customerId}/status", method = {RequestMethod.PUT, RequestMethod.PATCH})
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS,
+            PermissionCodes.DOMAIN_CUSTOMER_UPDATE_STATUS
+    })
     public DomainCustomerDtos.DomainCustomerView updateCustomerStatus(
             @PathVariable long domainId,
             @PathVariable long customerId,

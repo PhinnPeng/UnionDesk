@@ -44,7 +44,31 @@ export type LoginResponse = {
   expiresInSeconds: number;
   user: LoginUserView;
   accessibleDomains: BusinessDomainView[];
+  /** 本次会话落点域（兼容字段名） */
   defaultBusinessDomainId: number;
+  /** 用户默认业务域偏好；未设置时为 null/undefined */
+  preferredDefaultDomainId?: number | null;
+};
+
+export type SetDefaultDomainRequest = {
+  domainId: number;
+};
+
+export type SetDefaultDomainResponse = {
+  preferredDefaultDomainId: number;
+};
+
+export type SwitchDomainRequest = {
+  domainId: number;
+};
+
+export type SwitchDomainResponse = {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  expiresInSeconds: number;
+  businessDomainId: number;
+  accessibleDomains?: BusinessDomainView[];
 };
 
 export type LoginConfig = {
@@ -479,6 +503,8 @@ export type CreateAdminDomainPayload = {
   visibility_policy_codes: P0VisibilityPolicyCode[];
   registration_enabled: P0AccessPolicy;
   invitation_enabled: P0AccessPolicy;
+  /** 可选：建域时套用的团队模板 id */
+  team_template_id?: number | string | null;
 };
 
 export type UpdateAdminDomainPayload = {
@@ -647,6 +673,8 @@ export type DomainTicketType = {
 	form_schema_draft?: Record<string, unknown> | null;
 	form_schema_current_version_no?: number | null;
 	form_schema_has_unpublished?: boolean | null;
+	/** 溯源平台事项类型 ID；直接创建时为 null */
+	source_global_type_id?: string | null;
 	transition_rules?: TransitionRule[];
 };
 
@@ -758,6 +786,8 @@ export type TicketStatusDefinition = {
   status: "active" | "disabled" | string;
   sort_order: number;
   is_system: boolean;
+  /** 溯源平台状态 ID；直接创建时为 null */
+  source_status_id?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -778,6 +808,75 @@ export type UpdateTicketStatusDefinitionBody = {
   name?: string;
   description?: string;
   category?: TicketStatusDefinitionCategory;
+};
+
+export type TeamTemplateItem = {
+  id: string;
+  ticket_type_id: string;
+  ticket_type_code?: string | null;
+  ticket_type_name?: string | null;
+  sort_order: number;
+  include_form_schema: boolean;
+  include_workflow: boolean;
+  include_description_template: boolean;
+};
+
+export type TeamTemplate = {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  icon?: string | null;
+  status: "active" | "disabled" | string;
+  is_system: boolean;
+  sort_order: number;
+  version: number;
+  items: TeamTemplateItem[];
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type TeamTemplateList = {
+  total: number;
+  items: TeamTemplate[];
+};
+
+export type TeamTemplateOption = {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  icon?: string | null;
+  version: number;
+  item_count: number;
+};
+
+export type TeamTemplateItemBody = {
+  ticket_type_id: number | string;
+  sort_order?: number;
+  include_form_schema?: boolean;
+  include_workflow?: boolean;
+  include_description_template?: boolean;
+};
+
+export type CreateTeamTemplateBody = {
+  /** 不传则由服务端根据名称自动生成 */
+  code?: string;
+  name: string;
+  description?: string;
+  icon?: string | null;
+  status?: "active" | "disabled";
+  /** 不传或空数组均允许（空壳模板） */
+  items?: TeamTemplateItemBody[];
+};
+
+export type UpdateTeamTemplateBody = {
+  name?: string;
+  description?: string;
+  icon?: string | null;
+  status?: "active" | "disabled";
+  /** 传入时整表替换；不传则不改关联事项类型 */
+  items?: TeamTemplateItemBody[];
 };
 
 export type CreateTicketAttributeBody = {
@@ -887,10 +986,11 @@ export type DomainTicketTemplate = {
 };
 
 export type CreateDomainTicketTypeBody = {
-  code: string;
+  code?: string;
   name: string;
   description?: string | null;
   icon?: string | null;
+  template_key?: string | null;
   status_flow?: TicketStatusFlow | Record<string, unknown> | null;
 };
 

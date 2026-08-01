@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "P0 完成后的 lint/typecheck 验收口径"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "核对人员列表页骨架与权限显隐"}
+{"file": ".trellis/tasks/07-31-business-console-p0-members-basic-onboarding/prd.md", "reason": "对照 AC1–AC6 做实现验收"}
+{"file": ".trellis/tasks/07-27-business-console-full-mirror/prd.md", "reason": "父任务 R3/R4 与平台无回归要求"}

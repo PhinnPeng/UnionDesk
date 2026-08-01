@@ -13,5 +13,11 @@ describe("permissionCodeLabels", () => {
 		expect(PERMISSION_CODE_LABELS["platform.user.reset_password"]).toBe("重置平台用户密码");
 		expect(PERMISSION_CODE_LABELS["platform.user.offboard_pool.export"]).toBe("导出离职池");
 		expect(PERMISSION_CODE_LABELS["platform.user.offboard_pool.batch_restore"]).toBe("批量恢复");
+		expect(PERMISSION_CODE_LABELS["domain.home.read"]).toBe("查看概览");
+		expect(PERMISSION_CODE_LABELS["domain.overview.read"]).toBe("查看运营概览");
+		expect(PERMISSION_CODE_LABELS["domain.general.read"]).toBe("查看通用设置");
+		expect(PERMISSION_CODE_LABELS["domain.customer.read"]).toBe("查看客户");
+		expect(PERMISSION_CODE_LABELS["domain.audit_log.read"]).toBe("查看操作日志");
+		expect(PERMISSION_CODE_LABELS["domain.login_log.read"]).toBe("查看登录日志");
 	});
 });

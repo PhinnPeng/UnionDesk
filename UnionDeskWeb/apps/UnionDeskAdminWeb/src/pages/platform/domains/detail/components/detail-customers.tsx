@@ -300,7 +300,7 @@ function CustomersAddModal({
 			title="添加客户"
 			open={open}
 			width={720}
-			destroyOnClose
+			destroyOnHidden
 			onCancel={onCancel}
 			footer={(
 				<Space>
@@ -464,7 +464,7 @@ function CustomersBatchStaffModal({
 			title="批量添加员工"
 			open={open}
 			width={720}
-			destroyOnClose
+			destroyOnHidden
 			onCancel={onCancel}
 			okText="确认添加"
 			cancelText="取消"

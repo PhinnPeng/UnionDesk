@@ -171,4 +171,15 @@
           AND deleted_at IS NULL
     </update>
 
+    <update id="updateAppliedTeamTemplate">
+        UPDATE business_domain
+        SET applied_team_template_id = #{templateId},
+            applied_team_template_version = #{templateVersion},
+            applied_team_template_at = CURRENT_TIMESTAMP(3),
+            updated_at = CURRENT_TIMESTAMP(3),
+            updated_by = #{updatedBy}
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </update>
+
 </mapper>

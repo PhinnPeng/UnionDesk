@@ -301,7 +301,7 @@ export function RuleConfigDrawer({
 			open={open}
 			onClose={onClose}
 			width={380}
-			destroyOnClose
+			destroyOnHidden
 			footer={(
 				<>
 					<Button

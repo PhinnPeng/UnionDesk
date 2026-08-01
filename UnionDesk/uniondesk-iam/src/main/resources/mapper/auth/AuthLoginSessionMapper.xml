@@ -79,6 +79,16 @@
           AND session_status = 'active'
     </update>
 
+    <update id="updateBusinessDomainAndRefreshToken">
+        UPDATE auth_login_session
+        SET business_domain_id = #{businessDomainId},
+            refresh_token_hash = #{refreshTokenHash},
+            last_seen_at = #{lastSeenAt}
+        WHERE sid = #{sid}
+          AND session_type = #{sessionType}
+          AND session_status = 'active'
+    </update>
+
     <update id="revokeBySid">
         UPDATE auth_login_session
         SET session_status = 'revoked',

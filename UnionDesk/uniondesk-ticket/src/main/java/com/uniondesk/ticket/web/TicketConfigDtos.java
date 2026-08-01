@@ -23,17 +23,23 @@ public final class TicketConfigDtos {
             Integer form_schema_current_version_no,
             Boolean form_schema_has_unpublished,
             String status,
+            String source_global_type_id,
             java.util.List<TransitionRuleView> transition_rules) {
     }
 
     public record CreateTicketTypeRequest(
-            @NotBlank String code,
+            String code,
             @NotBlank String name,
             String description,
             String description_template_md,
             String icon,
+            String template_key,
             Object status_flow,
             Object form_schema) {
+    }
+
+    public record ImportPlatformTicketTypesRequest(
+            @NotEmpty java.util.List<@NotBlank String> platform_type_ids) {
     }
 
     public record UpdateTicketTypeRequest(

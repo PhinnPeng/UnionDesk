@@ -4,7 +4,7 @@ import type { AppRouteRecordRaw } from "#src/router/types";
 
 import { buildRoutesFromAdminMenuSnapshot } from "#src/layout/layout-menu";
 import { hasPlatformRoleHint } from "#src/router/extra-info/resolve-home-path";
-import { hasBusinessDomainAccess } from "#src/utils/access/business-domain";
+import { hasBusinessDomainAccessFromDomains } from "#src/utils/access/business-domain";
 
 import type { UserInfoType } from "./types";
 
@@ -56,6 +56,7 @@ export function buildUserInfoFromLoginUser(
 	user: LoginUserView,
 	roles: readonly string[],
 	loginRole?: string | null,
+	accessibleDomains: readonly unknown[] = [],
 ): UserInfoType {
 	return {
 		id: user.id,
@@ -67,13 +68,19 @@ export function buildUserInfoFromLoginUser(
 		roles: normalizeAccessRoles(roles),
 		actions: [],
 		platformAccess: hasPlatformRoleHint(roles, loginRole),
-		businessDomainAccess: false,
+		businessDomainAccess: hasBusinessDomainAccessFromDomains(accessibleDomains),
 		menus: [],
 	};
 }
 
-export function buildUserInfoFromPermissionSnapshot(snapshot: PermissionSnapshot): UserInfoType {
+export function buildUserInfoFromPermissionSnapshot(
+	snapshot: PermissionSnapshot,
+	options?: { accessibleDomains?: readonly unknown[]; businessDomainAccess?: boolean },
+): UserInfoType {
 	const menus = buildBackendRoutesFromSnapshot(snapshot.menuTree);
+	const businessDomainAccess = typeof options?.businessDomainAccess === "boolean"
+		? options.businessDomainAccess
+		: hasBusinessDomainAccessFromDomains(options?.accessibleDomains ?? snapshot.domains);
 	return {
 		id: snapshot.user.id,
 		avatar: "",
@@ -84,7 +91,7 @@ export function buildUserInfoFromPermissionSnapshot(snapshot: PermissionSnapshot
 		roles: normalizeAccessRoles(snapshot.roles),
 		actions: snapshot.actions.map(action => action.code),
 		platformAccess: hasPlatformAccess(snapshot),
-		businessDomainAccess: hasBusinessDomainAccess(menus),
+		businessDomainAccess,
 		menus,
 	};
 }

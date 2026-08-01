@@ -26,13 +26,22 @@ const KPI_ITEMS = [
 	{ key: "blockedWords", label: "屏蔽词" },
 ] as const;
 
+const TICKET_VIEW_DOMAIN_ALL = "ticket.view.domain_all";
+
 export function DetailOverview({ domain, onNavigateTab }: DetailOverviewProps) {
 	const { hasPermission } = useAuth();
 	const canViewCustomers = hasPermission(PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ);
+	const canViewTickets = hasPermission(TICKET_VIEW_DOMAIN_ALL);
 	const [pendingTicketCount, setPendingTicketCount] = useState<number | null>(null);
 
 	useEffect(() => {
 		let ignore = false;
+		if (!canViewTickets) {
+			setPendingTicketCount(null);
+			return () => {
+				ignore = true;
+			};
+		}
 		void (async () => {
 			try {
 				const result = await fetchP0AdminDomainTicketsPage({
@@ -53,7 +62,7 @@ export function DetailOverview({ domain, onNavigateTab }: DetailOverviewProps) {
 		return () => {
 			ignore = true;
 		};
-	}, [domain.id]);
+	}, [canViewTickets, domain.id]);
 
 	const resolveKpiValue = (key: (typeof KPI_ITEMS)[number]["key"]) => {
 		if (key === "pendingTickets") {
@@ -85,7 +94,7 @@ export function DetailOverview({ domain, onNavigateTab }: DetailOverviewProps) {
 					高频运营向导
 				</Title>
 				<Space wrap>
-					<Button onClick={() => onNavigateTab("tickets")}>事项管理</Button>
+					<Button onClick={() => onNavigateTab("ticket_config")}>事项配置</Button>
 					<Button onClick={() => onNavigateTab("onboarding")}>入域管理</Button>
 					<Button onClick={() => onNavigateTab("members")}>人员管理</Button>
 					{canViewCustomers ? (

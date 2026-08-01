@@ -52,4 +52,10 @@ public interface BusinessDomainMapper {
             @Param("id") long id);
 
     int softDelete(@Param("id") long id, @Param("updatedBy") Long updatedBy);
+
+    int updateAppliedTeamTemplate(
+            @Param("id") long id,
+            @Param("templateId") long templateId,
+            @Param("templateVersion") int templateVersion,
+            @Param("updatedBy") Long updatedBy);
 }

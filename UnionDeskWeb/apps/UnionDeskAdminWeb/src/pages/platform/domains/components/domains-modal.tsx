@@ -2,8 +2,9 @@ import type {
 	CreateAdminDomainPayload,
 	P0AccessPolicy,
 	P0VisibilityPolicyCode,
+	TeamTemplateOption,
 } from "@uniondesk/shared";
-import { createAdminDomain, toErrorMessage } from "@uniondesk/shared";
+import { createAdminDomain, fetchTeamTemplateOptions, toErrorMessage } from "@uniondesk/shared";
 
 import { uploadAttachment } from "#src/api/platform/attachment";
 import { AuthGuarded } from "#src/components/auth-guarded";
@@ -40,7 +41,6 @@ import {
 	Select,
 	Space,
 	Steps,
-	Tag,
 	Upload,
 } from "antd";
 import type { FormInstance, StepsProps, UploadProps } from "antd";
@@ -72,6 +72,10 @@ type CreateMode = "blank" | "template";
 interface ModeStepProps {
 	createMode: CreateMode;
 	onSelectMode: (mode: CreateMode) => void;
+	templateOptions: TeamTemplateOption[];
+	selectedTemplateId: string | null;
+	onSelectTemplate: (templateId: string | null) => void;
+	loadingTemplates: boolean;
 }
 
 interface BasicInfoStepProps {
@@ -97,6 +101,7 @@ interface PolicyStepProps {
 interface PreviewStepProps {
 	form: FormInstance;
 	createMode: CreateMode;
+	selectedTemplateName?: string | null;
 }
 
 export interface DomainsModalProps {
@@ -142,7 +147,7 @@ const STEP_FIELD_NAMES: string[][] = [
 
 const MODE_LABELS: Record<CreateMode, string> = {
 	blank: "全新空白独立域",
-	template: "行业级公共预置模板",
+	template: "套用团队模板",
 };
 
 function selectionCardClass(selected: boolean, extra?: string): string {
@@ -433,8 +438,16 @@ export function DomainAccessPolicyFields() {
 	);
 }
 
-function ModeStep({ createMode, onSelectMode }: ModeStepProps) {
+function ModeStep({
+	createMode,
+	onSelectMode,
+	templateOptions,
+	selectedTemplateId,
+	onSelectTemplate,
+	loadingTemplates,
+}: ModeStepProps) {
 	const blankSelected = createMode === "blank";
+	const templateSelected = createMode === "template";
 
 	return (
 		<div className="space-y-4 text-left">
@@ -461,25 +474,48 @@ function ModeStep({ createMode, onSelectMode }: ModeStepProps) {
 					</button>
 				</Col>
 				<Col xs={24} md={12}>
-					<div
-						className={`${styles.selectionCard} ${styles.selectionCardDisabled} flex flex-col justify-between rounded-lg p-5`}
-						aria-disabled
+					<button
+						type="button"
+						className={selectionCardClass(templateSelected, "flex flex-col justify-between rounded-lg p-5")}
+						onClick={() => onSelectMode("template")}
 					>
-						<Tag className="absolute top-3 right-3 z-10 m-0" color="default">
-							即将推出
-						</Tag>
 						<div className="space-y-3">
-							<div className={`${styles.modeCardIcon} ${styles.modeCardIconMuted}`}>
+							<div className={styles.modeCardIcon}>
 								<AppstoreOutlined className="text-base" />
 							</div>
-							<h4 className="text-xs font-bold text-colorText">套用高可用系统模板</h4>
+							<h4 className="text-xs font-bold text-colorText">套用团队模板</h4>
 							<p className="text-[10px] leading-relaxed text-colorTextSecondary">
-								一键选择并装配系统内置行业沉淀的最佳流程方案，预置工单状态机、SLA 水位限制与默认安全角色。
+								选择平台团队模板，建域时深拷贝事项类型、表单与工作流；之后与模板解耦，互不影响。
 							</p>
 						</div>
-					</div>
+						<span className={`${styles.selectionCardCheck} ${templateSelected ? "" : styles.selectionCardCheckIdle}`}>
+							{templateSelected ? <CheckCircleFilled /> : <CheckCircleOutlined />}
+						</span>
+					</button>
 				</Col>
 			</Row>
+			{templateSelected
+				? (
+					<div className="rounded-lg border border-colorBorderSecondary p-4">
+						<div className="mb-2 text-xs font-bold text-colorText">选择团队模板</div>
+						<Select
+							className="w-full"
+							loading={loadingTemplates}
+							placeholder={templateOptions.length ? "请选择启用中的团队模板" : "暂无可用模板，请先在事项配置中创建"}
+							value={selectedTemplateId ?? undefined}
+							options={templateOptions.map(item => ({
+								value: item.id,
+								label: `${item.name}（v${item.version} · ${item.item_count} 个类型）`,
+							}))}
+							onChange={value => onSelectTemplate(value ?? null)}
+							allowClear
+						/>
+						<p className="mt-2 mb-0 text-[10px] text-colorTextSecondary">
+							模板内容随平台事项类型当前配置变化；套用后仅影响本业务域快照。
+						</p>
+					</div>
+				)
+				: null}
 		</div>
 	);
 }
@@ -712,7 +748,7 @@ function PolicyStep({ form, onDirty }: PolicyStepProps) {
 	);
 }
 
-function PreviewStep({ form, createMode }: PreviewStepProps) {
+function PreviewStep({ form, createMode, selectedTemplateName }: PreviewStepProps) {
 	const name = Form.useWatch("name", form) as string | undefined;
 	const code = Form.useWatch("code", form) as string | undefined;
 	const portalUrl = Form.useWatch("portal_url", form) as string | undefined;
@@ -724,6 +760,9 @@ function PreviewStep({ form, createMode }: PreviewStepProps) {
 
 	const logoUrl = resolveDomainLogoUrl(logo);
 	const displayName = name?.trim();
+	const modeLabel = createMode === "template" && selectedTemplateName
+		? `${MODE_LABELS.template} · ${selectedTemplateName}`
+		: MODE_LABELS[createMode];
 
 	return (
 		<div className="space-y-4 text-left">
@@ -732,7 +771,7 @@ function PreviewStep({ form, createMode }: PreviewStepProps) {
 				<div className={styles.previewGrid}>
 					<div>
 						<span className="text-colorTextSecondary">创建模式：</span>
-						<strong>{MODE_LABELS[createMode]}</strong>
+						<strong>{modeLabel}</strong>
 					</div>
 					<div className="flex items-center gap-1">
 						<span className="text-colorTextSecondary">在册标识 Logo：</span>
@@ -779,6 +818,9 @@ export function DomainsModal({ open, onClose, onCreated }: DomainsModalProps) {
 	const [form] = Form.useForm<DomainCreateFormValues>();
 	const [currentStep, setCurrentStep] = useState(0);
 	const [createMode, setCreateMode] = useState<CreateMode>("blank");
+	const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+	const [templateOptions, setTemplateOptions] = useState<TeamTemplateOption[]>([]);
+	const [loadingTemplates, setLoadingTemplates] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [dirty, setDirty] = useState(false);
 	const bodyScrollRef = useRef<HTMLDivElement>(null);
@@ -786,13 +828,31 @@ export function DomainsModal({ open, onClose, onCreated }: DomainsModalProps) {
 
 	useEffect(() => {
 		if (!open) {
-			form.resetFields();
+			// Modal destroyOnHidden 会卸载 Form，关闭时勿调用 form 方法，避免 useForm 未连接告警
 			setCurrentStep(0);
 			setCreateMode("blank");
+			setSelectedTemplateId(null);
 			setDirty(false);
 			portalUrlTouched.current = false;
+			return;
 		}
-	}, [form, open]);
+		form.resetFields();
+		setLoadingTemplates(true);
+		void fetchTeamTemplateOptions()
+			.then((options) => {
+				setTemplateOptions(Array.isArray(options) ? options : []);
+			})
+			.catch((error) => {
+				message.error(toErrorMessage(error));
+				setTemplateOptions([]);
+			})
+			.finally(() => setLoadingTemplates(false));
+	}, [form, message, open]);
+
+	const selectedTemplateName = useMemo(
+		() => templateOptions.find(item => item.id === selectedTemplateId)?.name ?? null,
+		[selectedTemplateId, templateOptions],
+	);
 
 	const requestClose = () => {
 		if (dirty) {
@@ -820,8 +880,8 @@ export function DomainsModal({ open, onClose, onCreated }: DomainsModalProps) {
 
 	const validateCurrentStep = async (): Promise<boolean> => {
 		if (currentStep === 0) {
-			if (createMode !== "blank") {
-				message.warning("系统模板功能即将推出，请先选择「全新空白起航」");
+			if (createMode === "template" && !selectedTemplateId) {
+				message.warning("请选择要套用的团队模板，或改选「全新空白起航」");
 				return false;
 			}
 			return true;
@@ -869,7 +929,11 @@ export function DomainsModal({ open, onClose, onCreated }: DomainsModalProps) {
 
 	const handleSubmit = async () => {
 		const values = await form.validateFields().catch(() => null);
-		if (!values || createMode !== "blank") {
+		if (!values) {
+			return;
+		}
+		if (createMode === "template" && !selectedTemplateId) {
+			message.warning("请选择要套用的团队模板");
 			return;
 		}
 		const payload: CreateAdminDomainPayload = {
@@ -880,6 +944,7 @@ export function DomainsModal({ open, onClose, onCreated }: DomainsModalProps) {
 			visibility_policy_codes: normalizeVisibility(values.visibility_policy_codes ?? ["public"]),
 			registration_enabled: values.registration_enabled,
 			invitation_enabled: values.invitation_enabled,
+			team_template_id: createMode === "template" ? selectedTemplateId : undefined,
 		};
 		setSubmitting(true);
 		try {
@@ -906,8 +971,8 @@ export function DomainsModal({ open, onClose, onCreated }: DomainsModalProps) {
 			centered
 			onCancel={requestClose}
 			width={800}
-			maskClosable={false}
-			destroyOnClose
+			mask={{ closable: false }}
+			destroyOnHidden
 			footer={null}
 			styles={{
 				container: { padding: 0, overflow: "hidden" },
@@ -981,11 +1046,18 @@ export function DomainsModal({ open, onClose, onCreated }: DomainsModalProps) {
 						<div className={currentStep === 0 ? undefined : "hidden"}>
 							<ModeStep
 								createMode={createMode}
+								templateOptions={templateOptions}
+								selectedTemplateId={selectedTemplateId}
+								loadingTemplates={loadingTemplates}
+								onSelectTemplate={(templateId) => {
+									setSelectedTemplateId(templateId);
+									setDirty(true);
+								}}
 								onSelectMode={(mode) => {
-									if (mode === "template") {
-										return;
-									}
 									setCreateMode(mode);
+									if (mode === "blank") {
+										setSelectedTemplateId(null);
+									}
 									setDirty(true);
 								}}
 							/>
@@ -997,7 +1069,11 @@ export function DomainsModal({ open, onClose, onCreated }: DomainsModalProps) {
 							<PolicyStep form={form} onDirty={() => setDirty(true)} />
 						</div>
 						<div className={currentStep === 3 ? undefined : "hidden"}>
-							<PreviewStep form={form} createMode={createMode} />
+							<PreviewStep
+								form={form}
+								createMode={createMode}
+								selectedTemplateName={selectedTemplateName}
+							/>
 						</div>
 					</Form>
 				</div>

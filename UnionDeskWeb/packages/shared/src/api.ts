@@ -26,6 +26,10 @@ import type {
   LoginConfig,
   LoginRequest,
   LoginResponse,
+  SetDefaultDomainRequest,
+  SetDefaultDomainResponse,
+  SwitchDomainRequest,
+  SwitchDomainResponse,
   LoginLogView,
   OnlineSessionView,
   SessionView,
@@ -65,6 +69,7 @@ import type {
   CreateTicketAttributeBody,
   CreateTicketStatusDefinitionBody,
   CreatePlatformTicketTypeBody,
+  CreateTeamTemplateBody,
   PlatformTicketType,
   PlatformTicketTypeDetail,
   PlatformTicketTypeList,
@@ -76,8 +81,12 @@ import type {
   TicketAttributeSortOrderItem,
   TicketStatusDefinition,
   TicketStatusDefinitionList,
+  TeamTemplate,
+  TeamTemplateList,
+  TeamTemplateOption,
   UpdateTicketAttributeBody,
   UpdateTicketStatusDefinitionBody,
+  UpdateTeamTemplateBody,
   UpdatePlatformTicketTypeBody,
   UpdateDomainTicketTemplateBody,
   UpdateDomainTicketTypeBody,
@@ -464,6 +473,35 @@ export async function logout(): Promise<void> {
     }
   } finally {
     clearAuthSession();
+  }
+}
+
+export async function setDefaultDomain(payload: SetDefaultDomainRequest): Promise<SetDefaultDomainResponse> {
+  try {
+    const response = await api.put<SetDefaultDomainResponse>("/auth/me/default-domain", payload);
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+export async function switchDomain(payload: SwitchDomainRequest): Promise<SwitchDomainResponse> {
+  try {
+    const response = await api.post<SwitchDomainResponse>("/auth/switch-domain", payload);
+    const result = unwrapApiResponse(response.data);
+    const session = loadAuthSession();
+    if (session) {
+      saveAuthSession({
+        ...session,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        businessDomainId: result.businessDomainId,
+        expiresAt: new Date(Date.now() + result.expiresInSeconds * 1000).toISOString(),
+      });
+    }
+    return result;
+  } catch (error) {
+    throw toError(error);
   }
 }
 
@@ -1308,6 +1346,59 @@ export async function fetchPlatformDomainRolePermissions(domainId: string, roleI
   return normalizeDomainRolePermissions(unwrapApiResponse(response.data) as Record<string, unknown>);
 }
 
+/** `GET /api/v1/admin/domains/{domainId}/permission-items` */
+export async function fetchDomainPermissionItems(domainId: string): Promise<DomainPermissionItem[]> {
+  const response = await api.get<{ total: number; items: DomainPermissionItem[] }>(
+    `/admin/domains/${encodeURIComponent(domainId)}/permission-items`,
+  );
+  const result = unwrapApiResponse(response.data);
+  const data = result?.items ?? [];
+  return data.map(item => normalizeDomainPermissionItem(item as unknown as Record<string, unknown>));
+}
+
+/** `POST /api/v1/admin/domains/{domainId}/roles` */
+export async function createDomainRole(
+  domainId: string,
+  body: { code: string; name: string },
+): Promise<DomainRole> {
+  const response = await api.post<Record<string, unknown>>(
+    `/admin/domains/${encodeURIComponent(domainId)}/roles`,
+    body,
+  );
+  return normalizeDomainRole(unwrapApiResponse(response.data) as Record<string, unknown>);
+}
+
+/** `PUT /api/v1/admin/domains/{domainId}/roles/{roleId}` */
+export async function updateDomainRole(
+  domainId: string,
+  roleId: string,
+  body: { code?: string; name?: string },
+): Promise<DomainRole> {
+  const response = await api.put<Record<string, unknown>>(
+    `/admin/domains/${encodeURIComponent(domainId)}/roles/${encodeURIComponent(roleId)}`,
+    body,
+  );
+  return normalizeDomainRole(unwrapApiResponse(response.data) as Record<string, unknown>);
+}
+
+/** `DELETE /api/v1/admin/domains/{domainId}/roles/{roleId}` */
+export async function deleteDomainRole(domainId: string, roleId: string): Promise<void> {
+  await api.delete(`/admin/domains/${encodeURIComponent(domainId)}/roles/${encodeURIComponent(roleId)}`);
+}
+
+/** `PUT /api/v1/admin/domains/{domainId}/roles/{roleId}/permissions` */
+export async function updateDomainRolePermissions(
+  domainId: string,
+  roleId: string,
+  permissionItemIds: string[],
+): Promise<DomainRolePermissions> {
+  const response = await api.put<Record<string, unknown>>(
+    `/admin/domains/${encodeURIComponent(domainId)}/roles/${encodeURIComponent(roleId)}/permissions`,
+    { permission_item_ids: permissionItemIds.map(id => Number(id)) },
+  );
+  return normalizeDomainRolePermissions(unwrapApiResponse(response.data) as Record<string, unknown>);
+}
+
 /** `GET /api/v1/admin/domains/{domainId}/members` */
 export async function fetchDomainMembersPage(params: {
   domainId: string;
@@ -1560,6 +1651,19 @@ export async function createDomainTicketType(
   return unwrapApiResponse(response.data);
 }
 
+/** `POST /api/v1/admin/domains/{domainId}/ticket-types/from-platform` */
+export async function importDomainTicketTypesFromPlatform(
+  domainId: string,
+  platformTypeIds: string[],
+): Promise<DomainTicketType[]> {
+  const response = await api.post<{ total: number; items: DomainTicketType[] }>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-types/from-platform`,
+    { platform_type_ids: platformTypeIds },
+  );
+  const result = unwrapApiResponse(response.data);
+  return result?.items ?? [];
+}
+
 /** `PUT /api/v1/admin/domains/{domainId}/ticket-types/{typeId}` */
 export async function updateDomainTicketType(
   domainId: string,
@@ -1712,6 +1816,121 @@ export async function deletePlatformTicketStatus(statusId: string): Promise<void
   await api.delete(`/platform/ticket-statuses/${encodeURIComponent(statusId)}`);
 }
 
+/** `GET /api/v1/admin/domains/{domainId}/ticket-statuses` */
+export async function fetchDomainTicketStatuses(
+  domainId: string,
+  params?: {
+    keyword?: string;
+    page?: number;
+    page_size?: number;
+  },
+): Promise<TicketStatusDefinitionList> {
+  const response = await api.get<TicketStatusDefinitionList>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-statuses`,
+    { params },
+  );
+  return unwrapApiResponse(response.data) ?? { total: 0, items: [] };
+}
+
+/** `POST /api/v1/admin/domains/{domainId}/ticket-statuses` */
+export async function createDomainTicketStatus(
+  domainId: string,
+  body: CreateTicketStatusDefinitionBody,
+): Promise<TicketStatusDefinition> {
+  const response = await api.post<TicketStatusDefinition>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-statuses`,
+    body,
+  );
+  return unwrapApiResponse(response.data);
+}
+
+/** `POST /api/v1/admin/domains/{domainId}/ticket-statuses/from-platform` */
+export async function importDomainTicketStatusesFromPlatform(
+  domainId: string,
+  platformStatusIds: string[],
+): Promise<TicketStatusDefinition[]> {
+  const response = await api.post<{ total: number; items: TicketStatusDefinition[] }>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-statuses/from-platform`,
+    { platform_status_ids: platformStatusIds },
+  );
+  const result = unwrapApiResponse(response.data);
+  return result?.items ?? [];
+}
+
+/** `PUT /api/v1/admin/domains/{domainId}/ticket-statuses/{statusId}` */
+export async function updateDomainTicketStatus(
+  domainId: string,
+  statusId: string,
+  body: UpdateTicketStatusDefinitionBody,
+): Promise<TicketStatusDefinition> {
+  const response = await api.put<TicketStatusDefinition>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-statuses/${encodeURIComponent(statusId)}`,
+    body,
+  );
+  return unwrapApiResponse(response.data);
+}
+
+/** `DELETE /api/v1/admin/domains/{domainId}/ticket-statuses/{statusId}` */
+export async function deleteDomainTicketStatus(domainId: string, statusId: string): Promise<void> {
+  await api.delete(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-statuses/${encodeURIComponent(statusId)}`,
+  );
+}
+
+/** `GET /api/v1/platform/ticket-team-templates` */
+export async function fetchTeamTemplates(params?: {
+  keyword?: string;
+  page?: number;
+  page_size?: number;
+}): Promise<TeamTemplateList> {
+  const response = await api.get<TeamTemplateList>("/platform/ticket-team-templates", { params });
+  return unwrapApiResponse(response.data) ?? { total: 0, items: [] };
+}
+
+/** `GET /api/v1/platform/ticket-team-templates/options` */
+export async function fetchTeamTemplateOptions(): Promise<TeamTemplateOption[]> {
+  const response = await api.get<TeamTemplateOption[]>("/platform/ticket-team-templates/options");
+  return unwrapApiResponse(response.data) ?? [];
+}
+
+/** `GET /api/v1/platform/ticket-team-templates/{templateId}` */
+export async function fetchTeamTemplate(templateId: string): Promise<TeamTemplate> {
+  const response = await api.get<TeamTemplate>(
+    `/platform/ticket-team-templates/${encodeURIComponent(templateId)}`,
+  );
+  return unwrapApiResponse(response.data);
+}
+
+/** `POST /api/v1/platform/ticket-team-templates` */
+export async function createTeamTemplate(body: CreateTeamTemplateBody): Promise<TeamTemplate> {
+  const response = await api.post<TeamTemplate>("/platform/ticket-team-templates", body);
+  return unwrapApiResponse(response.data);
+}
+
+/** `PUT /api/v1/platform/ticket-team-templates/{templateId}` */
+export async function updateTeamTemplate(
+  templateId: string,
+  body: UpdateTeamTemplateBody,
+): Promise<TeamTemplate> {
+  const response = await api.put<TeamTemplate>(
+    `/platform/ticket-team-templates/${encodeURIComponent(templateId)}`,
+    body,
+  );
+  return unwrapApiResponse(response.data);
+}
+
+/** `DELETE /api/v1/platform/ticket-team-templates/{templateId}` */
+export async function deleteTeamTemplate(templateId: string): Promise<void> {
+  await api.delete(`/platform/ticket-team-templates/${encodeURIComponent(templateId)}`);
+}
+
+/** `PUT /api/v1/platform/ticket-team-templates/reorder` */
+export async function reorderTeamTemplates(orderedIds: Array<number | string>): Promise<void> {
+  await api.put("/platform/ticket-team-templates/reorder", {
+    ordered_ids: orderedIds.map(id => Number(id)),
+  });
+}
+
 /** `GET /api/v1/admin/platform/ticket-types/{typeId}` */
 export async function fetchPlatformTicketType(typeId: string): Promise<PlatformTicketTypeDetail> {
   const response = await api.get<PlatformTicketTypeDetail>(
@@ -1852,6 +2071,19 @@ export async function createDomainTicketAttribute(
     body,
   );
   return unwrapApiResponse(response.data);
+}
+
+/** `POST /api/v1/admin/domains/{domainId}/ticket-attributes/from-platform` */
+export async function importDomainTicketAttributesFromPlatform(
+  domainId: string,
+  platformAttributeIds: string[],
+): Promise<TicketAttribute[]> {
+  const response = await api.post<{ total: number; items: TicketAttribute[] }>(
+    `/admin/domains/${encodeURIComponent(domainId)}/ticket-attributes/from-platform`,
+    { platform_attribute_ids: platformAttributeIds },
+  );
+  const result = unwrapApiResponse(response.data);
+  return result?.items ?? [];
 }
 
 /** `PUT /api/v1/admin/domains/{domainId}/ticket-attributes/{attributeId}` */

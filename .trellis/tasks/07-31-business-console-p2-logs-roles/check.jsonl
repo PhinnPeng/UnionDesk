@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "typecheck"}
+{"file": ".trellis/tasks/07-31-business-console-p2-logs-roles/prd.md", "reason": "AC"}
+{"file": ".trellis/tasks/07-27-business-console-full-mirror/prd.md", "reason": "父任务无回归"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "列表与 AuthGuarded"}

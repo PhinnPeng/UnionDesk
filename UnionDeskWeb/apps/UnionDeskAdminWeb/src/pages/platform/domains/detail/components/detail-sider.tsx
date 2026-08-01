@@ -23,6 +23,8 @@ import {
 	PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ,
 	PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ,
 	PLATFORM_DOMAIN_CONTROL_OVERVIEW,
+	PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_READ,
+	PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_READ,
 	PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ,
 	PLATFORM_DOMAIN_ROLES_READ,
 } from "../../platform-domain-permissions";
@@ -42,7 +44,7 @@ const NAV_ITEMS: { key: DetailTabKey; label: string; icon: React.ReactNode }[] =
 	{ key: "roles", label: "角色管理", icon: <SafetyCertificateOutlined /> },
 	{ key: "customers", label: "客户管理", icon: <IdcardOutlined /> },
 	{ key: "onboarding", label: "入域管理", icon: <UserAddOutlined /> },
-	{ key: "tickets", label: "事项管理", icon: <FormOutlined /> },
+	{ key: "ticket_config", label: "事项配置", icon: <FormOutlined /> },
 	{ key: "blockwords", label: "屏蔽词库", icon: <StopOutlined /> },
 	{ key: "notifications", label: "通知配置", icon: <BellOutlined /> },
 	{ key: "config", label: "参数配置", icon: <SettingOutlined /> },
@@ -66,7 +68,11 @@ export function DetailSider({ activeTab, onSelect }: DetailSiderProps) {
 			if (item.key === "blockwords" && !hasPermission(PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ)) {
 				return false;
 			}
-			if (item.key === "tickets" && !hasPermission(PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ)) {
+			if (item.key === "ticket_config" && !(
+				hasPermission(PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ)
+				|| hasPermission(PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_READ)
+				|| hasPermission(PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_READ)
+			)) {
 				return false;
 			}
 			if (item.key === "audit_logs" && !hasPermission(PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ)) {

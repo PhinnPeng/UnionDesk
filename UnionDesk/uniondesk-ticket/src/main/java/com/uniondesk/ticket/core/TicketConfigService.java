@@ -36,6 +36,7 @@ public class TicketConfigService {
     private final TicketTypeAttributeSlotRepository slotRepository;
     private final TicketTransitionRuleService transitionRuleService;
     private final TicketTypeFlowService ticketTypeFlowService;
+    private final PlatformTicketTypeCopyService platformTicketTypeCopyService;
     private final ObjectMapper objectMapper;
 
     public TicketConfigService(
@@ -48,6 +49,7 @@ public class TicketConfigService {
             TicketTypeAttributeSlotRepository slotRepository,
             TicketTransitionRuleService transitionRuleService,
             TicketTypeFlowService ticketTypeFlowService,
+            PlatformTicketTypeCopyService platformTicketTypeCopyService,
             ObjectMapper objectMapper) {
         this.ticketTypeRepository = ticketTypeRepository;
         this.ticketTemplateRepository = ticketTemplateRepository;
@@ -58,6 +60,7 @@ public class TicketConfigService {
         this.slotRepository = slotRepository;
         this.transitionRuleService = transitionRuleService;
         this.ticketTypeFlowService = ticketTypeFlowService;
+        this.platformTicketTypeCopyService = platformTicketTypeCopyService;
         this.objectMapper = objectMapper;
     }
 
@@ -69,8 +72,19 @@ public class TicketConfigService {
 
     @Transactional
     public TicketConfigDtos.TicketTypeView createTicketType(long domainId, TicketConfigDtos.CreateTicketTypeRequest request) {
-        String code = requiredText(request.code(), "code");
         String name = requiredText(request.name(), "name");
+        String icon = StringUtils.hasText(request.icon()) ? request.icon().trim() : "";
+        if (!StringUtils.hasText(icon) && StringUtils.hasText(request.template_key())) {
+            icon = defaultIcon(request.template_key());
+        }
+        if (!StringUtils.hasText(icon)) {
+            throw new IllegalArgumentException("icon is required");
+        }
+        String description = trimToNull(request.description());
+        if (description == null && StringUtils.hasText(request.template_key())) {
+            description = defaultDescription(request.template_key());
+        }
+        String code = resolveDomainCode(domainId, request.code(), request.template_key(), name);
         assertCodeUnique(domainId, code, null);
         assertNameUnique(domainId, name, null);
         Object statusFlow = request.status_flow() == null
@@ -84,22 +98,46 @@ public class TicketConfigService {
         po.setBusinessDomainId(domainId);
         po.setCode(code);
         po.setName(name);
-        po.setDescription(trimToNull(request.description()));
+        po.setDescription(description);
         po.setDescriptionTemplateMd(trimToNull(request.description_template_md()));
-        po.setIcon(trimToNull(request.icon()));
+        po.setIcon(icon);
+        po.setCategory(resolveCategory(request.template_key()));
         po.setStatus(TicketTypePo.STATUS_ACTIVE);
-        po.setSortOrder(0);
+        po.setSortOrder(ticketTypeRepository.nextSortOrderDomain(domainId));
         po.setSystem(false);
         try {
             ticketTypeRepository.save(po);
         } catch (DuplicateKeyException ex) {
             throw translateTicketTypeDuplicate(ex);
         }
+        if (StringUtils.hasText(request.template_key())) {
+            ticketTypeAttributeSlotService.seedDomainSystemSlots(domainId, po.getId(), request.template_key(), null);
+        }
         ticketFormSchemaService.initializeForNewType(domainId, po.getId(), formSchemaJson);
         if (request.status_flow() != null) {
             ticketTypeFlowService.replaceAll(domainId, po.getId(), statusFlow, null);
         }
         return toTicketTypeView(po);
+    }
+
+    @Transactional
+    public List<TicketConfigDtos.TicketTypeView> importPlatformTicketTypes(
+            long domainId,
+            TicketConfigDtos.ImportPlatformTicketTypesRequest request) {
+        if (request == null || request.platform_type_ids() == null || request.platform_type_ids().isEmpty()) {
+            throw new IllegalArgumentException("platform_type_ids is required");
+        }
+        List<TicketConfigDtos.TicketTypeView> created = new java.util.ArrayList<>();
+        for (String rawId : request.platform_type_ids()) {
+            long platformTypeId = parseLong(rawId, "platform_type_id");
+            TicketTypePo po = platformTicketTypeCopyService.copyToDomain(
+                    domainId,
+                    platformTypeId,
+                    PlatformTicketTypeCopyService.CopyOptions.allIncluded(),
+                    null);
+            created.add(toTicketTypeView(po));
+        }
+        return created;
     }
 
     @Transactional
@@ -394,6 +432,7 @@ public class TicketConfigService {
                 currentVersionNo,
                 aggregate.hasUnpublished(),
                 StringUtils.hasText(po.getStatus()) ? po.getStatus() : "active",
+                po.getSourceGlobalTypeId() == null ? null : String.valueOf(po.getSourceGlobalTypeId()),
                 workflow.transition_rules());
     }
 
@@ -558,6 +597,56 @@ public class TicketConfigService {
             return null;
         }
         return value.trim();
+    }
+
+    private String resolveDomainCode(long domainId, String code, String templateKey, String name) {
+        if (StringUtils.hasText(code)) {
+            return code.trim().toLowerCase(Locale.ROOT);
+        }
+        if (StringUtils.hasText(templateKey)) {
+            String base = templateKey.trim().toLowerCase(Locale.ROOT);
+            if (ticketTypeRepository.findByDomainIdAndCode(domainId, base) == null) {
+                return base;
+            }
+            return base + "_" + Long.toHexString(System.nanoTime()).substring(0, 6);
+        }
+        String base = name.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "_");
+        if (!StringUtils.hasText(base) || "_".equals(base)) {
+            base = "type";
+        }
+        return base + "_" + Long.toHexString(System.nanoTime()).substring(0, 6);
+    }
+
+    private String resolveCategory(String templateKey) {
+        if (!StringUtils.hasText(templateKey)) {
+            return "transaction";
+        }
+        return switch (templateKey.trim().toLowerCase(Locale.ROOT)) {
+            case "simple_ticket" -> "feedback";
+            default -> "transaction";
+        };
+    }
+
+    private String defaultDescription(String templateKey) {
+        if (!StringUtils.hasText(templateKey)) {
+            return null;
+        }
+        return switch (templateKey.trim().toLowerCase(Locale.ROOT)) {
+            case "simple_ticket" -> "适用于快速记录的轻量事项，默认仅描述必填";
+            case "standard_ticket" -> "适用于标准工单流程的事项，默认标题与描述均必填";
+            default -> null;
+        };
+    }
+
+    private String defaultIcon(String templateKey) {
+        if (!StringUtils.hasText(templateKey)) {
+            return "";
+        }
+        return switch (templateKey.trim().toLowerCase(Locale.ROOT)) {
+            case "simple_ticket" -> "mdi:file-document-outline";
+            case "standard_ticket" -> "mdi:ticket-outline";
+            default -> "";
+        };
     }
 
     private void assertCodeUnique(long domainId, String code, Long excludeTypeId) {

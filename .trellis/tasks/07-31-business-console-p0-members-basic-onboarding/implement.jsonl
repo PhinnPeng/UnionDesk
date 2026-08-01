@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "列表页骨架与 AuthGuarded 按钮权限约定，人员页必须对齐"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "pages/domain 落位与独立页面边界"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "若需并列 domain.* 鉴权，定位 Controller/Service 模块"}
+{"file": ".trellis/tasks/07-27-business-console-full-mirror/design.md", "reason": "父任务权限矩阵与菜单码，P0 差异（禁启停、入域只读）以此为基线"}
+{"file": ".trellis/tasks/07-31-business-console-p0-members-basic-onboarding/design.md", "reason": "本子任务技术边界与平台对照差异"}

@@ -43,6 +43,9 @@ public class DomainRoleService {
     @Transactional
     public DomainRoleDtos.DomainRoleView updateRole(long domainId, long roleId, DomainRoleDtos.UpdateDomainRoleRequest request) {
         DomainRoleDtos.DomainRoleView existing = loadRole(domainId, roleId);
+        if (existing.preset()) {
+            throw new IllegalArgumentException("preset role cannot be updated");
+        }
         String code = StringUtils.hasText(request.code()) ? request.code().trim() : existing.code();
         String name = StringUtils.hasText(request.name()) ? request.name().trim() : existing.name();
         domainRoleRepository.updateRole(code, name, roleId, domainId);
@@ -63,7 +66,10 @@ public class DomainRoleService {
             long domainId,
             long roleId,
             DomainRoleDtos.UpdateDomainRolePermissionRequest request) {
-        loadRole(domainId, roleId);
+        DomainRoleDtos.DomainRoleView role = loadRole(domainId, roleId);
+        if (role.preset()) {
+            throw new IllegalArgumentException("preset role cannot be updated");
+        }
         List<Long> permissionItemIds = normalizeIds(request.permission_item_ids());
         if (!permissionItemIds.isEmpty()) {
             ensurePermissionItemsExist(permissionItemIds);

@@ -3,7 +3,7 @@
   "name": "business-console-full-mirror",
   "title": "业务域端完整镜像平台域控制台",
   "description": "",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -18,7 +18,11 @@
   "commit": null,
   "pr_url": null,
   "subtasks": [],
-  "children": [],
+  "children": [
+    "07-31-business-console-p0-members-basic-onboarding",
+    "07-31-business-console-p1-customers-blockwords-config",
+    "07-31-business-console-p2-logs-roles"
+  ],
   "parent": null,
   "relatedFiles": [],
   "notes": "",

@@ -51,7 +51,8 @@ class DomainServiceDeleteTests {
                 "/default-domain-logo.svg",
                 List.of("public"),
                 "allowed",
-                "allowed"));
+                "allowed",
+                null));
         long domainId = created.id();
 
         domainService.deleteDomain(domainId);
@@ -78,7 +79,8 @@ class DomainServiceDeleteTests {
                 "/default-domain-logo.svg",
                 List.of("public"),
                 "allowed",
-                "allowed"));
+                "allowed",
+                null));
         long domainId = created.id();
         jdbcTemplate.update("UPDATE business_domain SET status = 0 WHERE id = ?", domainId);
 
@@ -106,7 +108,8 @@ class DomainServiceDeleteTests {
                 "/default-domain-logo.svg",
                 List.of("public"),
                 "allowed",
-                "allowed"));
+                "allowed",
+                null));
         long domainId = created.id();
         domainService.deleteDomain(domainId);
 

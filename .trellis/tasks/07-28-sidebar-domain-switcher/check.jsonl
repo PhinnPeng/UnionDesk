@@ -1,0 +1,4 @@
+{"file": ".trellis/tasks/07-28-sidebar-domain-switcher/prd.md", "reason": "AC1–AC6 acceptance criteria for quality gate"}
+{"file": ".trellis/tasks/07-28-sidebar-domain-switcher/design.md", "reason": "Security: server-side domain membership checks; JWT switch contract"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend compliance for layout widget and store changes"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend migration and API conventions"}

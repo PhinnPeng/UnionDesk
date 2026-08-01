@@ -1,27 +1,18 @@
 import { BasicContent } from "#src/components/basic-content";
 import { TableSearchForm } from "#src/components/table-search-form";
 import { fetchLoginLogsPage } from "#src/api/platform/audit";
-import { fetchBusinessDomains } from "#src/api/platform/domain";
+import type { LoginLogView } from "#src/api/platform/audit";
 
-import { App, Button, Card, DatePicker, Form, Input, Select, Table, Tag } from "antd";
+import { fetchAdminDomainsPage, toErrorMessage } from "@uniondesk/shared";
+
+import { App, Button, Card, DatePicker, Form, Input, Select, Table, Tag, Tooltip, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useState } from "react";
 import { SearchOutlined, ReloadOutlined } from "@ant-design/icons";
 
-import type { LoginLogView } from "#src/api/platform/audit";
-
 const { RangePicker } = DatePicker;
-
-const CLIENT_OPTIONS = [
-	{ label: "管理端", value: "ud-admin-web" },
-	{ label: "客户门户", value: "ud-customer-web" },
-];
-
-const PORTAL_OPTIONS = [
-	{ label: "员工端", value: "staff" },
-	{ label: "客户门户", value: "customer" },
-];
+const { Text } = Typography;
 
 const RESULT_OPTIONS = [
 	{ label: "成功", value: "success" },
@@ -39,24 +30,18 @@ function buildDateRange(values: [Dayjs | null, Dayjs | null] | null | undefined)
 	};
 }
 
-function renderPortalTag(val?: string | null) {
-	if (val === "staff") {
-		return <Tag color="blue">员工端</Tag>;
+function renderLoginMethod(val?: string | null) {
+	const key = (val ?? "").toUpperCase();
+	if (key === "USERNAME") {
+		return "用户名";
 	}
-	if (val === "customer") {
-		return <Tag color="cyan">客户门户</Tag>;
+	if (key === "MOBILE") {
+		return "手机号";
 	}
-	return <Tag color="default">{val ?? "-"}</Tag>;
-}
-
-function renderClientTag(val?: string | null) {
-	if (val === "ud-admin-web") {
-		return <Tag>管理端</Tag>;
+	if (key === "EMAIL") {
+		return "邮箱";
 	}
-	if (val === "ud-customer-web") {
-		return <Tag color="cyan">客户 Web</Tag>;
-	}
-	return <Tag color="default">{val ?? "-"}</Tag>;
+	return val?.trim() ? val : "-";
 }
 
 export default function PlatformLoginLogs() {
@@ -82,10 +67,9 @@ export default function PlatformLoginLogs() {
 				username: values.username,
 				nickname: values.nickname,
 				ip: values.ip,
-				portal_type: values.portalType,
-				client_code: values.clientCode,
 				business_domain_id: values.businessDomainId,
 				result: values.result,
+				client_code: "ud-admin-web",
 				...dates,
 			});
 			setDataSource(response.list);
@@ -102,12 +86,20 @@ export default function PlatformLoginLogs() {
 	};
 
 	useEffect(() => {
-		void fetchBusinessDomains()
-			.then(domains => {
-				setDomainOptions(domains.map(d => ({ label: d.name, value: d.id })));
+		void fetchAdminDomainsPage({ page: 1, page_size: 200 })
+			.then((result) => {
+				setDomainOptions(result.list
+					.map((item) => {
+						const id = Number(item.id);
+						if (!Number.isFinite(id)) {
+							return null;
+						}
+						return { label: item.name, value: id };
+					})
+					.filter((item): item is { label: string; value: number } => item != null));
 			})
-			.catch(() => {
-				message.error("加载业务域列表失败");
+			.catch((error) => {
+				message.error(toErrorMessage(error) || "加载业务域列表失败");
 			});
 		void loadData(1, 20);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -124,92 +116,59 @@ export default function PlatformLoginLogs() {
 
 	const columns: TableColumnsType<LoginLogView> = [
 		{
-			title: "序号",
-			key: "index",
-			width: 70,
-			align: "center",
-			render: (_, __, index) => (current - 1) * pageSize + index + 1,
-		},
-		{
-			title: "登录主体ID",
-			dataIndex: "subjectId",
-			width: 110,
-			align: "center",
-			render: (val) => val ?? "-",
-		},
-		{
-			title: "登录账号",
+			title: "账号",
 			dataIndex: "loginName",
 			width: 140,
-			render: (val) => <span className="font-medium text-slate-800">{val ?? "-"}</span>,
+			render: val => <span className="font-medium text-slate-800">{val ?? "-"}</span>,
 		},
 		{
-			title: "用户昵称",
+			title: "昵称",
 			dataIndex: "operatorName",
 			width: 120,
-			render: (val) => val ?? "-",
-		},
-		{
-			title: "业务域",
-			dataIndex: "domainName",
-			width: 120,
 			ellipsis: true,
-			render: (val, record) => val ?? (record.businessDomainId != null ? String(record.businessDomainId) : "-"),
+			render: val => val ?? "-",
 		},
 		{
-			title: "登录门户",
-			dataIndex: "portalType",
+			title: "登录方式",
+			dataIndex: "loginIdentifierType",
 			width: 100,
 			align: "center",
-			render: (val) => renderPortalTag(val),
-		},
-		{
-			title: "客户端",
-			dataIndex: "clientCode",
-			width: 110,
-			align: "center",
-			render: (val) => renderClientTag(val),
-		},
-		{
-			title: "客户端IP",
-			dataIndex: "ip",
-			width: 130,
-			render: (val) => (
-				<span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
-					{val ?? "-"}
-				</span>
-			),
+			render: val => renderLoginMethod(val),
 		},
 		{
 			title: "状态",
 			dataIndex: "result",
-			width: 90,
+			width: 100,
 			align: "center",
-			render: (val) => (
-				<Tag color={val === "success" ? "success" : "error"}>
-					{val === "success" ? "成功" : "失败"}
-				</Tag>
+			render: (val, record) => (
+				<Tooltip title={val === "failure" ? (record.failReason || "失败") : undefined}>
+					<Tag color={val === "success" ? "success" : "error"}>
+						{val === "success" ? "成功" : "失败"}
+					</Tag>
+				</Tooltip>
 			),
 		},
 		{
-			title: "失败原因",
-			dataIndex: "failReason",
-			ellipsis: true,
-			render: (val) => val ?? <span className="text-slate-400">-</span>,
-		},
-		{
-			title: "客户端UA",
+			title: "UA",
 			dataIndex: "userAgent",
 			ellipsis: true,
-			width: 180,
-			render: (val) => val ?? <span className="text-slate-400">-</span>,
+			render: (val) => {
+				if (!val) {
+					return <Text type="secondary">-</Text>;
+				}
+				return (
+					<Tooltip title={val}>
+						<span className="text-slate-600">{val}</span>
+					</Tooltip>
+				);
+			},
 		},
 		{
 			title: "登录时间",
 			dataIndex: "createdAt",
 			width: 170,
 			align: "center",
-			render: (val) => (val ? dayjs(val).format("YYYY-MM-DD HH:mm:ss") : "-"),
+			render: val => (val ? dayjs(val).format("YYYY-MM-DD HH:mm:ss") : "-"),
 		},
 	];
 
@@ -240,28 +199,22 @@ export default function PlatformLoginLogs() {
 								prefix={<SearchOutlined className="text-slate-400" />}
 							/>
 						</Form.Item>
-						<Form.Item name="username" label="登录账号">
+						<Form.Item name="username" label="账号">
 							<Input allowClear placeholder="请输入账号" />
 						</Form.Item>
-						<Form.Item name="nickname" label="用户昵称">
-							<Input allowClear placeholder="请输入用户昵称" />
+						<Form.Item name="nickname" label="昵称">
+							<Input allowClear placeholder="请输入昵称" />
 						</Form.Item>
 						<Form.Item name="ip" label="客户端IP">
 							<Input allowClear placeholder="请输入登录IP" />
 						</Form.Item>
-						<Form.Item name="portalType" label="登录门户">
-							<Select allowClear placeholder="全部" options={PORTAL_OPTIONS} />
-						</Form.Item>
-						<Form.Item name="clientCode" label="客户端">
-							<Select allowClear placeholder="全部" options={CLIENT_OPTIONS} />
-						</Form.Item>
 						<Form.Item name="businessDomainId" label="业务域">
-							<Select allowClear placeholder="全部" options={domainOptions} />
+							<Select allowClear placeholder="全部" options={domainOptions} showSearch optionFilterProp="label" />
 						</Form.Item>
-						<Form.Item name="result" label="登录结果">
+						<Form.Item name="result" label="状态">
 							<Select allowClear placeholder="全部" options={RESULT_OPTIONS} />
 						</Form.Item>
-						<Form.Item name="timeRange" label="登录时间范围">
+						<Form.Item name="timeRange" label="登录时间">
 							<RangePicker showTime className="w-full" placeholder={["开始时间", "结束时间"]} />
 						</Form.Item>
 					</TableSearchForm>
@@ -279,12 +232,12 @@ export default function PlatformLoginLogs() {
 							total,
 							showSizeChanger: true,
 							showQuickJumper: true,
-							showTotal: (totalCount) => `共 ${totalCount} 条记录`,
+							showTotal: totalCount => `共 ${totalCount} 条记录`,
 							onChange: (page, size) => {
 								void loadData(page, size);
 							},
 						}}
-						scroll={{ x: 1500 }}
+						scroll={{ x: 960 }}
 						size="middle"
 					/>
 				</Card>

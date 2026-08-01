@@ -35,6 +35,12 @@ public interface TicketAttributeMapper {
 
     TicketAttributePo findDomainByName(@Param("domainId") long domainId, @Param("name") String name);
 
+    TicketAttributePo findDomainBySystemKey(@Param("domainId") long domainId, @Param("systemKey") String systemKey);
+
+    TicketAttributePo findDomainBySourceAttributeId(
+            @Param("domainId") long domainId,
+            @Param("sourceAttributeId") long sourceAttributeId);
+
     Integer findMaxSortOrderPlatform();
 
     Integer findMaxSortOrderDomain(@Param("domainId") long domainId);

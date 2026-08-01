@@ -25,8 +25,8 @@ import { SearchPanel } from "./components/search-panel";
  * @en Flat menu item that can be jumped
  */
 function transformMenuToFlatMenu(menus: MenuItemType[], flatMap: MenuItemType[] = []) {
-	if (menus && menus.length === 0)
-		return [];
+	if (!Array.isArray(menus) || menus.length === 0)
+		return flatMap;
 	return menus.reduce((acc, cur) => {
 		if (!cur.children) {
 			acc.push(cur);

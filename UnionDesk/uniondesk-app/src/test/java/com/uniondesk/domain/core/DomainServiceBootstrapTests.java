@@ -49,7 +49,8 @@ class DomainServiceBootstrapTests {
                 "/default-domain-logo.svg",
                 List.of("public"),
                 "allowed",
-                "allowed"));
+                "allowed",
+                null));
 
         long domainId = created.id();
         assertNotNull(domainId);

@@ -1,0 +1,18 @@
+workflow: full
+phase: archive
+build_mode: subagent-driven-development
+build_pause: null
+isolation: branch
+verify_mode: full
+base_ref: 29b640c53bb9329bdeb5540fde6ea22fbeb4b72d
+design_doc: docs/superpowers/specs/2026-06-13-audit-log-semantics-design.md
+plan: docs/superpowers/plans/2026-06-13-audit-log-semantics.md
+verify_result: pass
+verification_report: docs/superpowers/reports/2026-06-14-audit-log-semantics-verify.md
+branch_status: handled
+created_at: 2026-06-13
+verified_at: 2026-06-14
+archived: false
+handoff_context: openspec/changes/audit-log-semantics/.comet/handoff/design-context.json
+handoff_hash: 9548b955094baa7d6fb26804c0d2583096ac2e6d1dad7458bee479557c7f6bdc
+build_command: cd UnionDesk && mvn compile -q

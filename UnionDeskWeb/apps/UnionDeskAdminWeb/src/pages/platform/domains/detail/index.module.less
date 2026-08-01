@@ -84,6 +84,13 @@
 	min-height: 0;
 	overflow-y: auto;
 	padding: 24px;
+
+	&:has(.domain-ticket-config) {
+		display: flex;
+		flex-direction: column;
+		padding: 0;
+		overflow: hidden;
+	}
 }
 
 .headerMeta {

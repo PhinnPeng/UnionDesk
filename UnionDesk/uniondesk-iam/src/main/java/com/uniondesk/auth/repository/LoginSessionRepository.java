@@ -33,6 +33,15 @@ public class LoginSessionRepository {
         return mapper.updateLastSeenAndExpires(sid, sessionType, lastSeenAt, expiresAt);
     }
 
+    public int updateBusinessDomainAndRefreshToken(
+            String sid,
+            String sessionType,
+            long businessDomainId,
+            String refreshTokenHash,
+            LocalDateTime lastSeenAt) {
+        return mapper.updateBusinessDomainAndRefreshToken(sid, sessionType, businessDomainId, refreshTokenHash, lastSeenAt);
+    }
+
     public int revokeBySid(String sid, String sessionType, LocalDateTime revokedAt, String revokedReason) {
         return mapper.revokeBySid(sid, sessionType, revokedAt, revokedReason);
     }

@@ -27,7 +27,10 @@ public class BlockedWordController {
     }
 
     @GetMapping
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ,
+            PermissionCodes.DOMAIN_BLOCKED_WORD_READ
+    })
     public PageResult<BlockedWordDtos.BlockedWordView> listBlockedWords(
             @PathVariable("domain_id") long domainId,
             @RequestParam(defaultValue = "1") int page,
@@ -38,7 +41,10 @@ public class BlockedWordController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE,
+            PermissionCodes.DOMAIN_BLOCKED_WORD_CREATE
+    })
     public BlockedWordDtos.BlockedWordView createBlockedWord(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody BlockedWordDtos.CreateBlockedWordRequest request) {
@@ -47,7 +53,10 @@ public class BlockedWordController {
 
     @PostMapping("/batch")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE,
+            PermissionCodes.DOMAIN_BLOCKED_WORD_CREATE
+    })
     public BlockedWordDtos.BatchCreateBlockedWordResult createBlockedWordsBatch(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody BlockedWordDtos.BatchCreateBlockedWordRequest request) {
@@ -56,7 +65,10 @@ public class BlockedWordController {
 
     @DeleteMapping("/{word_id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE,
+            PermissionCodes.DOMAIN_BLOCKED_WORD_DELETE
+    })
     public void deleteBlockedWord(
             @PathVariable("domain_id") long domainId,
             @PathVariable("word_id") long wordId) {

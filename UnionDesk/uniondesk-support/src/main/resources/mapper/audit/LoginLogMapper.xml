@@ -10,6 +10,7 @@
         <result property="businessDomainId" column="business_domain_id"/>
         <result property="domainName" column="domain_name"/>
         <result property="loginName" column="login_name"/>
+        <result property="loginIdentifierType" column="login_identifier_type"/>
         <result property="portalType" column="portal_type"/>
         <result property="clientCode" column="client_code"/>
         <result property="eventType" column="event_type"/>
@@ -28,6 +29,7 @@
             l.business_domain_id,
             bd.name AS domain_name,
             l.login_name,
+            l.login_identifier_type,
             l.portal_type,
             l.client_code,
             l.event_type,

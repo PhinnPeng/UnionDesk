@@ -556,7 +556,7 @@ function MembersSearchPanel({ loading, onSearch, onReset }: MembersSearchPanelPr
 					/>
 				</Form.Item>
 				<Form.Item name="createdRange" label="加入时间">
-					<RangePicker style={{ width: "100%" }} placeholder={["加入开始", "加入结束"]} disabled={loading} />
+					<RangePicker style={{ width: "100%" }} placeholder={["加入开始", "加入结束"]} disabled={loading} allowEmpty={[true, true]} />
 				</Form.Item>
 			</TableSearchForm>
 		</Card>

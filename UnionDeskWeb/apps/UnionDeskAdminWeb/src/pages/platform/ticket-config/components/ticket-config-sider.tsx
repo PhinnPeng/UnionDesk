@@ -1,23 +1,32 @@
-import { AppstoreOutlined, FlagOutlined, ProfileOutlined } from "@ant-design/icons";
+import { AppstoreOutlined, ClusterOutlined, FlagOutlined, ProfileOutlined } from "@ant-design/icons";
 
 import { useAuth } from "#src/hooks/use-auth";
 import {
 	PLATFORM_TICKET_CONFIG_ATTR_READ,
 	PLATFORM_TICKET_CONFIG_STATUS_READ,
+	PLATFORM_TICKET_CONFIG_TEMPLATE_READ,
 	PLATFORM_TICKET_CONFIG_TYPE_READ,
 } from "#src/pages/platform/domains/platform-domain-permissions";
 import {
+	buildTicketConfigPath,
+	isTeamTemplateConfigPath,
 	parseTicketConfigSection,
 	resolveEffectiveTicketConfigSection,
 	type TicketConfigSection,
 } from "#src/pages/platform/ticket-config/ticket-config-path";
 
 import { useMemo } from "react";
-import { useSearchParams } from "react-router";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 import styles from "../index.module.less";
 
 const NAV_ITEMS: { key: TicketConfigSection; label: string; icon: React.ReactNode; perm: string }[] = [
+	{
+		key: "templates",
+		label: "团队模板",
+		icon: <ClusterOutlined />,
+		perm: PLATFORM_TICKET_CONFIG_TEMPLATE_READ,
+	},
 	{
 		key: "attributes",
 		label: "事项属性",
@@ -40,11 +49,14 @@ const NAV_ITEMS: { key: TicketConfigSection; label: string; icon: React.ReactNod
 
 export function TicketConfigSider() {
 	const { hasPermission } = useAuth();
-	const [searchParams, setSearchParams] = useSearchParams();
+	const navigate = useNavigate();
+	const location = useLocation();
+	const [searchParams] = useSearchParams();
 
 	const canViewAttributes = hasPermission(PLATFORM_TICKET_CONFIG_ATTR_READ);
 	const canViewTypes = hasPermission(PLATFORM_TICKET_CONFIG_TYPE_READ);
 	const canViewStatuses = hasPermission(PLATFORM_TICKET_CONFIG_STATUS_READ);
+	const canViewTemplates = hasPermission(PLATFORM_TICKET_CONFIG_TEMPLATE_READ);
 
 	const navItems = useMemo(
 		() => NAV_ITEMS.filter(item => hasPermission(item.perm)),
@@ -52,21 +64,18 @@ export function TicketConfigSider() {
 	);
 
 	const sectionParam = parseTicketConfigSection(searchParams.get("section"));
-	const activeKey = resolveEffectiveTicketConfigSection(
-		sectionParam,
-		canViewAttributes,
-		canViewTypes,
-		canViewStatuses,
-	);
+	const activeKey = isTeamTemplateConfigPath(location.pathname)
+		? "templates"
+		: resolveEffectiveTicketConfigSection(
+			sectionParam,
+			canViewAttributes,
+			canViewTypes,
+			canViewStatuses,
+			canViewTemplates,
+		);
 
 	const handleSelect = (key: TicketConfigSection) => {
-		setSearchParams((prev) => {
-			const next = new URLSearchParams(prev);
-			next.set("section", key);
-			next.delete("typeId");
-			next.delete("tab");
-			return next;
-		}, { replace: true });
+		navigate(buildTicketConfigPath({ section: key }), { replace: true });
 	};
 
 	return (

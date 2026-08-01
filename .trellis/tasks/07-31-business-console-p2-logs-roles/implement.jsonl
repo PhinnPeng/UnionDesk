@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "列表页骨架"}
+{"file": ".trellis/tasks/07-31-business-console-p2-logs-roles/design.md", "reason": "本子任务边界"}
+{"file": ".trellis/tasks/07-27-business-console-full-mirror/design.md", "reason": "角色权限矩阵"}
+{"file": ".trellis/tasks/07-31-business-console-p0-members-basic-onboarding/design.md", "reason": "会话域模式"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Controller 并列鉴权落位"}

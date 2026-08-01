@@ -28,6 +28,7 @@ export interface LoginLogView {
 	businessDomainId?: number | null
 	domainName?: string | null
 	loginName?: string | null
+	loginIdentifierType?: string | null
 	portalType?: string | null
 	clientCode?: string | null
 	eventType?: string | null

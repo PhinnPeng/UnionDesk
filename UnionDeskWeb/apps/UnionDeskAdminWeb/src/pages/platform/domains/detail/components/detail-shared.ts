@@ -7,7 +7,7 @@ export const detailTabs = [
 	"roles",
 	"customers",
 	"onboarding",
-	"tickets",
+	"ticket_config",
 	"blockwords",
 	"notifications",
 	"config",
@@ -33,6 +33,10 @@ export const visibilityOptions: { value: P0VisibilityPolicyCode; label: string }
 export function parseDetailTab(value: string | null): DetailTabKey {
 	if (value === "logs") {
 		return "audit_logs";
+	}
+	// 兼容旧 tab=tickets
+	if (value === "tickets") {
+		return "ticket_config";
 	}
 	if (value && (detailTabs as readonly string[]).includes(value)) {
 		return value as DetailTabKey;

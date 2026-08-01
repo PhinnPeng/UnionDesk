@@ -41,6 +41,9 @@ function getNodeScope(node: MenuItemType) {
 
 function filterMenuTreeByScope(tree: MenuItemType[], scopeFilter: MenuScope): MenuItemType[] {
 	const visit = (nodes: MenuItemType[]): MenuItemType[] => {
+		if (!Array.isArray(nodes)) {
+			return [];
+		}
 		return nodes.reduce<MenuItemType[]>((acc, node) => {
 			const nextChildren = node.children?.length ? visit(node.children) : [];
 			const matchesScope = getNodeScope(node) === scopeFilter;

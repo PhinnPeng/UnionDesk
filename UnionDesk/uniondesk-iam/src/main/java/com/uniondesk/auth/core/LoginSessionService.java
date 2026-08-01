@@ -108,6 +108,15 @@ public class LoginSessionService {
         return loginSessionRepository.revokeByUserId(userId, SESSION_TYPE_LOGIN, LocalDateTime.now(clock), reason);
     }
 
+    public int updateBusinessDomainAndRefreshToken(String sid, long businessDomainId, String refreshTokenHash) {
+        return loginSessionRepository.updateBusinessDomainAndRefreshToken(
+                sid,
+                SESSION_TYPE_LOGIN,
+                businessDomainId,
+                refreshTokenHash,
+                LocalDateTime.now(clock));
+    }
+
     public List<OnlineSession> listOnlineSessions(int limit) {
         int cappedLimit = Math.max(1, Math.min(limit, 500));
         return loginSessionRepository.findOnlineSessions(SESSION_TYPE_LOGIN, cappedLimit).stream()

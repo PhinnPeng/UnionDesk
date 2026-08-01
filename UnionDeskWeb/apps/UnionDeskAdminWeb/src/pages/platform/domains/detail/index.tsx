@@ -24,13 +24,19 @@ import { DetailOnboarding } from "./components/detail-onboarding";
 import { DetailOverview } from "./components/detail-overview";
 import { DetailRoles } from "./components/detail-roles";
 import { DetailSider } from "./components/detail-sider";
-import { DetailTickets } from "./components/detail-tickets";
+import {
+	DetailTicketConfig,
+	parseDomainTicketConfigSection,
+	type DomainTicketConfigSection,
+} from "./components/detail-ticket-config";
 import {
 	PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ,
 	PLATFORM_DOMAIN_CONTROL_ENTRY,
 	PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ,
 	PLATFORM_DOMAIN_CONTROL_OVERVIEW,
 	PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ,
+	PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_READ,
+	PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_READ,
 	PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ,
 	PLATFORM_DOMAIN_ROLES_READ,
 } from "../platform-domain-permissions";
@@ -43,7 +49,7 @@ function resolveEffectiveTab(
 	canViewOverview: boolean,
 	canViewCustomers: boolean,
 	canViewRoles: boolean,
-	canViewTickets: boolean,
+	canViewTicketConfig: boolean,
 	canViewAuditLogs: boolean,
 	canViewLoginLogs: boolean,
 ): DetailTabKey {
@@ -56,7 +62,7 @@ function resolveEffectiveTab(
 	if (activeTab === "roles" && !canViewRoles) {
 		return canViewOverview ? "overview" : "basic";
 	}
-	if (activeTab === "tickets" && !canViewTickets) {
+	if (activeTab === "ticket_config" && !canViewTicketConfig) {
 		return canViewOverview ? "overview" : "basic";
 	}
 	if (activeTab === "audit_logs" && !canViewAuditLogs) {
@@ -74,6 +80,8 @@ function renderActiveTab(
 	onSaved: (domain: AdminDomain) => void,
 	onNavigateTab: (tab: DetailTabKey) => void,
 	onDeleted: () => void,
+	ticketConfigSection: DomainTicketConfigSection,
+	onTicketConfigSectionChange: (section: DomainTicketConfigSection) => void,
 ) {
 	switch (tab) {
 		case "overview":
@@ -88,8 +96,14 @@ function renderActiveTab(
 			return <DetailCustomers domainId={domain.id} />;
 		case "onboarding":
 			return <DetailOnboarding domain={domain} onSaved={onSaved} />;
-		case "tickets":
-			return <DetailTickets domainId={domain.id} />;
+		case "ticket_config":
+			return (
+				<DetailTicketConfig
+					domainId={domain.id}
+					section={ticketConfigSection}
+					onSectionChange={onTicketConfigSectionChange}
+				/>
+			);
 		case "blockwords":
 			return <DetailBlockwords domainId={domain.id} />;
 		case "notifications":
@@ -111,7 +125,9 @@ export default function PlatformDomainDetail() {
 	const canViewCustomers = hasPermission(PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ);
 	const canViewOverview = hasPermission(PLATFORM_DOMAIN_CONTROL_OVERVIEW);
 	const canViewRoles = hasPermission(PLATFORM_DOMAIN_ROLES_READ);
-	const canViewTickets = hasPermission(PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ);
+	const canViewTicketConfig = hasPermission(PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ)
+		|| hasPermission(PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_READ)
+		|| hasPermission(PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_READ);
 	const canViewAuditLogs = hasPermission(PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ);
 	const canViewLoginLogs = hasPermission(PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ);
 	const navigate = useNavigate();
@@ -187,12 +203,13 @@ export default function PlatformDomainDetail() {
 	}, [domain?.name, domainId, resetTableTitle, setTableTitle]);
 
 	const activeTab = parseDetailTab(searchParams.get("tab"));
+	const ticketConfigSection = parseDomainTicketConfigSection(searchParams.get("section"));
 	const effectiveTab = resolveEffectiveTab(
 		activeTab,
 		canViewOverview,
 		canViewCustomers,
 		canViewRoles,
-		canViewTickets,
+		canViewTicketConfig,
 		canViewAuditLogs,
 		canViewLoginLogs,
 	);
@@ -209,9 +226,21 @@ export default function PlatformDomainDetail() {
 			else {
 				next.set("tab", effectiveTab);
 			}
+			if (effectiveTab !== "ticket_config") {
+				next.delete("section");
+			}
 			return next;
 		}, { replace: true });
 	}, [activeTab, effectiveTab, setSearchParams]);
+
+	const handleTicketConfigSectionChange = (section: DomainTicketConfigSection) => {
+		setSearchParams((prev) => {
+			const next = new URLSearchParams(prev);
+			next.set("tab", "ticket_config");
+			next.set("section", section);
+			return next;
+		}, { replace: true });
+	};
 
 	const handleTabSelect = (tab: DetailTabKey) => {
 		if (tab === "customers" && !canViewCustomers) {
@@ -223,7 +252,7 @@ export default function PlatformDomainDetail() {
 		if (tab === "roles" && !canViewRoles) {
 			return;
 		}
-		if (tab === "tickets" && !canViewTickets) {
+		if (tab === "ticket_config" && !canViewTicketConfig) {
 			return;
 		}
 		if (tab === "audit_logs" && !canViewAuditLogs) {
@@ -235,9 +264,16 @@ export default function PlatformDomainDetail() {
 		const next = new URLSearchParams(searchParams);
 		if (tab === "overview") {
 			next.delete("tab");
+			next.delete("section");
 		}
 		else {
 			next.set("tab", tab);
+			if (tab !== "ticket_config") {
+				next.delete("section");
+			}
+			else if (!next.get("section")) {
+				next.set("section", "types");
+			}
 		}
 		setSearchParams(next, { replace: true });
 	};
@@ -266,6 +302,8 @@ export default function PlatformDomainDetail() {
 										setDomain,
 										handleTabSelect,
 										() => navigate("/platform/domains"),
+										ticketConfigSection,
+										handleTicketConfigSectionChange,
 									)}
 								</div>
 							</div>

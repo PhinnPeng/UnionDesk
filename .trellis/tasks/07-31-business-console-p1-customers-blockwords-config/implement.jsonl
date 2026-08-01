@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "列表页骨架与 AuthGuarded"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "pages/domain 落位"}
+{"file": ".trellis/tasks/07-27-business-console-full-mirror/design.md", "reason": "父任务权限矩阵"}
+{"file": ".trellis/tasks/07-31-business-console-p1-customers-blockwords-config/design.md", "reason": "本子任务边界与平台对照"}
+{"file": ".trellis/tasks/07-31-business-console-p0-members-basic-onboarding/design.md", "reason": "复用 P0 会话域解析与页面模式"}

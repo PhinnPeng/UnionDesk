@@ -24,14 +24,17 @@ public class TicketAttributeService {
 
     private final TicketAttributeRepository ticketAttributeRepository;
     private final TicketTypeAttributeSlotRepository slotRepository;
+    private final PlatformTicketTypeCopyService platformTicketTypeCopyService;
     private final ObjectMapper objectMapper;
 
     public TicketAttributeService(
             TicketAttributeRepository ticketAttributeRepository,
             TicketTypeAttributeSlotRepository slotRepository,
+            PlatformTicketTypeCopyService platformTicketTypeCopyService,
             ObjectMapper objectMapper) {
         this.ticketAttributeRepository = ticketAttributeRepository;
         this.slotRepository = slotRepository;
+        this.platformTicketTypeCopyService = platformTicketTypeCopyService;
         this.objectMapper = objectMapper;
     }
 
@@ -93,6 +96,59 @@ public class TicketAttributeService {
     @Transactional
     public void reorderDomain(long domainId, TicketAttributeDtos.ReorderTicketAttributesRequest request, Long operatorId) {
         reorder(domainId, request, operatorId);
+    }
+
+    @Transactional
+    public List<TicketAttributeDtos.TicketAttributeView> importFromPlatform(
+            long domainId,
+            TicketAttributeDtos.ImportPlatformTicketAttributesRequest request,
+            Long operatorId) {
+        if (request == null || request.platform_attribute_ids() == null || request.platform_attribute_ids().isEmpty()) {
+            throw new IllegalArgumentException("platform_attribute_ids is required");
+        }
+        List<TicketAttributeDtos.TicketAttributeView> created = new java.util.ArrayList<>();
+        for (String rawId : request.platform_attribute_ids()) {
+            long platformAttributeId = parseLong(rawId, "platform_attribute_id");
+            TicketAttributePo platform = findPlatformAttribute(platformAttributeId);
+            assertPlatformAttributeNotInDomain(domainId, platform);
+            TicketAttributePo domainAttr = platformTicketTypeCopyService.ensureDomainAttribute(
+                    domainId, platform, operatorId);
+            created.add(toView(domainAttr));
+        }
+        return created;
+    }
+
+    private void assertPlatformAttributeNotInDomain(long domainId, TicketAttributePo platform) {
+        if (ticketAttributeRepository.findDomainBySourceAttributeId(domainId, platform.getId()) != null) {
+            throw new IllegalArgumentException("该平台事项属性已添加到当前域");
+        }
+        if (StringUtils.hasText(platform.getSystemKey())
+                && ticketAttributeRepository.findDomainBySystemKey(domainId, platform.getSystemKey()) != null) {
+            throw new IllegalArgumentException("该平台事项属性已添加到当前域");
+        }
+        if (ticketAttributeRepository.findDomainByName(domainId, platform.getName()) != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "属性名称已存在");
+        }
+    }
+
+    private TicketAttributePo findPlatformAttribute(long attributeId) {
+        TicketAttributePo existing = ticketAttributeRepository.findRequiredById(attributeId);
+        if (!TicketAttributePo.SCOPE_PLATFORM.equals(existing.getScope())) {
+            throw new IllegalArgumentException("属性不存在");
+        }
+        return existing;
+    }
+
+    private long parseLong(String raw, String fieldName) {
+        if (!StringUtils.hasText(raw)) {
+            throw new IllegalArgumentException(fieldName + " is required");
+        }
+        try {
+            return Long.parseLong(raw.trim());
+        }
+        catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(fieldName + " is invalid");
+        }
     }
 
     @Transactional

@@ -27,7 +27,7 @@ import { navigatePlatformTicketTypeConfig } from "./open-config-tab";
 import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import { App, Button, Card, Empty, Form, Input, Space, Typography } from "antd";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 import "./ticket-types-panel.less";
 
@@ -43,6 +43,7 @@ export interface TicketTypesPanelProps {
 export function TicketTypesPanel({ onAttributeEdit, onWorkflowEdit }: TicketTypesPanelProps = {}) {
 	const { message, modal } = App.useApp();
 	const navigate = useNavigate();
+	const [searchParams, setSearchParams] = useSearchParams();
 	const { hasPermission } = useAuth();
 
 	const [loading, setLoading] = useState(false);
@@ -56,6 +57,20 @@ export function TicketTypesPanel({ onAttributeEdit, onWorkflowEdit }: TicketType
 	const [editing, setEditing] = useState<PlatformTicketType | null>(null);
 	const [templateKey, setTemplateKey] = useState<TicketTypeTemplateKey | null>(null);
 	const [copyFrom, setCopyFrom] = useState<PlatformTicketType | null>(null);
+	const [createDropdownOpen, setCreateDropdownOpen] = useState(false);
+
+	/** 跨页「新建事项类型」：?action=create → 展开创建下拉后清除参数 */
+	useEffect(() => {
+		if (searchParams.get("action") !== "create") {
+			return;
+		}
+		setCreateDropdownOpen(true);
+		setSearchParams((prev) => {
+			const next = new URLSearchParams(prev);
+			next.delete("action");
+			return next;
+		}, { replace: true });
+	}, [searchParams, setSearchParams]);
 
 	const loadTypes = useCallback(async (nextPage = page, nextPageSize = pageSize, nextKeyword = keyword) => {
 		setLoading(true);
@@ -259,7 +274,11 @@ export function TicketTypesPanel({ onAttributeEdit, onWorkflowEdit }: TicketType
 								刷新
 							</Button>
 							<AuthGuarded auth={PLATFORM_TICKET_CONFIG_TYPE_CREATE}>
-								<CreateTicketTypeDropdown onSelect={handleOpenCreate} />
+								<CreateTicketTypeDropdown
+									open={createDropdownOpen}
+									onOpenChange={setCreateDropdownOpen}
+									onSelect={handleOpenCreate}
+								/>
 							</AuthGuarded>
 						</Space>
 					)}

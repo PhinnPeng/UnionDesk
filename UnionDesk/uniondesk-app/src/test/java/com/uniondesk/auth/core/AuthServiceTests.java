@@ -3,6 +3,10 @@ package com.uniondesk.auth.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -78,6 +82,9 @@ class AuthServiceTests {
     @Mock
     private PlatformRoleService platformRoleService;
 
+    @Mock
+    private UserConfigService userConfigService;
+
     private final JwtTokenService jwtTokenService = new JwtTokenService(
             new ObjectMapper(),
             "uniondesk-demo-jwt-secret-please-change-me",
@@ -107,7 +114,11 @@ class AuthServiceTests {
                 invitationCodeService,
                 authVersionService,
                 platformRoleService,
+                userConfigService,
                 CLOCK);
+        org.mockito.Mockito.lenient()
+                .when(userConfigService.getPreferredDefaultDomainId(org.mockito.ArgumentMatchers.anyLong()))
+                .thenReturn(Optional.empty());
     }
 
     @Test
@@ -351,6 +362,123 @@ class AuthServiceTests {
                 "JUnit"))
                 .isInstanceOf(AuthCaptchaException.class)
                 .hasMessage("captcha required");
+    }
+
+    @Test
+    void loginUsesPreferredDefaultDomainWhenAccessible() {
+        LoginAccount account = new LoginAccount(2L, "admin", "13900000000", "admin@uniondesk.local",
+                passwordEncoder.encode("admin123"), 1, "admin", "active");
+        LoginConfig config = new LoginConfig(
+                true, true, true, true, false, false, null, null, 604800, 10, LocalDateTime.now(CLOCK));
+
+        when(authClientService.findByCode("ud-admin-web")).thenReturn(Optional.of(new AuthClient("ud-admin-web", "admin", 1)));
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginAccountService.findByIdentifier("admin", LoginIdentifierType.USERNAME, "staff"))
+                .thenReturn(Optional.of(account));
+        when(iamService.listUserRoleCodesByClient(2L, "ud-admin-web")).thenReturn(List.of("super_admin"));
+        when(loginAccountService.loadAccessibleDomainIds(2L, List.of("super_admin"))).thenReturn(List.of(10L, 20L));
+        stubDomainView(10L);
+        stubDomainView(20L);
+        when(userConfigService.getPreferredDefaultDomainId(2L)).thenReturn(Optional.of(20L));
+        when(loginSessionService.createSession(any(LoginSessionService.CreateSessionCommand.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0, LoginSessionService.CreateSessionCommand.class).sid());
+
+        AuthDtos.LoginResponse response = authService.login(
+                new AuthDtos.LoginRequest("admin", "admin123", null, null),
+                "ud-admin-web",
+                "127.0.0.1",
+                "JUnit");
+
+        assertThat(response.defaultBusinessDomainId()).isEqualTo(20L);
+        assertThat(response.preferredDefaultDomainId()).isEqualTo(20L);
+    }
+
+    @Test
+    void loginFallsBackToFirstAccessibleWhenPreferredInvalid() {
+        LoginAccount account = new LoginAccount(2L, "admin", "13900000000", "admin@uniondesk.local",
+                passwordEncoder.encode("admin123"), 1, "admin", "active");
+        LoginConfig config = new LoginConfig(
+                true, true, true, true, false, false, null, null, 604800, 10, LocalDateTime.now(CLOCK));
+
+        when(authClientService.findByCode("ud-admin-web")).thenReturn(Optional.of(new AuthClient("ud-admin-web", "admin", 1)));
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginAccountService.findByIdentifier("admin", LoginIdentifierType.USERNAME, "staff"))
+                .thenReturn(Optional.of(account));
+        when(iamService.listUserRoleCodesByClient(2L, "ud-admin-web")).thenReturn(List.of("super_admin"));
+        when(loginAccountService.loadAccessibleDomainIds(2L, List.of("super_admin"))).thenReturn(List.of(10L, 20L));
+        stubDomainView(10L);
+        stubDomainView(20L);
+        when(userConfigService.getPreferredDefaultDomainId(2L)).thenReturn(Optional.of(999L));
+        when(loginSessionService.createSession(any(LoginSessionService.CreateSessionCommand.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0, LoginSessionService.CreateSessionCommand.class).sid());
+
+        AuthDtos.LoginResponse response = authService.login(
+                new AuthDtos.LoginRequest("admin", "admin123", null, null),
+                "ud-admin-web",
+                "127.0.0.1",
+                "JUnit");
+
+        assertThat(response.defaultBusinessDomainId()).isEqualTo(10L);
+        assertThat(response.preferredDefaultDomainId()).isNull();
+    }
+
+    @Test
+    void setDefaultDomainRejectsInaccessibleDomain() {
+        UserContext context = new UserContext(2L, "super_admin", 10L, "sid-100", "ud-admin-web");
+        when(iamService.listUserRoleCodesByClient(2L, "ud-admin-web")).thenReturn(List.of("super_admin"));
+        when(loginAccountService.loadAccessibleDomainIds(2L, "staff", List.of("super_admin"))).thenReturn(List.of(10L));
+        stubDomainView(10L);
+
+        assertThatThrownBy(() -> authService.setDefaultDomain(context, 999L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("无权访问该业务域");
+        verify(userConfigService, never()).upsertPreferredDefaultDomainId(anyLong(), anyLong());
+    }
+
+    @Test
+    void setDefaultDomainPersistsPreferenceWithoutSwitchingSession() {
+        UserContext context = new UserContext(2L, "super_admin", 10L, "sid-100", "ud-admin-web");
+        when(iamService.listUserRoleCodesByClient(2L, "ud-admin-web")).thenReturn(List.of("super_admin"));
+        when(loginAccountService.loadAccessibleDomainIds(2L, "staff", List.of("super_admin"))).thenReturn(List.of(10L, 20L));
+        stubDomainView(10L);
+        stubDomainView(20L);
+
+        AuthDtos.SetDefaultDomainResponse response = authService.setDefaultDomain(context, 20L);
+
+        assertThat(response.preferredDefaultDomainId()).isEqualTo(20L);
+        verify(userConfigService).upsertPreferredDefaultDomainId(2L, 20L);
+        verify(loginSessionService, never()).updateBusinessDomainAndRefreshToken(anyString(), anyLong(), anyString());
+    }
+
+    @Test
+    void switchDomainRejectsInaccessibleDomain() {
+        UserContext context = new UserContext(2L, "super_admin", 10L, "sid-100", "ud-admin-web");
+        when(iamService.listUserRoleCodesByClient(2L, "ud-admin-web")).thenReturn(List.of("super_admin"));
+        when(loginAccountService.loadAccessibleDomainIds(2L, "staff", List.of("super_admin"))).thenReturn(List.of(10L));
+        stubDomainView(10L);
+
+        assertThatThrownBy(() -> authService.switchDomain(context, 999L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("无权访问该业务域");
+        verify(loginSessionService, never()).updateBusinessDomainAndRefreshToken(anyString(), anyLong(), anyString());
+    }
+
+    @Test
+    void switchDomainIssuesTokensForAccessibleDomain() {
+        UserContext context = new UserContext(2L, "super_admin", 10L, "sid-100", "ud-admin-web");
+        when(iamService.listUserRoleCodesByClient(2L, "ud-admin-web")).thenReturn(List.of("super_admin"));
+        when(loginAccountService.loadAccessibleDomainIds(2L, "staff", List.of("super_admin"))).thenReturn(List.of(10L, 20L));
+        stubDomainView(10L);
+        stubDomainView(20L);
+        when(loginSessionService.updateBusinessDomainAndRefreshToken(eq("sid-100"), eq(20L), anyString())).thenReturn(1);
+
+        AuthDtos.SwitchDomainResponse response = authService.switchDomain(context, 20L);
+
+        assertThat(response.businessDomainId()).isEqualTo(20L);
+        assertThat(response.accessToken()).contains(".");
+        assertThat(response.refreshToken()).contains(".");
+        assertThat(response.tokenType()).isEqualTo("Bearer");
+        verify(loginSessionService).updateBusinessDomainAndRefreshToken(eq("sid-100"), eq(20L), anyString());
     }
 
     private void stubDomainView(long domainId) {

@@ -19,6 +19,12 @@ public interface AuthLoginSessionMapper {
     int updateLastSeenAndExpires(@Param("sid") String sid, @Param("sessionType") String sessionType,
                                  @Param("lastSeenAt") LocalDateTime lastSeenAt, @Param("expiresAt") LocalDateTime expiresAt);
 
+    int updateBusinessDomainAndRefreshToken(@Param("sid") String sid,
+                                            @Param("sessionType") String sessionType,
+                                            @Param("businessDomainId") long businessDomainId,
+                                            @Param("refreshTokenHash") String refreshTokenHash,
+                                            @Param("lastSeenAt") LocalDateTime lastSeenAt);
+
     int revokeBySid(@Param("sid") String sid, @Param("sessionType") String sessionType,
                     @Param("revokedAt") LocalDateTime revokedAt, @Param("revokedReason") String revokedReason);
 

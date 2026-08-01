@@ -274,8 +274,19 @@ public class IamController {
     }
 
     @GetMapping("/me/permission-snapshot")
-    public IamDtos.PermissionSnapshotView currentPermissionSnapshot() {
-        PermissionSnapshot snapshot = iamService.loadPermissionSnapshot(requireCurrentContext());
+    public IamDtos.PermissionSnapshotView currentPermissionSnapshot(
+            @RequestParam(name = "menuScope", required = false) String menuScope,
+            @RequestParam(name = "domainId", required = false) Long domainId) {
+        PermissionSnapshot snapshot;
+        try {
+            snapshot = iamService.loadPermissionSnapshot(
+                    requireCurrentContext(),
+                    menuScope,
+                    domainId);
+        }
+        catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage());
+        }
         List<IamDtos.MenuView> menuTree = snapshot.menuTree().stream()
                 .map(this::toMenuView)
                 .toList();

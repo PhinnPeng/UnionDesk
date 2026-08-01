@@ -1,0 +1,31 @@
+{
+  "id": "ticket-team-template",
+  "name": "ticket-team-template",
+  "title": "团队模板",
+  "description": "平台事项配置：团队模板 CRUD；建域可选深拷贝平台类型装配；模板随依赖变、已建域跟快照",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "phinnpeng",
+  "assignee": "phinnpeng",
+  "createdAt": "2026-07-25",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "master",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "openspec/changes/matter-config-global/design.md",
+    "UnionDeskWeb/apps/UnionDeskAdminWeb/src/pages/platform/ticket-config/",
+    "UnionDesk/uniondesk-ticket/",
+    "UnionDesk/uniondesk-domain/"
+  ],
+  "notes": "设计与可行性见 design.md §6；用户确认：模板随依赖、域跟快照",
+  "meta": {}
+}

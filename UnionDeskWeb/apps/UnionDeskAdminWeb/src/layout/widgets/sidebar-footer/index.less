@@ -1,0 +1,271 @@
+.sidebar-footer {
+	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 8px 0 0;
+	border-top: 1px solid var(--ant-color-border-secondary);
+
+	&--dark {
+		border-top-color: #303030;
+	}
+
+	&--collapsed {
+		align-items: center;
+	}
+
+	&__item {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		width: calc(100% - 16px);
+		height: 40px;
+		margin-inline: 8px;
+		padding: 0 10px;
+		border: 0;
+		border-radius: 8px;
+		background: transparent;
+		cursor: pointer;
+		text-align: left;
+		color: inherit;
+		font-size: 13px;
+		line-height: 1.3;
+
+		&:hover {
+			background: var(--ant-color-fill-tertiary);
+		}
+
+		&--dark:hover {
+			background: rgba(255, 255, 255, 0.08);
+		}
+
+		&--collapsed {
+			justify-content: center;
+			width: 40px;
+			margin-inline: 0;
+			padding: 0;
+		}
+	}
+
+	&__item-icon {
+		flex-shrink: 0;
+		font-size: 16px;
+		opacity: 0.85;
+	}
+
+	&__item-label {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	&__item-extra {
+		flex-shrink: 0;
+		font-size: 12px;
+		opacity: 0.55;
+	}
+
+	/* 外层通栏仅作布局与顶部分隔，无 hover */
+	&__user-wrap {
+		display: flex;
+		justify-content: center;
+		width: 100%;
+		margin-top: 4px;
+		padding: 6px 0;
+		border-top: 1px solid var(--ant-color-border-secondary);
+	}
+
+	&--dark &__user-wrap {
+		border-top-color: #303030;
+	}
+
+	/* 用户中心：相对父容器居中、略窄的圆角长方形；hover 仅作用在该块 */
+	&__user-bar {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		width: calc(100% - 16px);
+		max-width: 100%;
+		min-height: 32px;
+		height: 32px;
+		margin: 0 auto;
+		padding: 0 8px;
+		border: 0;
+		border-radius: 8px;
+		background: transparent;
+		cursor: pointer;
+		color: inherit;
+		text-align: left;
+		box-sizing: border-box;
+
+		&:hover,
+		&--open {
+			background: var(--ant-color-fill-tertiary);
+		}
+	}
+
+	&--dark &__user-bar {
+		&:hover,
+		&.sidebar-footer__user-bar--open {
+			background: rgba(255, 255, 255, 0.08);
+		}
+	}
+
+	&__user-bar--collapsed {
+		justify-content: center;
+		align-items: center;
+		width: 32px;
+		min-width: 32px;
+		height: 32px;
+		padding: 0;
+		margin-inline: auto;
+	}
+
+	&__avatar {
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		line-height: 0;
+
+		.ant-avatar {
+			display: inline-flex !important;
+			align-items: center;
+			justify-content: center;
+			font-size: 12px;
+			line-height: 1;
+		}
+
+		.ant-avatar-string {
+			line-height: 1 !important;
+			transform: none !important;
+			position: static !important;
+			left: auto !important;
+		}
+	}
+
+	&__user-name {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 12px;
+		font-weight: 500;
+		line-height: 1.3;
+		color: inherit;
+	}
+
+	&__user-swap {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		line-height: 0;
+		opacity: 0.55;
+		font-size: 9px;
+		gap: 0;
+
+		.anticon {
+			display: block;
+			height: 7px;
+			line-height: 7px;
+		}
+	}
+}
+
+/* 弹出层挂到 body，需显式跟随侧栏深浅色（ContextIsolator 会隔离嵌套 ConfigProvider） */
+.sidebar-footer-popover {
+	&--dark {
+		.ant-popover-container,
+		.ant-popover-inner,
+		.ant-popover-content {
+			background: #1f1f1f !important;
+			color: rgba(255, 255, 255, 0.85);
+		}
+
+		.ant-menu {
+			background: transparent !important;
+			color: inherit;
+		}
+
+		.ant-menu-item,
+		.ant-menu-item .anticon {
+			color: inherit !important;
+		}
+
+		.ant-menu-item:hover,
+		.ant-menu-item-active {
+			background: rgba(255, 255, 255, 0.08) !important;
+			color: rgba(255, 255, 255, 0.85) !important;
+		}
+
+		.ant-menu-item-divider {
+			border-color: #303030;
+		}
+	}
+}
+
+.sidebar-domain-popover {
+	width: 260px;
+
+	&__title {
+		margin-bottom: 8px;
+		font-size: 13px;
+		font-weight: 600;
+	}
+
+	&__list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		max-height: 280px;
+		overflow: auto;
+	}
+
+	&__row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		width: 100%;
+		padding: 8px 10px;
+		border: 0;
+		border-radius: 6px;
+		background: transparent;
+		cursor: pointer;
+		text-align: left;
+		color: inherit;
+
+		&:hover {
+			background: var(--ant-color-fill-tertiary);
+		}
+
+		&--active {
+			background: var(--ant-color-primary-bg);
+		}
+	}
+
+	&__row-main {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-width: 0;
+		flex: 1;
+	}
+
+	&__name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 13px;
+	}
+
+	&__check {
+		color: var(--ant-color-primary);
+		font-size: 12px;
+	}
+}

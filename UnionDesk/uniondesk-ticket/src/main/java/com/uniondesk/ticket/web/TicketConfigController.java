@@ -4,6 +4,7 @@ import com.uniondesk.iam.core.PermissionCodes;
 import com.uniondesk.iam.core.RequirePermission;
 import com.uniondesk.ticket.core.TicketAttributeService;
 import com.uniondesk.ticket.core.TicketConfigService;
+import com.uniondesk.ticket.core.TicketStatusService;
 import com.uniondesk.ticket.core.TicketTypeAttributeSlotService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -26,14 +27,17 @@ public class TicketConfigController {
     private final TicketConfigService ticketConfigService;
     private final TicketAttributeService ticketAttributeService;
     private final TicketTypeAttributeSlotService ticketTypeAttributeSlotService;
+    private final TicketStatusService ticketStatusService;
 
     public TicketConfigController(
             TicketConfigService ticketConfigService,
             TicketAttributeService ticketAttributeService,
-            TicketTypeAttributeSlotService ticketTypeAttributeSlotService) {
+            TicketTypeAttributeSlotService ticketTypeAttributeSlotService,
+            TicketStatusService ticketStatusService) {
         this.ticketConfigService = ticketConfigService;
         this.ticketAttributeService = ticketAttributeService;
         this.ticketTypeAttributeSlotService = ticketTypeAttributeSlotService;
+        this.ticketStatusService = ticketStatusService;
     }
 
     @GetMapping("/admin/domains/{domain_id}/ticket-types")
@@ -50,6 +54,16 @@ public class TicketConfigController {
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody TicketConfigDtos.CreateTicketTypeRequest request) {
         return ticketConfigService.createTicketType(domainId, request);
+    }
+
+    @PostMapping("/admin/domains/{domain_id}/ticket-types/from-platform")
+    @ResponseStatus(HttpStatus.CREATED)
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_CREATE)
+    public TicketConfigDtos.TicketTypeListView importPlatformTicketTypes(
+            @PathVariable("domain_id") long domainId,
+            @Valid @RequestBody TicketConfigDtos.ImportPlatformTicketTypesRequest request) {
+        List<TicketConfigDtos.TicketTypeView> items = ticketConfigService.importPlatformTicketTypes(domainId, request);
+        return new TicketConfigDtos.TicketTypeListView(items.size(), items);
     }
 
     @PutMapping("/admin/domains/{domain_id}/ticket-types/{type_id}")
@@ -143,6 +157,17 @@ public class TicketConfigController {
         return ticketAttributeService.createDomain(domainId, request, null);
     }
 
+    @PostMapping("/admin/domains/{domain_id}/ticket-attributes/from-platform")
+    @ResponseStatus(HttpStatus.CREATED)
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_CREATE)
+    public TicketAttributeDtos.TicketAttributeListView importPlatformTicketAttributes(
+            @PathVariable("domain_id") long domainId,
+            @Valid @RequestBody TicketAttributeDtos.ImportPlatformTicketAttributesRequest request) {
+        List<TicketAttributeDtos.TicketAttributeView> items =
+                ticketAttributeService.importFromPlatform(domainId, request, null);
+        return new TicketAttributeDtos.TicketAttributeListView(items.size(), items);
+    }
+
     @PutMapping("/admin/domains/{domain_id}/ticket-attributes/{attribute_id}")
     @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_UPDATE)
     public TicketAttributeDtos.TicketAttributeView updateDomainTicketAttribute(
@@ -168,6 +193,54 @@ public class TicketConfigController {
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody TicketAttributeDtos.ReorderTicketAttributesRequest request) {
         ticketAttributeService.reorderDomain(domainId, request, null);
+    }
+
+    @GetMapping("/admin/domains/{domain_id}/ticket-statuses")
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_READ)
+    public TicketStatusDtos.TicketStatusListView listDomainTicketStatuses(
+            @PathVariable("domain_id") long domainId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(name = "page_size", required = false) Integer pageSize) {
+        return ticketStatusService.listDomain(domainId, keyword, page, pageSize);
+    }
+
+    @PostMapping("/admin/domains/{domain_id}/ticket-statuses")
+    @ResponseStatus(HttpStatus.CREATED)
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_CREATE)
+    public TicketStatusDtos.TicketStatusView createDomainTicketStatus(
+            @PathVariable("domain_id") long domainId,
+            @Valid @RequestBody TicketStatusDtos.CreateTicketStatusRequest request) {
+        return ticketStatusService.createDomain(domainId, request, null);
+    }
+
+    @PostMapping("/admin/domains/{domain_id}/ticket-statuses/from-platform")
+    @ResponseStatus(HttpStatus.CREATED)
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_CREATE)
+    public TicketStatusDtos.TicketStatusListView importPlatformTicketStatuses(
+            @PathVariable("domain_id") long domainId,
+            @Valid @RequestBody TicketStatusDtos.ImportPlatformTicketStatusesRequest request) {
+        List<TicketStatusDtos.TicketStatusView> items =
+                ticketStatusService.importFromPlatform(domainId, request, null);
+        return new TicketStatusDtos.TicketStatusListView(items.size(), items);
+    }
+
+    @PutMapping("/admin/domains/{domain_id}/ticket-statuses/{status_id}")
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_UPDATE)
+    public TicketStatusDtos.TicketStatusView updateDomainTicketStatus(
+            @PathVariable("domain_id") long domainId,
+            @PathVariable("status_id") long statusId,
+            @Valid @RequestBody TicketStatusDtos.UpdateTicketStatusRequest request) {
+        return ticketStatusService.updateDomain(domainId, statusId, request, null);
+    }
+
+    @DeleteMapping("/admin/domains/{domain_id}/ticket-statuses/{status_id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_DELETE)
+    public void deleteDomainTicketStatus(
+            @PathVariable("domain_id") long domainId,
+            @PathVariable("status_id") long statusId) {
+        ticketStatusService.deleteDomain(domainId, statusId);
     }
 
     @GetMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/attribute-slots")

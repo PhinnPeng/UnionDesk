@@ -8,11 +8,14 @@ import { createUseStyles } from "react-jss";
 
 import LayoutMenu from "../layout-menu";
 import { useMenu } from "../layout-menu/use-menu";
+import { SidebarFooter } from "../widgets/sidebar-footer";
 
 const useStyles = createUseStyles({
 	drawerStyles: {
 		"& .ant-drawer-body": {
 			"padding": 0,
+			"display": "flex",
+			"flexDirection": "column",
 			"&>ul": {
 				paddingTop: "1em",
 			},
@@ -46,13 +49,16 @@ export default function LayoutMobileMenu() {
 					className={cn(classes.drawerStyles)}
 					onClose={() => setPreferences("sidebarCollapsed", false)}
 				>
-					<Scrollbar>
-						<LayoutMenu
-							autoExpandCurrentMenu
-							menus={sideNavItems}
-							handleMenuSelect={handleMenuSelect}
-						/>
-					</Scrollbar>
+					<div className="flex-1 overflow-hidden">
+						<Scrollbar>
+							<LayoutMenu
+								autoExpandCurrentMenu
+								menus={sideNavItems}
+								handleMenuSelect={handleMenuSelect}
+							/>
+						</Scrollbar>
+					</div>
+					<SidebarFooter forceShowDomain />
 				</Drawer>
 			)
 			: null

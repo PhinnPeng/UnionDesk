@@ -35,7 +35,7 @@ function buildDateRange(values: [Dayjs | null, Dayjs | null] | null | undefined)
 	};
 }
 
-export function DetailAuditLogs({ domainId }: DetailAuditLogsProps) {
+function DetailAuditLogsContent({ numericDomainId }: { numericDomainId: number }) {
 	const { message } = App.useApp();
 	const [form] = Form.useForm();
 	const [loading, setLoading] = useState(false);
@@ -44,14 +44,7 @@ export function DetailAuditLogs({ domainId }: DetailAuditLogsProps) {
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState(20);
 
-	const numericDomainId = resolveNumericDomainId(domainId);
-
 	const loadLogs = useCallback(async (nextPage = page, nextPageSize = pageSize) => {
-		if (numericDomainId === null) {
-			setRows([]);
-			setTotal(0);
-			return;
-		}
 		setLoading(true);
 		try {
 			const values = form.getFieldsValue();
@@ -121,53 +114,61 @@ export function DetailAuditLogs({ domainId }: DetailAuditLogsProps) {
 		},
 	];
 
+	return (
+		<Card title="操作日志" bordered={false}>
+			<TableSearchForm
+				form={form}
+				className="mb-4"
+				onFinish={() => {
+					setPage(1);
+					void loadLogs(1, pageSize);
+				}}
+				onReset={() => {
+					setPage(1);
+					void loadLogs(1, pageSize);
+				}}
+			>
+				<Form.Item name="operator" label="操作者">
+					<Input allowClear placeholder="姓名 / ID" />
+				</Form.Item>
+				<Form.Item name="action" label="动作">
+					<Select allowClear placeholder="全部动作" options={[...AUDIT_ACTION_FILTER_OPTIONS]} />
+				</Form.Item>
+				<Form.Item name="timeRange" label="时间范围">
+					<RangePicker showTime className="w-full" allowEmpty={[true, true]} />
+				</Form.Item>
+			</TableSearchForm>
+			<Table
+				rowKey="id"
+				loading={loading}
+				columns={columns}
+				dataSource={rows}
+				pagination={{
+					current: page,
+					pageSize,
+					total,
+					showSizeChanger: true,
+					onChange: (nextPage, nextPageSize) => {
+						setPage(nextPage);
+						setPageSize(nextPageSize);
+					},
+				}}
+				scroll={{ x: 1100 }}
+			/>
+		</Card>
+	);
+}
+
+export function DetailAuditLogs({ domainId }: DetailAuditLogsProps) {
+	const numericDomainId = resolveNumericDomainId(domainId);
+
 	if (numericDomainId === null) {
 		return <Empty description="无效的业务域 ID" />;
 	}
 
 	return (
 		<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ} fallback={<Empty description="无权限查看操作日志" />}>
-			<Card title="操作日志" bordered={false}>
-				<TableSearchForm
-					form={form}
-					className="mb-4"
-					onFinish={() => {
-						setPage(1);
-						void loadLogs(1, pageSize);
-					}}
-					onReset={() => {
-						setPage(1);
-						void loadLogs(1, pageSize);
-					}}
-				>
-					<Form.Item name="operator" label="操作者">
-						<Input allowClear placeholder="姓名 / ID" />
-					</Form.Item>
-					<Form.Item name="action" label="动作">
-						<Select allowClear placeholder="全部动作" options={[...AUDIT_ACTION_FILTER_OPTIONS]} />
-					</Form.Item>
-					<Form.Item name="timeRange" label="时间范围">
-						<RangePicker showTime className="w-full" />
-					</Form.Item>
-				</TableSearchForm>
-				<Table
-					rowKey="id"
-					loading={loading}
-					columns={columns}
-					dataSource={rows}
-					pagination={{
-						current: page,
-						pageSize,
-						total,
-						showSizeChanger: true,
-						onChange: (nextPage, nextPageSize) => {
-							setPage(nextPage);
-							setPageSize(nextPageSize);
-						},
-					}}
-					scroll={{ x: 1100 }}
-				/>
-			</Card>
+			<DetailAuditLogsContent numericDomainId={numericDomainId} />
 		</AuthGuarded>
 	);
 }

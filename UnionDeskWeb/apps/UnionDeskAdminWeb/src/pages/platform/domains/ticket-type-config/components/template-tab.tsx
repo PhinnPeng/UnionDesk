@@ -4,8 +4,12 @@ import {
 } from "#src/pages/platform/domains/platform-domain-permissions";
 
 import { Button, Empty, Spin } from "antd";
-import { lazy, Suspense, useCallback, useState } from "react";
+import { lazy, Suspense, useCallback, useRef, useState } from "react";
 import Markdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
+
+import type { DescriptionTemplateEditorHandle } from "./description-template-editor";
+import "./template-tab.less";
 
 const DescriptionTemplateEditor = lazy(() =>
 	import("./description-template-editor").then(module => ({
@@ -14,17 +18,17 @@ const DescriptionTemplateEditor = lazy(() =>
 );
 
 interface TicketTypeSummary {
-	id: string;
-	name: string;
-	description_template_md?: string | null;
+	id: string
+	name: string
+	description_template_md?: string | null
 }
 
 interface TemplateTabProps {
-	loading: boolean;
-	ticketType: TicketTypeSummary | null;
-	updatePermission?: string;
-	onSave: (markdown: string) => Promise<void>;
-	saving: boolean;
+	loading: boolean
+	ticketType: TicketTypeSummary | null
+	updatePermission?: string
+	onSave: (markdown: string) => Promise<void>
+	saving: boolean
 }
 
 export function TemplateTab({
@@ -39,6 +43,7 @@ export function TemplateTab({
 	/** Seed for BlockNote mount only; must stay stable while editing. */
 	const [editSeedMarkdown, setEditSeedMarkdown] = useState("");
 	const [editSessionKey, setEditSessionKey] = useState(0);
+	const editorRef = useRef<DescriptionTemplateEditorHandle>(null);
 
 	const templateMd = ticketType?.description_template_md?.trim() ?? "";
 
@@ -56,7 +61,9 @@ export function TemplateTab({
 	}, [ticketType?.description_template_md]);
 
 	const handleSave = useCallback(async () => {
-		await onSave(draftMarkdown);
+		const markdown = editorRef.current?.getMarkdown() ?? draftMarkdown;
+		await onSave(markdown);
+		setDraftMarkdown(markdown);
 		setMode("preview");
 	}, [draftMarkdown, onSave]);
 
@@ -85,6 +92,7 @@ export function TemplateTab({
 					>
 						<DescriptionTemplateEditor
 							key={`${ticketType.id}-${editSessionKey}`}
+							ref={editorRef}
 							initialMarkdown={editSeedMarkdown}
 							onChange={setDraftMarkdown}
 						/>
@@ -109,8 +117,8 @@ export function TemplateTab({
 			<div className="min-h-0 flex-1 overflow-auto rounded-lg border border-[var(--ant-color-border)] bg-[var(--ant-color-bg-container)] p-6">
 				{templateMd
 					? (
-						<div className="prose max-w-none dark:prose-invert">
-							<Markdown>{templateMd}</Markdown>
+						<div className="description-template-preview">
+							<Markdown remarkPlugins={[remarkBreaks]}>{templateMd}</Markdown>
 						</div>
 					)
 					: (

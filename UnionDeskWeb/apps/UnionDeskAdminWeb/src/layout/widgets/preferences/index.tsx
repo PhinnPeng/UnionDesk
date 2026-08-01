@@ -9,7 +9,6 @@ import { usePreferencesStore } from "#src/store/preferences";
 
 import { CopyOutlined, RedoOutlined, RocketOutlined, SettingOutlined } from "@ant-design/icons";
 import { theme as antdTheme, Badge, ConfigProvider, Divider, Drawer, FloatButton } from "antd";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
@@ -23,12 +22,21 @@ import {
 	SiteTheme,
 	Tabbar,
 } from "./blocks";
+import { usePreferencesDrawerStore } from "./preferences-drawer-store";
 
 const preferencesContentId = "__react-antd-admin__preferences_drawer__";
-export function Preferences({ ...restProps }: ButtonProps) {
+
+interface PreferencesProps extends ButtonProps {
+	/** 仅挂载抽屉，不渲染顶栏设置按钮（由用户菜单打开） */
+	hideTrigger?: boolean
+}
+
+export function Preferences({ hideTrigger = false, ...restProps }: PreferencesProps) {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
-	const [isOpen, setIsOpen] = useState(false);
+	const isOpen = usePreferencesDrawerStore(state => state.open);
+	const setOpen = usePreferencesDrawerStore(state => state.setOpen);
+	const openDrawer = usePreferencesDrawerStore(state => state.openDrawer);
 	const { isMobile } = useDeviceType();
 	const { reset, isDefault, isDark } = usePreferences();
 	const preferences = usePreferencesStore();
@@ -51,16 +59,20 @@ export function Preferences({ ...restProps }: ButtonProps) {
 
 	return (
 		<>
-			<BasicButton
-				type="text"
-				{...restProps}
-				onClick={(e) => {
-					restProps?.onClick?.(e);
-					setIsOpen(true);
-				}}
-			>
-				<SettingOutlined />
-			</BasicButton>
+			{hideTrigger
+				? null
+				: (
+					<BasicButton
+						type="text"
+						{...restProps}
+						onClick={(e) => {
+							restProps?.onClick?.(e);
+							openDrawer();
+						}}
+					>
+						<SettingOutlined />
+					</BasicButton>
+				)}
 			<ConfigProvider
 				theme={{
 					/**
@@ -76,7 +88,7 @@ export function Preferences({ ...restProps }: ButtonProps) {
 					title={t("preferences.title")}
 					placement="right"
 					onClose={() => {
-						setIsOpen(false);
+						setOpen(false);
 					}}
 					extra={(
 						<Badge

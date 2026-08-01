@@ -19,48 +19,58 @@ import { baseRoutes } from "./routes";
 // 记录已经加载的页面
 const loadedPaths = new Set<string>();
 
-export const rootRoute: RouteObject[] = [
-	{
-		path: "/",
-		id: ROOT_ROUTE_ID,
-		Component: LayoutRoot,
-		children: baseRoutes,
-		loader: ({ request }) => {
-			/**
-			 * @zh 初次加载路由时，开始进度条动画
-			 * @en Start the progress bar animation when loading routes for the first time
-			 */
-			const { transitionProgress } = usePreferencesStore.getState();
-			if (transitionProgress) {
-				NProgress.start();
-				const relativePath = new URL(request.url).pathname;
-				loadedPaths.add(relativePath);
-			}
-			return null;
-		},
-		shouldRevalidate: ({ nextUrl, currentUrl }) => {
-			if (nextUrl.pathname === currentUrl.pathname) {
+/**
+ * 每次返回带「干净 baseRoutes 浅拷贝」的根路由。
+ * patchRoutes 会就地改 children；若与模块级 baseRoutes 共用引用，
+ * 再 _internalSetRoutes(rootRoute) 会让 branches 与 tree 不一致，动态路由进树却匹配到 *。
+ */
+export function createRootRouteConfig(): RouteObject[] {
+	return [
+		{
+			path: "/",
+			id: ROOT_ROUTE_ID,
+			Component: LayoutRoot,
+			children: [...baseRoutes],
+			loader: ({ request }) => {
+				/**
+				 * @zh 初次加载路由时，开始进度条动画
+				 * @en Start the progress bar animation when loading routes for the first time
+				 */
+				const { transitionProgress } = usePreferencesStore.getState();
+				if (transitionProgress) {
+					NProgress.start();
+					const relativePath = new URL(request.url).pathname;
+					loadedPaths.add(relativePath);
+				}
+				return null;
+			},
+			shouldRevalidate: ({ nextUrl, currentUrl }) => {
+				if (nextUrl.pathname === currentUrl.pathname) {
+					return false;
+				}
+				/**
+				 * @zh 路由更新时，开始进度条动画
+				 * @en Start the progress bar animation when the route is updated
+				 */
+				const { transitionProgress } = usePreferencesStore.getState();
+				const isLoaded = loadedPaths.has(nextUrl.pathname);
+				if (transitionProgress && !isLoaded) {
+					NProgress.start();
+					loadedPaths.add(nextUrl.pathname);
+				}
 				return false;
-			}
-			/**
-			 * @zh 路由更新时，开始进度条动画
-			 * @en Start the progress bar animation when the route is updated
-			 */
-			const { transitionProgress } = usePreferencesStore.getState();
-			const isLoaded = loadedPaths.has(nextUrl.pathname);
-			if (transitionProgress && !isLoaded) {
-				NProgress.start();
-				loadedPaths.add(nextUrl.pathname);
-			}
-			return false;
+			},
 		},
-	},
-];
+	];
+}
+
+/** 兼容旧引用；运行时重置请用 createRootRouteConfig() */
+export const rootRoute: RouteObject[] = createRootRouteConfig();
 
 function createRouter() {
 	if (import.meta.env.VITE_ROUTER_MODE === "hash") {
 		return createHashRouter(
-			rootRoute,
+			createRootRouteConfig(),
 			{
 				/**
 				 * @zh 路由模式为 hash 时，不需要设置 basename 属性，如果设置 basename 为 `/app`，根路由 `/` 则会变为 `/#/app`
@@ -72,7 +82,7 @@ function createRouter() {
 		);
 	}
 	return createBrowserRouter(
-		rootRoute,
+		createRootRouteConfig(),
 		{
 			basename: import.meta.env.BASE_URL,
 		},

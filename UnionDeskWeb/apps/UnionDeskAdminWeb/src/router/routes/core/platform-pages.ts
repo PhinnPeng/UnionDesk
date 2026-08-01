@@ -4,6 +4,7 @@ import ContainerLayout from "#src/layout/container-layout";
 
 import { lazy } from "react";
 
+const PlatformHome = lazy(() => import("#src/pages/platform/home"));
 const TicketDetail = lazy(() => import("#src/pages/platform/ticket-detail"));
 const DomainDetail = lazy(() => import("#src/pages/platform/domains/detail"));
 const TicketTypeConfigPage = lazy(() => import("#src/pages/platform/domains/ticket-type-config"));
@@ -15,6 +16,10 @@ const TicketConfigTypes = lazy(() => import("#src/pages/platform/ticket-config/t
 const PlatformTicketTypeConfig = lazy(() => import("#src/pages/platform/ticket-config/types/config"));
 const TicketConfigAttributes = lazy(() => import("#src/pages/platform/ticket-config/attributes"));
 const TicketConfigStatuses = lazy(() => import("#src/pages/platform/ticket-config/statuses"));
+const TicketConfigTemplates = lazy(() => import("#src/pages/platform/ticket-config/templates"));
+const TeamTemplateConfigEntry = lazy(() => import("#src/pages/platform/ticket-config/templates/config"));
+const TeamTemplateConfigBasic = lazy(() => import("#src/pages/platform/ticket-config/templates/config/basic"));
+const TeamTemplateConfigCollaboration = lazy(() => import("#src/pages/platform/ticket-config/templates/config/collaboration"));
 
 /**
  * 将内置平台页面包裹在 ContainerLayout 内，经 LayoutContent 渲染（侧栏、顶栏、页签）。
@@ -46,6 +51,15 @@ function withPlatformLayout(route: AppRouteRecordRaw): AppRouteRecordRaw {
  * 这些页面不依赖后端菜单配置，始终可访问，但隐藏于侧栏菜单
  */
 const routes: AppRouteRecordRaw[] = [
+	withPlatformLayout({
+		path: "/platform/home",
+		Component: PlatformHome,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "平台首页",
+		},
+	}),
 	withPlatformLayout({
 		path: "/platform/ticket-detail",
 		Component: TicketDetail,
@@ -152,6 +166,46 @@ const routes: AppRouteRecordRaw[] = [
 			hideInMenu: true,
 			scope: "platform",
 			title: "事项状态",
+			currentActiveMenu: "/platform/ticket-config",
+		},
+	}),
+	withPlatformLayout({
+		path: "/platform/ticket-config/templates/:templateId/basic",
+		Component: TeamTemplateConfigBasic,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "团队模板基础信息",
+			currentActiveMenu: "/platform/ticket-config",
+		},
+	}),
+	withPlatformLayout({
+		path: "/platform/ticket-config/templates/:templateId/collaboration",
+		Component: TeamTemplateConfigCollaboration,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "团队模板协作配置",
+			currentActiveMenu: "/platform/ticket-config",
+		},
+	}),
+	withPlatformLayout({
+		path: "/platform/ticket-config/templates/:templateId",
+		Component: TeamTemplateConfigEntry,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "团队模板配置",
+			currentActiveMenu: "/platform/ticket-config",
+		},
+	}),
+	withPlatformLayout({
+		path: "/platform/ticket-config/templates",
+		Component: TicketConfigTemplates,
+		handle: {
+			hideInMenu: true,
+			scope: "platform",
+			title: "团队模板",
 			currentActiveMenu: "/platform/ticket-config",
 		},
 	}),

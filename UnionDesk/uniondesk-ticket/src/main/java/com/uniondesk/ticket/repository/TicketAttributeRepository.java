@@ -64,6 +64,14 @@ public class TicketAttributeRepository {
         return mapper.findDomainByName(domainId, name);
     }
 
+    public TicketAttributePo findDomainBySystemKey(long domainId, String systemKey) {
+        return mapper.findDomainBySystemKey(domainId, systemKey);
+    }
+
+    public TicketAttributePo findDomainBySourceAttributeId(long domainId, long sourceAttributeId) {
+        return mapper.findDomainBySourceAttributeId(domainId, sourceAttributeId);
+    }
+
     public int nextSortOrderPlatform() {
         Integer max = mapper.findMaxSortOrderPlatform();
         return max == null ? 0 : max + 1;

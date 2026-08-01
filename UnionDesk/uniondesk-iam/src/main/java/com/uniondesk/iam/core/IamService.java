@@ -140,17 +140,28 @@ public class IamService {
     }
 
     public PermissionSnapshot loadPermissionSnapshot(UserContext context) {
+        return loadPermissionSnapshot(context, null, null);
+    }
+
+    public PermissionSnapshot loadPermissionSnapshot(UserContext context, String menuScopeOverride, Long domainId) {
         if (context == null) {
             throw new IllegalArgumentException("context is required");
         }
         UserSummary user = loadCurrentUserSummary(context.userId());
         List<String> roles = listUserRoleCodesByClient(context.userId(), context.clientCode());
         List<DomainSummary> domains = loadDomainSummaries(context.userId(), roles);
+        // domainId 预留：后续按域角色过滤；当前先校验名单（非平台运营须在 domains 内）
+        if (domainId != null && domainId > 0 && !isPlatformOperator(roles)) {
+            boolean allowed = domains.stream().anyMatch(domain -> domain.id() == domainId);
+            if (!allowed) {
+                throw new IllegalArgumentException("无权访问该业务域");
+            }
+        }
         List<AdminMenuService.AdminMenuNode> menuTree = List.of();
         List<IamResource> actions;
         if ("ud-admin-web".equalsIgnoreCase(context.clientCode())) {
             AdminMenuService.PermissionSnapshotData snapshotData = adminMenuService.loadPermissionSnapshot(roles);
-            String activeMenuScope = resolveAdminMenuScope(context.role());
+            String activeMenuScope = resolveRequestedMenuScope(menuScopeOverride, context.role());
             List<AdminMenuService.AdminMenuNode> activeMenus = snapshotData.menus().stream()
                     .filter(menu -> activeMenuScope.equals(menu.scope()))
                     .toList();
@@ -187,6 +198,23 @@ public class IamService {
                 menuTree,
                 actions,
                 Instant.now(clock).toString());
+    }
+
+    private String resolveRequestedMenuScope(String menuScopeOverride, String roleCode) {
+        if (StringUtils.hasText(menuScopeOverride)) {
+            String normalized = menuScopeOverride.trim().toLowerCase();
+            if ("platform".equals(normalized) || "business".equals(normalized)) {
+                return normalized;
+            }
+        }
+        return resolveAdminMenuScope(roleCode);
+    }
+
+    private boolean isPlatformOperator(List<String> roles) {
+        return roles.stream().anyMatch(role -> {
+            String code = role == null ? "" : role.trim().toLowerCase();
+            return "super_admin".equals(code) || "platform_admin".equals(code);
+        });
     }
 
     private String resolveAdminMenuScope(String roleCode) {

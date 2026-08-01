@@ -152,7 +152,7 @@ export function DetailRoles({ domainId }: DetailRolesProps) {
 				title={selectedRole ? `已分配权限 - ${formatDomainRoleLabel(selectedRole)}` : "已分配权限"}
 				open={permissionDrawerOpen}
 				width={520}
-				destroyOnClose
+				destroyOnHidden
 				onClose={handleClosePermissionDrawer}
 			>
 				{permissionLoading ? (

@@ -308,7 +308,7 @@ export function DetailBaseinfo({ domain, onSaved, onDeleted }: DetailBaseinfoPro
 				open={codeConfirmOpen}
 				okText="确认删除"
 				cancelText="取消"
-				destroyOnClose
+				destroyOnHidden
 				onCancel={() => setCodeConfirmOpen(false)}
 				onOk={handleCodeConfirm}
 			>

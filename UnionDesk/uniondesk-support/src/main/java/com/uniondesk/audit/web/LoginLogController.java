@@ -57,7 +57,10 @@ public class LoginLogController {
     }
 
     @GetMapping("/domains/{domainId}/login-logs")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ,
+            PermissionCodes.DOMAIN_LOGIN_LOG_READ
+    })
     public PageResult<AuditDtos.LoginLogView> listLoginLogs(
             @PathVariable long domainId,
             @RequestParam(defaultValue = "1") int page,

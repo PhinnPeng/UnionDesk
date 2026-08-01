@@ -26,11 +26,13 @@ const mocks = vi.hoisted(() => {
 		actions: [] as string[],
 		menus: [] as typeof authState.user.menus,
 		platformAccess: true,
+		businessDomainAccess: false,
 		setUserInfo: vi.fn(),
 		reset: vi.fn(),
 	};
 	const accessState = {
 		isAccessChecked: false,
+		activeScope: null as string | null,
 		routeList: [],
 		setAccessStore: vi.fn(),
 		reset: vi.fn(),
@@ -48,16 +50,12 @@ const mocks = vi.hoisted(() => {
 		pathname: "/",
 		search: "",
 		navigate: vi.fn(),
-		fetchUserInfoAndRoutes: vi.fn().mockResolvedValue({
-			userInfo: authState.user,
-			routes: [],
-		}),
-		generateRoutesFromBackend: vi.fn().mockResolvedValue([]),
-		generateRoutesByFrontend: vi.fn().mockReturnValue([]),
-		removeDuplicateRoutes: vi.fn((routes: unknown[]) => routes),
+		bootstrapAccessForPath: vi.fn().mockResolvedValue({}),
+		ensureScopeAccess: vi.fn().mockResolvedValue({}),
 		goLogin: vi.fn(),
 		hideLoading: vi.fn(),
 		setupLoading: vi.fn(),
+		showLoading: vi.fn(),
 	};
 });
 
@@ -76,7 +74,8 @@ function createStoreMock<TState extends object>(state: TState) {
 }
 
 vi.mock("#src/api/user", () => ({
-	fetchUserInfoAndRoutes: mocks.fetchUserInfoAndRoutes,
+	bootstrapAccessForPath: mocks.bootstrapAccessForPath,
+	ensureScopeAccess: mocks.ensureScopeAccess,
 }));
 
 vi.mock("#src/hooks/use-current-route", () => ({
@@ -91,18 +90,7 @@ vi.mock("#src/plugins/hide-loading", () => ({
 
 vi.mock("#src/plugins/loading", () => ({
 	setupLoading: mocks.setupLoading,
-}));
-
-vi.mock("#src/router/guard/utils", () => ({
-	removeDuplicateRoutes: mocks.removeDuplicateRoutes,
-}));
-
-vi.mock("#src/router/utils/generate-routes-from-backend", () => ({
-	generateRoutesFromBackend: mocks.generateRoutesFromBackend,
-}));
-
-vi.mock("#src/router/utils/generate-routes-from-frontend", () => ({
-	generateRoutesByFrontend: mocks.generateRoutesByFrontend,
+	showLoading: mocks.showLoading,
 }));
 
 vi.mock("#src/store/access", () => ({
@@ -146,8 +134,10 @@ describe("AuthGuard", () => {
 		mocks.pathname = "/";
 		mocks.search = "";
 		mocks.accessState.isAccessChecked = false;
+		mocks.accessState.activeScope = null;
 		mocks.userState.id = 2;
 		mocks.userState.actions = [];
+		mocks.userState.businessDomainAccess = false;
 		mocks.authState.user.menus = [
 			{
 				path: "/platform/home",
@@ -156,21 +146,25 @@ describe("AuthGuard", () => {
 		];
 		mocks.userState.platformAccess = true;
 		mocks.navigate.mockReset();
-		mocks.fetchUserInfoAndRoutes.mockClear();
-		mocks.generateRoutesFromBackend.mockClear();
-		mocks.generateRoutesByFrontend.mockClear();
-		mocks.removeDuplicateRoutes.mockClear();
+		mocks.bootstrapAccessForPath.mockClear();
+		mocks.bootstrapAccessForPath.mockResolvedValue({});
+		mocks.ensureScopeAccess.mockClear();
+		mocks.ensureScopeAccess.mockResolvedValue({});
 		mocks.goLogin.mockClear();
 		mocks.hideLoading.mockClear();
 		mocks.setupLoading.mockClear();
+		mocks.showLoading.mockClear();
 		mocks.authState.reset.mockClear();
 		mocks.userState.setUserInfo.mockClear();
 		mocks.accessState.setAccessStore.mockClear();
 	});
 
-	it("redirects the root path to business home when actions are empty", async () => {
+	it("redirects the root path to platform home when only platform access", async () => {
 		mocks.accessState.isAccessChecked = true;
+		mocks.accessState.activeScope = "business";
 		mocks.userState.id = 2;
+		mocks.userState.platformAccess = true;
+		mocks.userState.businessDomainAccess = false;
 
 		render(
 			<AuthGuard>
@@ -179,13 +173,19 @@ describe("AuthGuard", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByTestId("navigate")).toHaveTextContent("/home");
+			expect(mocks.navigate).toHaveBeenCalledWith(
+				"/platform/home",
+				expect.objectContaining({ replace: true }),
+			);
 		});
 	});
 
-	it("redirects root to platform home when actions contain only platform.* codes", async () => {
+	it("redirects root to platform home when platformAccess and no domain membership", async () => {
 		mocks.accessState.isAccessChecked = true;
+		mocks.accessState.activeScope = "business";
 		mocks.userState.id = 2;
+		mocks.userState.platformAccess = true;
+		mocks.userState.businessDomainAccess = false;
 		mocks.userState.actions = ["platform.menu.read"];
 
 		render(
@@ -195,7 +195,10 @@ describe("AuthGuard", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByTestId("navigate")).toHaveTextContent("/platform/home");
+			expect(mocks.navigate).toHaveBeenCalledWith(
+				"/platform/home",
+				expect.objectContaining({ replace: true }),
+			);
 		});
 	});
 
@@ -212,14 +215,16 @@ describe("AuthGuard", () => {
 		expect(screen.queryByTestId("navigate")).toBeNull();
 	});
 
-	it("redirects root to business home when actions contain platform.* and domain.*", async () => {
+	it("redirects root to business home when dual access prefers business", async () => {
 		mocks.accessState.isAccessChecked = true;
+		mocks.accessState.activeScope = "business";
 		mocks.userState.id = 2;
 		mocks.authState.user.menus = [
 			{ path: "/platform/home", handle: { scope: "platform", title: "平台首页" } } as (typeof mocks.authState.user.menus)[number],
 			{ path: "/system/menu", handle: { scope: "business", title: "菜单管理" } } as (typeof mocks.authState.user.menus)[number],
 		];
 		mocks.userState.platformAccess = true;
+		mocks.userState.businessDomainAccess = true;
 		mocks.userState.actions = ["platform.menu.read", "domain.menu.read"];
 
 		render(
@@ -229,13 +234,49 @@ describe("AuthGuard", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByTestId("navigate")).toHaveTextContent("/home");
+			expect(mocks.navigate).toHaveBeenCalledWith(
+				"/home",
+				expect.objectContaining({ replace: true }),
+			);
 		});
+	});
+
+	it("after bootstrap on root, navigates to home instead of rematching /", async () => {
+		mocks.accessState.isAccessChecked = false;
+		mocks.userState.businessDomainAccess = true;
+		mocks.userState.platformAccess = true;
+		mocks.userState.actions = ["domain.menu.read"];
+		mocks.authState.user.menus = [
+			{ path: "/home", handle: { scope: "business", title: "概览" } } as (typeof mocks.authState.user.menus)[number],
+		];
+		mocks.bootstrapAccessForPath.mockImplementation(async () => {
+			mocks.accessState.isAccessChecked = true;
+			mocks.accessState.activeScope = "business";
+			mocks.userState.id = 2;
+			mocks.userState.menus = mocks.authState.user.menus;
+		});
+
+		render(
+			<AuthGuard>
+				<div>child</div>
+			</AuthGuard>,
+		);
+
+		await waitFor(() => {
+			expect(mocks.bootstrapAccessForPath).toHaveBeenCalledWith("/");
+			expect(mocks.navigate).toHaveBeenCalledWith(
+				"/home",
+				expect.objectContaining({ replace: true, flushSync: true }),
+			);
+		});
+		expect(mocks.navigate).not.toHaveBeenCalledWith("/", expect.anything());
 	});
 
 	it("redirects logged-in users away from the login page", async () => {
 		mocks.pathname = "/login";
 		mocks.userState.actions = ["platform.menu.read"];
+		mocks.userState.platformAccess = true;
+		mocks.userState.businessDomainAccess = false;
 
 		render(
 			<AuthGuard>
@@ -289,7 +330,7 @@ describe("AuthGuard", () => {
 		mocks.pathname = "/platform/home";
 		mocks.accessState.isAccessChecked = false;
 		mocks.userState.id = 0;
-		mocks.fetchUserInfoAndRoutes.mockRejectedValueOnce(new HttpRequestError(401, "Unauthorized"));
+		mocks.bootstrapAccessForPath.mockRejectedValueOnce(new HttpRequestError(401, "Unauthorized"));
 
 		render(
 			<AuthGuard>

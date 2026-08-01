@@ -11,6 +11,26 @@ public final class PermissionCodes {
     public static final String DOMAIN_MENU_UPDATE = "domain.menu.update";
     public static final String DOMAIN_MENU_DELETE = "domain.menu.delete";
     public static final String DOMAIN_HOME_READ = "domain.home.read";
+    public static final String DOMAIN_OVERVIEW_READ = "domain.overview.read";
+    public static final String DOMAIN_GENERAL_READ = "domain.general.read";
+    public static final String DOMAIN_GENERAL_UPDATE = "domain.general.update";
+    public static final String DOMAIN_GENERAL_UPDATE_STATUS = "domain.general.update_status";
+    public static final String DOMAIN_CUSTOMER_READ = "domain.customer.read";
+    public static final String DOMAIN_CUSTOMER_CREATE = "domain.customer.create";
+    public static final String DOMAIN_CUSTOMER_UPDATE_STATUS = "domain.customer.update_status";
+    public static final String DOMAIN_BLOCKED_WORD_READ = "domain.blocked_word.read";
+    public static final String DOMAIN_BLOCKED_WORD_CREATE = "domain.blocked_word.create";
+    public static final String DOMAIN_BLOCKED_WORD_DELETE = "domain.blocked_word.delete";
+    public static final String DOMAIN_TICKET_ATTRIBUTE_READ = "domain.ticket_attribute.read";
+    public static final String DOMAIN_TICKET_ATTRIBUTE_CREATE = "domain.ticket_attribute.create";
+    public static final String DOMAIN_TICKET_ATTRIBUTE_UPDATE = "domain.ticket_attribute.update";
+    public static final String DOMAIN_TICKET_ATTRIBUTE_DELETE = "domain.ticket_attribute.delete";
+    public static final String DOMAIN_TICKET_STATUS_READ = "domain.ticket_status.read";
+    public static final String DOMAIN_TICKET_STATUS_CREATE = "domain.ticket_status.create";
+    public static final String DOMAIN_TICKET_STATUS_UPDATE = "domain.ticket_status.update";
+    public static final String DOMAIN_TICKET_STATUS_DELETE = "domain.ticket_status.delete";
+    public static final String DOMAIN_AUDIT_LOG_READ = "domain.audit_log.read";
+    public static final String DOMAIN_LOGIN_LOG_READ = "domain.login_log.read";
     public static final String PLATFORM_ADMIN_PERMISSION_CODES_READ = "platform.admin_permission_codes.read";
 
     public static final String PLATFORM_IAM_RESOURCE_READ = "platform.iam.resource.read";
@@ -121,6 +141,10 @@ public final class PermissionCodes {
     public static final String PLATFORM_TICKET_CONFIG_STATUS_CREATE = "platform.ticket_config.status.create";
     public static final String PLATFORM_TICKET_CONFIG_STATUS_UPDATE = "platform.ticket_config.status.update";
     public static final String PLATFORM_TICKET_CONFIG_STATUS_DELETE = "platform.ticket_config.status.delete";
+    public static final String PLATFORM_TICKET_CONFIG_TEMPLATE_READ = "platform.ticket_config.template.read";
+    public static final String PLATFORM_TICKET_CONFIG_TEMPLATE_CREATE = "platform.ticket_config.template.create";
+    public static final String PLATFORM_TICKET_CONFIG_TEMPLATE_UPDATE = "platform.ticket_config.template.update";
+    public static final String PLATFORM_TICKET_CONFIG_TEMPLATE_DELETE = "platform.ticket_config.template.delete";
     public static final String PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_READ =
             "platform.domain.control.ticket_attribute.read";
     public static final String PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_CREATE =
@@ -129,6 +153,14 @@ public final class PermissionCodes {
             "platform.domain.control.ticket_attribute.update";
     public static final String PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_DELETE =
             "platform.domain.control.ticket_attribute.delete";
+    public static final String PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_READ =
+            "platform.domain.control.ticket_status.read";
+    public static final String PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_CREATE =
+            "platform.domain.control.ticket_status.create";
+    public static final String PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_UPDATE =
+            "platform.domain.control.ticket_status.update";
+    public static final String PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_DELETE =
+            "platform.domain.control.ticket_status.delete";
     public static final String DOMAIN_CONFIG_READ = "domain.config.read";
     public static final String DOMAIN_CONFIG_UPDATE = "domain.config.update";
     public static final String PLATFORM_SYSTEM_CONFIG_READ = "platform.system_config.read";

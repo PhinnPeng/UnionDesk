@@ -290,7 +290,7 @@ export function TypedRuleConfigModal({
 			cancelText="取消"
 			okButtonProps={{ disabled: permissionBlocked }}
 			width={480}
-			destroyOnClose
+			destroyOnHidden
 		>
 			{isAdditional ? (
 				<>

@@ -1,1 +1,3 @@
-{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/tasks/07-27-business-console-full-mirror/prd.md", "reason": "AC0–AC7 acceptance for quality gate"}
+{"file": ".trellis/tasks/07-27-business-console-full-mirror/design.md", "reason": "Entry §0.7 and menu visibility checks"}
+{"file": "openspec/specs/business-console-minimum-reach/spec.md", "reason": "Regression: no platform.* noise on business snapshot"}

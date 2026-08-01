@@ -94,7 +94,31 @@ public final class AuthDtos {
             String subjectId,
             LoginUserView user,
             List<BusinessDomainView> accessibleDomains,
-            long defaultBusinessDomainId) {
+            long defaultBusinessDomainId,
+            Long preferredDefaultDomainId) {
+    }
+
+    public record SetDefaultDomainRequest(
+            @JsonAlias({"domain_id"})
+            @NotNull Long domainId) {
+    }
+
+    public record SetDefaultDomainResponse(
+            Long preferredDefaultDomainId) {
+    }
+
+    public record SwitchDomainRequest(
+            @JsonAlias({"domain_id"})
+            @NotNull Long domainId) {
+    }
+
+    public record SwitchDomainResponse(
+            String accessToken,
+            String refreshToken,
+            String tokenType,
+            long expiresInSeconds,
+            long businessDomainId,
+            List<BusinessDomainView> accessibleDomains) {
     }
 
     public record LoginConfigView(

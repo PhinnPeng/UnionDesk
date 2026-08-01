@@ -34,7 +34,7 @@ function buildDateRange(values: [Dayjs | null, Dayjs | null] | null | undefined)
 	};
 }
 
-export function DetailLoginLogs({ domainId }: DetailLoginLogsProps) {
+function DetailLoginLogsContent({ numericDomainId }: { numericDomainId: number }) {
 	const { message } = App.useApp();
 	const [form] = Form.useForm();
 	const [loading, setLoading] = useState(false);
@@ -43,14 +43,7 @@ export function DetailLoginLogs({ domainId }: DetailLoginLogsProps) {
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState(20);
 
-	const numericDomainId = resolveNumericDomainId(domainId);
-
 	const loadLogs = useCallback(async (nextPage = page, nextPageSize = pageSize) => {
-		if (numericDomainId === null) {
-			setRows([]);
-			setTotal(0);
-			return;
-		}
 		setLoading(true);
 		try {
 			const values = form.getFieldsValue();
@@ -117,67 +110,75 @@ export function DetailLoginLogs({ domainId }: DetailLoginLogsProps) {
 		},
 	];
 
+	return (
+		<Card title="登录日志" bordered={false}>
+			<TableSearchForm
+				form={form}
+				className="mb-4"
+				onFinish={() => {
+					setPage(1);
+					void loadLogs(1, pageSize);
+				}}
+				onReset={() => {
+					setPage(1);
+					void loadLogs(1, pageSize);
+				}}
+			>
+				<Form.Item name="portalType" label="门户">
+					<Select
+						allowClear
+						placeholder="全部门户"
+						options={[
+							{ label: "员工端", value: "staff" },
+							{ label: "客户端", value: "customer" },
+						]}
+					/>
+				</Form.Item>
+				<Form.Item name="result" label="结果">
+					<Select
+						allowClear
+						placeholder="全部结果"
+						options={[
+							{ label: "成功", value: "success" },
+							{ label: "失败", value: "failure" },
+						]}
+					/>
+				</Form.Item>
+				<Form.Item name="timeRange" label="时间范围">
+					<RangePicker showTime className="w-full" allowEmpty={[true, true]} />
+				</Form.Item>
+			</TableSearchForm>
+			<Table
+				rowKey="id"
+				loading={loading}
+				columns={columns}
+				dataSource={rows}
+				pagination={{
+					current: page,
+					pageSize,
+					total,
+					showSizeChanger: true,
+					onChange: (nextPage, nextPageSize) => {
+						setPage(nextPage);
+						setPageSize(nextPageSize);
+					},
+				}}
+				scroll={{ x: 1000 }}
+			/>
+		</Card>
+	);
+}
+
+export function DetailLoginLogs({ domainId }: DetailLoginLogsProps) {
+	const numericDomainId = resolveNumericDomainId(domainId);
+
 	if (numericDomainId === null) {
 		return <Empty description="无效的业务域 ID" />;
 	}
 
 	return (
 		<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ} fallback={<Empty description="无权限查看登录日志" />}>
-			<Card title="登录日志" bordered={false}>
-				<TableSearchForm
-					form={form}
-					className="mb-4"
-					onFinish={() => {
-						setPage(1);
-						void loadLogs(1, pageSize);
-					}}
-					onReset={() => {
-						setPage(1);
-						void loadLogs(1, pageSize);
-					}}
-				>
-					<Form.Item name="portalType" label="门户">
-						<Select
-							allowClear
-							placeholder="全部门户"
-							options={[
-								{ label: "员工端", value: "staff" },
-								{ label: "客户端", value: "customer" },
-							]}
-						/>
-					</Form.Item>
-					<Form.Item name="result" label="结果">
-						<Select
-							allowClear
-							placeholder="全部结果"
-							options={[
-								{ label: "成功", value: "success" },
-								{ label: "失败", value: "failure" },
-							]}
-						/>
-					</Form.Item>
-					<Form.Item name="timeRange" label="时间范围">
-						<RangePicker showTime className="w-full" />
-					</Form.Item>
-				</TableSearchForm>
-				<Table
-					rowKey="id"
-					loading={loading}
-					columns={columns}
-					dataSource={rows}
-					pagination={{
-						current: page,
-						pageSize,
-						total,
-						showSizeChanger: true,
-						onChange: (nextPage, nextPageSize) => {
-							setPage(nextPage);
-							setPageSize(nextPageSize);
-						},
-					}}
-					scroll={{ x: 1000 }}
-				/>
-			</Card>
+			<DetailLoginLogsContent numericDomainId={numericDomainId} />
 		</AuthGuarded>
 	);
 }

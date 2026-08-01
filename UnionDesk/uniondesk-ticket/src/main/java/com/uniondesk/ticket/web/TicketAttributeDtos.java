@@ -98,4 +98,8 @@ public final class TicketAttributeDtos {
     public record PromoteTicketAttributeRequest(
             @NotNull Long attribute_id) {
     }
+
+    public record ImportPlatformTicketAttributesRequest(
+            @NotEmpty List<@NotBlank String> platform_attribute_ids) {
+    }
 }

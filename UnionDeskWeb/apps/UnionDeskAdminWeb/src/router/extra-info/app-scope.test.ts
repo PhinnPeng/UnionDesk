@@ -1,8 +1,42 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { resolveHomePathFromActions, resolveHomePathFromMenus } from "./resolve-home-path";
+import { resolveDefaultHomePath, resolveHomePathFromActions, resolveHomePathFromMenus } from "./resolve-home-path";
 
-describe("resolveHomePathFromActions", () => {
+describe("resolveDefaultHomePath", () => {
+	beforeEach(() => {
+		vi.stubEnv("VITE_BASE_HOME_PATH", "/home");
+	});
+
+	it("仅平台能力进入平台首页", () => {
+		expect(resolveDefaultHomePath(true, false)).toBe("/platform/home");
+	});
+
+	it("仅域名单进入业务域首页", () => {
+		expect(resolveDefaultHomePath(false, true)).toBe("/home");
+	});
+
+	it("双端进入业务域首页", () => {
+		expect(resolveDefaultHomePath(true, true)).toBe("/home");
+	});
+
+	it("双无回退业务域首页", () => {
+		expect(resolveDefaultHomePath(false, false)).toBe("/home");
+	});
+});
+
+describe("resolveHomePathFromMenus", () => {
+	beforeEach(() => {
+		vi.stubEnv("VITE_BASE_HOME_PATH", "/home");
+	});
+
+	it("按平台能力与域名单矩阵解析", () => {
+		expect(resolveHomePathFromMenus([], true, undefined, [], false)).toBe("/platform/home");
+		expect(resolveHomePathFromMenus([], true, undefined, [], true)).toBe("/home");
+		expect(resolveHomePathFromMenus([], false, undefined, [], true)).toBe("/home");
+	});
+});
+
+describe("resolveHomePathFromActions (legacy)", () => {
 	beforeEach(() => {
 		vi.stubEnv("VITE_BASE_HOME_PATH", "/home");
 	});
@@ -13,28 +47,5 @@ describe("resolveHomePathFromActions", () => {
 
 	it("仅 domain.* 权限时进入业务域首页", () => {
 		expect(resolveHomePathFromActions(["domain.menu.read", "domain.role.read"])).toBe("/home");
-	});
-
-	it("platform.* 与 domain.* 同时存在时进入业务域首页", () => {
-		expect(resolveHomePathFromActions(["platform.menu.read", "domain.menu.read"])).toBe("/home");
-	});
-
-	it("无 actions 时进入业务域默认首页", () => {
-		expect(resolveHomePathFromActions([])).toBe("/home");
-	});
-});
-
-describe("resolveHomePathFromMenus", () => {
-	beforeEach(() => {
-		vi.stubEnv("VITE_BASE_HOME_PATH", "/home");
-	});
-
-	it("传入 actions 时优先走三元规则", () => {
-		expect(resolveHomePathFromMenus([], true, undefined, ["platform.menu.read"])).toBe("/platform/home");
-		expect(resolveHomePathFromMenus([], true, undefined, ["platform.menu.read", "domain.menu.read"])).toBe("/home");
-	});
-
-	it("无 actions 时回退业务域默认首页", () => {
-		expect(resolveHomePathFromMenus([], true)).toBe("/home");
 	});
 });

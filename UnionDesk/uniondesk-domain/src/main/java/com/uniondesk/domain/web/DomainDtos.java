@@ -42,7 +42,8 @@ public final class DomainDtos {
             String logo,
             List<String> visibility_policy_codes,
             String registration_enabled,
-            String invitation_enabled) {
+            String invitation_enabled,
+            Long team_template_id) {
     }
 
     public record UpdateDomainRequest(

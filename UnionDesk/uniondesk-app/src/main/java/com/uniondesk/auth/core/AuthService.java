@@ -52,6 +52,7 @@ public class AuthService {
     private final InvitationCodeService invitationCodeService;
     private final AuthVersionService authVersionService;
     private final PlatformRoleService platformRoleService;
+    private final UserConfigService userConfigService;
     private final Clock clock;
 
     public AuthService(
@@ -70,6 +71,7 @@ public class AuthService {
             InvitationCodeService invitationCodeService,
             AuthVersionService authVersionService,
             PlatformRoleService platformRoleService,
+            UserConfigService userConfigService,
             Clock clock) {
         this.loginAccountService = loginAccountService;
         this.authClientService = authClientService;
@@ -86,6 +88,7 @@ public class AuthService {
         this.invitationCodeService = invitationCodeService;
         this.authVersionService = authVersionService;
         this.platformRoleService = platformRoleService;
+        this.userConfigService = userConfigService;
         this.clock = clock;
     }
 
@@ -136,26 +139,26 @@ public class AuthService {
         if (account.status() != 1) {
             throw failLogin(
                     account.id(), account.username(), identifierType, request.username(), "account_disabled",
-                    clientIp, userAgent, clientCode, portalType, null, null);
+                    clientIp, userAgent, clientCode, portalType, null, loginAuditService.resolveStaffSubjectId(account.id()));
         }
         if ("offboarded".equalsIgnoreCase(account.employmentStatus())) {
             throw failLogin(
                     account.id(), account.username(), identifierType, request.username(), "account_offboarded",
-                    clientIp, userAgent, clientCode, portalType, null, null);
+                    clientIp, userAgent, clientCode, portalType, null, loginAuditService.resolveStaffSubjectId(account.id()));
         }
         if (!passwordEncoder.matches(request.password(), account.passwordHash())) {
             throw failLogin(
                     account.id(), account.username(), identifierType, request.username(), "password_mismatch",
-                    clientIp, userAgent, clientCode, portalType, null, null);
+                    clientIp, userAgent, clientCode, portalType, null, loginAuditService.resolveStaffSubjectId(account.id()));
         }
         List<String> roles = iamService.listUserRoleCodesByClient(account.id(), authClient.clientCode());
         String effectiveRole = roles.isEmpty() ? "customer" : roles.get(0);
         List<String> responseRoles = roles.isEmpty() ? List.of("customer") : roles;
         List<Long> accessibleDomainIds = loginAccountService.loadAccessibleDomainIds(account.id(), roles);
         List<BusinessDomainView> accessibleDomains = resolveAccessibleDomains(accessibleDomainIds);
-        long defaultBusinessDomainId = accessibleDomains.isEmpty()
-                ? loginAccountService.resolveDefaultDomainId()
-                : accessibleDomains.get(0).id();
+        Long preferredDefaultDomainId = userConfigService.getPreferredDefaultDomainId(account.id()).orElse(null);
+        Long effectivePreferredDefaultDomainId = sanitizePreferredDomainId(accessibleDomains, preferredDefaultDomainId);
+        long defaultBusinessDomainId = resolveSessionDomainId(accessibleDomains, effectivePreferredDefaultDomainId);
 
         String sid = UUID.randomUUID().toString();
         UserContext userContext = new UserContext(account.id(), effectiveRole, defaultBusinessDomainId, sid, authClient.clientCode());
@@ -175,9 +178,10 @@ public class AuthService {
                 userAgent));
         String accessToken = jwtTokenService.issueAccessToken(userContext);
         String effectivePortalType = determinePortalType(request.portalType(), effectiveRole);
+        Long subjectId = loginAuditService.resolveStaffSubjectId(account.id());
         loginAuditService.record(loginAuditService.loginSuccess(
                 sid,
-                null,
+                subjectId,
                 effectivePortalType,
                 authClient.clientCode(),
                 defaultBusinessDomainId,
@@ -187,8 +191,6 @@ public class AuthService {
                 clientIp,
                 userAgent));
 
-        String subjectId = String.valueOf(account.id()); // TODO: 从 identity_subject 获取真实 subject_id
-        
         return new AuthDtos.LoginResponse(
                 accessToken,
                 refreshToken,
@@ -198,10 +200,11 @@ public class AuthService {
                 "Bearer",
                 jwtTokenService.accessTokenTtl().toSeconds(),
                 effectivePortalType,
-                subjectId,
+                subjectId == null ? String.valueOf(account.id()) : String.valueOf(subjectId),
                 new LoginUserView(account.id(), account.username(), account.mobile(), account.email(), responseRoles),
                 accessibleDomains,
-                defaultBusinessDomainId);
+                defaultBusinessDomainId,
+                effectivePreferredDefaultDomainId);
     }
     
     private String determinePortalType(String requestedPortalType, String role) {
@@ -243,9 +246,9 @@ public class AuthService {
         List<String> responseRoles = roles.isEmpty() ? List.of("customer") : roles;
         List<Long> accessibleDomainIds = loginAccountService.loadAccessibleDomainIds(account.id(), "customer", null);
         List<BusinessDomainView> accessibleDomains = resolveAccessibleDomains(accessibleDomainIds);
-        long defaultBusinessDomainId = accessibleDomains.isEmpty()
-                ? loginAccountService.resolveDefaultDomainId()
-                : accessibleDomains.get(0).id();
+        Long preferredDefaultDomainId = userConfigService.getPreferredDefaultDomainId(account.id()).orElse(null);
+        Long effectivePreferredDefaultDomainId = sanitizePreferredDomainId(accessibleDomains, preferredDefaultDomainId);
+        long defaultBusinessDomainId = resolveSessionDomainId(accessibleDomains, effectivePreferredDefaultDomainId);
         String sid = UUID.randomUUID().toString();
         UserContext userContext = new UserContext(account.id(), effectiveRole, defaultBusinessDomainId, sid, authClient.clientCode());
         LocalDateTime sessionExpiresAt = LocalDateTime.now(clock).plusSeconds(config.sessionTtlSeconds());
@@ -288,7 +291,8 @@ public class AuthService {
                 subjectId == null ? String.valueOf(account.id()) : String.valueOf(subjectId),
                 new LoginUserView(account.id(), account.username(), account.mobile(), account.email(), responseRoles),
                 accessibleDomains,
-                defaultBusinessDomainId);
+                defaultBusinessDomainId,
+                effectivePreferredDefaultDomainId);
     }
 
     @Transactional
@@ -532,6 +536,42 @@ public class AuthService {
                 context.clientCode());
     }
 
+    @Transactional
+    public AuthDtos.SetDefaultDomainResponse setDefaultDomain(UserContext context, long domainId) {
+        List<BusinessDomainView> accessibleDomains = resolveAccessibleDomainsForUser(context);
+        ensureDomainAccessible(accessibleDomains, domainId);
+        userConfigService.upsertPreferredDefaultDomainId(context.userId(), domainId);
+        return new AuthDtos.SetDefaultDomainResponse(domainId);
+    }
+
+    @Transactional
+    public AuthDtos.SwitchDomainResponse switchDomain(UserContext context, long domainId) {
+        List<BusinessDomainView> accessibleDomains = resolveAccessibleDomainsForUser(context);
+        ensureDomainAccessible(accessibleDomains, domainId);
+        UserContext switchedContext = new UserContext(
+                context.userId(),
+                context.role(),
+                domainId,
+                context.sessionId(),
+                context.clientCode());
+        String refreshToken = jwtTokenService.issueRefreshToken(switchedContext);
+        int updated = loginSessionService.updateBusinessDomainAndRefreshToken(
+                context.sessionId(),
+                domainId,
+                sha256(refreshToken));
+        if (updated == 0) {
+            throw new AuthenticationFailedException("session expired or revoked");
+        }
+        String accessToken = jwtTokenService.issueAccessToken(switchedContext);
+        return new AuthDtos.SwitchDomainResponse(
+                accessToken,
+                refreshToken,
+                "Bearer",
+                jwtTokenService.accessTokenTtl().toSeconds(),
+                domainId,
+                accessibleDomains);
+    }
+
     public void logoutCurrentSession(UserContext context, String clientIp, String userAgent) {
         loginSessionService.revokeSession(context.sessionId(), "user_logout");
         loginAuditService.record(loginAuditService.sessionEvent(
@@ -652,6 +692,42 @@ public class AuthService {
             return filterDomains(List.of(loginAccountService.resolveDefaultDomainId()));
         }
         return filterDomains(accessibleDomainIds);
+    }
+
+    private long resolveSessionDomainId(List<BusinessDomainView> accessibleDomains, Long preferredDefaultDomainId) {
+        Long sanitizedPreferred = sanitizePreferredDomainId(accessibleDomains, preferredDefaultDomainId);
+        if (sanitizedPreferred != null) {
+            return sanitizedPreferred;
+        }
+        if (accessibleDomains.isEmpty()) {
+            return loginAccountService.resolveDefaultDomainId();
+        }
+        return accessibleDomains.get(0).id();
+    }
+
+    private Long sanitizePreferredDomainId(List<BusinessDomainView> accessibleDomains, Long preferredDefaultDomainId) {
+        if (preferredDefaultDomainId == null) {
+            return null;
+        }
+        boolean preferredAccessible = accessibleDomains.stream()
+                .anyMatch(domain -> preferredDefaultDomainId.equals(domain.id()));
+        return preferredAccessible ? preferredDefaultDomainId : null;
+    }
+
+    private List<BusinessDomainView> resolveAccessibleDomainsForUser(UserContext context) {
+        String accountType = "ud-customer-web".equalsIgnoreCase(context.clientCode()) ? "customer" : "staff";
+        List<String> roles = "customer".equals(accountType)
+                ? List.of("customer")
+                : iamService.listUserRoleCodesByClient(context.userId(), context.clientCode());
+        List<Long> accessibleDomainIds = loginAccountService.loadAccessibleDomainIds(context.userId(), accountType, roles);
+        return resolveAccessibleDomains(accessibleDomainIds);
+    }
+
+    private void ensureDomainAccessible(List<BusinessDomainView> accessibleDomains, long domainId) {
+        boolean accessible = accessibleDomains.stream().anyMatch(domain -> domain.id() == domainId);
+        if (!accessible) {
+            throw new IllegalArgumentException("无权访问该业务域");
+        }
     }
 
     private List<BusinessDomainView> filterDomains(List<Long> accessibleDomainIds) {

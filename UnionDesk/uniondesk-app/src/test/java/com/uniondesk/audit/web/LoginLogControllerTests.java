@@ -41,6 +41,7 @@ class LoginLogControllerTests {
                         10L,
                         "Demo Domain",
                         "admin",
+                        "USERNAME",
                         "staff",
                         "ud-admin-web",
                         "LOGIN",

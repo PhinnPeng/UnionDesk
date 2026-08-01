@@ -1,6 +1,6 @@
 import type { TabPaneProps } from "antd";
 
-import { appScopes, getAppHomePath, type AppScope } from "#src/router/extra-info/app-scope";
+import { appScopes, getAppHomePath, type AppScope } from "#src/router/extra-info/app-scope-core";
 import { usePreferencesStore } from "#src/store/preferences";
 import { getAppNamespace } from "#src/utils/get-app-namespace";
 

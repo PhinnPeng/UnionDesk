@@ -14,14 +14,17 @@ function resolveNumericDomainId(domainId: string): number | null {
 
 interface DomainConfigPanelProps {
 	domainId: string;
+	/** 为 false 时只读（隐藏增删与保存）；默认 true，平台详情 Tab 行为不变 */
+	canUpdate?: boolean;
 }
 
 /** 域配置 KV 表单（可嵌入详情 Tab） */
-export function DomainConfigPanel({ domainId }: DomainConfigPanelProps) {
+export function DomainConfigPanel({ domainId, canUpdate = true }: DomainConfigPanelProps) {
 	const { message } = App.useApp();
 	const numericDomainId = resolveNumericDomainId(domainId);
 	const [loading, setLoading] = useState(false);
 	const [form] = Form.useForm();
+	const formDisabled = loading || !canUpdate;
 
 	useEffect(() => {
 		if (!numericDomainId) {
@@ -94,7 +97,7 @@ export function DomainConfigPanel({ domainId }: DomainConfigPanelProps) {
 
 	return (
 		<Space direction="vertical" size={16} className="w-full">
-			<Form form={form} layout="vertical" disabled={loading}>
+			<Form form={form} layout="vertical" disabled={formDisabled}>
 				<Form.List name="items">
 					{(fields, { add, remove }) => (
 						<Space direction="vertical" size={12} className="w-full">
@@ -104,7 +107,13 @@ export function DomainConfigPanel({ domainId }: DomainConfigPanelProps) {
 									size="small"
 									type="inner"
 									title={`配置项 #${index + 1}`}
-									extra={<Button type="link" danger onClick={() => remove(field.name)}>删除</Button>}
+									extra={canUpdate
+										? (
+											<Button type="link" danger onClick={() => remove(field.name)}>
+												删除
+											</Button>
+										)
+										: null}
 								>
 									<Row gutter={16}>
 										<Col xs={24} lg={12}>
@@ -143,16 +152,26 @@ export function DomainConfigPanel({ domainId }: DomainConfigPanelProps) {
 									</Form.Item>
 								</Card>
 							))}
-							<Button type="dashed" onClick={() => add({ valueType: "string" })}>新增配置项</Button>
+							{canUpdate
+								? (
+									<Button type="dashed" onClick={() => add({ valueType: "string" })}>
+										新增配置项
+									</Button>
+								)
+								: null}
 						</Space>
 					)}
 				</Form.List>
 			</Form>
-			<div className="flex justify-end">
-				<Button type="primary" onClick={() => void onSave()} loading={loading}>
-					保存配置
-				</Button>
-			</div>
+			{canUpdate
+				? (
+					<div className="flex justify-end">
+						<Button type="primary" onClick={() => void onSave()} loading={loading}>
+							保存配置
+						</Button>
+					</div>
+				)
+				: null}
 		</Space>
 	);
 }

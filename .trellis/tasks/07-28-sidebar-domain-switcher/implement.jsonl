@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "AdminWeb layout/components conventions before DomainSwitcherBar"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Flyway and auth/IAM backend conventions for user_config"}
+{"file": ".trellis/tasks/07-28-sidebar-domain-switcher/design.md", "reason": "API contracts, user_config schema, layout insertion"}
+{"file": ".trellis/tasks/07-28-sidebar-domain-switcher/prd.md", "reason": "R1–R5 requirements and confirmed decisions"}
+{"file": ".trellis/tasks/07-27-business-console-full-mirror/prd.md", "reason": "Related R3 multi-domain switch contract for business console"}

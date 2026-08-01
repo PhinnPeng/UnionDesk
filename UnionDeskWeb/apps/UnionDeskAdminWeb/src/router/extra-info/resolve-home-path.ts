@@ -31,8 +31,21 @@ function getHomePath(scope: typeof scopePlatform | typeof scopeBusiness) {
 }
 
 /**
- * 按快照 actions 权限码组合解析默认首页。
- * 仅 platform.* → 平台控制台；仅非 platform.* 或两者都有 → 统一业务域后台。
+ * 按「平台能力 × 域访问名单」二维矩阵解析默认首页（design §0.3）。
+ */
+export function resolveDefaultHomePath(platformAccess: boolean, businessDomainAccess: boolean): string {
+	if (platformAccess && !businessDomainAccess) {
+		return getHomePath(scopePlatform);
+	}
+	if (businessDomainAccess) {
+		return getHomePath(scopeBusiness);
+	}
+	// 双无：无可用控制台，仍落业务首页由守卫展示无权限；避免死循环跳平台
+	return getHomePath(scopeBusiness);
+}
+
+/**
+ * @deprecated 进端已改为名单矩阵；保留供测试过渡，勿用于新逻辑。
  */
 export function resolveHomePathFromActions(actions: readonly string[]): string {
 	const hasPlatform = actions.some(code => code.startsWith("platform."));
@@ -44,17 +57,15 @@ export function resolveHomePathFromActions(actions: readonly string[]): string {
 }
 
 /**
- * 根据 actions 解析默认首页（登录成功、访问 `/`、返回首页共用）。
- * actions 非空时优先走三元规则；否则回退业务域默认首页。
+ * 根据平台能力与域名单解析默认首页。
+ * `platformAccess` / `businessDomainAccess` 优先；缺省时回退业务首页。
  */
 export function resolveHomePathFromMenus(
 	_menus: AppRouteRecordRaw[],
-	_platformAccess: boolean,
+	platformAccess: boolean,
 	_options?: ResolveHomePathOptions,
-	actions: readonly string[] = [],
+	_actions: readonly string[] = [],
+	businessDomainAccess = false,
 ): string {
-	if (actions.length > 0) {
-		return resolveHomePathFromActions(actions);
-	}
-	return getHomePath(scopeBusiness);
+	return resolveDefaultHomePath(platformAccess, businessDomainAccess);
 }

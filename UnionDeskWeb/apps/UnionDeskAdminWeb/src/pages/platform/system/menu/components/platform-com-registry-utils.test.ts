@@ -46,24 +46,38 @@ describe("platform-com-registry-utils", () => {
 		)).toBe(true);
 	});
 
-	it("covers all registry entries as leaf paths", () => {
+	it("builds flat domain leaves under domain path branch", () => {
+		const options = buildPlatformComCascaderOptions([
+			{ label: "运营概览", value: "domain/overview" },
+			{ label: "人员管理", value: "domain/members" },
+		]);
+
+		const domainNode = options.find(option => option.value === "domain");
+		expect(domainNode?.label).toBe("domain");
+		expect(domainNode?.children?.some(
+			child => child.value === "domain/overview" && child.label === "运营概览",
+		)).toBe(true);
+		expect(domainNode?.children?.some(
+			child => child.value === "domain/members" && child.label === "人员管理",
+		)).toBe(true);
+	});
+
+	it("covers all registry entries in cascader tree", () => {
 		const options = buildPlatformComCascaderOptions(platformComRegistry);
-		const leafKeys = new Set<string>();
+		const allKeys = new Set<string>();
 
 		const visit = (nodes: ReturnType<typeof buildPlatformComCascaderOptions>) => {
 			for (const node of nodes) {
+				allKeys.add(node.value);
 				if (node.children?.length) {
 					visit(node.children);
-				}
-				else {
-					leafKeys.add(node.value);
 				}
 			}
 		};
 
 		visit(options);
 		for (const item of platformComRegistry) {
-			expect(leafKeys.has(item.value)).toBe(true);
+			expect(allKeys.has(item.value)).toBe(true);
 		}
 	});
 });

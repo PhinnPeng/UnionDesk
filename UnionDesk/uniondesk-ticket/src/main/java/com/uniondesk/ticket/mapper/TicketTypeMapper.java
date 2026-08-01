@@ -16,6 +16,12 @@ public interface TicketTypeMapper {
 
     TicketTypePo findByDomainIdAndName(@Param("domainId") long domainId, @Param("name") String name);
 
+    TicketTypePo findByDomainIdAndSourceGlobalTypeId(
+            @Param("domainId") long domainId,
+            @Param("sourceGlobalTypeId") long sourceGlobalTypeId);
+
+    Integer findMaxSortOrderDomain(@Param("domainId") long domainId);
+
     List<TicketTypePo> findByPlatform(@Param("keywordLike") String keywordLike);
 
     long countByPlatform(@Param("keywordLike") String keywordLike);

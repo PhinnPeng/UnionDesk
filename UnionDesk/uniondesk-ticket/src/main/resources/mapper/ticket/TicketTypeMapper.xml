@@ -61,6 +61,21 @@
         LIMIT 1
     </select>
 
+    <select id="findByDomainIdAndSourceGlobalTypeId" resultMap="TicketTypePo">
+        SELECT <include refid="TicketTypeColumns"/>
+        FROM ticket_type
+        WHERE scope = 'domain'
+          AND business_domain_id = #{domainId}
+          AND source_global_type_id = #{sourceGlobalTypeId}
+        LIMIT 1
+    </select>
+
+    <select id="findMaxSortOrderDomain" resultType="java.lang.Integer">
+        SELECT MAX(sort_order)
+        FROM ticket_type
+        WHERE scope = 'domain' AND business_domain_id = #{domainId}
+    </select>
+
     <select id="findByPlatform" resultMap="TicketTypePo">
         SELECT <include refid="TicketTypeColumns"/>
         FROM ticket_type

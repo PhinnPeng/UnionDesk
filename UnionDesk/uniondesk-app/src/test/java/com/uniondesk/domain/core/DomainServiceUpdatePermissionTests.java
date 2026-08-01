@@ -108,7 +108,8 @@ class DomainServiceUpdatePermissionTests {
                         "/default-domain-logo.svg",
                         List.of("public"),
                         "allowed",
-                        "allowed"))
+                        "allowed",
+                        null))
                 .id();
     }
 }

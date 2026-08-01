@@ -115,6 +115,24 @@
         LIMIT 1
     </select>
 
+    <select id="findDomainBySystemKey" resultMap="TicketAttributePo">
+        SELECT <include refid="TicketAttributeColumns"/>
+        FROM ticket_attribute
+        WHERE scope = 'domain'
+          AND business_domain_id = #{domainId}
+          AND system_key = #{systemKey}
+        LIMIT 1
+    </select>
+
+    <select id="findDomainBySourceAttributeId" resultMap="TicketAttributePo">
+        SELECT <include refid="TicketAttributeColumns"/>
+        FROM ticket_attribute
+        WHERE scope = 'domain'
+          AND business_domain_id = #{domainId}
+          AND source_attribute_id = #{sourceAttributeId}
+        LIMIT 1
+    </select>
+
     <select id="findMaxSortOrderPlatform" resultType="java.lang.Integer">
         SELECT MAX(sort_order) FROM ticket_attribute WHERE scope = 'platform'
     </select>

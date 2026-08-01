@@ -32,6 +32,15 @@ public class TicketTypeRepository {
         return mapper.findByDomainIdAndName(domainId, name);
     }
 
+    public TicketTypePo findByDomainIdAndSourceGlobalTypeId(long domainId, long sourceGlobalTypeId) {
+        return mapper.findByDomainIdAndSourceGlobalTypeId(domainId, sourceGlobalTypeId);
+    }
+
+    public int nextSortOrderDomain(long domainId) {
+        Integer max = mapper.findMaxSortOrderDomain(domainId);
+        return max == null ? 0 : max + 1;
+    }
+
     public TicketTypePo findRequiredByIdAndDomainId(long id, long domainId) {
         TicketTypePo po = mapper.findByIdAndDomainId(id, domainId);
         if (po == null) {

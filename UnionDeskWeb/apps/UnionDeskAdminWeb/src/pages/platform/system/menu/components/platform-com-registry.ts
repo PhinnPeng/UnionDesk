@@ -8,13 +8,27 @@ export type PlatformComRegistryItem = {
 };
 
 export const platformComRegistry: PlatformComRegistryItem[] = [
-	{ label: "首页", value: "home" },
+	{ label: "概览", value: "home" },
 	{ label: "关于", value: "about" },
 
 	{ label: "系统管理/用户管理", value: "system/user" },
 	{ label: "系统管理/部门管理", value: "system/dept" },
 	{ label: "系统管理/角色管理", value: "system/role" },
+	{ label: "系统管理/菜单管理", value: "system/menu" },
 	{ label: "平台管理/菜单管理", value: "platform/system/menu" },
+
+	{ label: "运营概览", value: "domain/overview" },
+	{ label: "通用设置", value: "domain/basic" },
+	{ label: "人员管理", value: "domain/members" },
+	{ label: "角色管理", value: "domain/roles" },
+	{ label: "客户管理", value: "domain/customers" },
+	{ label: "入域管理", value: "domain/onboarding" },
+	{ label: "事项配置", value: "domain/ticket-config" },
+	{ label: "屏蔽词库", value: "domain/blockwords" },
+	{ label: "通知配置", value: "domain/notifications" },
+	{ label: "参数配置", value: "domain/config" },
+	{ label: "操作日志", value: "domain/audit-logs" },
+	{ label: "登录日志", value: "domain/login-logs" },
 
 	{ label: "平台管理/平台首页", value: "platform/home" },
 	{ label: "平台管理/业务域管理/业务域列表", value: "platform/domains" },
@@ -41,6 +55,7 @@ export const platformComRegistry: PlatformComRegistryItem[] = [
 	{ label: "平台管理/事项配置/事项属性", value: "platform/ticket-config/attributes" },
 	{ label: "平台管理/事项配置/事项类型", value: "platform/ticket-config/types" },
 	{ label: "平台管理/事项配置/事项状态", value: "platform/ticket-config/statuses" },
+	{ label: "平台管理/事项配置/团队模板", value: "platform/ticket-config/templates" },
 
 	{ label: "个人中心/个人资料", value: "personal-center/my-profile" },
 	{ label: "个人中心/设置", value: "personal-center/settings" },

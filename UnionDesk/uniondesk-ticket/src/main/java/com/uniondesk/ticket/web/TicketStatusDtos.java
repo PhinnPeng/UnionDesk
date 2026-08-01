@@ -1,6 +1,7 @@
 package com.uniondesk.ticket.web;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 
 public final class TicketStatusDtos {
@@ -19,6 +20,7 @@ public final class TicketStatusDtos {
             String status,
             int sort_order,
             boolean is_system,
+            String source_status_id,
             String created_at,
             String updated_at) {
     }
@@ -39,5 +41,9 @@ public final class TicketStatusDtos {
             String name,
             String description,
             String category) {
+    }
+
+    public record ImportPlatformTicketStatusesRequest(
+            @NotEmpty List<@NotBlank String> platform_status_ids) {
     }
 }

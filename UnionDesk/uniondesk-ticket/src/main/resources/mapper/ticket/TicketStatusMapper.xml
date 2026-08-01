@@ -83,6 +83,69 @@
         WHERE scope = 'platform'
     </select>
 
+    <sql id="domainScopeWhere">
+        scope = 'domain'
+        AND business_domain_id = #{domainId}
+        <if test="keywordLike != null and keywordLike != ''">
+            AND (name LIKE #{keywordLike} OR description LIKE #{keywordLike} OR code LIKE #{keywordLike})
+        </if>
+    </sql>
+
+    <select id="findByDomain" resultMap="TicketStatusPo">
+        SELECT <include refid="TicketStatusColumns"/>
+        FROM ticket_status
+        WHERE <include refid="domainScopeWhere"/>
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="countByDomain" resultType="long">
+        SELECT COUNT(1)
+        FROM ticket_status
+        WHERE <include refid="domainScopeWhere"/>
+    </select>
+
+    <select id="findPageByDomain" resultMap="TicketStatusPo">
+        SELECT <include refid="TicketStatusColumns"/>
+        FROM ticket_status
+        WHERE <include refid="domainScopeWhere"/>
+        ORDER BY sort_order ASC, id ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findDomainByCode" resultMap="TicketStatusPo">
+        SELECT <include refid="TicketStatusColumns"/>
+        FROM ticket_status
+        WHERE scope = 'domain'
+          AND business_domain_id = #{domainId}
+          AND code = #{code}
+        LIMIT 1
+    </select>
+
+    <select id="findDomainByName" resultMap="TicketStatusPo">
+        SELECT <include refid="TicketStatusColumns"/>
+        FROM ticket_status
+        WHERE scope = 'domain'
+          AND business_domain_id = #{domainId}
+          AND name = #{name}
+        LIMIT 1
+    </select>
+
+    <select id="findDomainBySourceStatusId" resultMap="TicketStatusPo">
+        SELECT <include refid="TicketStatusColumns"/>
+        FROM ticket_status
+        WHERE scope = 'domain'
+          AND business_domain_id = #{domainId}
+          AND source_status_id = #{sourceStatusId}
+        LIMIT 1
+    </select>
+
+    <select id="findMaxSortOrderDomain" resultType="java.lang.Integer">
+        SELECT MAX(sort_order)
+        FROM ticket_status
+        WHERE scope = 'domain'
+          AND business_domain_id = #{domainId}
+    </select>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO ticket_status (
             scope, business_domain_id, code, name, description, category, state_type,
@@ -109,6 +172,14 @@
         DELETE FROM ticket_status
         WHERE id = #{id}
           AND scope = 'platform'
+          AND is_system = 0
+    </delete>
+
+    <delete id="deleteByIdDomain">
+        DELETE FROM ticket_status
+        WHERE id = #{id}
+          AND scope = 'domain'
+          AND business_domain_id = #{domainId}
           AND is_system = 0
     </delete>
 

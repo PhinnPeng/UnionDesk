@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.uniondesk.ticket.core.TicketConfigService;
 import com.uniondesk.ticket.core.TicketAttributeService;
+import com.uniondesk.ticket.core.TicketStatusService;
 import com.uniondesk.ticket.core.TicketTypeAttributeSlotService;
 import com.uniondesk.common.web.ApiResponseWrapper;
 import java.util.List;
@@ -28,6 +29,7 @@ class TicketConfigControllerTests {
     private final TicketConfigService ticketConfigService = mock(TicketConfigService.class);
     private final TicketAttributeService ticketAttributeService = mock(TicketAttributeService.class);
     private final TicketTypeAttributeSlotService ticketTypeAttributeSlotService = mock(TicketTypeAttributeSlotService.class);
+    private final TicketStatusService ticketStatusService = mock(TicketStatusService.class);
 
     @Test
     void listTicketTypesReturnsRows() throws Exception {
@@ -36,7 +38,7 @@ class TicketConfigControllerTests {
                 new TicketConfigDtos.TicketTypeView(
                         "11", "1", "default", "默认类型", null, null, null,
                         Map.of("states", List.of()), Map.of("properties", Map.of()), Map.of("properties", Map.of()),
-                        1, false, "active",
+                        1, false, "active", null,
                         List.of())));  // transition_rules
 
         mockMvc.perform(get("/api/v1/admin/domains/1/ticket-types"))
@@ -150,7 +152,8 @@ class TicketConfigControllerTests {
         return MockMvcBuilders.standaloneSetup(new TicketConfigController(
                 ticketConfigService,
                 ticketAttributeService,
-                ticketTypeAttributeSlotService))
+                ticketTypeAttributeSlotService,
+                ticketStatusService))
                 .setControllerAdvice(new ApiResponseWrapper())
                 .build();
     }

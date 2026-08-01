@@ -1,4 +1,5 @@
 import type { AppRouteRecordRaw } from "#src/router/types";
+import type { BusinessDomainView } from "@uniondesk/shared";
 
 export interface AuthType {
 	token: string
@@ -8,7 +9,12 @@ export interface AuthType {
 	clientCode: string
 	tokenType: string
 	expiresInSeconds: number
+	/** 当前会话活跃业务域（兼容登录字段 defaultBusinessDomainId） */
 	defaultBusinessDomainId: number
+	/** 用户跨登录默认域偏好；未设置或无效时为 null */
+	preferredDefaultDomainId: number | null
+	/** 登录返回的业务域访问名单 */
+	accessibleDomains: BusinessDomainView[]
 	user: UserInfoType | null
 }
 

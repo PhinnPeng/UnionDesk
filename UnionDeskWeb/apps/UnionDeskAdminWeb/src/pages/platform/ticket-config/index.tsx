@@ -1,8 +1,10 @@
 import { TicketAttributesPanel } from "./attributes/ticket-attributes-panel";
 import { TicketStatusesPanel } from "./statuses/ticket-statuses-panel";
+import { TeamTemplatesPanel } from "./templates/team-templates-panel";
+import { TeamTemplateConfigPage } from "./templates/config/team-template-config-page";
 import { TicketConfigShell } from "./ticket-config-shell";
 import {
-	buildTicketConfigPath,
+	parseTeamTemplateConfigModule,
 	parseTicketConfigSection,
 	resolveEffectiveTicketConfigSection,
 } from "./ticket-config-path";
@@ -14,6 +16,7 @@ import { useAuth } from "#src/hooks/use-auth";
 import {
 	PLATFORM_TICKET_CONFIG_ATTR_READ,
 	PLATFORM_TICKET_CONFIG_STATUS_READ,
+	PLATFORM_TICKET_CONFIG_TEMPLATE_READ,
 	PLATFORM_TICKET_CONFIG_TYPE_READ,
 } from "#src/pages/platform/domains/platform-domain-permissions";
 
@@ -28,6 +31,7 @@ export default function PlatformTicketConfigPage() {
 	const canViewAttributes = hasPermission(PLATFORM_TICKET_CONFIG_ATTR_READ);
 	const canViewTypes = hasPermission(PLATFORM_TICKET_CONFIG_TYPE_READ);
 	const canViewStatuses = hasPermission(PLATFORM_TICKET_CONFIG_STATUS_READ);
+	const canViewTemplates = hasPermission(PLATFORM_TICKET_CONFIG_TEMPLATE_READ);
 
 	const sectionParam = parseTicketConfigSection(searchParams.get("section"));
 	const effectiveSection = resolveEffectiveTicketConfigSection(
@@ -35,8 +39,11 @@ export default function PlatformTicketConfigPage() {
 		canViewAttributes,
 		canViewTypes,
 		canViewStatuses,
+		canViewTemplates,
 	);
 	const typeId = searchParams.get("typeId")?.trim() ?? "";
+	const templateId = searchParams.get("templateId")?.trim() ?? "";
+	const templateModule = parseTeamTemplateConfigModule(searchParams.get("module"));
 
 	useEffect(() => {
 		if (sectionParam === effectiveSection) {
@@ -48,6 +55,10 @@ export default function PlatformTicketConfigPage() {
 			if (effectiveSection !== "types") {
 				next.delete("typeId");
 				next.delete("tab");
+			}
+			if (effectiveSection !== "templates") {
+				next.delete("templateId");
+				next.delete("module");
 			}
 			return next;
 		}, { replace: true });
@@ -63,12 +74,19 @@ export default function PlatformTicketConfigPage() {
 		}, { replace: true });
 	};
 
+	if (effectiveSection === "templates" && templateId) {
+		return <TeamTemplateConfigPage templateId={templateId} module={templateModule} />;
+	}
+
 	const renderContent = () => {
 		if (effectiveSection === "attributes") {
 			return <TicketAttributesPanel scope="platform" />;
 		}
 		if (effectiveSection === "statuses") {
 			return <TicketStatusesPanel />;
+		}
+		if (effectiveSection === "templates") {
+			return <TeamTemplatesPanel />;
 		}
 		if (typeId) {
 			return (

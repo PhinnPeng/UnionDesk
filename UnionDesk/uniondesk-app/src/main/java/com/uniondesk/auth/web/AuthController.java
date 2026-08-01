@@ -97,6 +97,16 @@ public class AuthController {
         return authService.currentUser(requireCurrentUser());
     }
 
+    @PutMapping("/me/default-domain")
+    public AuthDtos.SetDefaultDomainResponse setDefaultDomain(@Valid @RequestBody AuthDtos.SetDefaultDomainRequest request) {
+        return authService.setDefaultDomain(requireCurrentUser(), request.domainId());
+    }
+
+    @PostMapping("/switch-domain")
+    public AuthDtos.SwitchDomainResponse switchDomain(@Valid @RequestBody AuthDtos.SwitchDomainRequest request) {
+        return authService.switchDomain(requireCurrentUser(), request.domainId());
+    }
+
     @PostMapping("/step-up")
     public AuthDtos.StepUpResponse stepUp(@Valid @RequestBody AuthDtos.StepUpRequest request) {
         return authService.stepUp(requireCurrentUser(), request.password(), request.operationCode());

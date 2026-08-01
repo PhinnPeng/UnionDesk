@@ -41,6 +41,7 @@ public class TicketTypeAttributeSlotService {
     private final TicketFormSchemaService ticketFormSchemaService;
     private final TicketTypeFlowService ticketTypeFlowService;
     private final TicketPriorityLevelRepository ticketPriorityLevelRepository;
+    private final PlatformTicketTypeCopyService platformTicketTypeCopyService;
     private final ObjectMapper objectMapper;
 
     public TicketTypeAttributeSlotService(
@@ -50,6 +51,7 @@ public class TicketTypeAttributeSlotService {
             TicketFormSchemaService ticketFormSchemaService,
             TicketTypeFlowService ticketTypeFlowService,
             TicketPriorityLevelRepository ticketPriorityLevelRepository,
+            PlatformTicketTypeCopyService platformTicketTypeCopyService,
             ObjectMapper objectMapper) {
         this.ticketTypeRepository = ticketTypeRepository;
         this.ticketAttributeRepository = ticketAttributeRepository;
@@ -57,6 +59,7 @@ public class TicketTypeAttributeSlotService {
         this.ticketFormSchemaService = ticketFormSchemaService;
         this.ticketTypeFlowService = ticketTypeFlowService;
         this.ticketPriorityLevelRepository = ticketPriorityLevelRepository;
+        this.platformTicketTypeCopyService = platformTicketTypeCopyService;
         this.objectMapper = objectMapper;
     }
 
@@ -158,39 +161,60 @@ public class TicketTypeAttributeSlotService {
     @Transactional
     public void seedPlatformSystemSlots(long typeId, String templateKey, Long operatorId) {
         ticketTypeRepository.findRequiredPlatformById(typeId);
+        seedSystemSlots(typeId, null, templateKey, operatorId);
+    }
+
+    @Transactional
+    public void seedDomainSystemSlots(long domainId, long typeId, String templateKey, Long operatorId) {
+        ticketTypeRepository.findRequiredByIdAndDomainId(typeId, domainId);
+        seedSystemSlots(typeId, domainId, templateKey, operatorId);
+    }
+
+    private void seedSystemSlots(long typeId, Long domainId, String templateKey, Long operatorId) {
         String normalizedTemplate = templateKey == null ? "" : templateKey.trim().toLowerCase(Locale.ROOT);
         boolean simpleTicket = "simple_ticket".equals(normalizedTemplate);
         int sortOrder = 0;
         if (!simpleTicket) {
-            TicketAttributePo title = requirePlatformSystemAttributeByKey("title", "标题");
-            insertSeedSlot(typeId, title, sortOrder++, true, true, operatorId);
+            insertSeedSlot(typeId, resolveSeedAttribute(domainId, "title", "标题", operatorId), sortOrder++, true, true, operatorId);
         }
-        TicketAttributePo description = requirePlatformSystemAttributeByKey("description", "描述");
-        insertSeedSlot(typeId, description, sortOrder++, true, true, operatorId);
-        TicketAttributePo priority = requirePlatformSystemAttributeByKey("priority", "优先级");
-        insertSeedSlot(typeId, priority, sortOrder++, true, true, operatorId);
-        TicketAttributePo assignee = ticketAttributeRepository.findPlatformBySystemKey("assignee");
-        if (assignee == null) {
-            assignee = ticketAttributeRepository.findPlatformByName("处理人");
+        insertSeedSlot(typeId, resolveSeedAttribute(domainId, "description", "描述", operatorId), sortOrder++, true, true, operatorId);
+        insertSeedSlot(typeId, resolveSeedAttribute(domainId, "priority", "优先级", operatorId), sortOrder++, true, true, operatorId);
+        TicketAttributePo assignee = findPlatformSystemAttribute("assignee", "处理人");
+        if (assignee != null) {
+            insertSeedSlot(typeId, resolveSeedAttribute(domainId, assignee, operatorId), sortOrder++, false, false, operatorId);
         }
-        if (assignee != null && assignee.isSystem()) {
-            insertSeedSlot(typeId, assignee, sortOrder++, false, false, operatorId);
-        }
-        TicketAttributePo watchers = ticketAttributeRepository.findPlatformBySystemKey("watchers");
-        if (watchers == null) {
-            watchers = ticketAttributeRepository.findPlatformByName("关注人");
-        }
-        if (watchers != null && watchers.isSystem()) {
-            insertSeedSlot(typeId, watchers, sortOrder++, false, false, operatorId);
+        TicketAttributePo watchers = findPlatformSystemAttribute("watchers", "关注人");
+        if (watchers != null) {
+            insertSeedSlot(typeId, resolveSeedAttribute(domainId, watchers, operatorId), sortOrder++, false, false, operatorId);
         }
     }
 
-    private TicketAttributePo requirePlatformSystemAttributeByKey(String systemKey, String fallbackName) {
+    private TicketAttributePo resolveSeedAttribute(Long domainId, String systemKey, String fallbackName, Long operatorId) {
+        TicketAttributePo platformAttr = requirePlatformSystemAttributeByKey(systemKey, fallbackName);
+        return resolveSeedAttribute(domainId, platformAttr, operatorId);
+    }
+
+    private TicketAttributePo resolveSeedAttribute(Long domainId, TicketAttributePo platformAttr, Long operatorId) {
+        if (domainId == null) {
+            return platformAttr;
+        }
+        return platformTicketTypeCopyService.ensureDomainAttribute(domainId, platformAttr, operatorId);
+    }
+
+    private TicketAttributePo findPlatformSystemAttribute(String systemKey, String fallbackName) {
         TicketAttributePo attribute = ticketAttributeRepository.findPlatformBySystemKey(systemKey);
         if (attribute == null) {
             attribute = ticketAttributeRepository.findPlatformByName(fallbackName);
         }
-        if (attribute == null || !attribute.isSystem()) {
+        if (attribute != null && attribute.isSystem()) {
+            return attribute;
+        }
+        return null;
+    }
+
+    private TicketAttributePo requirePlatformSystemAttributeByKey(String systemKey, String fallbackName) {
+        TicketAttributePo attribute = findPlatformSystemAttribute(systemKey, fallbackName);
+        if (attribute == null) {
             throw new IllegalStateException("缺少平台系统属性：" + fallbackName);
         }
         return attribute;
@@ -710,6 +734,7 @@ public class TicketTypeAttributeSlotService {
                 currentVersionNo,
                 aggregate.hasUnpublished(),
                 StringUtils.hasText(type.getStatus()) ? type.getStatus() : "active",
+                type.getSourceGlobalTypeId() == null ? null : String.valueOf(type.getSourceGlobalTypeId()),
                 workflow.transition_rules());
     }
 

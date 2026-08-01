@@ -59,4 +59,8 @@
         SELECT subject_id FROM customer_account WHERE id = #{customerAccountId} LIMIT 1
     </select>
 
+    <select id="selectSubjectIdByStaffAccountId" resultType="java.lang.Long">
+        SELECT subject_id FROM staff_account WHERE id = #{staffAccountId} LIMIT 1
+    </select>
+
 </mapper>

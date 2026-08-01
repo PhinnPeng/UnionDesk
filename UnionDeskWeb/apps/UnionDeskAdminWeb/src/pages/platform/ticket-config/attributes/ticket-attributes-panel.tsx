@@ -10,6 +10,7 @@ import {
 	deletePlatformTicketAttribute,
 	fetchDomainTicketAttributes,
 	fetchPlatformTicketAttributes,
+	importDomainTicketAttributesFromPlatform,
 	reorderDomainTicketAttributes,
 	reorderPlatformTicketAttributes,
 	toErrorMessage,
@@ -33,37 +34,47 @@ import {
 
 import { AttributeFormModal } from "./components/attribute-form-modal";
 import { AttributeSortableTable } from "./components/attribute-sortable-table";
+import { DomainAddPlatformTicketAttributesModal } from "./components/domain-add-platform-ticket-attributes-modal";
 
 import { PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
-import { App, Button, Card, Empty, Form, Input, Space, Typography } from "antd";
-import { useCallback, useEffect, useState } from "react";
+import { App, Button, Card, Empty, Form, Input, Space } from "antd";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import "./ticket-attributes-panel.less";
+
+export interface TicketAttributesPanelPermissions {
+	read: string
+	create: string
+	update: string
+	delete: string
+}
 
 export interface TicketAttributesPanelProps {
 	scope: "platform" | "domain";
 	domainId?: string;
+	/** 覆盖默认权限码（业务域端传入 domain.ticket_attribute.*） */
+	permissions?: TicketAttributesPanelPermissions;
 }
 
 interface AttributesSearchValues {
 	keyword?: string;
 }
 
-export function TicketAttributesPanel({ scope, domainId }: TicketAttributesPanelProps) {
+export function TicketAttributesPanel({ scope, domainId, permissions }: TicketAttributesPanelProps) {
 	const { message, modal } = App.useApp();
 	const { hasPermission } = useAuth();
-	const readPerm = scope === "platform"
+	const readPerm = permissions?.read ?? (scope === "platform"
 		? PLATFORM_TICKET_CONFIG_ATTR_READ
-		: PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_READ;
-	const createPerm = scope === "platform"
+		: PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_READ);
+	const createPerm = permissions?.create ?? (scope === "platform"
 		? PLATFORM_TICKET_CONFIG_ATTR_CREATE
-		: PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_CREATE;
-	const updatePerm = scope === "platform"
+		: PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_CREATE);
+	const updatePerm = permissions?.update ?? (scope === "platform"
 		? PLATFORM_TICKET_CONFIG_ATTR_UPDATE
-		: PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_UPDATE;
-	const deletePerm = scope === "platform"
+		: PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_UPDATE);
+	const deletePerm = permissions?.delete ?? (scope === "platform"
 		? PLATFORM_TICKET_CONFIG_ATTR_DELETE
-		: PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_DELETE;
+		: PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_DELETE);
 
 	const [loading, setLoading] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
@@ -74,6 +85,9 @@ export function TicketAttributesPanel({ scope, domainId }: TicketAttributesPanel
 	const [keyword, setKeyword] = useState("");
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editing, setEditing] = useState<TicketAttribute | null>(null);
+	const [addFromPlatformOpen, setAddFromPlatformOpen] = useState(false);
+	const [importing, setImporting] = useState(false);
+	const [excludeCatalog, setExcludeCatalog] = useState<TicketAttribute[]>([]);
 
 	const loadAttributes = useCallback(async (nextPage = page, nextPageSize = pageSize, nextKeyword = keyword) => {
 		if (scope === "domain" && !domainId) {
@@ -116,6 +130,67 @@ export function TicketAttributesPanel({ scope, domainId }: TicketAttributesPanel
 	const handleResetSearch = useCallback(() => {
 		void loadAttributes(1, pageSize, "");
 	}, [loadAttributes, pageSize]);
+
+	const excludePlatformAttributeIds = useMemo(() => {
+		const ids = new Set<string>();
+		for (const attr of excludeCatalog) {
+			if (attr.source_attribute_id) {
+				ids.add(attr.source_attribute_id);
+			}
+		}
+		return ids;
+	}, [excludeCatalog]);
+
+	const excludeAttributeNames = useMemo(() => {
+		const names = new Set<string>();
+		for (const attr of excludeCatalog) {
+			names.add(attr.name);
+		}
+		return names;
+	}, [excludeCatalog]);
+
+	const excludeAttributeSystemKeys = useMemo(() => {
+		const keys = new Set<string>();
+		for (const attr of excludeCatalog) {
+			if (attr.system_key) {
+				keys.add(attr.system_key);
+			}
+		}
+		return keys;
+	}, [excludeCatalog]);
+
+	const handleOpenAddFromPlatform = async () => {
+		if (!domainId) {
+			return;
+		}
+		try {
+			const result = await fetchDomainTicketAttributes(domainId);
+			setExcludeCatalog(result.items);
+			setAddFromPlatformOpen(true);
+		}
+		catch (error) {
+			message.error(toErrorMessage(error));
+		}
+	};
+
+	const handleImportFromPlatform = async (platformAttributeIds: string[]) => {
+		if (scope !== "domain" || !domainId) {
+			return;
+		}
+		setImporting(true);
+		try {
+			const created = await importDomainTicketAttributesFromPlatform(domainId, platformAttributeIds);
+			message.success(created.length > 1 ? `已添加 ${created.length} 个属性` : "属性已添加");
+			setAddFromPlatformOpen(false);
+			await loadAttributes();
+		}
+		catch (error) {
+			message.error(toErrorMessage(error));
+		}
+		finally {
+			setImporting(false);
+		}
+	};
 
 	const handleReorder = async (nextRows: TicketAttribute[]) => {
 		setRows(nextRows);
@@ -248,13 +323,36 @@ export function TicketAttributesPanel({ scope, domainId }: TicketAttributesPanel
 						<Space>
 							<Button icon={<ReloadOutlined />} onClick={() => void loadAttributes()}>刷新</Button>
 							<AuthGuarded auth={createPerm} fallback={null}>
-								<Button type="primary" icon={<PlusOutlined />} onClick={() => {
-									setEditing(null);
-									setModalOpen(true);
-								}}
-								>
-									新建
-								</Button>
+								{scope === "domain"
+									? (
+										<Space>
+											<Button icon={<PlusOutlined />} onClick={() => void handleOpenAddFromPlatform()}>
+												添加属性
+											</Button>
+											<Button
+												type="primary"
+												icon={<PlusOutlined />}
+												onClick={() => {
+													setEditing(null);
+													setModalOpen(true);
+												}}
+											>
+												创建属性
+											</Button>
+										</Space>
+									)
+									: (
+										<Button
+											type="primary"
+											icon={<PlusOutlined />}
+											onClick={() => {
+												setEditing(null);
+												setModalOpen(true);
+											}}
+										>
+											新建
+										</Button>
+									)}
 							</AuthGuarded>
 						</Space>
 					)}
@@ -287,6 +385,19 @@ export function TicketAttributesPanel({ scope, domainId }: TicketAttributesPanel
 					}}
 					onSubmit={handleSubmit}
 				/>
+				{scope === "domain"
+					? (
+						<DomainAddPlatformTicketAttributesModal
+							open={addFromPlatformOpen}
+							excludePlatformAttributeIds={excludePlatformAttributeIds}
+							excludeNames={excludeAttributeNames}
+							excludeSystemKeys={excludeAttributeSystemKeys}
+							submitting={importing}
+							onCancel={() => setAddFromPlatformOpen(false)}
+							onAdd={handleImportFromPlatform}
+						/>
+					)
+					: null}
 			</div>
 		</AuthGuarded>
 	);

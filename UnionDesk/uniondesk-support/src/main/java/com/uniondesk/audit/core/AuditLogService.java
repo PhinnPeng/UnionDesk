@@ -199,6 +199,7 @@ public class AuditLogService {
                 po.getBusinessDomainId(),
                 po.getDomainName(),
                 po.getLoginName(),
+                po.getLoginIdentifierType(),
                 po.getPortalType(),
                 po.getClientCode(),
                 po.getEventType(),

@@ -50,6 +50,10 @@ public class LoginAuditService {
         return loginAuditRepository.findSubjectIdByCustomerAccountId(customerAccountId);
     }
 
+    public Long resolveStaffSubjectId(long staffAccountId) {
+        return loginAuditRepository.findSubjectIdByStaffAccountId(staffAccountId);
+    }
+
     public String maskIdentifier(String identifier, String identifierType) {
         if (!StringUtils.hasText(identifier)) {
             return "***";

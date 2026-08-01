@@ -16,11 +16,27 @@ const TEMPLATE_ICONS: Record<TicketTypeTemplateKey, ReactNode> = {
 };
 
 interface CreateTicketTypeDropdownProps {
-	onSelect: (key: TicketTypeTemplateKey) => void;
+	onSelect: (key: TicketTypeTemplateKey) => void
+	/** 受控展开（用于跨页导航后自动打开） */
+	open?: boolean
+	onOpenChange?: (open: boolean) => void
 }
 
-export function CreateTicketTypeDropdown({ onSelect }: CreateTicketTypeDropdownProps) {
-	const [open, setOpen] = useState(false);
+export function CreateTicketTypeDropdown({
+	onSelect,
+	open: openProp,
+	onOpenChange,
+}: CreateTicketTypeDropdownProps) {
+	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+	const controlled = openProp !== undefined;
+	const open = controlled ? openProp : uncontrolledOpen;
+
+	const setOpen = (next: boolean) => {
+		if (!controlled) {
+			setUncontrolledOpen(next);
+		}
+		onOpenChange?.(next);
+	};
 
 	const dropdownRender = () => (
 		<div className="create-ticket-type-dropdown__panel">

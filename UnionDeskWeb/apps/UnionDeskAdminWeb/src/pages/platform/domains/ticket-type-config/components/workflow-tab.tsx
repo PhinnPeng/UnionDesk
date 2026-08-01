@@ -52,6 +52,8 @@ interface WorkflowTabProps {
 	availableAttributes: TicketAttribute[];
 	slots: Array<TicketAttributeSlot & { dragId: string }>;
 	canUpdate?: boolean;
+	/** 覆盖默认写权限（业务域端传入 domain.ticket_type.update） */
+	updatePermission?: string;
 	onRefresh: () => void;
 }
 
@@ -62,6 +64,7 @@ export function WorkflowTab({
 	availableAttributes,
 	slots,
 	canUpdate = true,
+	updatePermission = PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE,
 	onRefresh,
 }: WorkflowTabProps) {
 	const { message, modal } = App.useApp();
@@ -421,7 +424,7 @@ export function WorkflowTab({
 				</div>
 				{/* 操作按钮 */}
 				<div className="toolbar-actions">
-					<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE} fallback={null}>
+					<AuthGuarded auth={updatePermission} fallback={null}>
 						<button
 							className="action-btn"
 							disabled={!canUpdate}
@@ -431,7 +434,7 @@ export function WorkflowTab({
 							添加状态
 						</button>
 					</AuthGuarded>
-					<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE} fallback={null}>
+					<AuthGuarded auth={updatePermission} fallback={null}>
 						<button
 							className="action-btn"
 							disabled={!canUpdate || statusFlow.states.length < 2}
@@ -441,7 +444,7 @@ export function WorkflowTab({
 							创建步骤
 						</button>
 					</AuthGuarded>
-					<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE} fallback={null}>
+					<AuthGuarded auth={updatePermission} fallback={null}>
 						<Dropdown
 							overlayClassName="rule-kind-dropdown"
 							menu={{
@@ -512,7 +515,7 @@ export function WorkflowTab({
 						取消
 					</button>
 				)}
-				<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE} fallback={null}>
+				<AuthGuarded auth={updatePermission} fallback={null}>
 					<button
 						className={`apply-btn ${isDirty ? "enabled" : ""}`}
 						disabled={!isDirty || saving}

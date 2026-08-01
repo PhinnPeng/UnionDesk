@@ -10,6 +10,7 @@ public class LoginLogViewPo {
     private Long businessDomainId;
     private String domainName;
     private String loginName;
+    private String loginIdentifierType;
     private String portalType;
     private String clientCode;
     private String eventType;
@@ -65,6 +66,14 @@ public class LoginLogViewPo {
 
     public void setLoginName(String loginName) {
         this.loginName = loginName;
+    }
+
+    public String getLoginIdentifierType() {
+        return loginIdentifierType;
+    }
+
+    public void setLoginIdentifierType(String loginIdentifierType) {
+        this.loginIdentifierType = loginIdentifierType;
     }
 
     public String getPortalType() {

@@ -6,6 +6,10 @@ import type {
 	LoginResponse,
 	PermissionSnapshot,
 	SessionView,
+	SetDefaultDomainRequest,
+	SetDefaultDomainResponse,
+	SwitchDomainRequest,
+	SwitchDomainResponse,
 } from "@uniondesk/shared";
 
 import type { LoginInfo } from "#src/api/user/types";
@@ -20,6 +24,10 @@ export type {
 	LoginResponse,
 	PermissionSnapshot,
 	SessionView,
+	SetDefaultDomainRequest,
+	SetDefaultDomainResponse,
+	SwitchDomainRequest,
+	SwitchDomainResponse,
 };
 
 export function fetchLoginConfig(): Promise<LoginConfig> {
@@ -39,8 +47,24 @@ export function verifyCaptcha(data: CaptchaVerifyRequest): Promise<CaptchaVerify
 	});
 }
 
-export function fetchPermissionSnapshot(): Promise<PermissionSnapshot> {
-	return requestBackendJson<PermissionSnapshot>("v1/iam/me/permission-snapshot");
+export type PermissionSnapshotQuery = {
+	/** platform | business — 强制快照菜单/动作 scope（进端契约） */
+	menuScope?: "platform" | "business"
+	/** 当前业务域；业务端拉包时传入 */
+	domainId?: number | string
+};
+
+export function fetchPermissionSnapshot(query?: PermissionSnapshotQuery): Promise<PermissionSnapshot> {
+	const params = new URLSearchParams();
+	if (query?.menuScope) {
+		params.set("menuScope", query.menuScope);
+	}
+	if (query?.domainId != null && String(query.domainId).trim() !== "" && Number(query.domainId) > 0) {
+		params.set("domainId", String(query.domainId));
+	}
+	const qs = params.toString();
+	const path = qs ? `v1/iam/me/permission-snapshot?${qs}` : "v1/iam/me/permission-snapshot";
+	return requestBackendJson<PermissionSnapshot>(path);
 }
 
 export function fetchSessionStatus(): Promise<SessionView> {
@@ -59,4 +83,18 @@ export function fetchLogout(): Promise<void> {
 	return requestBackendJson<void>("v1/auth/logout", {
 		method: "POST",
 	}).then(() => undefined);
+}
+
+export function fetchSetDefaultDomain(data: SetDefaultDomainRequest): Promise<SetDefaultDomainResponse> {
+	return requestBackendJson<SetDefaultDomainResponse>("v1/auth/me/default-domain", {
+		method: "PUT",
+		json: data,
+	});
+}
+
+export function fetchSwitchDomain(data: SwitchDomainRequest): Promise<SwitchDomainResponse> {
+	return requestBackendJson<SwitchDomainResponse>("v1/auth/switch-domain", {
+		method: "POST",
+		json: data,
+	});
 }

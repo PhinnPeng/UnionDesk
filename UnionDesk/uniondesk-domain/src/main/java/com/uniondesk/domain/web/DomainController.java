@@ -56,7 +56,11 @@ public class DomainController {
     }
 
     @GetMapping("/admin/domains/{id}")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_ENTRY)
+    @RequirePermission({
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_ENTRY,
+            PermissionCodes.DOMAIN_GENERAL_READ,
+            PermissionCodes.DOMAIN_INVITATION_CODE_READ
+    })
     public DomainDtos.DomainView getAdmin(@PathVariable long id) {
         return domainService.getDomain(id);
     }
@@ -71,7 +75,8 @@ public class DomainController {
     @PutMapping("/admin/domains/{id}")
     @RequirePermission({
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE,
-            PermissionCodes.PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE_STATUS
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE_STATUS,
+            PermissionCodes.DOMAIN_GENERAL_UPDATE
     })
     public DomainDtos.DomainView updateAdmin(@PathVariable long id, @Valid @RequestBody DomainDtos.UpdateDomainRequest request) {
         return domainService.updateDomain(id, request);

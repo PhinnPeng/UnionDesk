@@ -102,8 +102,9 @@
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
+		/* 左上 → 右下（\），上角「结束状态」、下角「开始状态」 */
 		background: linear-gradient(
-			to bottom right,
+			to bottom left,
 			transparent calc(50% - 0.5px),
 			var(--ant-color-border-secondary) calc(50% - 0.5px),
 			var(--ant-color-border-secondary) calc(50% + 0.5px),

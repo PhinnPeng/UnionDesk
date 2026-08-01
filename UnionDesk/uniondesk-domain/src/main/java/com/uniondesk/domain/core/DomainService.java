@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,18 +37,21 @@ public class DomainService {
     private final DomainBootstrapService domainBootstrapService;
     private final IamService iamService;
     private final AuditLogWriter auditLogWriter;
+    private final ObjectProvider<DomainTeamTemplateApplier> teamTemplateApplier;
 
     public DomainService(
             DomainRepository domainRepository,
             ObjectMapper objectMapper,
             DomainBootstrapService domainBootstrapService,
             IamService iamService,
-            AuditLogWriter auditLogWriter) {
+            AuditLogWriter auditLogWriter,
+            ObjectProvider<DomainTeamTemplateApplier> teamTemplateApplier) {
         this.domainRepository = domainRepository;
         this.objectMapper = objectMapper;
         this.domainBootstrapService = domainBootstrapService;
         this.iamService = iamService;
         this.auditLogWriter = auditLogWriter;
+        this.teamTemplateApplier = teamTemplateApplier;
     }
 
     public PageResult<DomainDtos.DomainView> listAdminDomains(
@@ -115,6 +119,13 @@ public class DomainService {
         }
 
         domainBootstrapService.bootstrapNewDomain(id, context.userId());
+        if (request.team_template_id() != null) {
+            DomainTeamTemplateApplier applier = teamTemplateApplier.getIfAvailable();
+            if (applier == null) {
+                throw new IllegalStateException("团队模板套用服务不可用");
+            }
+            applier.applyOnDomainCreate(id, request.team_template_id(), context.userId());
+        }
         auditLogWriter.write(
                 id,
                 context.userId(),
@@ -167,7 +178,10 @@ public class DomainService {
         }
         if ((profileChanging || policyChanging)
                 && !iamService.hasAnyPermission(
-                        context, List.of(PermissionCodes.PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE))) {
+                        context,
+                        List.of(
+                                PermissionCodes.PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE,
+                                PermissionCodes.DOMAIN_GENERAL_UPDATE))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN.message());
         }
 

@@ -53,6 +53,35 @@ public class TicketStatusRepository {
         return max == null ? 0 : max + 1;
     }
 
+    public List<TicketStatusPo> findAllDomain(long domainId, String keywordLike) {
+        return mapper.findByDomain(domainId, keywordLike);
+    }
+
+    public long countDomain(long domainId, String keywordLike) {
+        return mapper.countByDomain(domainId, keywordLike);
+    }
+
+    public List<TicketStatusPo> findPageDomain(long domainId, String keywordLike, int limit, long offset) {
+        return mapper.findPageByDomain(domainId, keywordLike, limit, offset);
+    }
+
+    public TicketStatusPo findDomainByCode(long domainId, String code) {
+        return mapper.findDomainByCode(domainId, code);
+    }
+
+    public TicketStatusPo findDomainByName(long domainId, String name) {
+        return mapper.findDomainByName(domainId, name);
+    }
+
+    public TicketStatusPo findDomainBySourceStatusId(long domainId, long sourceStatusId) {
+        return mapper.findDomainBySourceStatusId(domainId, sourceStatusId);
+    }
+
+    public int nextSortOrderDomain(long domainId) {
+        Integer max = mapper.findMaxSortOrderDomain(domainId);
+        return max == null ? 0 : max + 1;
+    }
+
     public void insert(TicketStatusPo po) {
         mapper.insert(po);
     }
@@ -63,5 +92,9 @@ public class TicketStatusRepository {
 
     public int deletePlatform(long id) {
         return mapper.deleteByIdPlatform(id);
+    }
+
+    public int deleteDomain(long domainId, long id) {
+        return mapper.deleteByIdDomain(domainId, id);
     }
 }

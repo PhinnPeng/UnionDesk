@@ -24,7 +24,7 @@ import { useTabsStore } from "#src/store/tabs";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Spin, Tabs, Typography } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 
 import {
 	PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ,
@@ -39,16 +39,24 @@ const { Title } = Typography;
 
 type TabKey = "attributes" | "workflow" | "template";
 
+function parseTabKey(raw: string | null): TabKey {
+	if (raw === "workflow" || raw === "template" || raw === "attributes") {
+		return raw;
+	}
+	return "attributes";
+}
+
 export default function TicketTypeConfigPage() {
 	const { message } = App.useApp();
 	const navigate = useNavigate();
 	const { domainId: domainIdParam, typeId: typeIdParam } = useParams();
+	const [searchParams, setSearchParams] = useSearchParams();
 	const { setTableTitle, resetTableTitle } = useTabsStore();
 
 	const domainId = domainIdParam?.trim() ?? "";
 	const typeId = typeIdParam?.trim() ?? "";
 
-	const [activeTab, setActiveTab] = useState<TabKey>("attributes");
+	const [activeTab, setActiveTab] = useState<TabKey>(() => parseTabKey(searchParams.get("tab")));
 	const [loading, setLoading] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [ticketType, setTicketType] = useState<DomainTicketType | null>(null);
@@ -62,12 +70,26 @@ export default function TicketTypeConfigPage() {
 		return `/platform/domains/ticket-type-config/${encodeURIComponent(domainId)}/${encodeURIComponent(typeId)}`;
 	}, [domainId, typeId]);
 
+	useEffect(() => {
+		setActiveTab(parseTabKey(searchParams.get("tab")));
+	}, [searchParams]);
+
+	const handleTabChange = useCallback((nextTab: string) => {
+		const tab = parseTabKey(nextTab);
+		setActiveTab(tab);
+		setSearchParams((prev) => {
+			const next = new URLSearchParams(prev);
+			next.set("tab", tab);
+			return next;
+		}, { replace: true });
+	}, [setSearchParams]);
+
 	const backToTickets = useCallback(() => {
 		if (!domainId) {
 			navigate("/platform/domains");
 			return;
 		}
-		navigate(`/platform/domains/detail/${encodeURIComponent(domainId)}?tab=tickets`);
+		navigate(`/platform/domains/detail/${encodeURIComponent(domainId)}?tab=ticket_config&section=types`);
 	}, [domainId, navigate]);
 
 	const loadData = useCallback(async () => {
@@ -216,7 +238,7 @@ export default function TicketTypeConfigPage() {
 						<Tabs
 							type="card"
 							activeKey={activeTab}
-							onChange={key => setActiveTab(key as TabKey)}
+							onChange={handleTabChange}
 							items={[
 								{
 									key: "attributes",

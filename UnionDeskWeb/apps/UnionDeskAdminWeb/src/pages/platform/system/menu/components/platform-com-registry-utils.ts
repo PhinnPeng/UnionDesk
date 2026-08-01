@@ -57,10 +57,16 @@ function buildSegmentLabelHints(registry: PlatformComRegistryItem[]) {
 	for (const item of registry) {
 		const valueSegments = splitValueSegments(item.value);
 		const labelSegments = splitLabelSegments(item.label);
+		const labelsAlignWithPath = labelSegments.length === valueSegments.length;
 
 		for (let index = 0; index < valueSegments.length; index += 1) {
 			const prefix = valueSegments.slice(0, index + 1).join("/");
-			const hintedLabel = labelSegments[index] ?? labelSegments[labelSegments.length - 1];
+			const isLeaf = index === valueSegments.length - 1;
+			// 仅在 label 分段与 path 对齐时给中间节点打中文 hint；
+			// 扁平 label（如「运营概览」↔ domain/overview）只标注叶子，中间级回退为 path segment。
+			const hintedLabel = labelsAlignWithPath
+				? labelSegments[index]
+				: (isLeaf ? (labelSegments[labelSegments.length - 1] ?? item.label) : undefined);
 			if (hintedLabel && !hints.has(prefix)) {
 				hints.set(prefix, hintedLabel);
 			}

@@ -46,7 +46,7 @@ export default function PlatformTicketTypeFlowConfig() {
 			navigate("/platform/domains");
 			return;
 		}
-		navigate(`/platform/domains/detail/${encodeURIComponent(domainId)}?tab=tickets`);
+		navigate(`/platform/domains/detail/${encodeURIComponent(domainId)}?tab=ticket_config&section=types`);
 	}, [domainId, navigate]);
 
 	const loadTicketType = useCallback(async () => {

@@ -25,4 +25,8 @@ public class LoginAuditRepository {
     public Long findSubjectIdByCustomerAccountId(long customerAccountId) {
         return mapper.selectSubjectIdByCustomerAccountId(customerAccountId);
     }
+
+    public Long findSubjectIdByStaffAccountId(long staffAccountId) {
+        return mapper.selectSubjectIdByStaffAccountId(staffAccountId);
+    }
 }

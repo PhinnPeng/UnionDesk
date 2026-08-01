@@ -1,0 +1,14 @@
+{
+  "change": "audit-log-semantics",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "9548b955094baa7d6fb26804c0d2583096ac2e6d1dad7458bee479557c7f6bdc",
+  "files": [
+    { "path": "openspec/changes/audit-log-semantics/proposal.md", "sha256": "46c69a83a85b13269487ada18a88d2bd86b57867fe752c75befee34a2cc95157" },
+    { "path": "openspec/changes/audit-log-semantics/design.md", "sha256": "e46db5e41c0d15dd39d00926bd2cb70892ab22f83694c8d032574b265958b87c" },
+    { "path": "openspec/changes/audit-log-semantics/tasks.md", "sha256": "9c65bf04baf08ec78b9a136b32da18acb34f70cca4bd532bb7f1c32867f2676f" },
+    { "path": "openspec/changes/audit-log-semantics/specs/audit-log-semantics/spec.md", "sha256": "44e782083b43f19f0cb42def5b187b210ac8f024e42d43d864441e157085e101" }
+  ]
+}

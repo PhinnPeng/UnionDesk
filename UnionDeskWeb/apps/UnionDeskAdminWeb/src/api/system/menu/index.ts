@@ -6,15 +6,43 @@ import type { MenuItemType } from "./types";
 
 export * from "./types";
 
-export function fetchMenuTree(params: { scope: "platform" | "business" }): Promise<MenuItemType[]>;
-export function fetchMenuTree(params?: { scope?: "platform" | "business" }): Promise<MenuItemType[] | Record<string, MenuItemType[]>>;
-export function fetchMenuTree(params?: { scope?: "platform" | "business" }): Promise<MenuItemType[] | Record<string, MenuItemType[]>> {
+/** 后端 `MenuTreeResultView`：始终按 platform/business 分组返回 */
+type MenuTreeResultView = {
+	platform?: MenuItemType[]
+	business?: MenuItemType[]
+};
+
+function normalizeMenuTree(
+	raw: MenuItemType[] | MenuTreeResultView | null | undefined,
+	scope?: "platform" | "business",
+): MenuItemType[] {
+	if (Array.isArray(raw)) {
+		return raw;
+	}
+	if (!raw || typeof raw !== "object") {
+		return [];
+	}
+	const platform = Array.isArray(raw.platform) ? raw.platform : [];
+	const business = Array.isArray(raw.business) ? raw.business : [];
+	if (scope === "platform") {
+		return platform;
+	}
+	if (scope === "business") {
+		return business;
+	}
+	return [...platform, ...business];
+}
+
+export async function fetchMenuTree(params: { scope: "platform" | "business" }): Promise<MenuItemType[]>;
+export async function fetchMenuTree(params?: { scope?: "platform" | "business" }): Promise<MenuItemType[]>;
+export async function fetchMenuTree(params?: { scope?: "platform" | "business" }): Promise<MenuItemType[]> {
 	const query = new URLSearchParams();
 	if (params?.scope) {
 		query.set("scope", params.scope);
 	}
 	const path = query.size > 0 ? `v1/iam/menus/tree?${query.toString()}` : "v1/iam/menus/tree";
-	return requestBackendJson<MenuItemType[] | Record<string, MenuItemType[]>>(path);
+	const raw = await requestBackendJson<MenuItemType[] | MenuTreeResultView>(path);
+	return normalizeMenuTree(raw, params?.scope);
 }
 
 export function fetchCreateMenu(data: CreateMenuPayload): Promise<unknown> {

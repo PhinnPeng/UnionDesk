@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>侧栏对齐示意 · UnionDesk</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #161a22;
+      --panel-2: #1c2230;
+      --line: #2a3344;
+      --text: #e8ecf4;
+      --muted: #8b95a8;
+      --accent: #3b82f6;
+      --warn: #d97706;
+      --ok: #16a34a;
+      --header: 48px;
+      --tab: 35px;
+      --trigger: 40px;
+      --chrome: calc(var(--header) + var(--tab));
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .page { max-width: 980px; margin: 0 auto; padding: 24px 20px 48px; }
+    h1 { font-size: 22px; font-weight: 650; margin: 0 0 8px; }
+    .sub { color: var(--muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .group + .group { margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--line); }
+    button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    button:hover { border-color: #3d4a63; }
+    button.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 720px) {
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .group + .group { margin-left: 0; padding-left: 0; border-left: none; }
+    }
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .stat .label { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    .stat .value { font-size: 18px; font-weight: 650; }
+    .stat.warn .value { color: var(--warn); }
+    .stat.ok .value { color: var(--ok); }
+    .stage-wrap {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .stage-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .stage-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
+    .pills { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pill {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+    }
+    .pill.ok { color: #bbf7d0; border-color: #166534; background: #052e16; }
+    .pill.warn { color: #fde68a; border-color: #92400e; background: #1c1408; }
+    .blurb { padding: 0 14px 12px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .stage {
+      position: relative;
+      height: 280px;
+      margin: 0 14px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #0b0d12;
+    }
+    .sider {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: var(--sider-w);
+      background: var(--panel-2);
+      border-right: 1px solid var(--line);
+      transition: width .25s ease;
+    }
+    .brand {
+      height: var(--brand-h);
+      border-bottom: 2px solid var(--brand-line);
+      display: flex;
+      flex-direction: column;
+      transition: height .25s ease;
+    }
+    .logo-row {
+      height: var(--header);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .logo {
+      width: 20px; height: 20px; border-radius: 4px; background: var(--accent);
+    }
+    .logo-title { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; }
+    .trigger-row {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .menu { padding: 10px 0; }
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #3a455a; margin: 14px auto;
+    }
+    .menu.expanded .dot { margin-left: 18px; }
+    .main {
+      position: absolute;
+      left: var(--sider-w); right: 0; top: 0; bottom: 0;
+      transition: left .25s ease;
+    }
+    .header {
+      height: var(--header);
+      display: flex; align-items: center;
+      padding: 0 16px;
+      font-weight: 650;
+      border-bottom: 1px solid var(--line);
+      background: #12161e;
+    }
+    .tabs {
+      height: var(--tab);
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 16px;
+      border-bottom: 2px solid var(--chrome-line);
+      background: #12161e;
+    }
+    .tab {
+      height: 22px; padding: 0 10px; border-radius: 4px;
+      font-size: 12px; color: var(--muted); background: #1a2230;
+      display: flex; align-items: center;
+    }
+    .tab.active { background: var(--accent); color: #fff; }
+    .content {
+      position: absolute;
+      left: 0; right: 0; top: var(--chrome); bottom: 0;
+      padding: var(--pad);
+      transition: padding .2s ease;
+    }
+    .shell {
+      height: 100%;
+      display: flex;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .section {
+      width: 108px;
+      border-right: 1px solid var(--line);
+      background: var(--panel-2);
+      padding: 10px 6px;
+    }
+    .sec-item {
+      font-size: 12px;
+      padding: 8px 8px;
+      border-radius: 4px;
+      color: var(--muted);
+      border-left: 3px solid transparent;
+    }
+    .sec-item.active {
+      background: rgba(59,130,246,.18);
+      color: #93c5fd;
+      border-left-color: var(--accent);
+    }
+    .list { flex: 1; padding: 14px; color: var(--muted); font-size: 13px; }
+    .guide {
+      position: absolute;
+      left: 0; right: 0;
+      top: var(--chrome);
+      border-top: 1px dashed var(--accent);
+      opacity: .55;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .delta {
+      position: absolute;
+      left: calc(var(--sider-w) / 2 - 4px);
+      width: 2px;
+      background: var(--warn);
+      z-index: 6;
+      pointer-events: none;
+    }
+    .delta-label {
+      position: absolute;
+      left: calc(var(--sider-w) / 2 + 8px);
+      color: var(--warn);
+      font-size: 11px;
+      white-space: nowrap;
+      z-index: 6;
+      pointer-events: none;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+    @media (max-width: 720px) { .cards { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+    }
+    .card.active { border-color: var(--accent); }
+    .card h3 { margin: 0 0 8px; font-size: 14px; }
+    .card li { color: var(--muted); font-size: 12px; margin: 4px 0; line-height: 1.4; }
+    .note {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid #1e3a5f;
+      background: #0c1a2e;
+      color: #bfdbfe;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>侧栏对齐 · 浏览器示意</h1>
+    <p class="sub">对照现状 / 方案 B / 方案 A+B。切换收起·展开，观察侧栏顶区分割线与页签底边是否贯通，以及内容壳是否满宽。</p>
+
+    <div class="toolbar">
+      <div class="group" role="group" aria-label="侧栏状态">
+        <button type="button" id="btn-collapsed" class="active" data-mode="collapsed">侧栏收起</button>
+        <button type="button" id="btn-expanded" data-mode="expanded">侧栏展开</button>
+      </div>
+      <div class="group" role="group" aria-label="方案">
+        <button type="button" id="btn-current" class="active" data-scheme="current">现状</button>
+        <button type="button" id="btn-b" data-scheme="b">方案 B</button>
+        <button type="button" id="btn-ab" data-scheme="ab">方案 A+B</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="label">侧栏状态</div><div class="value" id="stat-mode">收起</div></div>
+      <div class="stat" id="stat-brand-wrap"><div class="label">顶区高度</div><div class="value" id="stat-brand">88px</div></div>
+      <div class="stat" id="stat-delta-wrap"><div class="label">相对页签底 Δ</div><div class="value" id="stat-delta">5px</div></div>
+      <div class="stat" id="stat-pad-wrap"><div class="label">内容外框</div><div class="value" id="stat-pad">p-4</div></div>
+    </div>
+
+    <div class="stage-wrap">
+      <div class="stage-head">
+        <h2 id="scheme-title">现状</h2>
+        <div class="pills">
+          <span class="pill warn" id="pill-seam">分割线错位</span>
+          <span class="pill warn" id="pill-flush">内容缩进 p-4</span>
+        </div>
+      </div>
+      <p class="blurb" id="scheme-blurb">收起侧栏顶区 ≈88px（48+40），页签底边 83px；内容再套 BasicContent p-4，角接呈台阶。</p>
+      <div class="stage" id="stage" aria-label="布局线框">
+        <div class="sider" id="sider">
+          <div class="brand" id="brand">
+            <div class="logo-row">
+              <div class="logo"></div>
+              <span class="logo-title" id="logo-title" hidden>UnionDesk</span>
+            </div>
+            <div class="trigger-row" id="trigger-row">☰</div>
+          </div>
+          <div class="menu" id="menu">
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+        <div class="main" id="main">
+          <div class="header">事项配置</div>
+          <div class="tabs">
+            <div class="tab">概览</div>
+            <div class="tab active">事项配置 ×</div>
+          </div>
+          <div class="content" id="content">
+            <div class="shell">
+              <div class="section">
+                <div class="sec-item active">事项类型</div>
+                <div class="sec-item">事项属性</div>
+                <div class="sec-item">事项状态</div>
+              </div>
+              <div class="list">事项类型列表区</div>
+            </div>
+          </div>
+        </div>
+        <div class="guide" title="目标缝：顶栏+页签底边"></div>
+        <div class="delta" id="delta-bar"></div>
+        <div class="delta-label" id="delta-label"></div>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card active" data-scheme="current">
+        <h3>现状</h3>
+        <ul>
+          <li>收起顶区 = 48+40 = 88px</li>
+          <li>页签底边 = 83px → 有 Δ</li>
+          <li>BasicContent p-4 双层台阶</li>
+        </ul>
+      </div>
+      <div class="card" data-scheme="b">
+        <h3>方案 B · 满宽壳</h3>
+        <ul>
+          <li>本页 BasicContent p-0</li>
+          <li>页签 ↔ 壳左缘对齐</li>
+          <li>侧栏高度未改，收起仍有 Δ</li>
+        </ul>
+      </div>
+      <div class="card" data-scheme="ab">
+        <h3>方案 A+B · 推荐</h3>
+        <ul>
+          <li>收起顶区 = 48+35 = 83px</li>
+          <li>分割线与页签底边贯通</li>
+          <li>满宽壳 + 过渡仍跟侧栏</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="note">
+      落地建议：先做 B（事项配置页满宽，改动面小），再做 A（收起态 sidebar-brand 高度对齐 header+tabbar）。展开态顶区仍对齐顶栏 48px 即可。
+    </div>
+  </div>
+
+  <script>
+    const HEADER = 48;
+    const TAB = 35;
+    const TRIGGER = 40;
+    const CHROME = HEADER + TAB;
+
+    const meta = {
+      current: {
+        title: "现状",
+        blurb: "收起侧栏顶区 = 48+40 = 88px，页签底边 83px；内容再套 BasicContent p-4，角接呈台阶。",
+      },
+      b: {
+        title: "方案 B · 满宽壳",
+        blurb: "仅去掉内容区外框 padding，页签与事项配置壳左缘对齐；侧栏分割线仍可能与页签底边错开。",
+      },
+      ab: {
+        title: "方案 A+B · 推荐",
+        blurb: "收起顶区高度 = header+tabbar；内容满宽。分割线与页签底边贯通，收起/展开仍整齐。",
+      },
+    };
+
+    let mode = "collapsed";
+    let scheme = "current";
+
+    function brandHeight() {
+      if (mode === "expanded") return HEADER;
+      return scheme === "ab" ? CHROME : HEADER + TRIGGER;
+    }
+
+    function contentPad() {
+      return scheme === "current" ? 16 : 0;
+    }
+
+    function render() {
+      const brandH = brandHeight();
+      const pad = contentPad();
+      const siderW = mode === "collapsed" ? 56 : 148;
+      const delta = Math.abs(brandH - CHROME);
+      const seamOk = mode === "expanded" || delta <= 1;
+      const flushOk = pad === 0;
+      const alignedBrand = seamOk;
+
+      const stage = document.getElementById("stage");
+      stage.style.setProperty("--sider-w", siderW + "px");
+      stage.style.setProperty("--brand-h", brandH + "px");
+      stage.style.setProperty("--pad", pad + "px");
+      stage.style.setProperty("--radius", pad > 0 ? "8px" : "0");
+      stage.style.setProperty("--brand-line", alignedBrand ? "var(--accent)" : "#64748b");
+      stage.style.setProperty("--chrome-line", flushOk && alignedBrand ? "var(--accent)" : "#64748b");
+
+      document.getElementById("logo-title").hidden = mode === "collapsed";
+      document.getElementById("trigger-row").hidden = mode === "expanded";
+      document.getElementById("menu").classList.toggle("expanded", mode === "expanded");
+
+      document.getElementById("stat-mode").textContent = mode === "collapsed" ? "收起" : "展开";
+      document.getElementById("stat-brand").textContent = brandH + "px";
+      document.getElementById("stat-delta").textContent = mode === "expanded" ? "N/A" : delta + "px";
+      document.getElementById("stat-pad").textContent = pad === 0 ? "满宽" : "p-4";
+
+      document.getElementById("stat-brand-wrap").className = "stat" + (scheme === "ab" && mode === "collapsed" ? " ok" : "");
+      document.getElementById("stat-delta-wrap").className = "stat" + (mode === "collapsed" && delta > 1 ? " warn" : " ok");
+      document.getElementById("stat-pad-wrap").className = "stat" + (flushOk ? " ok" : " warn");
+
+      document.getElementById("scheme-title").textContent = meta[scheme].title;
+      document.getElementById("scheme-blurb").textContent = meta[scheme].blurb;
+
+      const seam = document.getElementById("pill-seam");
+      seam.textContent = seamOk ? "分割线对齐" : "分割线错位";
+      seam.className = "pill " + (seamOk ? "ok" : "warn");
+      const flush = document.getElementById("pill-flush");
+      flush.textContent = flushOk ? "内容满宽" : "内容缩进 p-4";
+      flush.className = "pill " + (flushOk ? "ok" : "warn");
+
+      const deltaBar = document.getElementById("delta-bar");
+      const deltaLabel = document.getElementById("delta-label");
+      if (mode === "collapsed" && delta > 1) {
+        const top = Math.min(brandH, CHROME);
+        const h = Math.abs(brandH - CHROME);
+        deltaBar.style.display = "block";
+        deltaBar.style.top = top + "px";
+        deltaBar.style.height = h + "px";
+        deltaLabel.style.display = "block";
+        deltaLabel.style.top = top + h / 2 - 6 + "px";
+        deltaLabel.textContent = "Δ " + delta + "px";
+      } else {
+        deltaBar.style.display = "none";
+        deltaLabel.style.display = "none";
+      }
+
+      document.querySelectorAll("[data-mode]").forEach((el) => {
+        el.classList.toggle("active", el.getAttribute("data-mode") === mode);
+      });
+      document.querySelectorAll("[data-scheme]").forEach((el) => {
+        el.classList.toggle("active", el.getAttribute("data-scheme") === scheme);
+      });
+    }
+
+    document.querySelectorAll("[data-mode]").forEach((el) => {
+      el.addEventListener("click", () => {
+        mode = el.getAttribute("data-mode");
+        render();
+      });
+    });
+    document.querySelectorAll("[data-scheme]").forEach((el) => {
+      el.addEventListener("click", () => {
+        scheme = el.getAttribute("data-scheme");
+        render();
+      });
+    });
+
+    render();
+  </script>
+</body>
+</html>

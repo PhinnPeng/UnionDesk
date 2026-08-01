@@ -30,6 +30,7 @@ public final class AuditDtos {
             Long businessDomainId,
             String domainName,
             String loginName,
+            String loginIdentifierType,
             String portalType,
             String clientCode,
             String eventType,

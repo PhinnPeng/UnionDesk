@@ -2,13 +2,14 @@ import type { ButtonProps, MenuProps } from "antd";
 
 import { BasicButton } from "#src/components/basic-button";
 import { RiAccountCircleLine } from "#src/icons";
+import { usePreferencesDrawerStore } from "#src/layout/widgets/preferences/preferences-drawer-store";
 import { loginPath } from "#src/router/extra-info";
 import { useAuthStore } from "#src/store/auth";
 import { useUserStore } from "#src/store/user";
 import { cn } from "#src/utils/cn";
 import { isWindowsOs } from "#src/utils/is-windows-os";
 
-import { LogoutOutlined } from "@ant-design/icons";
+import { LogoutOutlined, SettingOutlined } from "@ant-design/icons";
 import { useKeyPress } from "ahooks";
 import { Avatar, Dropdown } from "antd";
 import { useMemo } from "react";
@@ -20,6 +21,7 @@ export function UserMenu({ ...restProps }: ButtonProps) {
 	const { t } = useTranslation();
 	const avatar = useUserStore(state => state.avatar);
 	const logout = useAuthStore(state => state.logout);
+	const openPreferences = usePreferencesDrawerStore(state => state.openDrawer);
 
 	const onClick: MenuProps["onClick"] = async ({ key }) => {
 		if (key === "logout") {
@@ -28,6 +30,9 @@ export function UserMenu({ ...restProps }: ButtonProps) {
 		}
 		if (key === "personal-center") {
 			navigate("/personal-center/my-profile");
+		}
+		if (key === "preferences") {
+			openPreferences();
 		}
 	};
 
@@ -39,6 +44,12 @@ export function UserMenu({ ...restProps }: ButtonProps) {
 			icon: <RiAccountCircleLine />,
 			extra: `${altView}P`,
 		},
+		{
+			label: t("preferences.title"),
+			key: "preferences",
+			icon: <SettingOutlined />,
+		},
+		{ type: "divider" },
 		{
 			label: t("authority.logout"),
 			key: "logout",

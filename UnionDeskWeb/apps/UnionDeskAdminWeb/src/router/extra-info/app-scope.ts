@@ -3,30 +3,18 @@ import { useAccessStore } from "#src/store/access";
 import { useAuthStore } from "#src/store/auth";
 import { useUserStore } from "#src/store/user";
 
-import { businessHomePath, platformHomePath, platformPath } from "./route-path";
 import { resolveHomePathFromMenus } from "./resolve-home-path";
 
-export { hasPlatformRoleHint, isPlatformRoleCode, resolveHomePathFromActions, resolveHomePathFromMenus } from "./resolve-home-path";
+export {
+	appScopes,
+	getAppHomePath,
+	getAppScopeByPath,
+	isPlatformRoutePath,
+} from "./app-scope-core";
+export type { AppScope } from "./app-scope-core";
+
+export { hasPlatformRoleHint, isPlatformRoleCode, resolveDefaultHomePath, resolveHomePathFromActions, resolveHomePathFromMenus } from "./resolve-home-path";
 export type { ResolveHomePathOptions } from "./resolve-home-path";
-
-export const appScopes = {
-	business: "business",
-	platform: "platform",
-} as const;
-
-export type AppScope = typeof appScopes[keyof typeof appScopes];
-
-export function isPlatformRoutePath(pathname?: string) {
-	return typeof pathname === "string" && (pathname === platformPath || pathname.startsWith(`${platformPath}/`));
-}
-
-export function getAppScopeByPath(pathname?: string): AppScope {
-	return isPlatformRoutePath(pathname) ? appScopes.platform : appScopes.business;
-}
-
-export function getAppHomePath(scope: AppScope) {
-	return scope === appScopes.platform ? platformHomePath : businessHomePath;
-}
 
 /**
  * 解析「返回首页」目标路径，与 auth-guard 访问 `/` 时的逻辑一致。
@@ -48,13 +36,13 @@ function pickMenusForHome(): AppRouteRecordRaw[] {
 }
 
 function getHomePathContext() {
-	const { platformAccess, roles, actions } = useUserStore.getState();
+	const { platformAccess, businessDomainAccess, roles, actions } = useUserStore.getState();
 	const loginRole = useAuthStore.getState().role;
-	return { platformAccess, roles, loginRole, actions };
+	return { platformAccess, businessDomainAccess: Boolean(businessDomainAccess), roles, loginRole, actions };
 }
 
 export function resolveBackHomePath(): string {
 	const menus = pickMenusForHome();
-	const { platformAccess, roles, loginRole, actions } = getHomePathContext();
-	return resolveHomePathFromMenus(menus, platformAccess, { roles, loginRole }, actions);
+	const { platformAccess, businessDomainAccess, roles, loginRole, actions } = getHomePathContext();
+	return resolveHomePathFromMenus(menus, platformAccess, { roles, loginRole }, actions, businessDomainAccess);
 }

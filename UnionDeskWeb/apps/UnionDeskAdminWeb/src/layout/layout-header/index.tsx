@@ -44,6 +44,8 @@ export default function LayoutHeader({ className, children }: LayoutHeaderProps)
 	const isMaximize = useTabsStore(state => state[appScope].isMaximize);
 	const { isTopNav, isMixedNav } = useLayout();
 	const isFixedDarkTheme = isDark || (sidebarTheme === "dark" && (isMixedNav || isTopNav));
+	/** 有侧栏/移动端抽屉底部坞时入口在侧栏；纯顶栏导航仍保留顶栏入口 */
+	const showHeaderAccountEntries = isTopNav;
 
 	return (
 		<ConfigProvider
@@ -84,13 +86,14 @@ export default function LayoutHeader({ className, children }: LayoutHeaderProps)
 
 				<div className="flex items-center">
 					<GlobalSearch />
-					<Preferences {...buttonProps} />
+					{/* 抽屉始终挂载；由用户菜单打开，顶栏不再展示设置按钮 */}
+					<Preferences hideTrigger />
 					<ThemeButton {...buttonProps} />
 					<LanguageButton {...buttonProps} />
 					<FullscreenButton {...buttonProps} target={document.documentElement} />
 					<NotificationContainer {...buttonProps} />
-					<PlatformEntryButton {...buttonProps} />
-					<UserMenu {...buttonProps} />
+					{showHeaderAccountEntries ? <PlatformEntryButton {...buttonProps} /> : null}
+					{showHeaderAccountEntries ? <UserMenu {...buttonProps} /> : null}
 				</div>
 			</header>
 		</ConfigProvider>
