@@ -38,3 +38,37 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 2: Archive domain onboarding and settings hub
+
+**Date**: 2026-08-03
+**Task**: Archive domain onboarding and settings hub
+**Branch**: `master`
+
+### Summary
+
+Archived two completed Admin tasks: domain onboarding write/CRUD and business settings/customers sidebar hub. Left CustomerWeb portal WIP uncommitted.
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c8e5ecf` | (see git log) |
+| `0a50d86` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
