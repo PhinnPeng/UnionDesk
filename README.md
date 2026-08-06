@@ -93,26 +93,77 @@ MVP 范围详见 [`docs/product/prd.md`](docs/product/prd.md) §1.4；迭代排�
 3. 通知模板（站内 → 邮件/短信）。
 4. OpenAPI 驱动的前端类型化 API Client。
 
-## 7. 快速开始（参考）
+## 7. 本地开发（启动与调试）
 
-> **开发环境已部署时，不需要重复部署中间件。**  
-> 仓库内 `docker-compose.yml` **仅演示** compose 结构，日常联调**不要**以此为准重复 `docker compose up`。连接信息见 [`docs/product/sprint-0-plan.md`](docs/product/sprint-0-plan.md) §联调环境。
+> **开发环境中间件已部署，不需要重复部署。**  
+> 仓库内 `docker-compose.yml` **仅演示** compose 结构，日常联调**不要**以此为准重复 `docker compose up`。连接信息见 [`docs/product/sprint-0-plan.md`](docs/product/sprint-0-plan.md) §3 联调环境。
+
+### 7.1 前置条件
+
+| 依赖 | 要求 | 说明 |
+| --- | --- | --- |
+| JDK | 21+ | 后端 Spring Boot 3.x |
+| Node.js + pnpm | pnpm ≥ 10 | 前端 Monorepo（`UnionDeskWeb/`） |
+| 中间件 | 已部署可用 | MySQL `127.0.0.1:30306`、Redis `127.0.0.1:30379`、MinIO `127.0.0.1:30090` |
+
+后端启动依赖数据库，中间件未就绪时会等待约 30s 后启动失败（`Communications link failure`）。启动前可先确认端口在监听：
 
 ```powershell
-# 后端（库 uniondesk，见 UnionDesk/src/main/resources/application.yml）
-cd UnionDesk
-.\mvnw.cmd spring-boot:run
-
-# 管理端（S0/S1 重点）
-cd UnionDeskWeb
-pnpm install
-pnpm -C apps/UnionDeskAdminWeb dev
-
-# 客户端（可选）
-pnpm -C apps/UnionDeskCustomerWeb dev
+Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in 30306, 30090 }
 ```
 
-验证：`GET http://127.0.0.1:8080/actuator/health` → `{"status":"UP"}`。
+### 7.2 后端（Spring Boot，端口 8080）
+
+```powershell
+cd UnionDesk
+.\mvnw.cmd -pl uniondesk-app spring-boot:run
+```
+
+> 注意：主类在 `uniondesk-app` 模块，必须在命令中带 `-pl uniondesk-app`（或进入该模块目录执行），否则报 `Unable to find a suitable main class`。
+
+- 验证：`GET http://127.0.0.1:8080/actuator/health` → `{"success":true,"data":{"status":"UP"}}`
+- 启动成功标志：日志出现 `Started UnionDeskApplication`；正常冷启动约 8~10s（Maven 解析 + Spring 上下文 + Flyway 迁移）。
+- 日志：`UnionDesk/logs/`（Logback 滚动文件）。
+- JRebel 热部署：设置 `JREBEL_HOME` 后执行 `UnionDesk/scripts/run-with-jrebel.ps1`，详见 [`UnionDesk/scripts/README.md`](UnionDesk/scripts/README.md)。
+
+### 7.3 前端（Vite）
+
+首次安装依赖（仅一次）：
+
+```powershell
+cd UnionDeskWeb
+pnpm install
+```
+
+| 应用 | 启动命令 | 访问地址 |
+| --- | --- | --- |
+| 管理端（S0/S1 重点） | `pnpm -C apps/UnionDeskAdminWeb dev`（或 `pnpm dev:admin`） | http://127.0.0.1:3333 |
+| 客户端 | `pnpm -C apps/UnionDeskCustomerWeb dev`（或 `pnpm dev:customer`） | http://localhost:5173 |
+
+### 7.4 质量门禁与调试
+
+前端（在 `UnionDeskWeb/` 下）：
+
+```powershell
+pnpm run check:utf8       # 编码检查（提交前必跑）
+pnpm run lint:admin       # 管理端 lint
+pnpm run typecheck:admin  # 管理端类型检查
+pnpm run build:admin      # 管理端构建
+pnpm -C apps/UnionDeskCustomerWeb test:run   # 客户端单测（vitest）
+```
+
+后端：`UnionDesk` 目录下 `.\mvnw.cmd test`。
+
+联调/运维脚本（数据库备份 `backup-db.ps1`、Flyway 一致性检查 `check-flyway.ps1`、JRebel 启动 `run-with-jrebel.ps1`）清单见 [`UnionDesk/scripts/README.md`](UnionDesk/scripts/README.md)。
+
+### 7.5 常见问题
+
+| 现象 | 原因与处理 |
+| --- | --- |
+| 后端启动报 `Communications link failure` | 中间件未就绪：确认 30306/30090 端口在监听后重试 |
+| `spring-boot:run` 报 `Unable to find a suitable main class` | 在 UnionDesk 根目录直接执行所致，须加 `-pl uniondesk-app`（见 §7.2） |
+| 8080 被占用且 health 无响应 | 残留僵尸 java 进程：`Get-Process java` 确认后 `Stop-Process -Id <pid> -Force`，再重启 |
+| 客户端 5173 无法访问 | Vite 默认绑定 IPv6 `localhost`，请用 `http://localhost:5173`（勿用 `127.0.0.1`） |
 
 ## 8. 参考
 
