@@ -1,5 +1,6 @@
 package com.uniondesk.domain.core;
 
+import com.uniondesk.auth.core.AuthVersionService;
 import com.uniondesk.common.web.PageResult;
 import com.uniondesk.domain.entity.DomainCustomerPo;
 import com.uniondesk.domain.entity.StaffAccountPo;
@@ -8,6 +9,7 @@ import com.uniondesk.domain.web.DomainCustomerDtos;
 import com.uniondesk.domain.web.DomainDtos;
 import com.uniondesk.iam.core.CustomerAccountService;
 import com.uniondesk.iam.core.IdentitySubjectService;
+import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -19,23 +21,29 @@ import org.springframework.util.StringUtils;
 @Service
 public class DomainCustomerService {
 
+    private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    private static final int PASSWORD_LENGTH = 12;
+
     private final DomainCustomerRepository domainCustomerRepository;
     private final DomainService domainService;
     private final Clock clock;
     private final IdentitySubjectService identitySubjectService;
     private final CustomerAccountService customerAccountService;
+    private final AuthVersionService authVersionService;
 
     public DomainCustomerService(
             DomainCustomerRepository domainCustomerRepository,
             DomainService domainService,
             Clock clock,
             IdentitySubjectService identitySubjectService,
-            CustomerAccountService customerAccountService) {
+            CustomerAccountService customerAccountService,
+            AuthVersionService authVersionService) {
         this.domainCustomerRepository = domainCustomerRepository;
         this.domainService = domainService;
         this.clock = clock;
         this.identitySubjectService = identitySubjectService;
         this.customerAccountService = customerAccountService;
+        this.authVersionService = authVersionService;
     }
 
     public PageResult<DomainCustomerDtos.DomainCustomerView> listCustomers(
@@ -143,6 +151,25 @@ public class DomainCustomerService {
                 "disabled".equals(status) ? now : null,
                 current.created_at(),
                 now);
+    }
+
+    @Transactional
+    public DomainCustomerDtos.ResetCustomerPasswordResponse resetCustomerPassword(long domainId, long customerId) {
+        loadDomain(domainId);
+        DomainCustomerDtos.DomainCustomerView customer = loadCustomerById(domainId, customerId);
+        String rawPassword = generateRandomPassword();
+        customerAccountService.resetPassword(customer.customer_account_id(), rawPassword);
+        authVersionService.incrementVersion(customer.customer_account_id(), "customer");
+        return new DomainCustomerDtos.ResetCustomerPasswordResponse(rawPassword, true);
+    }
+
+    private String generateRandomPassword() {
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(PASSWORD_LENGTH);
+        for (int i = 0; i < PASSWORD_LENGTH; i++) {
+            sb.append(PASSWORD_CHARS.charAt(random.nextInt(PASSWORD_CHARS.length())));
+        }
+        return sb.toString();
     }
 
     private DomainCustomerDtos.DomainCustomerView loadCustomerById(long domainId, long customerId) {

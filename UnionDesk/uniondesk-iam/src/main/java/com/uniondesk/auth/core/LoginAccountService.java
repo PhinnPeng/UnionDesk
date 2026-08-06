@@ -86,10 +86,15 @@ public class LoginAccountService {
     public void updatePassword(String accountType, long accountId, String rawPassword) {
         String passwordHash = passwordEncoder.encode(rawPassword);
         if ("customer".equalsIgnoreCase(normalizeAccountType(accountType))) {
-            loginAccountRepository.updateCustomerPassword(accountId, passwordHash);
+            loginAccountRepository.updateCustomerPassword(accountId, passwordHash, 0);
             return;
         }
         loginAccountRepository.updateStaffPassword(accountId, passwordHash);
+    }
+
+    public void resetPassword(long accountId, String rawPassword) {
+        String passwordHash = passwordEncoder.encode(rawPassword);
+        loginAccountRepository.updateCustomerPassword(accountId, passwordHash, 1);
     }
 
     private String identifierColumn(LoginIdentifierType type) {
@@ -109,7 +114,8 @@ public class LoginAccountService {
                 po.getPasswordHash(),
                 po.getStatus(),
                 accountType,
-                po.getEmploymentStatus());
+                po.getEmploymentStatus(),
+                po.getMustChangePassword());
     }
 
     private String normalizeAccountType(String accountType) {
@@ -143,6 +149,7 @@ public class LoginAccountService {
             String passwordHash,
             int status,
             String accountType,
-            String employmentStatus) {
+            String employmentStatus,
+            int mustChangePassword) {
     }
 }

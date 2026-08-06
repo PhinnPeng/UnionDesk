@@ -18,6 +18,7 @@ import com.uniondesk.iam.core.CustomerAccountService;
 import com.uniondesk.iam.core.IamService;
 import com.uniondesk.iam.core.PlatformRoleService;
 import com.uniondesk.auth.core.AuthVersionService;
+import com.uniondesk.notification.core.NotificationCenterService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -29,6 +30,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +39,8 @@ import org.springframework.util.StringUtils;
 
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final LoginAccountService loginAccountService;
     private final AuthClientService authClientService;
@@ -53,6 +58,8 @@ public class AuthService {
     private final AuthVersionService authVersionService;
     private final PlatformRoleService platformRoleService;
     private final UserConfigService userConfigService;
+    private final TrustedLoginIpService trustedLoginIpService;
+    private final NotificationCenterService notificationCenterService;
     private final Clock clock;
 
     public AuthService(
@@ -72,6 +79,8 @@ public class AuthService {
             AuthVersionService authVersionService,
             PlatformRoleService platformRoleService,
             UserConfigService userConfigService,
+            TrustedLoginIpService trustedLoginIpService,
+            NotificationCenterService notificationCenterService,
             Clock clock) {
         this.loginAccountService = loginAccountService;
         this.authClientService = authClientService;
@@ -89,6 +98,8 @@ public class AuthService {
         this.authVersionService = authVersionService;
         this.platformRoleService = platformRoleService;
         this.userConfigService = userConfigService;
+        this.trustedLoginIpService = trustedLoginIpService;
+        this.notificationCenterService = notificationCenterService;
         this.clock = clock;
     }
 
@@ -244,11 +255,16 @@ public class AuthService {
         List<String> roles = iamService.listUserRoleCodesByClient(account.id(), authClient.clientCode());
         String effectiveRole = roles.isEmpty() ? "customer" : roles.get(0);
         List<String> responseRoles = roles.isEmpty() ? List.of("customer") : roles;
-        List<Long> accessibleDomainIds = loginAccountService.loadAccessibleDomainIds(account.id(), "customer", null);
-        List<BusinessDomainView> accessibleDomains = resolveAccessibleDomains(accessibleDomainIds);
+        List<Long> joinedDomainIds = loginAccountService.loadAccessibleDomainIds(account.id(), "customer", null);
+        // 0 域客户：不注入平台默认域，避免“假加入”导致误进 /home
+        List<BusinessDomainView> accessibleDomains = joinedDomainIds.isEmpty()
+                ? List.of()
+                : filterDomains(joinedDomainIds);
         Long preferredDefaultDomainId = userConfigService.getPreferredDefaultDomainId(account.id()).orElse(null);
         Long effectivePreferredDefaultDomainId = sanitizePreferredDomainId(accessibleDomains, preferredDefaultDomainId);
-        long defaultBusinessDomainId = resolveSessionDomainId(accessibleDomains, effectivePreferredDefaultDomainId);
+        long defaultBusinessDomainId = accessibleDomains.isEmpty()
+                ? 0L
+                : resolveSessionDomainId(accessibleDomains, effectivePreferredDefaultDomainId);
         String sid = UUID.randomUUID().toString();
         UserContext userContext = new UserContext(account.id(), effectiveRole, defaultBusinessDomainId, sid, authClient.clientCode());
         LocalDateTime sessionExpiresAt = LocalDateTime.now(clock).plusSeconds(config.sessionTtlSeconds());
@@ -279,6 +295,51 @@ public class AuthService {
                 request.username(),
                 clientIp,
                 userAgent));
+
+        boolean riskLoginNotified = false;
+        String normalizedIp = trustedLoginIpService.normalizeIp(clientIp);
+        if (StringUtils.hasText(normalizedIp)) {
+            boolean trusted = trustedLoginIpService.isTrusted(account.id(), normalizedIp);
+            if (!trusted) {
+                Long notifyDomainId = joinedDomainIds.isEmpty()
+                        ? null
+                        : (defaultBusinessDomainId > 0 ? defaultBusinessDomainId : joinedDomainIds.getFirst());
+                LocalDateTime now = LocalDateTime.now(clock);
+                String auditDetail = "audit_only";
+                try {
+                    NotificationCenterService.NotificationDispatchResult riskResult =
+                            notificationCenterService.notifyCustomerRiskLogin(
+                                    account.id(),
+                                    notifyDomainId,
+                                    normalizedIp,
+                                    summarizeUserAgent(userAgent),
+                                    now);
+                    riskLoginNotified = riskResult != null && !"audit_only".equals(riskResult.status());
+                    auditDetail = riskLoginNotified ? "inbox_notified" : "audit_only";
+                } catch (RuntimeException ex) {
+                    // B：风险通知失败不得阻断已签发的登录
+                    log.warn("customer risk-login notify failed userId={} ip={}", account.id(), normalizedIp, ex);
+                    riskLoginNotified = false;
+                    auditDetail = "notify_failed";
+                }
+                loginAuditService.record(loginAuditService.sessionEvent(
+                        sid,
+                        subjectId,
+                        effectivePortalType,
+                        authClient.clientCode(),
+                        notifyDomainId != null ? notifyDomainId : defaultBusinessDomainId,
+                        account.username(),
+                        identifierType.name(),
+                        request.username(),
+                        "RISK_LOGIN_NEW_IP",
+                        "success",
+                        auditDetail,
+                        normalizedIp,
+                        userAgent));
+            }
+            trustedLoginIpService.upsertAndPrune(account.id(), normalizedIp);
+        }
+
         return new AuthDtos.LoginResponse(
                 accessToken,
                 refreshToken,
@@ -292,7 +353,9 @@ public class AuthService {
                 new LoginUserView(account.id(), account.username(), account.mobile(), account.email(), responseRoles),
                 accessibleDomains,
                 defaultBusinessDomainId,
-                effectivePreferredDefaultDomainId);
+                effectivePreferredDefaultDomainId,
+                riskLoginNotified,
+                account.mustChangePassword() == 1);
     }
 
     @Transactional
@@ -758,6 +821,14 @@ public class AuthService {
 
     private String maskIdentifier(String identifier, LoginIdentifierType type) {
         return loginAuditService.maskIdentifier(identifier, type.name());
+    }
+
+    private String summarizeUserAgent(String userAgent) {
+        if (!StringUtils.hasText(userAgent)) {
+            return "未知设备";
+        }
+        String trimmed = userAgent.trim().replaceAll("\\s+", " ");
+        return trimmed.length() <= 120 ? trimmed : trimmed.substring(0, 117) + "...";
     }
 
     private String sha256(String value) {

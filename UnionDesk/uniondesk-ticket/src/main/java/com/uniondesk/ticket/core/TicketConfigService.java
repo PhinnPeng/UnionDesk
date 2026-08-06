@@ -70,6 +70,17 @@ public class TicketConfigService {
                 .toList();
     }
 
+    /** Customer portal: active domain ticket types only (brief). */
+    public List<TicketConfigDtos.CustomerTicketTypeView> listCustomerTicketTypes(long domainId) {
+        return ticketTypeRepository.findByDomainId(domainId).stream()
+                .filter(po -> TicketTypePo.STATUS_ACTIVE.equalsIgnoreCase(po.getStatus()))
+                .map(po -> new TicketConfigDtos.CustomerTicketTypeView(
+                        po.getId(),
+                        po.getName(),
+                        po.getDescription()))
+                .toList();
+    }
+
     @Transactional
     public TicketConfigDtos.TicketTypeView createTicketType(long domainId, TicketConfigDtos.CreateTicketTypeRequest request) {
         String name = requiredText(request.name(), "name");

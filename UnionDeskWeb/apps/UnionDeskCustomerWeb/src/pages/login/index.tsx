@@ -1,192 +1,249 @@
-import { LockOutlined, MailOutlined, MobileOutlined, UserOutlined } from "@ant-design/icons";
-import { Button, Card, Col, Form, Input, Row, Select, Space, Tabs, Typography, message } from "antd";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useCustomerPortal } from "@uniondesk/shared";
+import { fetchLoginConfig, loginCustomerLive, useCustomerPortal } from "@uniondesk/shared";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
-type LoginFormValues = {
-  loginName: string;
-  password: string;
-};
+import { useToast } from "../../components/Toast";
+import { enterDedicatedDomain, findDomainByCode } from "../../utils/domain-flow";
 
-type RegisterFormValues = {
-  loginName: string;
-  password: string;
-  displayName: string;
-  phone: string;
-  email?: string;
-  domainId?: number;
-  invitationCode?: string;
-};
+import slideNotify from "./assets/slide-notify.png";
+import slideSubmit from "./assets/slide-submit.png";
+import slideTrack from "./assets/slide-track.png";
+import { LoginCaptcha } from "./LoginCaptcha";
+import "./login.css";
+
+const SLIDES = [
+	{
+		title: "把问题说清楚，我们马上跟进",
+		text: "选择服务类型，填写现象与期望。提交后立刻拿到工单号，进度随时可查。",
+		image: slideSubmit,
+		alt: "提交服务请求示意",
+	},
+	{
+		title: "公开回复清晰可见",
+		text: "客服进展、补充请求都在时间线里。需要时一键补充说明，不用反复追问。",
+		image: slideTrack,
+		alt: "工单进度跟踪示意",
+	},
+	{
+		title: "重要更新不会错过",
+		text: "工单变更与系统消息汇入通知中心。点开即可回到对应服务记录。",
+		image: slideNotify,
+		alt: "服务通知提醒示意",
+	},
+] as const;
 
 export default function LoginPage() {
-  const portal = useCustomerPortal();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
-  const [loading, setLoading] = useState(false);
+	const portal = useCustomerPortal();
+	const toast = useToast();
+	const navigate = useNavigate();
+	const params = useParams();
+	const domainCode = params.domainCode;
+	const dedicatedDomain = useMemo(
+		() => findDomainByCode(portal.domains, domainCode),
+		[domainCode, portal.domains],
+	);
 
-  const handleLogin = async (values: LoginFormValues) => {
-    setLoading(true);
-    try {
-      portal.login({
-        loginName: values.loginName.trim(),
-        password: values.password
-      });
-      message.success("登录成功");
-      navigate("/domains", { replace: true });
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : "登录失败");
-    } finally {
-      setLoading(false);
-    }
-  };
+	const [loginName, setLoginName] = useState("");
+	const [password, setPassword] = useState("");
+	const [loading, setLoading] = useState(false);
+	const [slideIndex, setSlideIndex] = useState(0);
+	const [captchaEnabled, setCaptchaEnabled] = useState(false);
+	const [captchaHint, setCaptchaHint] = useState<string | null>(null);
+	const [captchaToken, setCaptchaToken] = useState("");
+	const [captchaKey, setCaptchaKey] = useState(0);
 
-  const handleRegister = async (values: RegisterFormValues) => {
-    setLoading(true);
-    try {
-      portal.register({
-        loginName: values.loginName.trim(),
-        password: values.password,
-        displayName: values.displayName.trim(),
-        phone: values.phone.trim(),
-        email: values.email?.trim(),
-        domainId: values.domainId ?? null,
-        invitationCode: values.invitationCode?.trim()
-      });
-      message.success("注册成功");
-      navigate("/domains", { replace: true });
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : "注册失败");
-    } finally {
-      setLoading(false);
-    }
-  };
+	const registerPath = domainCode ? `/d/${domainCode}/register` : "/register";
 
-  return (
-    <Row style={{ minHeight: "100vh" }} align="middle" justify="center">
-      <Col xs={22} sm={20} md={18} lg={16} xl={14} xxl={12}>
-        <Card
-          bordered={false}
-          style={{
-            overflow: "hidden",
-            borderRadius: 28,
-            boxShadow: "0 24px 80px rgba(15, 23, 42, 0.12)",
-            background:
-              "linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(244,248,255,0.92) 46%, rgba(236,249,245,0.92) 100%)"
-          }}
-        >
-          <Row gutter={28} align="middle">
-            <Col xs={24} md={12}>
-              <Space direction="vertical" size={18} style={{ width: "100%" }}>
-                <Typography.Text type="secondary">Customer Web · P0 闭环</Typography.Text>
-                <Typography.Title level={2} style={{ margin: 0 }}>
-                  客户注册、登录、入域和工单查看，一页接通
-                </Typography.Title>
-                <Typography.Paragraph type="secondary" style={{ margin: 0 }}>
-                  登录后先进入业务域，再提交工单、查看回复和通知。演示账号默认可直接登录，注册时也可以顺手加入邀请码业务域。
-                </Typography.Paragraph>
-                <Space wrap>
-                  <Card size="small" style={{ minWidth: 150 }}>
-                    <Typography.Text type="secondary">演示账号</Typography.Text>
-                    <Typography.Title level={5} style={{ margin: "6px 0 0" }}>
-                      customer / customer123
-                    </Typography.Title>
-                  </Card>
-                  <Card size="small" style={{ minWidth: 150 }}>
-                    <Typography.Text type="secondary">默认业务域</Typography.Text>
-                    <Typography.Title level={5} style={{ margin: "6px 0 0" }}>
-                      {portal.domains[0]?.name ?? "-"}
-                    </Typography.Title>
-                  </Card>
-                </Space>
-              </Space>
-            </Col>
-            <Col xs={24} md={12}>
-              <Card bordered={false} style={{ borderRadius: 24, background: "rgba(255, 255, 255, 0.82)" }}>
-                <Tabs
-                  activeKey={activeTab}
-                  onChange={(key) => setActiveTab(key as "login" | "register")}
-                  items={[
-                    {
-                      key: "login",
-                      label: "登录",
-                      children: (
-                        <Form<LoginFormValues> layout="vertical" onFinish={handleLogin}>
-                          <Form.Item
-                            label="登录名"
-                            name="loginName"
-                            rules={[{ required: true, message: "请输入登录名" }]}
-                          >
-                            <Input prefix={<UserOutlined />} placeholder="请输入登录名" />
-                          </Form.Item>
-                          <Form.Item label="密码" name="password" rules={[{ required: true, message: "请输入密码" }]}>
-                            <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" />
-                          </Form.Item>
-                          <Button type="primary" htmlType="submit" loading={loading} block>
-                            登录并进入业务域
-                          </Button>
-                        </Form>
-                      )
-                    },
-                    {
-                      key: "register",
-                      label: "注册",
-                      children: (
-                        <Form<RegisterFormValues> layout="vertical" onFinish={handleRegister}>
-                          <Form.Item
-                            label="登录名"
-                            name="loginName"
-                            rules={[{ required: true, message: "请输入登录名" }]}
-                          >
-                            <Input prefix={<UserOutlined />} placeholder="创建登录名" />
-                          </Form.Item>
-                          <Form.Item
-                            label="显示名称"
-                            name="displayName"
-                            rules={[{ required: true, message: "请输入显示名称" }]}
-                          >
-                            <Input prefix={<UserOutlined />} placeholder="客户姓名或企业名称" />
-                          </Form.Item>
-                          <Form.Item label="手机号" name="phone" rules={[{ required: true, message: "请输入手机号" }]}>
-                            <Input prefix={<MobileOutlined />} placeholder="请输入手机号" />
-                          </Form.Item>
-                          <Form.Item label="邮箱" name="email">
-                            <Input prefix={<MailOutlined />} placeholder="可选，用于通知" />
-                          </Form.Item>
-                          <Form.Item label="加入业务域" name="domainId">
-                            <Select
-                              allowClear
-                              placeholder="可选，注册后直接加入业务域"
-                              options={portal.domains.map((domain) => ({
-                                value: domain.id,
-                                label: `${domain.name} · ${domain.joinHint}`
-                              }))}
-                            />
-                          </Form.Item>
-                          <Form.Item label="邀请码" name="invitationCode">
-                            <Input placeholder="可选，填入邀请码直接入域" />
-                          </Form.Item>
-                          <Form.Item
-                            label="密码"
-                            name="password"
-                            rules={[{ required: true, message: "请输入密码" }]}
-                          >
-                            <Input.Password prefix={<LockOutlined />} placeholder="设置登录密码" />
-                          </Form.Item>
-                          <Button type="primary" htmlType="submit" loading={loading} block>
-                            注册并开始使用
-                          </Button>
-                        </Form>
-                      )
-                    }
-                  ]}
-                />
-              </Card>
-            </Col>
-          </Row>
-        </Card>
-      </Col>
-    </Row>
-  );
+	useEffect(() => {
+		let cancelled = false;
+		void fetchLoginConfig().then((config) => {
+			if (cancelled) {
+				return;
+			}
+			setCaptchaEnabled(Boolean(config.captchaEnabled));
+			setCaptchaHint(config.captchaHint ?? null);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	useEffect(() => {
+		const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+		if (reduceMotion) {
+			return;
+		}
+		const timer = window.setInterval(() => {
+			setSlideIndex(prev => (prev + 1) % SLIDES.length);
+		}, 4200);
+		return () => window.clearInterval(timer);
+	}, []);
+
+	const handleSubmit = async (event: FormEvent) => {
+		event.preventDefault();
+		if (captchaEnabled && !captchaToken) {
+			toast.error("请先完成滑动验证");
+			return;
+		}
+		setLoading(true);
+		try {
+			const { snapshot, riskLoginNotified } = await loginCustomerLive({
+				loginName: loginName.trim(),
+				password,
+				captchaToken: captchaToken || undefined,
+			});
+			if (riskLoginNotified) {
+				toast.success("检测到新登录环境，已发送站内提醒");
+			}
+			if (domainCode) {
+				const result = await enterDedicatedDomain(domainCode);
+				if (result.ok) {
+					toast.success(`已进入 ${dedicatedDomain?.name ?? "业务域"}`);
+					navigate(result.path, { replace: true });
+				}
+				else {
+					toast.error(result.message);
+					navigate(result.path, { replace: true });
+				}
+				return;
+			}
+			if (!riskLoginNotified) {
+				toast.success("登录成功");
+			}
+			navigate(snapshot.activeDomain ? "/home" : "/domains", { replace: true });
+		}
+		catch (error) {
+			setCaptchaToken("");
+			setCaptchaKey(prev => prev + 1);
+			toast.error(error instanceof Error ? error.message : "登录失败");
+		}
+		finally {
+			setLoading(false);
+		}
+	};
+
+	return (
+		<div className="auth">
+			<main className="auth__main">
+				<div className="auth__dock">
+					<section className="auth__story" aria-label="产品介绍">
+						<header className="auth__top">
+							<Link to="/login" className="auth__brand" aria-label="UnionDesk 首页">
+								<span className="auth__mark" aria-hidden>U</span>
+								<span className="auth__brand-name">UnionDesk</span>
+							</Link>
+						</header>
+
+						<div className="auth__story-body">
+							<div className="auth__story-inner">
+								<h1 className="auth__headline">
+									服务请求，
+									<em>清晰可跟</em>
+								</h1>
+								<p className="auth__lead">
+									提交工单、查看进展、接收通知。登录后即可开始。
+								</p>
+
+								<div className="auth__carousel" aria-live="polite">
+									{SLIDES.map((slide, index) => (
+										<article
+											key={slide.title}
+											className={`auth__slide${index === slideIndex ? " is-active" : ""}`}
+											aria-hidden={index !== slideIndex}
+										>
+											<figure className="auth__slide-figure">
+												<img
+													className="auth__slide-image"
+													src={slide.image}
+													alt={slide.alt}
+													width={960}
+													height={540}
+													decoding="async"
+												/>
+												<figcaption className="auth__slide-caption">
+													<h2 className="auth__slide-title">{slide.title}</h2>
+													<p className="auth__slide-text">{slide.text}</p>
+												</figcaption>
+											</figure>
+										</article>
+									))}
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<section className="auth__form-panel" aria-label="登录">
+						<div className="auth__form-stack">
+							<h2 className="auth__card-title">登录</h2>
+							<p className="auth__card-desc">
+								{dedicatedDomain
+									? "验证通过后将直接进入当前业务域服务台"
+									: "使用客户账号登录，随后选择业务域"}
+							</p>
+							{dedicatedDomain
+								? (
+									<div className="auth__domain">
+										专属入口 · {dedicatedDomain.name}
+									</div>
+								)
+								: null}
+
+							<form className="auth__form" onSubmit={handleSubmit}>
+								<div className="auth__field">
+									<label htmlFor="loginName">账号</label>
+									<input
+										id="loginName"
+										name="loginName"
+										value={loginName}
+										onChange={event => setLoginName(event.target.value)}
+										placeholder="手机号或登录名"
+										autoComplete="username"
+										autoCapitalize="none"
+										spellCheck={false}
+										required
+									/>
+								</div>
+								<div className="auth__field">
+									<label htmlFor="password">密码</label>
+									<input
+										id="password"
+										name="password"
+										type="password"
+										value={password}
+										onChange={event => setPassword(event.target.value)}
+										placeholder="输入密码"
+										autoComplete="current-password"
+										required
+									/>
+								</div>
+								<LoginCaptcha
+									key={captchaKey}
+									enabled={captchaEnabled}
+									hint={captchaHint}
+									disabled={loading}
+									onVerified={setCaptchaToken}
+									onError={message => toast.error(message)}
+								/>
+								<button
+									className="auth__submit"
+									type="submit"
+									disabled={loading || (captchaEnabled && !captchaToken)}
+								>
+									{loading ? "正在登录…" : "继续"}
+								</button>
+							</form>
+
+							<div className="auth__links">
+								<Link to={registerPath}>创建账号</Link>
+								{domainCode
+									? <Link to="/login">统一登录</Link>
+									: <Link to="/d/online-service/login">专属入口</Link>}
+							</div>
+							<p className="auth__hint">演示：customer / customer123</p>
+						</div>
+					</section>
+				</div>
+			</main>
+		</div>
+	);
 }
-

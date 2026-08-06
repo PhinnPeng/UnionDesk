@@ -609,7 +609,13 @@ export default function DomainCustomersPage() {
 					<AuthGuarded auth={DOMAIN_CUSTOMER_RESET_PASSWORD} fallback={null}>
 						<ConfirmPopover
 							title="确认重置密码"
-							description={`确定重置「${row.display_name}」的密码吗？重置后客户首次登录需强制修改密码。`}
+							description={(
+								<>
+									确定重置「{row.display_name}」的密码吗？
+									<br />
+									重置后客户首次登录需强制修改密码。
+								</>
+							)}
 							onConfirm={() => handleResetPassword(row)}
 						>
 							<Button type="link" size="small">重置密码</Button>

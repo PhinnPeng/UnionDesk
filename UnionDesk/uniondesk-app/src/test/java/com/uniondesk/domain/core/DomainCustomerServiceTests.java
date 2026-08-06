@@ -48,7 +48,8 @@ class DomainCustomerServiceTests {
                 domainService,
                 CLOCK,
                 mock(IdentitySubjectService.class),
-                mock(CustomerAccountService.class));
+                mock(CustomerAccountService.class),
+                mock(com.uniondesk.auth.core.AuthVersionService.class));
 
         DomainCustomerDtos.DomainCustomerView activeView = service.updateCustomerStatus(
                 10L, 1L, new DomainCustomerDtos.UpdateDomainCustomerStatusRequest("active"));

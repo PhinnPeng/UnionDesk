@@ -7,6 +7,7 @@ export const DOMAIN_GENERAL_UPDATE = "domain.general.update";
 export const DOMAIN_CUSTOMER_READ = "domain.customer.read";
 export const DOMAIN_CUSTOMER_CREATE = "domain.customer.create";
 export const DOMAIN_CUSTOMER_UPDATE_STATUS = "domain.customer.update_status";
+export const DOMAIN_CUSTOMER_RESET_PASSWORD = "domain.customer.reset_password";
 
 export const DOMAIN_BLOCKED_WORD_READ = "domain.blocked_word.read";
 export const DOMAIN_BLOCKED_WORD_CREATE = "domain.blocked_word.create";

@@ -47,6 +47,14 @@ public class TicketConfigController {
         return new TicketConfigDtos.TicketTypeListView(items.size(), items);
     }
 
+    @GetMapping("/domains/{domain_id}/ticket-types")
+    @RequirePermission({PermissionCodes.TICKET_CREATE, PermissionCodes.TICKET_VIEW_SELF})
+    public TicketConfigDtos.CustomerTicketTypeListView listCustomerTicketTypes(
+            @PathVariable("domain_id") long domainId) {
+        List<TicketConfigDtos.CustomerTicketTypeView> items = ticketConfigService.listCustomerTicketTypes(domainId);
+        return new TicketConfigDtos.CustomerTicketTypeListView(items.size(), items);
+    }
+
     @PostMapping("/admin/domains/{domain_id}/ticket-types")
     @ResponseStatus(HttpStatus.CREATED)
     @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_CREATE)

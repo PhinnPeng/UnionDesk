@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "CustomerWeb 实现质量门禁"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "shared LoginResponse / inbox 类型"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "登录与通知页交互约定"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "常用 IP 表与迁移约定"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Auth 钩子与通知质量门禁"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "登录失败与枚举防护"}

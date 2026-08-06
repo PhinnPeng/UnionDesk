@@ -13,6 +13,7 @@ public class LoginAccountPo {
     private int status;
     private String accountType;
     private String employmentStatus;
+    private int mustChangePassword;
 
     public long getId() { return id; }
     public void setId(long id) { this.id = id; }
@@ -30,4 +31,6 @@ public class LoginAccountPo {
     public void setAccountType(String accountType) { this.accountType = accountType; }
     public String getEmploymentStatus() { return employmentStatus; }
     public void setEmploymentStatus(String employmentStatus) { this.employmentStatus = employmentStatus; }
+    public int getMustChangePassword() { return mustChangePassword; }
+    public void setMustChangePassword(int mustChangePassword) { this.mustChangePassword = mustChangePassword; }
 }

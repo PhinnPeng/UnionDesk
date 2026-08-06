@@ -22,6 +22,7 @@ import com.uniondesk.domain.web.DomainDtos;
 import com.uniondesk.iam.core.CustomerAccountService;
 import com.uniondesk.iam.core.PlatformRoleService;
 import com.uniondesk.iam.core.IamService;
+import com.uniondesk.notification.core.NotificationCenterService;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -85,6 +86,12 @@ class AuthServiceTests {
     @Mock
     private UserConfigService userConfigService;
 
+    @Mock
+    private TrustedLoginIpService trustedLoginIpService;
+
+    @Mock
+    private NotificationCenterService notificationCenterService;
+
     private final JwtTokenService jwtTokenService = new JwtTokenService(
             new ObjectMapper(),
             "uniondesk-demo-jwt-secret-please-change-me",
@@ -115,16 +122,27 @@ class AuthServiceTests {
                 authVersionService,
                 platformRoleService,
                 userConfigService,
+                trustedLoginIpService,
+                notificationCenterService,
                 CLOCK);
         org.mockito.Mockito.lenient()
                 .when(userConfigService.getPreferredDefaultDomainId(org.mockito.ArgumentMatchers.anyLong()))
                 .thenReturn(Optional.empty());
+        org.mockito.Mockito.lenient()
+                .when(trustedLoginIpService.isTrusted(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(true);
+        org.mockito.Mockito.lenient()
+                .when(trustedLoginIpService.normalizeIp(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(invocation -> {
+                    String ip = invocation.getArgument(0);
+                    return ip == null ? "" : ip.trim();
+                });
     }
 
     @Test
     void loginSucceedsWithEmailIdentifierAndCreatesSession() {
         LoginAccount account = new LoginAccount(1L, "customer", "13800000000", "customer@uniondesk.local",
-                passwordEncoder.encode("customer123"), 1, "customer", "active");
+                passwordEncoder.encode("customer123"), 1, "customer", "active", 0);
         LoginConfig config = new LoginConfig(
                 true,
                 true,
@@ -168,7 +186,7 @@ class AuthServiceTests {
     @Test
     void loginFailsWithBadPasswordAndDoesNotCreateSession() {
         LoginAccount account = new LoginAccount(1L, "customer", "13800000000", "customer@uniondesk.local",
-                passwordEncoder.encode("customer123"), 1, "customer", "active");
+                passwordEncoder.encode("customer123"), 1, "customer", "active", 0);
         LoginConfig config = new LoginConfig(
                 true,
                 true,
@@ -200,7 +218,7 @@ class AuthServiceTests {
     @Test
     void loginFailsWhenNoRoleCanAccessClient() {
         LoginAccount account = new LoginAccount(2L, "admin", "13900000000", "admin@uniondesk.local",
-                passwordEncoder.encode("admin123"), 1, "admin", "active");
+                passwordEncoder.encode("admin123"), 1, "admin", "active", 0);
         LoginConfig config = new LoginConfig(
                 true,
                 true,
@@ -230,12 +248,140 @@ class AuthServiceTests {
                 "127.0.0.1",
                 "JUnit");
         assertThat(response.clientCode()).isEqualTo("ud-customer-web");
+        assertThat(response.riskLoginNotified()).isFalse();
+        verify(trustedLoginIpService).upsertAndPrune(2L, "127.0.0.1");
+    }
+
+    @Test
+    void customerLoginNotifiesRiskOnNewIp() {
+        LoginAccount account = new LoginAccount(2L, "customer", "13900000000", "customer@uniondesk.local",
+                passwordEncoder.encode("customer123"), 1, "customer", "active", 0);
+        LoginConfig config = new LoginConfig(
+                true,
+                true,
+                true,
+                true,
+                false,
+                false,
+                null,
+                null,
+                604800,
+                10,
+                LocalDateTime.now(CLOCK));
+
+        when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginAccountService.findByIdentifier("customer", LoginIdentifierType.USERNAME, "customer"))
+                .thenReturn(Optional.of(account));
+        when(iamService.listUserRoleCodesByClient(2L, "ud-customer-web")).thenReturn(List.of("customer"));
+        when(loginAccountService.loadAccessibleDomainIds(2L, "customer", null)).thenReturn(List.of(1L));
+        stubDomainView(1L);
+        when(loginSessionService.createSession(any(LoginSessionService.CreateSessionCommand.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0, LoginSessionService.CreateSessionCommand.class).sid());
+        when(trustedLoginIpService.isTrusted(2L, "10.0.0.8")).thenReturn(false);
+        when(notificationCenterService.notifyCustomerRiskLogin(
+                eq(2L), eq(1L), eq("10.0.0.8"), anyString(), any(LocalDateTime.class)))
+                .thenReturn(new NotificationCenterService.NotificationDispatchResult(9L, 11L, "sent"));
+
+        AuthDtos.LoginResponse response = authService.login(
+                new AuthDtos.LoginRequest("customer", "customer123", null, null),
+                "ud-customer-web",
+                "10.0.0.8",
+                "Mozilla/5.0");
+
+        assertThat(response.accessToken()).contains(".");
+        assertThat(response.riskLoginNotified()).isTrue();
+        verify(notificationCenterService).notifyCustomerRiskLogin(
+                eq(2L), eq(1L), eq("10.0.0.8"), anyString(), any(LocalDateTime.class));
+        verify(trustedLoginIpService).upsertAndPrune(2L, "10.0.0.8");
+    }
+
+    @Test
+    void customerLoginRiskNotifyFailureDoesNotBlockLogin() {
+        LoginAccount account = new LoginAccount(2L, "customer", "13900000000", "customer@uniondesk.local",
+                passwordEncoder.encode("customer123"), 1, "customer", "active", 0);
+        LoginConfig config = new LoginConfig(
+                true,
+                true,
+                true,
+                true,
+                false,
+                false,
+                null,
+                null,
+                604800,
+                10,
+                LocalDateTime.now(CLOCK));
+
+        when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginAccountService.findByIdentifier("customer", LoginIdentifierType.USERNAME, "customer"))
+                .thenReturn(Optional.of(account));
+        when(iamService.listUserRoleCodesByClient(2L, "ud-customer-web")).thenReturn(List.of("customer"));
+        when(loginAccountService.loadAccessibleDomainIds(2L, "customer", null)).thenReturn(List.of(1L));
+        stubDomainView(1L);
+        when(loginSessionService.createSession(any(LoginSessionService.CreateSessionCommand.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0, LoginSessionService.CreateSessionCommand.class).sid());
+        when(trustedLoginIpService.normalizeIp("10.0.0.9")).thenReturn("10.0.0.9");
+        when(trustedLoginIpService.isTrusted(2L, "10.0.0.9")).thenReturn(false);
+        when(notificationCenterService.notifyCustomerRiskLogin(
+                eq(2L), eq(1L), eq("10.0.0.9"), anyString(), any(LocalDateTime.class)))
+                .thenThrow(new RuntimeException("inbox unavailable"));
+
+        AuthDtos.LoginResponse response = authService.login(
+                new AuthDtos.LoginRequest("customer", "customer123", null, null),
+                "ud-customer-web",
+                "10.0.0.9",
+                "Mozilla/5.0");
+
+        assertThat(response.accessToken()).contains(".");
+        assertThat(response.riskLoginNotified()).isFalse();
+        verify(trustedLoginIpService).upsertAndPrune(2L, "10.0.0.9");
+    }
+
+    @Test
+    void customerLoginWithZeroDomainsReturnsEmptyAccessibleDomains() {
+        LoginAccount account = new LoginAccount(2L, "customer", "13900000000", "customer@uniondesk.local",
+                passwordEncoder.encode("customer123"), 1, "customer", "active", 0);
+        LoginConfig config = new LoginConfig(
+                true,
+                true,
+                true,
+                true,
+                false,
+                false,
+                null,
+                null,
+                604800,
+                10,
+                LocalDateTime.now(CLOCK));
+
+        when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginAccountService.findByIdentifier("customer", LoginIdentifierType.USERNAME, "customer"))
+                .thenReturn(Optional.of(account));
+        when(iamService.listUserRoleCodesByClient(2L, "ud-customer-web")).thenReturn(List.of("customer"));
+        when(loginAccountService.loadAccessibleDomainIds(2L, "customer", null)).thenReturn(List.of());
+        when(loginSessionService.createSession(any(LoginSessionService.CreateSessionCommand.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0, LoginSessionService.CreateSessionCommand.class).sid());
+        when(trustedLoginIpService.normalizeIp("127.0.0.1")).thenReturn("127.0.0.1");
+        when(trustedLoginIpService.isTrusted(2L, "127.0.0.1")).thenReturn(true);
+
+        AuthDtos.LoginResponse response = authService.login(
+                new AuthDtos.LoginRequest("customer", "customer123", null, null),
+                "ud-customer-web",
+                "127.0.0.1",
+                "JUnit");
+
+        assertThat(response.accessibleDomains()).isEmpty();
+        assertThat(response.defaultBusinessDomainId()).isZero();
+        assertThat(response.riskLoginNotified()).isFalse();
     }
 
     @Test
     void loginConsumesCaptchaTokenWhenCaptchaEnabled() {
         LoginAccount account = new LoginAccount(2L, "admin", "13900000000", "admin@uniondesk.local",
-                passwordEncoder.encode("admin123"), 1, "admin", "active");
+                passwordEncoder.encode("admin123"), 1, "admin", "active", 0);
         LoginConfig config = new LoginConfig(
                 true,
                 true,
@@ -301,7 +447,7 @@ class AuthServiceTests {
     @Test
     void currentUserReturnsAccountDetails() {
         LoginAccount account = new LoginAccount(1L, "customer", "13800000000", "customer@uniondesk.local",
-                passwordEncoder.encode("customer123"), 1, "customer", "active");
+                passwordEncoder.encode("customer123"), 1, "customer", "active", 0);
         UserContext context = new UserContext(1L, "customer", 10L, "sid-100", "ud-customer-web");
         when(loginAccountService.findById(1L, "customer")).thenReturn(Optional.of(account));
         when(loginAccountService.loadAccessibleDomainIds(1L, "customer", null)).thenReturn(List.of(1L));
@@ -316,7 +462,7 @@ class AuthServiceTests {
     @Test
     void stepUpSucceedsWithCorrectPassword() {
         LoginAccount account = new LoginAccount(1L, "admin", "13900000000", "admin@uniondesk.local",
-                passwordEncoder.encode("admin123"), 1, "admin", "active");
+                passwordEncoder.encode("admin123"), 1, "admin", "active", 0);
         UserContext context = new UserContext(1L, "super_admin", 10L, "sid-100", "ud-admin-web");
         when(loginAccountService.findById(1L, "staff")).thenReturn(Optional.of(account));
         AuthDtos.StepUpResponse response = authService.stepUp(context, "admin123", null);
@@ -329,7 +475,7 @@ class AuthServiceTests {
     @Test
     void stepUpFailsWithWrongPassword() {
         LoginAccount account = new LoginAccount(1L, "admin", "13900000000", "admin@uniondesk.local",
-                passwordEncoder.encode("admin123"), 1, "admin", "active");
+                passwordEncoder.encode("admin123"), 1, "admin", "active", 0);
         UserContext context = new UserContext(1L, "super_admin", 10L, "sid-100", "ud-admin-web");
         when(loginAccountService.findById(1L, "staff")).thenReturn(Optional.of(account));
         assertThatThrownBy(() -> authService.stepUp(context, "wrong-password", null))
@@ -367,7 +513,7 @@ class AuthServiceTests {
     @Test
     void loginUsesPreferredDefaultDomainWhenAccessible() {
         LoginAccount account = new LoginAccount(2L, "admin", "13900000000", "admin@uniondesk.local",
-                passwordEncoder.encode("admin123"), 1, "admin", "active");
+                passwordEncoder.encode("admin123"), 1, "admin", "active", 0);
         LoginConfig config = new LoginConfig(
                 true, true, true, true, false, false, null, null, 604800, 10, LocalDateTime.now(CLOCK));
 
@@ -396,7 +542,7 @@ class AuthServiceTests {
     @Test
     void loginFallsBackToFirstAccessibleWhenPreferredInvalid() {
         LoginAccount account = new LoginAccount(2L, "admin", "13900000000", "admin@uniondesk.local",
-                passwordEncoder.encode("admin123"), 1, "admin", "active");
+                passwordEncoder.encode("admin123"), 1, "admin", "active", 0);
         LoginConfig config = new LoginConfig(
                 true, true, true, true, false, false, null, null, 604800, 10, LocalDateTime.now(CLOCK));
 

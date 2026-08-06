@@ -58,4 +58,9 @@ public final class DomainCustomerDtos {
     public record UpdateDomainCustomerStatusRequest(
             @NotBlank String status) {
     }
+
+    public record ResetCustomerPasswordResponse(
+            String password,
+            boolean must_change_password) {
+    }
 }

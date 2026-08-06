@@ -1,5 +1,6 @@
 package com.uniondesk.iam.core;
 
+import com.uniondesk.auth.core.LoginAccountService;
 import com.uniondesk.iam.entity.CustomerAccountPo;
 import com.uniondesk.iam.repository.CustomerAccountRepository;
 import java.util.Optional;
@@ -14,14 +15,17 @@ public class CustomerAccountService {
 
     private final CustomerAccountRepository customerAccountRepository;
     private final IdentitySubjectService identitySubjectService;
+    private final LoginAccountService loginAccountService;
     private final PasswordEncoder passwordEncoder;
 
     public CustomerAccountService(
             CustomerAccountRepository customerAccountRepository,
             IdentitySubjectService identitySubjectService,
+            LoginAccountService loginAccountService,
             PasswordEncoder passwordEncoder) {
         this.customerAccountRepository = customerAccountRepository;
         this.identitySubjectService = identitySubjectService;
+        this.loginAccountService = loginAccountService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -65,6 +69,11 @@ public class CustomerAccountService {
 
     public Optional<Long> findIdByUsernameOrPhone(String username, String phone) {
         return customerAccountRepository.findIdByUsernameOrPhone(username, phone);
+    }
+
+    @Transactional
+    public void resetPassword(long customerAccountId, String rawPassword) {
+        loginAccountService.resetPassword(customerAccountId, rawPassword);
     }
 
     private CustomerAccount toCustomerAccount(CustomerAccountPo po) {

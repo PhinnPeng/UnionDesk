@@ -346,6 +346,18 @@ export function clearAuthSession(): void {
   clearAllPersistedAuth(true);
 }
 
+/** 更新已存会话的强制改密标志（改密成功后置 false） */
+export function updateStoredMustChangePassword(mustChangePassword: boolean): void {
+  const session = loadAuthSession();
+  if (!session) {
+    return;
+  }
+  saveAuthSession({
+    ...session,
+    mustChangePassword,
+  });
+}
+
 export function loadPermissionSnapshot(): PermissionSnapshot | null {
   const session = loadAuthSession();
   if (!session) {

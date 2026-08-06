@@ -28,5 +28,8 @@ public interface LoginAccountMapper {
 
     int updateStaffPassword(@Param("id") long id, @Param("passwordHash") String passwordHash);
 
-    int updateCustomerPassword(@Param("id") long id, @Param("passwordHash") String passwordHash);
+    int updateCustomerPassword(
+            @Param("id") long id,
+            @Param("passwordHash") String passwordHash,
+            @Param("mustChangePassword") int mustChangePassword);
 }

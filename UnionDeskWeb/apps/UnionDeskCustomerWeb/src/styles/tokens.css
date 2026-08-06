@@ -1,0 +1,53 @@
+:root {
+  color-scheme: light;
+
+  --ud-primary: #1e40af;
+  --ud-primary-strong: #1d4ed8;
+  --ud-primary-soft: rgba(30, 64, 175, 0.12);
+  --ud-accent-from: #14b8a6;
+  --ud-accent-to: #0ea5e9;
+  --ud-accent: #0ea5e9;
+  --ud-success: #0f766e;
+  --ud-success-soft: rgba(15, 118, 110, 0.14);
+  --ud-danger: #dc2626;
+  --ud-warning: #d97706;
+
+  /* Back-compat aliases used across existing pages */
+  --ud-brand: var(--ud-primary);
+  --ud-brand-strong: var(--ud-primary-strong);
+  --ud-brand-soft: var(--ud-primary-soft);
+
+  --ud-text: #1e3a8a;
+  --ud-text-secondary: #64748b;
+  --ud-text-tertiary: #94a3b8;
+
+  --ud-bg-0: #eff6ff;
+  --ud-bg-1: #eef2ff;
+  --ud-canvas: linear-gradient(145deg, #eff6ff, #eef2ff 50%, #ecfeff);
+  --ud-surface: rgba(255, 255, 255, 0.62);
+  --ud-surface-strong: rgba(255, 255, 255, 0.88);
+  --ud-border: rgba(255, 255, 255, 0.92);
+  --ud-border-strong: rgba(191, 219, 254, 0.95);
+  --ud-shadow: 0 18px 40px rgba(30, 64, 175, 0.1);
+  --ud-shadow-soft: 0 8px 22px rgba(30, 64, 175, 0.06);
+
+  --ud-radius-sm: 10px;
+  --ud-radius-md: 16px;
+  --ud-radius-lg: 20px;
+  --ud-radius-pill: 999px;
+
+  --ud-font: "Plus Jakarta Sans", "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+  --ud-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --ud-rail-w: 76px;
+  --ud-topbar-h: 56px;
+  --ud-dock-h: 42px;
+  --ud-dock-fs: 10px;
+  --ud-dock-lh: 1.2;
+  --ud-dock-line: calc(var(--ud-dock-fs) * var(--ud-dock-lh));
+  --ud-dock-pad-x: calc(var(--ud-dock-line) * 2);
+  --ud-dock-inset: 14px;
+  --ud-content-max: 1080px;
+  --ud-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ud-shell-bp: 900px;
+}

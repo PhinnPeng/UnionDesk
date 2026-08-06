@@ -16,6 +16,7 @@ import com.uniondesk.notification.repository.InboxMessageRepository;
 import com.uniondesk.notification.repository.NotificationLogRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +50,9 @@ class NotificationCenterServiceTests {
 
     @BeforeEach
     void setUp() {
+        notificationLogSequence.set(0L);
+        inboxMessageSequence.set(0L);
+        unreadMessageCount.set(0L);
         notificationCenterService = new NotificationCenterService(
                 notificationLogRepository,
                 inboxMessageRepository,
@@ -74,6 +78,36 @@ class NotificationCenterServiceTests {
         assertThat(notificationCenterService.markRead(1001L, result.inboxMessageId())).isEqualTo(1);
         unreadMessageCount.set(0L);
         assertThat(notificationCenterService.unreadCount(1001L)).isEqualTo(0L);
+    }
+
+    @Test
+    void notifyCustomerRiskLoginWritesInboxWhenDomainPresent() {
+        NotificationCenterService.NotificationDispatchResult result =
+                notificationCenterService.notifyCustomerRiskLogin(
+                        1001L,
+                        1L,
+                        "10.0.0.8",
+                        "Mozilla/5.0",
+                        LocalDateTime.now(CLOCK));
+
+        assertThat(result.status()).isEqualTo("sent");
+        assertThat(result.inboxMessageId()).isPositive();
+        assertThat(notificationCenterService.unreadCount(1001L)).isEqualTo(1L);
+    }
+
+    @Test
+    void notifyCustomerRiskLoginDegradesWhenNoDomain() {
+        NotificationCenterService.NotificationDispatchResult result =
+                notificationCenterService.notifyCustomerRiskLogin(
+                        1001L,
+                        null,
+                        "10.0.0.8",
+                        "Mozilla/5.0",
+                        LocalDateTime.now(CLOCK));
+
+        assertThat(result.status()).isEqualTo("audit_only");
+        assertThat(result.inboxMessageId()).isZero();
+        assertThat(notificationCenterService.unreadCount(1001L)).isZero();
     }
 
     private void stubIdentityLookups() {

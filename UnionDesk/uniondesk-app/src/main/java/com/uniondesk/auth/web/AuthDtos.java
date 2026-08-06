@@ -95,7 +95,73 @@ public final class AuthDtos {
             LoginUserView user,
             List<BusinessDomainView> accessibleDomains,
             long defaultBusinessDomainId,
-            Long preferredDefaultDomainId) {
+            Long preferredDefaultDomainId,
+            @JsonAlias({"risk_login_notified"})
+            Boolean riskLoginNotified,
+            @JsonAlias({"must_change_password"})
+            Boolean mustChangePassword) {
+        public LoginResponse(
+                String accessToken,
+                String refreshToken,
+                String sid,
+                String role,
+                String clientCode,
+                String tokenType,
+                long expiresInSeconds,
+                String portalType,
+                String subjectId,
+                LoginUserView user,
+                List<BusinessDomainView> accessibleDomains,
+                long defaultBusinessDomainId,
+                Long preferredDefaultDomainId,
+                Boolean riskLoginNotified) {
+            this(
+                    accessToken,
+                    refreshToken,
+                    sid,
+                    role,
+                    clientCode,
+                    tokenType,
+                    expiresInSeconds,
+                    portalType,
+                    subjectId,
+                    user,
+                    accessibleDomains,
+                    defaultBusinessDomainId,
+                    preferredDefaultDomainId,
+                    riskLoginNotified,
+                    null);
+        }
+        public LoginResponse(
+                String accessToken,
+                String refreshToken,
+                String sid,
+                String role,
+                String clientCode,
+                String tokenType,
+                long expiresInSeconds,
+                String portalType,
+                String subjectId,
+                LoginUserView user,
+                List<BusinessDomainView> accessibleDomains,
+                long defaultBusinessDomainId,
+                Long preferredDefaultDomainId) {
+            this(
+                    accessToken,
+                    refreshToken,
+                    sid,
+                    role,
+                    clientCode,
+                    tokenType,
+                    expiresInSeconds,
+                    portalType,
+                    subjectId,
+                    user,
+                    accessibleDomains,
+                    defaultBusinessDomainId,
+                    preferredDefaultDomainId,
+                    null);
+        }
     }
 
     public record SetDefaultDomainRequest(

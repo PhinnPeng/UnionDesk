@@ -112,6 +112,33 @@ public class NotificationCenterService {
                 "/api/v1/domains/%d/tickets/my/%d".formatted(businessDomainId, sourceTicketId));
     }
 
+    /**
+     * 客户新登录 IP 风险提醒。无可用业务域时降级为仅审计（由调用方写 login_log），不写站内信。
+     */
+    @Transactional
+    public NotificationDispatchResult notifyCustomerRiskLogin(
+            long userId,
+            Long businessDomainId,
+            String clientIp,
+            String uaSummary,
+            LocalDateTime at) {
+        if (businessDomainId == null || businessDomainId <= 0) {
+            return new NotificationDispatchResult(0L, 0L, "audit_only");
+        }
+        LocalDateTime occurredAt = at != null ? at : LocalDateTime.now(clock);
+        String safeIp = clientIp == null || clientIp.isBlank() ? "未知" : clientIp.trim();
+        String safeUa = uaSummary == null || uaSummary.isBlank() ? "未知设备" : uaSummary.trim();
+        String content = "检测到在新环境登录：IP %s，时间 %s，设备 %s。若非本人操作，请尽快修改密码。"
+                .formatted(safeIp, occurredAt, safeUa);
+        return sendSecurityInboxNotification(
+                businessDomainId,
+                userId,
+                "security.risk_login",
+                "登录环境提醒",
+                content,
+                "/inbox");
+    }
+
     @Transactional
     public long unreadCount(long recipientUserId) {
         return inboxMessageRepository.countUnread(identityResolutionRepository.ensureIdentitySubject(recipientUserId));
@@ -207,6 +234,69 @@ public class NotificationCenterService {
                 Map.of("template_code", templateCode, "recipient_user_id", recipientUserId, "status", status),
                 status);
         return new NotificationDispatchResult(notificationLogId, inboxMessageId, status);
+    }
+
+    private NotificationDispatchResult sendSecurityInboxNotification(
+            long businessDomainId,
+            long recipientUserId,
+            String templateCode,
+            String title,
+            String content,
+            String jumpUrl) {
+        long recipientSubjectId = identityResolutionRepository.ensureIdentitySubject(recipientUserId);
+        LocalDateTime now = LocalDateTime.now(clock);
+        long sourceId = recipientUserId;
+        String payloadJson = serializeJson(Map.of(
+                "business_domain_id", businessDomainId,
+                "recipient_user_id", recipientUserId,
+                "template_code", templateCode,
+                "title", title,
+                "content", content,
+                "jump_url", jumpUrl));
+
+        NotificationLogPo logPo = new NotificationLogPo();
+        logPo.setBusinessDomainId(businessDomainId);
+        logPo.setSourceType("security");
+        logPo.setSourceId(sourceId);
+        logPo.setChannel("inbox");
+        logPo.setRecipientSubjectId(recipientSubjectId);
+        logPo.setPortalType("customer");
+        logPo.setTemplateCode(templateCode);
+        logPo.setPayloadJson(payloadJson);
+        logPo.setStatus("sent");
+        logPo.setRetryCount(0);
+        logPo.setLastError(null);
+        logPo.setNextRetryAt(null);
+        logPo.setSentAt(now);
+        notificationLogRepository.save(logPo);
+
+        long notificationLogId = logPo.getId() == 0
+                ? notificationLogRepository.findLatestId(recipientSubjectId, sourceId, templateCode)
+                : logPo.getId();
+
+        InboxMessagePo inboxPo = new InboxMessagePo();
+        inboxPo.setNotificationLogId(notificationLogId);
+        inboxPo.setRecipientSubjectId(recipientSubjectId);
+        inboxPo.setPortalType("customer");
+        inboxPo.setBusinessDomainId(businessDomainId);
+        inboxPo.setTitle(title);
+        inboxPo.setContent(content);
+        inboxPo.setJumpUrl(jumpUrl);
+        inboxMessageRepository.save(inboxPo);
+
+        long inboxMessageId = inboxPo.getId() == 0
+                ? inboxMessageRepository.findLatestId(recipientSubjectId, notificationLogId)
+                : inboxPo.getId();
+
+        recordAudit(
+                businessDomainId,
+                recipientSubjectId,
+                "customer",
+                "security:risk_login:" + recipientUserId,
+                "security.risk_login",
+                Map.of("template_code", templateCode, "recipient_user_id", recipientUserId, "status", "sent"),
+                "sent");
+        return new NotificationDispatchResult(notificationLogId, inboxMessageId, "sent");
     }
 
     private void recordAudit(

@@ -1,12 +1,5 @@
-:root {
-  color-scheme: light;
-  font-family: "Inter", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
-  color: #162338;
-  background:
-    radial-gradient(circle at top left, rgba(29, 78, 216, 0.18), transparent 32%),
-    radial-gradient(circle at top right, rgba(15, 118, 110, 0.14), transparent 28%),
-    linear-gradient(180deg, #f5f8ff 0%, #eef4ff 48%, #f8fbff 100%);
-}
+@import "./styles/tokens.css";
+@import "./styles/app.css";
 
 * {
   box-sizing: border-box;
@@ -21,9 +14,29 @@ body,
 body {
   margin: 0;
   min-width: 320px;
-  background: inherit;
+  font-family: var(--ud-font);
+  color: var(--ud-text);
+  background: var(--ud-bg-0);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
 a {
-  color: inherit;
+  color: var(--ud-brand);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+::selection {
+  background: var(--ud-brand-soft);
 }

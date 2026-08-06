@@ -12,6 +12,7 @@
         <result property="status" column="status"/>
         <result property="accountType" column="account_type"/>
         <result property="employmentStatus" column="employment_status"/>
+        <result property="mustChangePassword" column="must_change_password"/>
     </resultMap>
 
     <select id="selectStaffByIdentifier" resultMap="LoginAccountPo">
@@ -30,7 +31,8 @@
             id, username, phone AS mobile, email, password_hash,
             CASE WHEN status = 'active' THEN 1 ELSE 0 END AS status,
             'customer' AS account_type,
-            status AS employment_status
+            status AS employment_status,
+            must_change_password
         FROM customer_account
         WHERE LOWER(${column}) = LOWER(#{identifier})
         LIMIT 1
@@ -52,7 +54,8 @@
             id, username, phone AS mobile, email, password_hash,
             CASE WHEN status = 'active' THEN 1 ELSE 0 END AS status,
             'customer' AS account_type,
-            status AS employment_status
+            status AS employment_status,
+            must_change_password
         FROM customer_account
         WHERE id = #{id}
         LIMIT 1
@@ -110,6 +113,7 @@
     <update id="updateCustomerPassword">
         UPDATE customer_account
         SET password_hash = #{passwordHash},
+            must_change_password = #{mustChangePassword},
             password_changed_at = CURRENT_TIMESTAMP(3),
             updated_at = CURRENT_TIMESTAMP(3)
         WHERE id = #{id}

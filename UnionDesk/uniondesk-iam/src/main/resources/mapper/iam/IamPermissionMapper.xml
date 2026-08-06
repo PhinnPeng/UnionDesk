@@ -40,7 +40,7 @@
         <foreach collection="codes" item="code" open="(" separator="," close=")">#{code}</foreach>
         UNION ALL
         SELECT
-            r.scope AS role_level,
+            'domain' AS role_level,
             'domain' AS binding_scope,
             dm.business_domain_id,
             p.permission_scope

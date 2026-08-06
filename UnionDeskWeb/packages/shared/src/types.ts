@@ -48,6 +48,10 @@ export type LoginResponse = {
   defaultBusinessDomainId: number;
   /** 用户默认业务域偏好；未设置时为 null/undefined */
   preferredDefaultDomainId?: number | null;
+  /** 本次登录是否因新 IP 写入了站内风险提醒 */
+  riskLoginNotified?: boolean;
+  /** 是否需强制修改密码（管理员重置密码后为 true，首次登录强制改密） */
+  mustChangePassword?: boolean;
 };
 
 export type SetDefaultDomainRequest = {
@@ -111,6 +115,8 @@ export type AuthSessionState = {
   userId?: number | null;
   businessDomainId?: number | null;
   expiresAt?: string | null;
+  /** 是否需强制修改密码（管理员重置密码后为 true，首次登录强制改密） */
+  mustChangePassword?: boolean;
 };
 
 export type LoginUserView = {
@@ -1046,6 +1052,12 @@ export type P0BatchCreateDomainCustomersResult = {
   added: number;
   skipped: number;
   items: P0DomainCustomer[];
+};
+
+/** 管理员重置客户密码响应：一次性展示的随机密码 */
+export type ResetDomainCustomerPasswordResponse = {
+  password: string;
+  must_change_password?: boolean;
 };
 
 export type P0AttachmentTargetType = "ticket" | "consultation" | "knowledge";

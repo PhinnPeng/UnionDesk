@@ -55,7 +55,7 @@ public class LoginAccountRepository {
         mapper.updateStaffPassword(id, passwordHash);
     }
 
-    public void updateCustomerPassword(long id, String passwordHash) {
-        mapper.updateCustomerPassword(id, passwordHash);
+    public void updateCustomerPassword(long id, String passwordHash, int mustChangePassword) {
+        mapper.updateCustomerPassword(id, passwordHash, mustChangePassword);
     }
 }

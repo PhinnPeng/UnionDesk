@@ -100,4 +100,12 @@ public class DomainCustomerController {
             @Valid @RequestBody DomainCustomerDtos.UpdateDomainCustomerStatusRequest request) {
         return domainCustomerService.updateCustomerStatus(domainId, customerId, request);
     }
+
+    @PutMapping("/customers/{customerId}/password")
+    @RequirePermission(PermissionCodes.DOMAIN_CUSTOMER_RESET_PASSWORD)
+    public DomainCustomerDtos.ResetCustomerPasswordResponse resetCustomerPassword(
+            @PathVariable long domainId,
+            @PathVariable long customerId) {
+        return domainCustomerService.resetCustomerPassword(domainId, customerId);
+    }
 }

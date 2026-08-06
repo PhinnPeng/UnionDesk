@@ -5,6 +5,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.uniondesk.auth.core.LoginAccountService;
 import com.uniondesk.iam.repository.CustomerAccountRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,13 +24,16 @@ class CustomerAccountServiceTests {
     private IdentitySubjectService identitySubjectService;
 
     @Mock
+    private LoginAccountService loginAccountService;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     private CustomerAccountService service;
 
     @BeforeEach
     void setUp() {
-        service = new CustomerAccountService(customerAccountRepository, identitySubjectService, passwordEncoder);
+        service = new CustomerAccountService(customerAccountRepository, identitySubjectService, loginAccountService, passwordEncoder);
     }
 
     @Test

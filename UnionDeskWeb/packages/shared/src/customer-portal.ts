@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 import { getDemoDomains, loadAuthSession, saveAuthSession, clearAuthSession } from "./storage";
-import type { AuthSessionState, DemoDomain, P0RegistrationPolicy } from "./types";
+import type { AuthSessionState, BusinessDomainView, DemoDomain, LoginResponse, P0RegistrationPolicy } from "./types";
 
 type CustomerPortalDomain = DemoDomain & {
   registrationPolicy: P0RegistrationPolicy;
@@ -118,6 +118,7 @@ export type CustomerPortalSnapshot = {
 export type CustomerLoginPayload = {
   loginName: string;
   password: string;
+  captchaToken?: string;
 };
 
 export type CustomerRegisterPayload = {
@@ -174,6 +175,9 @@ const ticketTypes: CustomerPortalTypeOption[] = [
 
 let cachedState: CustomerPortalState | null = null;
 const listeners = new Set<() => void>();
+/** When set, portal snapshot prefers these types (live API). */
+let liveTicketTypesOverride: CustomerPortalTypeOption[] | null = null;
+let liveMode = false;
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -439,7 +443,118 @@ function buildPortalSnapshot(state: CustomerPortalState): CustomerPortalSnapshot
     inboxMessages,
     unreadCount: inboxMessages.filter((message) => !message.isRead).length,
     attachments: state.attachments.filter((attachment) => attachment.ownerAccountId === account?.id),
-    ticketTypes
+    ticketTypes: liveTicketTypesOverride ?? ticketTypes
+  };
+}
+
+export function isCustomerPortalLiveMode(): boolean {
+  return liveMode;
+}
+
+export function setCustomerPortalLiveTicketTypes(types: CustomerPortalTypeOption[]): void {
+  liveTicketTypesOverride = types;
+  emitChange();
+}
+
+export function hydrateCustomerPortalFromLogin(response: LoginResponse): CustomerPortalSnapshot {
+  liveMode = true;
+  const nextState = updateState((state) => {
+    const user = response.user;
+    const accountId = user?.id ?? state.nextIds.account;
+    const now = nowIso();
+    const domainViews = response.accessibleDomains ?? [];
+    const domainIds = domainViews.map((domain) => domain.id);
+    const mappedDomains: CustomerPortalDomain[] = domainViews.map((domain) => mapBusinessDomain(domain, state.domains));
+    const existingAccount = state.accounts.find((item) => item.id === accountId);
+    const account: CustomerPortalAccount = {
+      id: accountId,
+      loginName: user?.username ?? response.user?.username ?? "customer",
+      password: "",
+      displayName: user?.username ?? "客户",
+      phone: user?.mobile ?? "",
+      email: user?.email ?? null,
+      domainIds,
+      createdAt: existingAccount?.createdAt ?? now,
+      updatedAt: now
+    };
+    const otherAccounts = state.accounts.filter((item) => item.id !== accountId);
+    const otherDomainIds = new Set(mappedDomains.map((item) => item.id));
+    const retainedDomains = state.domains.filter((item) => !otherDomainIds.has(item.id));
+    return {
+      ...state,
+      nextIds: {
+        ...state.nextIds,
+        account: Math.max(state.nextIds.account, accountId + 1)
+      },
+      accounts: [...otherAccounts, account],
+      domains: [...retainedDomains, ...mappedDomains],
+      activeAccountId: accountId,
+      activeDomainId: response.defaultBusinessDomainId > 0 ? response.defaultBusinessDomainId : domainIds[0] ?? null
+    };
+  });
+  return buildPortalSnapshot(nextState);
+}
+
+export function syncCustomerPortalActiveDomain(domainId: number): CustomerPortalSnapshot {
+  const nextState = updateState((state) => {
+    const account = ensureActiveAccount(state);
+    const domainIds = account.domainIds.includes(domainId) ? account.domainIds : [...account.domainIds, domainId];
+    return {
+      ...state,
+      accounts: state.accounts.map((item) =>
+        item.id === account.id ? { ...item, domainIds, updatedAt: nowIso() } : item
+      ),
+      activeAccountId: account.id,
+      activeDomainId: domainId
+    };
+  });
+  return buildPortalSnapshot(nextState);
+}
+
+export function replaceCustomerPortalTicketsForActiveDomain(tickets: CustomerPortalTicket[]): CustomerPortalSnapshot {
+  const nextState = updateState((state) => {
+    const account = resolveActiveAccount(state);
+    const domainId = state.activeDomainId;
+    if (!account || domainId == null) {
+      return state;
+    }
+    const retained = state.tickets.filter(
+      (ticket) => !(ticket.accountId === account.id && ticket.domainId === domainId)
+    );
+    return {
+      ...state,
+      tickets: [...retained, ...tickets],
+      nextIds: {
+        ...state.nextIds,
+        ticket: Math.max(state.nextIds.ticket, ...tickets.map((item) => item.id + 1), state.nextIds.ticket)
+      }
+    };
+  });
+  return buildPortalSnapshot(nextState);
+}
+
+export function clearCustomerPortalLiveSession(): void {
+  liveMode = false;
+  liveTicketTypesOverride = null;
+  clearAuthSession();
+  updateState((state) => ({
+    ...state,
+    activeAccountId: null,
+    activeDomainId: null
+  }));
+}
+
+function mapBusinessDomain(domain: BusinessDomainView, existing: CustomerPortalDomain[]): CustomerPortalDomain {
+  const prev = existing.find((item) => item.id === domain.id);
+  return {
+    id: domain.id,
+    code: domain.code,
+    name: domain.name,
+    description: prev?.description ?? "",
+    accent: prev?.accent ?? "#1E40AF",
+    supportLine: prev?.supportLine ?? "",
+    registrationPolicy: prev?.registrationPolicy ?? "admin_only",
+    invitationCode: prev?.invitationCode ?? ""
   };
 }
 
@@ -483,6 +598,10 @@ export function subscribeCustomerPortal(listener: () => void): () => void {
 
 export function getCustomerPortalState(): CustomerPortalState {
   return readState();
+}
+
+export function getCustomerPortalSnapshot(): CustomerPortalSnapshot {
+  return buildPortalSnapshot(readState());
 }
 
 export function loginCustomer(payload: CustomerLoginPayload): CustomerPortalSnapshot {
@@ -834,9 +953,5 @@ export function uploadCustomerAttachment(file: File, domainId?: number): Promise
 }
 
 export function listCustomerTicketTypes(): CustomerPortalTypeOption[] {
-  return ticketTypes;
-}
-
-export function getCustomerPortalSnapshot(): CustomerPortalSnapshot {
-  return buildPortalSnapshot(readState());
+  return liveTicketTypesOverride ?? ticketTypes;
 }

@@ -151,7 +151,7 @@ class TicketConfigServiceTests {
 
         assertThatThrownBy(() -> ticketConfigService.createTicketType(
                 DOMAIN_ID,
-                new TicketConfigDtos.CreateTicketTypeRequest("technical", "技术支持", null, null, null, null, null)))
+                new TicketConfigDtos.CreateTicketTypeRequest("technical", "技术支持", null, null, null, null, null, null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("该域下编码已存在");
 
@@ -161,7 +161,7 @@ class TicketConfigServiceTests {
 
         assertThatThrownBy(() -> ticketConfigService.createTicketType(
                 DOMAIN_ID,
-                new TicketConfigDtos.CreateTicketTypeRequest("technical", "技术支持", null, null, null, null, null)))
+                new TicketConfigDtos.CreateTicketTypeRequest("technical", "技术支持", null, null, null, null, null, null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("该域下名称已存在");
     }

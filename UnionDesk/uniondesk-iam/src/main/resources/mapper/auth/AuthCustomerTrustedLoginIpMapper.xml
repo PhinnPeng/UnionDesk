@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.auth.mapper.AuthCustomerTrustedLoginIpMapper">
+
+    <resultMap id="AuthCustomerTrustedLoginIpPo" type="com.uniondesk.auth.entity.AuthCustomerTrustedLoginIpPo">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="clientIp" column="client_ip"/>
+        <result property="lastUsedAt" column="last_used_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="selectByUserIdAndIp" resultMap="AuthCustomerTrustedLoginIpPo">
+        SELECT id, user_id, client_ip, last_used_at, created_at
+        FROM auth_customer_trusted_login_ip
+        WHERE user_id = #{userId}
+          AND client_ip = #{clientIp}
+        LIMIT 1
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO auth_customer_trusted_login_ip (
+            user_id, client_ip, last_used_at, created_at
+        )
+        VALUES (
+            #{userId}, #{clientIp}, #{lastUsedAt}, #{lastUsedAt}
+        )
+        ON DUPLICATE KEY UPDATE
+            last_used_at = VALUES(last_used_at)
+    </insert>
+
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM auth_customer_trusted_login_ip
+        WHERE user_id = #{userId}
+    </select>
+
+    <delete id="deleteOldestByUserId">
+        DELETE FROM auth_customer_trusted_login_ip
+        WHERE id IN (
+            SELECT id FROM (
+                SELECT id
+                FROM auth_customer_trusted_login_ip
+                WHERE user_id = #{userId}
+                ORDER BY last_used_at ASC, id ASC
+                LIMIT #{limit}
+            ) oldest
+        )
+    </delete>
+
+</mapper>

@@ -49,11 +49,13 @@ import type {
   P0StepUpRequest,
   P0StepUpResponse,
   P0InboxPageResponse,
+  P0InboxMessage,
   P0AdminTicketListItem,
   P0InvitationCode,
   CreateP0InvitationCodePayload,
   P0DomainCustomer,
   P0BatchCreateDomainCustomersResult,
+  ResetDomainCustomerPasswordResponse,
   DomainRole,
   DomainPermissionItem,
   DomainRolePermissions,
@@ -147,6 +149,8 @@ type RetriableRequestConfig = {
 };
 type LoginOptions = {
   persistMode?: AuthPersistMode;
+  /** Customer portal skips admin IAM menu snapshot. */
+  skipPermissionSnapshot?: boolean;
 };
 const CLIENT_CODE_HEADER = "X-UD-Client-Code";
 const API_ERROR_CODE_MESSAGES: Record<string, string> = {
@@ -455,10 +459,17 @@ export async function login(payload: LoginRequest, options?: LoginOptions): Prom
       userId: loginResponse.user?.id ?? null,
       businessDomainId: loginResponse.defaultBusinessDomainId ?? null,
       expiresAt: new Date(Date.now() + loginResponse.expiresInSeconds * 1000).toISOString(),
-      authenticatedAt: new Date().toISOString()
+      authenticatedAt: new Date().toISOString(),
+      mustChangePassword: Boolean(loginResponse.mustChangePassword),
     }, options);
-    const snapshot = await fetchPermissionSnapshot();
-    savePermissionSnapshot(snapshot, { persistMode: session.persistMode });
+    const clientCode = loginResponse.clientCode ?? resolveClientCode();
+    const skipSnapshot =
+      options?.skipPermissionSnapshot
+      ?? clientCode === "ud-customer-web";
+    if (!skipSnapshot) {
+      const snapshot = await fetchPermissionSnapshot();
+      savePermissionSnapshot(snapshot, { persistMode: session.persistMode });
+    }
     return loginResponse;
   } catch (error) {
     throw toError(error);
@@ -474,6 +485,19 @@ export async function logout(): Promise<void> {
     }
   } finally {
     clearAuthSession();
+  }
+}
+
+/** `PUT /auth/password` — 登录后修改密码（需旧密码），客户改密成功后强制改密标志清零 */
+export async function changePassword(oldPassword: string, newPassword: string): Promise<void> {
+  try {
+    const response = await api.put("/auth/password", {
+      old_password: oldPassword,
+      new_password: newPassword,
+    });
+    unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
   }
 }
 
@@ -1037,7 +1061,7 @@ export async function claimP0AdminTicket(domainId: string, ticketId: string): Pr
   }
 }
 
-/** P0：`GET /api/v1/inbox`；404 时返回空列表 */
+/** P0：`GET /api/v1/inbox`；对齐后端 `{ total, items }` 与历史 `{ list }` */
 export async function fetchP0InboxPage(params: {
   page: number;
   page_size: number;
@@ -1045,8 +1069,30 @@ export async function fetchP0InboxPage(params: {
   domain_id?: string;
 }): Promise<P0InboxPageResponse> {
   try {
-    const response = await api.get<P0InboxPageResponse>("/inbox", { params });
-    return unwrapApiResponse(response.data);
+    const response = await api.get<Record<string, unknown>>("/inbox", {
+      params: {
+        unreadOnly: params.is_read === false ? true : undefined,
+        limit: params.page_size,
+      },
+    });
+    const data = unwrapApiResponse(response.data) as Record<string, unknown>;
+    const rawList = Array.isArray(data.list)
+      ? data.list
+      : Array.isArray(data.items)
+        ? data.items
+        : [];
+    const list = rawList.map((row) => normalizeP0InboxMessage(row as Record<string, unknown>));
+    const unreadFromList = list.filter((item) => !item.is_read).length;
+    return {
+      total: typeof data.total === "number" ? data.total : list.length,
+      unread_count:
+        typeof data.unread_count === "number"
+          ? data.unread_count
+          : typeof data.unreadCount === "number"
+            ? data.unreadCount
+            : unreadFromList,
+      list,
+    };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
       return { total: 0, unread_count: 0, list: [] };
@@ -1058,9 +1104,18 @@ export async function fetchP0InboxPage(params: {
 /** P0：`GET /api/v1/inbox/unread-count` */
 export async function fetchP0InboxUnreadCount(): Promise<number> {
   try {
-    const response = await api.get<{ count: number }>("/inbox/unread-count");
-    const data = unwrapApiResponse(response.data);
-    return typeof data.count === "number" ? data.count : 0;
+    const response = await api.get<Record<string, unknown>>("/inbox/unread-count");
+    const data = unwrapApiResponse(response.data) as Record<string, unknown>;
+    if (typeof data.count === "number") {
+      return data.count;
+    }
+    if (typeof data.unreadCount === "number") {
+      return data.unreadCount;
+    }
+    if (typeof data.unread_count === "number") {
+      return data.unread_count;
+    }
+    return 0;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
       return 0;
@@ -1069,13 +1124,48 @@ export async function fetchP0InboxUnreadCount(): Promise<number> {
   }
 }
 
-/** P0：`PUT /api/v1/inbox/{message_id}/read` */
+/** P0：`POST /api/v1/inbox/{message_id}/read`（兼容旧 PUT） */
 export async function markP0InboxMessageRead(messageId: string): Promise<void> {
   try {
-    await api.put(`/inbox/${encodeURIComponent(messageId)}/read`);
+    await api.post(`/inbox/${encodeURIComponent(messageId)}/read`);
   } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      try {
+        await api.put(`/inbox/${encodeURIComponent(messageId)}/read`);
+        return;
+      } catch (putError) {
+        throw toError(putError);
+      }
+    }
     throw toError(error);
   }
+}
+
+function normalizeP0InboxMessage(raw: Record<string, unknown>): P0InboxMessage {
+  return {
+    id: String(raw.id ?? ""),
+    title: String(raw.title ?? ""),
+    content: raw.content != null ? String(raw.content) : null,
+    jump_url:
+      raw.jump_url != null
+        ? String(raw.jump_url)
+        : raw.jumpUrl != null
+          ? String(raw.jumpUrl)
+          : null,
+    is_read: Boolean(raw.is_read ?? raw.isRead ?? raw.read ?? false),
+    domain_name:
+      raw.domain_name != null
+        ? String(raw.domain_name)
+        : raw.domainName != null
+          ? String(raw.domainName)
+          : null,
+    created_at:
+      raw.created_at != null
+        ? String(raw.created_at)
+        : raw.createdAt != null
+          ? String(raw.createdAt)
+          : "",
+  };
 }
 
 function normalizeP0InvitationCode(raw: Record<string, unknown>): P0InvitationCode {
@@ -1293,6 +1383,21 @@ export async function updateDomainCustomerStatus(
     { status },
   );
   return normalizeP0DomainCustomer(unwrapApiResponse(response.data) as Record<string, unknown>);
+}
+
+/** `PUT .../customers/{customerId}/password` — 管理员重置客户密码，返回一次性随机密码 */
+export async function resetDomainCustomerPassword(
+  domainId: string,
+  customerId: string,
+): Promise<ResetDomainCustomerPasswordResponse> {
+  const response = await api.put<Record<string, unknown>>(
+    `/admin/domains/${encodeURIComponent(domainId)}/customers/${encodeURIComponent(customerId)}/password`,
+  );
+  const data = unwrapApiResponse(response.data) as Record<string, unknown>;
+  return {
+    password: String(data.password ?? ""),
+    must_change_password: Boolean(data.must_change_password),
+  };
 }
 
 function normalizeDomainRole(raw: Record<string, unknown>): DomainRole {
@@ -2362,3 +2467,146 @@ export function sendConsultationMessage(payload: SendConsultationMessagePayload)
 }
 
 export { clearAuthSession, saveTicketMeta };
+
+// --- Customer portal (live) ticket APIs ---
+
+export type CustomerTicketRow = {
+  id: number;
+  ticketNo: string;
+  businessDomainId: number;
+  ticketTypeId: number;
+  ticketTypeName: string;
+  customerId: number;
+  title: string;
+  description: string;
+  status: string;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  replyCount?: number;
+};
+
+export type CustomerTicketReplyRow = {
+  id: number;
+  senderType: string;
+  content: string;
+  createdAt: string;
+};
+
+export type CustomerTicketDetail = {
+  ticket: CustomerTicketRow;
+  replies: CustomerTicketReplyRow[];
+};
+
+export type CustomerTicketTypeBrief = {
+  id: number;
+  name: string;
+  description?: string | null;
+};
+
+export async function listCustomerMyTickets(
+  domainId: number,
+  options?: { status?: string; limit?: number },
+): Promise<CustomerTicketRow[]> {
+  try {
+    const response = await api.get<{ total: number; items: CustomerTicketRow[] }>(
+      `/domains/${domainId}/tickets/my`,
+      { params: { status: options?.status, limit: options?.limit ?? 100 } },
+    );
+    const data = unwrapApiResponse(response.data);
+    return data.items ?? [];
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+export async function getCustomerMyTicketDetail(
+  domainId: number,
+  ticketId: number,
+): Promise<CustomerTicketDetail> {
+  try {
+    const response = await api.get<CustomerTicketDetail>(
+      `/domains/${domainId}/tickets/my/${ticketId}`,
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+export async function createCustomerMyTicket(
+  domainId: number,
+  payload: {
+    ticketTypeId: number;
+    title: string;
+    description: string;
+    attachmentIds?: number[];
+  },
+): Promise<{ id: number; ticketNo: string }> {
+  try {
+    const response = await api.post<{ id: number; ticketNo: string }>(
+      `/domains/${domainId}/tickets`,
+      {
+        ticketTypeId: payload.ticketTypeId,
+        title: payload.title,
+        description: payload.description,
+        attachmentIds: payload.attachmentIds ?? [],
+        dynamicData: {},
+        source: "customer_web",
+      },
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+export async function replyCustomerMyTicket(
+  domainId: number,
+  ticketId: number,
+  payload: { version: number; content: string; attachmentIds?: number[] },
+): Promise<{ id: number }> {
+  try {
+    const response = await api.post<{ id: number }>(
+      `/domains/${domainId}/tickets/my/${ticketId}/replies`,
+      {
+        version: payload.version,
+        content: payload.content,
+        attachmentIds: payload.attachmentIds ?? [],
+      },
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+export async function withdrawCustomerMyTicket(
+  domainId: number,
+  ticketId: number,
+  payload: { version: number; reason: string },
+): Promise<{ id: number }> {
+  try {
+    const response = await api.post<{ id: number }>(
+      `/domains/${domainId}/tickets/my/${ticketId}/withdraw`,
+      payload,
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+export async function listCustomerDomainTicketTypes(
+  domainId: number,
+): Promise<CustomerTicketTypeBrief[]> {
+  try {
+    const response = await api.get<{ total: number; items: CustomerTicketTypeBrief[] }>(
+      `/domains/${domainId}/ticket-types`,
+    );
+    const data = unwrapApiResponse(response.data);
+    return data.items ?? [];
+  } catch (error) {
+    throw toError(error);
+  }
+}

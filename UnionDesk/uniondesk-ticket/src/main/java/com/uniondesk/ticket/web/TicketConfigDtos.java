@@ -241,6 +241,18 @@ public final class TicketConfigDtos {
             java.util.List<TicketTypeView> items) {
     }
 
+    /** Customer-facing brief ticket type (no admin schema / flow). */
+    public record CustomerTicketTypeView(
+            long id,
+            String name,
+            String description) {
+    }
+
+    public record CustomerTicketTypeListView(
+            long total,
+            java.util.List<CustomerTicketTypeView> items) {
+    }
+
     public record TicketTemplateListView(
             long total,
             java.util.List<TicketTemplateView> items) {

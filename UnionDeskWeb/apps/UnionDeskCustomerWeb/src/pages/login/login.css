@@ -1,0 +1,417 @@
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap");
+
+.auth {
+  --auth-blue: #0b6bcb;
+  --auth-blue-deep: #084f96;
+  --auth-blue-soft: #e7f1fb;
+  --auth-ink: #152033;
+  --auth-mute: #5b6578;
+  --auth-faint: #7a8496;
+  --auth-line: rgba(21, 32, 51, 0.1);
+  --auth-panel: #ffffff;
+  --auth-radius: 12px;
+  --auth-radius-control: 10px;
+  --auth-font: "Figtree", -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Segoe UI", "Microsoft YaHei", sans-serif;
+  --auth-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --auth-shadow: 0 14px 36px rgba(21, 48, 90, 0.1);
+
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(720px 420px at 12% 0%, rgba(11, 107, 203, 0.16), transparent 58%),
+    radial-gradient(640px 380px at 92% 88%, rgba(56, 189, 248, 0.14), transparent 55%),
+    linear-gradient(165deg, #e8f1fb 0%, #f4f7fb 42%, #e9eef6 100%);
+  color: var(--auth-ink);
+  font-family: var(--auth-font);
+}
+
+.auth__top {
+  z-index: 10;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  width: 100%;
+  padding: 0 clamp(28px, 5vw, 64px);
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.auth__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.auth__brand:hover {
+  text-decoration: none;
+}
+
+.auth__mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  background: linear-gradient(160deg, #4aa3ef 0%, var(--auth-blue) 58%, #0a5fad 100%);
+  box-shadow: 0 8px 16px rgba(11, 107, 203, 0.28);
+}
+
+.auth__brand-name {
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.auth__main {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+}
+
+/* Full-bleed left/right split: golden ratio ≈ 61.8% / 38.2% */
+.auth__dock {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.auth__story {
+  flex: 1.618 1 0;
+  min-width: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.auth__story-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 clamp(28px, 5vw, 64px) clamp(24px, 4vh, 48px);
+  box-sizing: border-box;
+}
+
+.auth__story-inner {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 14px;
+}
+
+.auth__headline {
+  margin: 0;
+  font-size: clamp(22px, 2.4vw, 28px);
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+  font-weight: 750;
+}
+
+.auth__headline em {
+  font-style: normal;
+  color: var(--auth-blue);
+}
+
+.auth__lead {
+  margin: 0;
+  max-width: 32em;
+  color: var(--auth-mute);
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+.auth__carousel {
+  position: relative;
+  margin-top: 6px;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--auth-radius);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.auth__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition:
+    opacity 0.4s var(--auth-ease),
+    transform 0.4s var(--auth-ease);
+}
+
+.auth__slide.is-active {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.auth__slide-figure {
+  position: relative;
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.auth__slide-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.auth__slide-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: 28px 16px 14px;
+  background: linear-gradient(180deg, transparent 0%, rgba(15, 28, 48, 0.78) 72%);
+  color: #fff;
+}
+
+.auth__slide-title {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.auth__slide-text {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Form panel — full viewport height card; content centered */
+.auth__form-panel {
+  flex: 1 1 0;
+  align-self: stretch;
+  min-width: 320px;
+  max-width: 42%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: clamp(28px, 5vh, 48px) clamp(28px, 4vw, 48px);
+  box-sizing: border-box;
+  border-radius: 0;
+  background: var(--auth-panel);
+  border: 0;
+  border-left: 1px solid rgba(21, 32, 51, 0.06);
+  box-shadow: -18px 0 48px rgba(21, 48, 90, 0.08);
+}
+
+.auth__form-stack {
+  width: min(320px, 100%);
+}
+
+.auth__card-title {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.auth__card-desc {
+  margin: 8px 0 0;
+  color: var(--auth-mute);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.auth__domain {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--auth-blue-soft);
+  color: var(--auth-blue-deep);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.auth__form {
+  margin-top: 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.auth__field {
+  display: grid;
+  gap: 6px;
+}
+
+.auth__field label {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--auth-mute);
+}
+
+.auth__field input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: var(--auth-radius-control);
+  border: 1px solid var(--auth-line);
+  background: #fff;
+  color: var(--auth-ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.18s var(--auth-ease), box-shadow 0.18s var(--auth-ease);
+}
+
+.auth__field input::placeholder {
+  color: #9aa3b2;
+  font-weight: 400;
+}
+
+.auth__field input:focus {
+  border-color: rgba(11, 107, 203, 0.55);
+  box-shadow: 0 0 0 3px rgba(11, 107, 203, 0.14);
+}
+
+.auth__captcha {
+  margin-top: 4px;
+  display: grid;
+  gap: 8px;
+}
+
+.auth__captcha-hint {
+  margin: 0;
+  color: var(--auth-faint);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.auth__submit {
+  margin-top: 4px;
+  width: 100%;
+  height: 48px;
+  border: 0;
+  border-radius: var(--auth-radius-control);
+  background: var(--auth-blue);
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(11, 107, 203, 0.22);
+  transition: background 0.18s var(--auth-ease), transform 0.18s var(--auth-ease);
+}
+
+.auth__submit:hover:not(:disabled) {
+  background: var(--auth-blue-deep);
+}
+
+.auth__submit:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.auth__submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.auth__links {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth__links a {
+  color: var(--auth-blue);
+  text-decoration: none;
+}
+
+.auth__links a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth__hint {
+  margin: 12px 0 0;
+  text-align: center;
+  color: var(--auth-faint);
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .auth__dock {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .auth__story {
+    order: 1;
+    flex: none;
+    width: 100%;
+    min-height: 0;
+  }
+
+  .auth__top {
+    padding: 0 20px;
+  }
+
+  .auth__story-body {
+    padding: 8px 20px 28px;
+  }
+
+  .auth__form-panel {
+    order: 2;
+    flex: none;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    min-height: min(72vh, 640px);
+    height: auto;
+    border-left: 0;
+    box-shadow: none;
+    border-top: 1px solid rgba(21, 32, 51, 0.06);
+  }
+
+  .auth__carousel {
+    aspect-ratio: 16 / 11;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth__slide,
+  .auth__submit {
+    transition: none !important;
+  }
+}
