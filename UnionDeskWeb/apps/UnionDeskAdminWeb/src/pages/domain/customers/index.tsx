@@ -5,6 +5,7 @@ import {
 	fetchDomainCustomer,
 	fetchDomainMembersPage,
 	fetchP0DomainCustomersPage,
+	resetDomainCustomerPassword,
 	toErrorMessage,
 	updateDomainCustomerStatus,
 } from "@uniondesk/shared";
@@ -16,12 +17,14 @@ import { TableSearchForm } from "#src/components/table-search-form";
 import {
 	DOMAIN_CUSTOMER_CREATE,
 	DOMAIN_CUSTOMER_READ,
+	DOMAIN_CUSTOMER_RESET_PASSWORD,
 	DOMAIN_CUSTOMER_UPDATE_STATUS,
 } from "#src/pages/domain/domain-permissions";
 import { useAuthStore } from "#src/store/auth";
 
 import { SearchOutlined } from "@ant-design/icons";
 import {
+	Alert,
 	App,
 	Button,
 	Card,
@@ -41,6 +44,7 @@ import {
 	Typography,
 } from "antd";
 import type { FormInstance, TableColumnsType } from "antd";
+import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 const { Text } = Typography;
@@ -58,15 +62,7 @@ interface CustomersAddModalProps {
 	confirmLoading?: boolean;
 	onCancel: () => void;
 	onSubmitBlank: (values: { display_name: string; login_name: string; phone: string; email: string }) => Promise<void>;
-	onSubmitStaff: (staffAccountId: string) => Promise<void>;
-}
-
-interface CustomersBatchStaffModalProps {
-	open: boolean;
-	domainId: string;
-	confirmLoading?: boolean;
-	onCancel: () => void;
-	onSubmit: (staffAccountIds: string[]) => Promise<void>;
+	onSubmitStaff: (staffAccountIds: string[]) => Promise<void>;
 }
 
 interface CustomerViewModalProps {
@@ -176,6 +172,39 @@ function CustomerViewModal({ open, domainId, customerId, onCancel }: CustomerVie
 	);
 }
 
+interface ResetPasswordResultModalProps {
+	open: boolean;
+	customerName: string;
+	password: string;
+	onClose: () => void;
+}
+
+function ResetPasswordResultModal({ open, customerName, password, onClose }: ResetPasswordResultModalProps) {
+	return (
+		<Modal
+			title="重置密码成功"
+			open={open}
+			okText="关闭"
+			cancelButtonProps={{ style: { display: "none" } }}
+			onOk={onClose}
+			onCancel={onClose}
+			destroyOnHidden
+		>
+			<Alert
+				type="warning"
+				showIcon
+				className="mb-4"
+				message={`客户「${customerName}」的新密码已生成，请复制并转交客户。`}
+				description="客户使用新密码首次登录时将被强制要求修改密码，此密码仅展示一次。"
+			/>
+			<Space direction="vertical" className="w-full">
+				<Text type="secondary">一次性密码</Text>
+				<Typography.Text code copyable>{password}</Typography.Text>
+			</Space>
+		</Modal>
+	);
+}
+
 function BlankCustomerForm({ form }: { form: FormInstance<{ display_name: string; login_name: string; phone: string; email: string }> }) {
 	return (
 		<Form form={form} layout="vertical">
@@ -230,14 +259,14 @@ function CustomersAddModal({
 	const [staffTotal, setStaffTotal] = useState(0);
 	const [staffPage, setStaffPage] = useState(1);
 	const [staffPageSize, setStaffPageSize] = useState(10);
-	const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+	const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([]);
 
 	const reset = useCallback(() => {
 		setStep(0);
 		setMode("blank");
 		setStaffKeyword("");
 		setStaffPage(1);
-		setSelectedStaffId(null);
+		setSelectedStaffIds([]);
 		form.resetFields();
 	}, [form]);
 
@@ -284,8 +313,7 @@ function CustomersAddModal({
 		{ title: "在岗状态", dataIndex: "status", width: 100, render: v => v ?? "—" },
 	], []);
 
-	const selectedStaff = staffRows.find(row => row.staff_account_id === selectedStaffId)
-		?? (selectedStaffId ? { staff_account_id: selectedStaffId } as DomainMember : undefined);
+	const selectedStaffRows = staffRows.filter(row => selectedStaffIds.includes(row.staff_account_id));
 
 	const handleNext = async () => {
 		if (step === 0) {
@@ -302,11 +330,11 @@ function CustomersAddModal({
 			}
 			return;
 		}
-		if (!selectedStaffId) {
-			message.warning("请选择一名员工");
+		if (selectedStaffIds.length === 0) {
+			message.warning("请至少选择一名员工");
 			return;
 		}
-		await onSubmitStaff(selectedStaffId);
+		await onSubmitStaff(selectedStaffIds);
 	};
 
 	return (
@@ -351,7 +379,7 @@ function CustomersAddModal({
 						<Radio value="staff">
 							<Space direction="vertical" size={0}>
 								<Text strong>选择员工新增</Text>
-								<Text type="secondary" className="text-xs">从本业务域员工列表选择一名员工</Text>
+								<Text type="secondary" className="text-xs">从本业务域员工列表选择多名员工</Text>
 							</Space>
 						</Radio>
 					</Space>
@@ -387,9 +415,8 @@ function CustomersAddModal({
 						columns={staffColumns}
 						dataSource={staffRows}
 						rowSelection={{
-							type: "radio",
-							selectedRowKeys: selectedStaffId ? [selectedStaffId] : [],
-							onChange: keys => setSelectedStaffId(String(keys[0] ?? "")),
+							selectedRowKeys: selectedStaffIds,
+							onChange: keys => setSelectedStaffIds(keys as string[]),
 						}}
 						pagination={{
 							current: staffPage,
@@ -402,145 +429,18 @@ function CustomersAddModal({
 							},
 						}}
 					/>
-					{selectedStaff ? (
-						<Descriptions bordered size="small" column={1} title="自动填充预览">
-							<Descriptions.Item label="账户">{memberLabel(selectedStaff)}</Descriptions.Item>
-							<Descriptions.Item label="手机">{selectedStaff.phone ?? "—"}</Descriptions.Item>
-							<Descriptions.Item label="邮箱">{selectedStaff.email ?? "—"}</Descriptions.Item>
+					{selectedStaffRows.length > 0 ? (
+						<Descriptions bordered size="small" column={1} title="自动填充预览" className="mt-4">
+							{selectedStaffRows.map(row => (
+								<Descriptions.Item key={row.staff_account_id} label={memberLabel(row)}>
+									{row.phone ?? "—"}
+									{" / "}
+									{row.email ?? "—"}
+								</Descriptions.Item>
+							))}
 						</Descriptions>
 					) : null}
 				</Space>
-			) : null}
-		</Modal>
-	);
-}
-
-function CustomersBatchStaffModal({
-	open,
-	domainId,
-	confirmLoading,
-	onCancel,
-	onSubmit,
-}: CustomersBatchStaffModalProps) {
-	const { message } = App.useApp();
-	const [keyword, setKeyword] = useState("");
-	const [loading, setLoading] = useState(false);
-	const [rows, setRows] = useState<DomainMember[]>([]);
-	const [total, setTotal] = useState(0);
-	const [page, setPage] = useState(1);
-	const [pageSize, setPageSize] = useState(10);
-	const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
-
-	const loadStaff = useCallback(async (nextPage: number, nextPageSize: number, nextKeyword: string) => {
-		if (!domainId) {
-			return;
-		}
-		setLoading(true);
-		try {
-			const result = await fetchDomainMembersPage({
-				domainId,
-				page: nextPage,
-				page_size: nextPageSize,
-				keyword: nextKeyword.trim() || undefined,
-			});
-			setRows(result.list);
-			setTotal(result.total);
-		}
-		catch (error) {
-			message.error(toErrorMessage(error));
-		}
-		finally {
-			setLoading(false);
-		}
-	}, [domainId, message]);
-
-	useEffect(() => {
-		if (!open) {
-			setKeyword("");
-			setPage(1);
-			setSelectedKeys([]);
-			return;
-		}
-		void loadStaff(page, pageSize, keyword);
-	}, [open, loadStaff, page, pageSize, keyword]);
-
-	const columns: TableColumnsType<DomainMember> = useMemo(() => [
-		{ title: "姓名/账户", key: "name", render: (_, row) => memberLabel(row) },
-		{ title: "手机", dataIndex: "phone", width: 130, render: v => v ?? "—" },
-		{ title: "邮箱", dataIndex: "email", ellipsis: true, render: v => v ?? "—" },
-		{ title: "在岗状态", dataIndex: "status", width: 100, render: v => v ?? "—" },
-	], []);
-
-	const previewRows = rows.filter(row => selectedKeys.includes(row.staff_account_id));
-
-	return (
-		<Modal
-			title="批量添加员工"
-			open={open}
-			width={720}
-			destroyOnHidden
-			onCancel={onCancel}
-			okText="确认添加"
-			cancelText="取消"
-			confirmLoading={confirmLoading}
-			onOk={() => {
-				if (selectedKeys.length === 0) {
-					message.warning("请至少选择一名员工");
-					return;
-				}
-				void onSubmit(selectedKeys);
-			}}
-		>
-			<Text type="secondary" className="mb-3 block text-xs">多选域内员工，一次提交为客户</Text>
-			<Space.Compact className="mb-3 w-full">
-				<Input
-					placeholder="搜索员工：姓名、手机、邮箱"
-					value={keyword}
-					onChange={e => setKeyword(e.target.value)}
-					onPressEnter={() => {
-						setPage(1);
-						void loadStaff(1, pageSize, keyword);
-					}}
-				/>
-				<Button onClick={() => {
-					setPage(1);
-					void loadStaff(1, pageSize, keyword);
-				}}
-				>
-					搜索
-				</Button>
-			</Space.Compact>
-			<Table<DomainMember>
-				rowKey="staff_account_id"
-				size="small"
-				loading={loading}
-				columns={columns}
-				dataSource={rows}
-				rowSelection={{
-					selectedRowKeys: selectedKeys,
-					onChange: keys => setSelectedKeys(keys as string[]),
-				}}
-				pagination={{
-					current: page,
-					pageSize,
-					total,
-					showSizeChanger: true,
-					onChange: (p, ps) => {
-						setPage(p);
-						setPageSize(ps);
-					},
-				}}
-			/>
-			{previewRows.length > 0 ? (
-				<Descriptions bordered size="small" column={1} title="自动填充预览" className="mt-4">
-					{previewRows.map(row => (
-						<Descriptions.Item key={row.staff_account_id} label={memberLabel(row)}>
-							{row.phone ?? "—"}
-							{" / "}
-							{row.email ?? "—"}
-						</Descriptions.Item>
-					))}
-				</Descriptions>
 			) : null}
 		</Modal>
 	);
@@ -564,10 +464,9 @@ export default function DomainCustomersPage() {
 	const [pageSize, setPageSize] = useState(20);
 	const [keyword, setKeyword] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("");
-	const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
 	const [addOpen, setAddOpen] = useState(false);
-	const [batchStaffOpen, setBatchStaffOpen] = useState(false);
 	const [viewCustomerId, setViewCustomerId] = useState<string | null>(null);
+	const [resetResult, setResetResult] = useState<{ customerName: string; password: string } | null>(null);
 
 	const loadCustomers = useCallback(async (
 		nextPage = page,
@@ -617,14 +516,11 @@ export default function DomainCustomersPage() {
 		void loadCustomers(1, pageSize, "", "");
 	}, [loadCustomers, pageSize]);
 
-	const applyStatusChange = useCallback(async (ids: string[], nextStatus: "active" | "disabled") => {
+	const applyStatusChange = useCallback(async (id: string, nextStatus: "active" | "disabled") => {
 		setSubmitting(true);
 		try {
-			for (const id of ids) {
-				await updateDomainCustomerStatus(domainId, id, nextStatus);
-			}
-			message.success(`已更新 ${ids.length} 名客户状态`);
-			setSelectedRowKeys([]);
+			await updateDomainCustomerStatus(domainId, id, nextStatus);
+			message.success("已更新客户状态");
 			await loadCustomers(page, pageSize, keyword, statusFilter);
 		}
 		catch (error) {
@@ -636,7 +532,7 @@ export default function DomainCustomersPage() {
 	}, [domainId, keyword, loadCustomers, message, page, pageSize, statusFilter]);
 
 	const confirmEnable = useCallback((
-		ids: string[],
+		id: string,
 		title: string,
 		content: string,
 	) => {
@@ -645,27 +541,43 @@ export default function DomainCustomersPage() {
 			content,
 			okText: "确定",
 			cancelText: "取消",
-			onOk: () => applyStatusChange(ids, "active"),
+			onOk: () => applyStatusChange(id, "active"),
 		});
 	}, [applyStatusChange, modal]);
 
 	const handleRowEnable = useCallback((row: P0DomainCustomer) => {
 		confirmEnable(
-			[row.id],
+			row.id,
 			"确认启用客户",
 			`确定将「${row.display_name}」重新启用吗？`,
 		);
 	}, [confirmEnable]);
 
+	const handleResetPassword = useCallback(async (row: P0DomainCustomer) => {
+		setSubmitting(true);
+		try {
+			const result = await resetDomainCustomerPassword(domainId, row.id);
+			setResetResult({ customerName: row.display_name, password: result.password });
+			message.success("密码已重置");
+		}
+		catch (error) {
+			message.error(toErrorMessage(error));
+		}
+		finally {
+			setSubmitting(false);
+		}
+	}, [domainId, message]);
+
 	const columns: TableColumnsType<P0DomainCustomer> = useMemo(() => [
-		{ title: "展示名", dataIndex: "display_name", ellipsis: true },
-		{ title: "登录名", dataIndex: "login_name", width: 120, render: v => v ?? "—" },
-		{ title: "手机", dataIndex: "phone", width: 130, render: v => v ?? "—" },
-		{ title: "邮箱", dataIndex: "email", ellipsis: true, render: v => v ?? "—" },
+		{ title: "展示名", dataIndex: "display_name", width: 180, align: "center", ellipsis: true },
+		{ title: "登录名", dataIndex: "login_name", width: 140, align: "center", render: v => v ?? "—" },
+		{ title: "手机", dataIndex: "phone", width: 130, align: "center", render: v => v ?? "—" },
+		{ title: "邮箱", dataIndex: "email", width: 220, align: "center", ellipsis: true, render: v => v ?? "—" },
 		{
 			title: "状态",
 			dataIndex: "status",
 			width: 90,
+			align: "center",
 			render: status => {
 				const { label, color } = formatStatusTag(status);
 				return <Tag color={color}>{label}</Tag>;
@@ -675,23 +587,40 @@ export default function DomainCustomersPage() {
 			title: "来源",
 			dataIndex: "source",
 			width: 110,
+			align: "center",
 			render: (_, row) => formatSource(row.source),
 		},
-		{ title: "创建时间", dataIndex: "created_at", width: 170, render: v => v ?? "—" },
+		{
+			title: "创建时间",
+			dataIndex: "created_at",
+			width: 150,
+			align: "center",
+			render: v => (v ? dayjs(v).format("YYYY-MM-DD HH:mm") : "—"),
+		},
 		{
 			title: "操作",
 			key: "actions",
-			width: 140,
+			width: 190,
+			align: "center",
 			fixed: "right",
 			render: (_, row) => (
 				<Space size="small">
 					<Button type="link" size="small" onClick={() => setViewCustomerId(row.id)}>查看</Button>
+					<AuthGuarded auth={DOMAIN_CUSTOMER_RESET_PASSWORD} fallback={null}>
+						<ConfirmPopover
+							title="确认重置密码"
+							description={`确定重置「${row.display_name}」的密码吗？重置后客户首次登录需强制修改密码。`}
+							onConfirm={() => handleResetPassword(row)}
+						>
+							<Button type="link" size="small">重置密码</Button>
+						</ConfirmPopover>
+					</AuthGuarded>
 					<AuthGuarded auth={DOMAIN_CUSTOMER_UPDATE_STATUS} fallback={null}>
 						{row.status === "active" ? (
 							<ConfirmPopover
 								title="确认禁用客户"
 								description={`确定将「${row.display_name}」设为禁用吗？`}
-								onConfirm={() => applyStatusChange([row.id], "disabled")}
+								onConfirm={() => applyStatusChange(row.id, "disabled")}
 							>
 								<Button type="link" size="small">禁用</Button>
 							</ConfirmPopover>
@@ -703,7 +632,7 @@ export default function DomainCustomersPage() {
 				</Space>
 			),
 		},
-	], [applyStatusChange, handleRowEnable]);
+	], [applyStatusChange, handleResetPassword, handleRowEnable]);
 
 	return (
 		<BasicContent>
@@ -748,31 +677,9 @@ export default function DomainCustomersPage() {
 								bordered={false}
 								title="客户列表"
 								extra={(
-									<Space wrap>
-										<AuthGuarded auth={DOMAIN_CUSTOMER_CREATE} fallback={null}>
-											<Button type="primary" onClick={() => setAddOpen(true)}>添加客户</Button>
-											<Button onClick={() => setBatchStaffOpen(true)}>批量添加员工</Button>
-										</AuthGuarded>
-										<AuthGuarded auth={DOMAIN_CUSTOMER_UPDATE_STATUS} fallback={null}>
-											<ConfirmPopover
-												title="确认批量禁用"
-												description={`确定将选中的 ${selectedRowKeys.length} 名客户设为禁用吗？`}
-												onConfirm={() => applyStatusChange(selectedRowKeys, "disabled")}
-											>
-												<Button disabled={selectedRowKeys.length === 0}>批量禁用</Button>
-											</ConfirmPopover>
-											<Button
-												disabled={selectedRowKeys.length === 0}
-												onClick={() => confirmEnable(
-													selectedRowKeys,
-													"确认批量启用",
-													`确定将选中的 ${selectedRowKeys.length} 名客户重新启用吗？`,
-												)}
-											>
-												批量启用
-											</Button>
-										</AuthGuarded>
-									</Space>
+									<AuthGuarded auth={DOMAIN_CUSTOMER_CREATE} fallback={null}>
+										<Button type="primary" onClick={() => setAddOpen(true)}>添加客户</Button>
+									</AuthGuarded>
 								)}
 							>
 								<Table<P0DomainCustomer>
@@ -780,11 +687,7 @@ export default function DomainCustomersPage() {
 									loading={loading}
 									columns={columns}
 									dataSource={rows}
-									scroll={{ x: 960 }}
-									rowSelection={{
-										selectedRowKeys,
-										onChange: keys => setSelectedRowKeys(keys as string[]),
-									}}
+									scroll={{ x: 1280 }}
 									pagination={{
 										current: page,
 										pageSize,
@@ -819,30 +722,7 @@ export default function DomainCustomersPage() {
 										setSubmitting(false);
 									}
 								}}
-								onSubmitStaff={async staffAccountId => {
-									setSubmitting(true);
-									try {
-										const result = await createDomainCustomersFromStaff(domainId, {
-											staff_account_ids: [staffAccountId],
-										});
-										message.success(`已添加 ${result.added} 名客户`);
-										setAddOpen(false);
-										await loadCustomers(1, pageSize, keyword, statusFilter);
-									}
-									catch (error) {
-										message.error(toErrorMessage(error));
-									}
-									finally {
-										setSubmitting(false);
-									}
-								}}
-							/>
-							<CustomersBatchStaffModal
-								open={batchStaffOpen}
-								domainId={domainId}
-								confirmLoading={submitting}
-								onCancel={() => setBatchStaffOpen(false)}
-								onSubmit={async staffAccountIds => {
+								onSubmitStaff={async staffAccountIds => {
 									setSubmitting(true);
 									try {
 										const result = await createDomainCustomersFromStaff(domainId, {
@@ -854,7 +734,7 @@ export default function DomainCustomersPage() {
 										else {
 											message.success(`已添加 ${result.added} 名客户`);
 										}
-										setBatchStaffOpen(false);
+										setAddOpen(false);
 										await loadCustomers(1, pageSize, keyword, statusFilter);
 									}
 									catch (error) {
@@ -870,6 +750,12 @@ export default function DomainCustomersPage() {
 								domainId={domainId}
 								customerId={viewCustomerId}
 								onCancel={() => setViewCustomerId(null)}
+							/>
+							<ResetPasswordResultModal
+								open={resetResult != null}
+								customerName={resetResult?.customerName ?? ""}
+								password={resetResult?.password ?? ""}
+								onClose={() => setResetResult(null)}
 							/>
 						</div>
 					)}
