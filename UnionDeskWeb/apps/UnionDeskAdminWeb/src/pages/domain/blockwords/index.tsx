@@ -18,7 +18,12 @@ import {
 } from "#src/pages/domain/domain-permissions";
 import { useAuthStore } from "#src/store/auth";
 
-import { PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import {
+	DeleteOutlined,
+	PlusOutlined,
+	ReloadOutlined,
+	SearchOutlined,
+} from "@ant-design/icons";
 import {
 	App,
 	Button,
@@ -29,6 +34,7 @@ import {
 	Modal,
 	Space,
 	Table,
+	Tooltip,
 } from "antd";
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -192,12 +198,14 @@ export default function DomainBlockwordsPage() {
 			fixed: "right",
 			render: (_, row) => (
 				<AuthGuarded auth={DOMAIN_BLOCKED_WORD_DELETE} fallback={null}>
-					<ConfirmPopover
-						title="确认删除该屏蔽词？"
-						onConfirm={() => handleDelete(row.id)}
-					>
-						<Button type="link" size="small" danger>删除</Button>
-					</ConfirmPopover>
+					<Tooltip title="删除">
+						<ConfirmPopover
+							title="确认删除该屏蔽词？"
+							onConfirm={() => handleDelete(row.id)}
+						>
+							<Button type="link" size="small" danger icon={<DeleteOutlined />} />
+						</ConfirmPopover>
+					</Tooltip>
 				</AuthGuarded>
 			),
 		},

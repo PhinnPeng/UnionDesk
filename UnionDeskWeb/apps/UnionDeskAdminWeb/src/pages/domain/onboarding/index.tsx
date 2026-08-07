@@ -21,6 +21,7 @@ import {
 } from "#src/pages/domain/domain-permissions";
 import { useAuthStore } from "#src/store/auth";
 
+import { DeleteOutlined } from "@ant-design/icons";
 import {
 	App,
 	Button,
@@ -36,6 +37,7 @@ import {
 	Table,
 	Tabs,
 	Tag,
+	Tooltip,
 	Typography,
 } from "antd";
 import type { TableColumnsType } from "antd";
@@ -350,14 +352,14 @@ export default function DomainOnboardingPage() {
 					width: 100,
 					fixed: "right" as const,
 					render: (_: unknown, row: P0InvitationCode) => (
-						<ConfirmPopover
-							title="确认删除该邀请码？"
-							onConfirm={() => handleDeleteInvite(row.id)}
-						>
-							<Button type="link" size="small" danger>
-								删除
-							</Button>
-						</ConfirmPopover>
+						<Tooltip title="删除">
+							<ConfirmPopover
+								title="确认删除该邀请码？"
+								onConfirm={() => handleDeleteInvite(row.id)}
+							>
+								<Button type="link" size="small" danger icon={<DeleteOutlined />} />
+							</ConfirmPopover>
+						</Tooltip>
 					),
 				}]
 			: []),

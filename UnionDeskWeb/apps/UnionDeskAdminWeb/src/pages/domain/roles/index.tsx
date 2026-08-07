@@ -12,7 +12,6 @@ import {
 
 import { AuthGuarded } from "#src/components/auth-guarded";
 import { BasicContent } from "#src/components/basic-content";
-import { ConfirmPopover } from "#src/components/confirm-popover";
 import { TableSearchForm } from "#src/components/table-search-form";
 import { useAuth } from "#src/hooks/use-auth";
 import {
@@ -25,13 +24,22 @@ import {
 } from "#src/pages/domain/domain-permissions";
 import { useAuthStore } from "#src/store/auth";
 
-import { PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import {
+	DeleteOutlined,
+	EditOutlined,
+	EllipsisOutlined,
+	PlusOutlined,
+	ReloadOutlined,
+	SearchOutlined,
+	SettingOutlined,
+} from "@ant-design/icons";
 import {
 	App,
 	Button,
 	Card,
 	Checkbox,
 	Drawer,
+	Dropdown,
 	Empty,
 	Form,
 	Input,
@@ -40,6 +48,7 @@ import {
 	Spin,
 	Table,
 	Tag,
+	Tooltip,
 	Typography,
 } from "antd";
 import type { TableColumnsType } from "antd";
@@ -98,7 +107,7 @@ function translateRoleError(error: unknown): string {
 }
 
 export default function DomainRolesPage() {
-	const { message } = App.useApp();
+	const { message, modal } = App.useApp();
 	const { hasPermission } = useAuth();
 	const defaultBusinessDomainId = useAuthStore(state => state.defaultBusinessDomainId);
 	const accessibleDomains = useAuthStore(state => state.accessibleDomains);
@@ -320,33 +329,56 @@ export default function DomainRolesPage() {
 			{
 				title: "操作",
 				key: "actions",
-				width: 260,
+				width: 130,
 				render: (_, row) => (
-					<Space size={0} wrap>
+					<Space size="small">
 						{canViewPermissions
 							? (
-								<Button type="link" size="small" onClick={() => void handleOpenPermissions(row)}>
-									{canUpdatePermissions && !row.preset ? "配置权限" : "查看权限"}
-								</Button>
+								<Tooltip title={canUpdatePermissions && !row.preset ? "配置权限" : "查看权限"}>
+									<Button
+										type="link"
+										size="small"
+										icon={<SettingOutlined />}
+										onClick={() => void handleOpenPermissions(row)}
+									/>
+								</Tooltip>
 							)
 							: null}
 						{canUpdate && !row.preset
 							? (
-								<Button type="link" size="small" onClick={() => handleOpenEdit(row)}>
-									编辑
-								</Button>
+								<Tooltip title="编辑">
+									<Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenEdit(row)} />
+								</Tooltip>
 							)
 							: null}
 						{canDelete && !row.preset
 							? (
-								<ConfirmPopover
-									title="确认删除该角色？"
-									onConfirm={() => handleDeleteRole(row)}
+								<Dropdown
+									trigger={["click"]}
+									menu={{
+										items: [
+											{
+												key: "delete",
+												label: "删除",
+												icon: <DeleteOutlined />,
+												danger: true,
+												onClick: () => {
+													modal.confirm({
+														title: "确认删除该角色？",
+														okText: "确认",
+														cancelText: "取消",
+														okButtonProps: { danger: true },
+														onOk: () => handleDeleteRole(row),
+													});
+												},
+											},
+										],
+									}}
 								>
-									<Button type="link" size="small" danger>
-										删除
-									</Button>
-								</ConfirmPopover>
+									<Tooltip title="更多">
+										<Button type="link" size="small" icon={<EllipsisOutlined />} />
+									</Tooltip>
+								</Dropdown>
 							)
 							: null}
 					</Space>
@@ -354,7 +386,7 @@ export default function DomainRolesPage() {
 			},
 		];
 		return base;
-	}, [canDelete, canUpdate, canUpdatePermissions, canViewPermissions, handleOpenPermissions]);
+	}, [canDelete, canUpdate, canUpdatePermissions, canViewPermissions, handleDeleteRole, handleOpenEdit, handleOpenPermissions, modal]);
 
 	if (!domainId) {
 		return (
