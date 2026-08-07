@@ -27,6 +27,7 @@ import {
 	EditOutlined,
 	EllipsisOutlined,
 	EyeOutlined,
+	KeyOutlined,
 	PlayCircleOutlined,
 	SearchOutlined,
 	StopOutlined,
@@ -646,6 +647,7 @@ export default function DomainCustomersPage() {
 									? [{
 										key: "reset-password",
 										label: "重置密码",
+										icon: <KeyOutlined />,
 										onClick: () => handleResetPassword(row),
 									}]
 									: []),
