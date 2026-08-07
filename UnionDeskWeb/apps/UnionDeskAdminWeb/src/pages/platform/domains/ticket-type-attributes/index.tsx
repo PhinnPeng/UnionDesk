@@ -22,7 +22,7 @@ import {
 
 import { formatAttributeTypeLabel } from "#src/pages/platform/ticket-config/attributes/components/attribute-utils";
 
-import { ArrowLeftOutlined, HolderOutlined, ReloadOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, HolderOutlined, ReloadOutlined, RollbackOutlined } from "@ant-design/icons";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -38,6 +38,7 @@ import {
 	Space,
 	Table,
 	Tag,
+	Tooltip,
 	Typography,
 } from "antd";
 import type { TableColumnsType } from "antd";
@@ -309,7 +310,9 @@ export default function TicketTypeAttributesPage() {
 					? "—"
 					: (
 						<ConfirmPopover title="确认拔出该属性？" onConfirm={() => void handleRemove(record.id)}>
-							<Button type="link" size="small" danger>拔出</Button>
+							<Tooltip title="拔出">
+								<Button type="link" size="small" danger icon={<RollbackOutlined />} />
+							</Tooltip>
 						</ConfirmPopover>
 					)
 			),

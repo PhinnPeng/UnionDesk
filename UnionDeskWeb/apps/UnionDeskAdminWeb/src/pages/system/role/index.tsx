@@ -11,9 +11,9 @@ import { BasicTable } from "#src/components/basic-table";
 import { useAuth } from "#src/hooks/use-auth";
 
 import { ConfirmPopover } from "#src/components/confirm-popover";
-import { PlusCircleOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "antd";
+import { Button, Tooltip } from "antd";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -73,22 +73,23 @@ export default function Role() {
 				return (
 					<div className="flex justify-center gap-2">
 						<AuthGuarded key="editable" auth={updateAuth}>
-							<BasicButton
-								type="link"
-								size="small"
-								onClick={async () => {
-									const permissions = await fetchRolePermissions(record.id);
-									setIsOpen(true);
-									setTitle(t("system.role.editRole"));
-									setDetailData({
-										...record,
-										menuIds: permissions.menuIds,
-										buttonIds: permissions.buttonIds,
-									});
-								}}
-							>
-								{t("common.edit")}
-							</BasicButton>
+							<Tooltip title={t("common.edit")}>
+								<BasicButton
+									type="link"
+									size="small"
+									icon={<EditOutlined />}
+									onClick={async () => {
+										const permissions = await fetchRolePermissions(record.id);
+										setIsOpen(true);
+										setTitle(t("system.role.editRole"));
+										setDetailData({
+											...record,
+											menuIds: permissions.menuIds,
+											buttonIds: permissions.buttonIds,
+										});
+									}}
+								/>
+							</Tooltip>
 						</AuthGuarded>
 						{!record.system ? (
 							<AuthGuarded key="delete" auth={deleteAuth}>
@@ -98,9 +99,9 @@ export default function Role() {
 									okText={t("common.confirm")}
 									cancelText={t("common.cancel")}
 								>
-									<BasicButton type="link" size="small">
-										{t("common.delete")}
-									</BasicButton>
+									<Tooltip title={t("common.delete")}>
+										<BasicButton type="link" size="small" danger icon={<DeleteOutlined />} />
+									</Tooltip>
 								</ConfirmPopover>
 							</AuthGuarded>
 						) : null}

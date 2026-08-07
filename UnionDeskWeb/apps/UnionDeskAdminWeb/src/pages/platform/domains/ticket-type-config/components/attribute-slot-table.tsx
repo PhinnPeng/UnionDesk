@@ -9,7 +9,7 @@ import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Button, Switch, Table, Tag, Typography } from "antd";
+import { Button, Switch, Table, Tag, Tooltip, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import React, { useMemo, useState } from "react";
 
@@ -275,28 +275,28 @@ export function AttributeSlotTable({
 					return (
 						<span className="attribute-slot-table__actions">
 							{canUpdate ? (
-								<Button
-									type="link"
-									size="small"
-									icon={<EditOutlined />}
-									onClick={() => setEditingSlot(record)}
-								>
-									编辑
-								</Button>
+								<Tooltip title="编辑">
+									<Button
+										type="link"
+										size="small"
+										icon={<EditOutlined />}
+										onClick={() => setEditingSlot(record)}
+									/>
+								</Tooltip>
 							) : null}
 							{!record.is_system && canUpdate ? (
 								<ConfirmPopover
 									title="确认拔出该属性？"
 									onConfirm={() => onRemove(record.id)}
 								>
-									<Button
-										type="link"
-										size="small"
-										danger
-										icon={<DeleteOutlined />}
-									>
-										删除
-									</Button>
+									<Tooltip title="删除">
+										<Button
+											type="link"
+											size="small"
+											danger
+											icon={<DeleteOutlined />}
+										/>
+									</Tooltip>
 								</ConfirmPopover>
 							) : null}
 						</span>

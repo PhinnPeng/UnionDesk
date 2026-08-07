@@ -93,6 +93,7 @@ vi.mock("antd", () => ({
 	Card: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	Space: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	Tag: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+	Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock("./components/detail", () => ({

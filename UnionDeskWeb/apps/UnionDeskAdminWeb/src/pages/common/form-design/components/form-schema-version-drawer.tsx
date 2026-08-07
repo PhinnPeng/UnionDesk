@@ -11,7 +11,7 @@ import { FormilyFormDesignerFallback } from "#src/components/formily-form-design
 import { mergeSystemFormSchema } from "#src/components/formily-form-designer/form-schema-utils";
 
 import { EyeOutlined, RollbackOutlined } from "@ant-design/icons";
-import { App, Button, Drawer, Empty, Spin, Table, Typography } from "antd";
+import { App, Button, Drawer, Empty, Spin, Table, Tooltip, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
@@ -129,28 +129,28 @@ export function FormSchemaVersionDrawer({
 			width: 180,
 			render: (_, record) => (
 				<div className="flex gap-2">
-					<Button
-						type="link"
-						size="small"
-						icon={<EyeOutlined />}
-						onClick={() => void handlePreview(record.version_no)}
-					>
-						预览
-					</Button>
+					<Tooltip title="预览">
+						<Button
+							type="link"
+							size="small"
+							icon={<EyeOutlined />}
+							onClick={() => void handlePreview(record.version_no)}
+						/>
+					</Tooltip>
 					<ConfirmPopover
 						title={`确认回退到 v${record.version_no}？`}
 						description="回退将立即发布为新版本，不会删除中间历史。"
 						onConfirm={() => handleRollback(record.version_no)}
 					>
-						<Button
-							type="link"
-							size="small"
-							icon={<RollbackOutlined />}
-							loading={rollingBackVersion === record.version_no}
-							disabled={record.is_current}
-						>
-							回退
-						</Button>
+						<Tooltip title="回退">
+							<Button
+								type="link"
+								size="small"
+								icon={<RollbackOutlined />}
+								loading={rollingBackVersion === record.version_no}
+								disabled={record.is_current}
+							/>
+						</Tooltip>
 					</ConfirmPopover>
 				</div>
 			),

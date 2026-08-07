@@ -4,12 +4,12 @@ import { resolveMenuIcon } from "#src/icons/resolve-menu-icon";
 
 import "./ticket-type-sortable-table.less";
 
-import { EditOutlined, HolderOutlined, MoreOutlined, NodeIndexOutlined, SettingOutlined } from "@ant-design/icons";
+import { CopyOutlined, DeleteOutlined, EditOutlined, EllipsisOutlined, HolderOutlined, NodeIndexOutlined, SettingOutlined } from "@ant-design/icons";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Button, Dropdown, Space, Switch, Table, Tag } from "antd";
+import { Button, Dropdown, Space, Switch, Table, Tag, Tooltip } from "antd";
 import type { TableColumnsType } from "antd";
 import React, { useMemo } from "react";
 
@@ -135,33 +135,40 @@ export function TicketTypeSortableTable({
 				<Space size={4}>
 					{canUpdate ? (
 						<>
-							<Button type="link" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)}>
-								编辑
-							</Button>
-							<Button type="text" size="small" icon={<SettingOutlined />} onClick={() => onAttributeEdit(record)}>
-								属性
-							</Button>
-							<Button type="text" size="small" icon={<NodeIndexOutlined />} onClick={() => onWorkflowEdit(record)}>
-								工作流
-							</Button>
+							<Tooltip title="编辑">
+								<Button type="link" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
+							</Tooltip>
+							<Tooltip title="属性">
+								<Button type="text" size="small" icon={<SettingOutlined />} onClick={() => onAttributeEdit(record)} />
+							</Tooltip>
+							<Tooltip title="工作流">
+								<Button type="text" size="small" icon={<NodeIndexOutlined />} onClick={() => onWorkflowEdit(record)} />
+							</Tooltip>
 						</>
 					) : null}
-					<Dropdown menu={{
-						items: [
-							{
-								key: "copy",
-								label: "复制为新类型",
-								onClick: () => onCopy(record),
-							},
-							...(canDelete && !record.is_system ? [{
-								key: "delete",
-								danger: true,
-								label: "删除",
-								onClick: () => onDelete(record),
-							}] : []),
-						],
-					}}>
-						<Button type="text" size="small" icon={<MoreOutlined />} />
+					<Dropdown
+						trigger={["click"]}
+						menu={{
+							items: [
+								{
+									key: "copy",
+									label: "复制为新类型",
+									icon: <CopyOutlined />,
+									onClick: () => onCopy(record),
+								},
+								...(canDelete && !record.is_system ? [{
+									key: "delete",
+									danger: true,
+									label: "删除",
+									icon: <DeleteOutlined />,
+									onClick: () => onDelete(record),
+								}] : []),
+							],
+						}}
+					>
+						<Tooltip title="更多">
+							<Button type="text" size="small" icon={<EllipsisOutlined />} />
+						</Tooltip>
 					</Dropdown>
 				</Space>
 			),

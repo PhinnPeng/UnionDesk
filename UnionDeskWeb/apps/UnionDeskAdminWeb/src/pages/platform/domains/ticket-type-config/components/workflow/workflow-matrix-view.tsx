@@ -18,7 +18,7 @@ import {
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
 import { Empty, Dropdown } from "antd";
-import { DeleteOutlined, HolderOutlined, HomeFilled, HomeOutlined, MoreOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EllipsisOutlined, HolderOutlined, HomeFilled, HomeOutlined } from "@ant-design/icons";
 import { useMemo, useCallback, useRef, useState } from "react";
 
 import { StatusLabel } from "./status-label";
@@ -119,7 +119,7 @@ function MatrixStateCell({
 								onClick={(e) => e.stopPropagation()}
 								onPointerDown={(e) => e.stopPropagation()}
 							>
-								<MoreOutlined />
+								<EllipsisOutlined />
 							</span>
 						</Dropdown>
 					</div>

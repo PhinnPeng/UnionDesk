@@ -21,8 +21,10 @@ import {
 } from "../../platform-domain-permissions";
 
 import {
+	CopyOutlined,
+	DeleteOutlined,
 	EditOutlined,
-	MoreOutlined,
+	EllipsisOutlined,
 	NodeIndexOutlined,
 	PlusOutlined,
 	ReloadOutlined,
@@ -156,34 +158,39 @@ function useTicketTypeColumns(handlers: TicketTypeActionHandlers): TableColumnsT
 				<div className={styles.actionsCell}>
 					<Space size={4}>
 						<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE} fallback={null}>
-							<Button type="link" size="small" icon={<EditOutlined />} onClick={() => handlers.onEdit(record)}>
-								编辑
-							</Button>
-							<Button type="text" size="small" icon={<SettingOutlined />} onClick={() => handlers.onAttributeEdit(record)}>
-								属性
-							</Button>
-							<Button type="text" size="small" icon={<NodeIndexOutlined />} onClick={() => handlers.onWorkflowEdit(record)}>
-								工作流
-							</Button>
+							<Tooltip title="编辑">
+								<Button type="link" size="small" icon={<EditOutlined />} onClick={() => handlers.onEdit(record)} />
+							</Tooltip>
+							<Tooltip title="属性">
+								<Button type="text" size="small" icon={<SettingOutlined />} onClick={() => handlers.onAttributeEdit(record)} />
+							</Tooltip>
+							<Tooltip title="工作流">
+								<Button type="text" size="small" icon={<NodeIndexOutlined />} onClick={() => handlers.onWorkflowEdit(record)} />
+							</Tooltip>
 						</AuthGuarded>
 						<Dropdown
+							trigger={["click"]}
 							menu={{
 								items: [
 									{
 										key: "copy",
 										label: "复制为新类型",
+										icon: <CopyOutlined />,
 										onClick: () => handlers.onCopy(record),
 									},
 									{
 										key: "delete",
 										danger: true,
 										label: "删除",
+										icon: <DeleteOutlined />,
 										onClick: () => handlers.onDelete(record),
 									},
 								],
 							}}
 						>
-							<Button type="text" size="small" icon={<MoreOutlined />} />
+							<Tooltip title="更多">
+								<Button type="text" size="small" icon={<EllipsisOutlined />} />
+							</Tooltip>
 						</Dropdown>
 					</Space>
 				</div>

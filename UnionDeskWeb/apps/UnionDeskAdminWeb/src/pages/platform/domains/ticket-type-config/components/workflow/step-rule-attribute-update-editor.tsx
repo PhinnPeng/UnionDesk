@@ -6,7 +6,8 @@ import type {
 
 import { MemberPicker } from "#src/pages/platform/components/member-picker";
 
-import { Button, DatePicker, Input, Select, Switch, Table } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
+import { Button, DatePicker, Input, Select, Switch, Table, Tooltip } from "antd";
 
 interface StepRuleAttributeUpdateEditorProps {
 	value: AttributeUpdateItem[];
@@ -136,14 +137,15 @@ export function StepRuleAttributeUpdateEditor({
 						title: "操作",
 						width: 64,
 						render: (_, __, index: number) => (
-							<Button
-								type="link"
-								danger
-								size="small"
-								onClick={() => onChange(value.filter((_, i) => i !== index))}
-							>
-								删除
-							</Button>
+							<Tooltip title="删除">
+								<Button
+									type="link"
+									danger
+									size="small"
+									icon={<DeleteOutlined />}
+									onClick={() => onChange(value.filter((_, i) => i !== index))}
+								/>
+							</Tooltip>
 						),
 					},
 				]}

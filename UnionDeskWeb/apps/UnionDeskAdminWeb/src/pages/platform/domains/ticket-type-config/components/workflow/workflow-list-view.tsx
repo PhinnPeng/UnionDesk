@@ -13,7 +13,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 
 import { Empty, Input, Dropdown } from "antd";
-import { DeleteOutlined, SearchOutlined, StarOutlined, StarFilled, MoreOutlined, HolderOutlined } from "@ant-design/icons";
+import { DeleteOutlined, SearchOutlined, StarOutlined, StarFilled, EllipsisOutlined, HolderOutlined } from "@ant-design/icons";
 import { useMemo, useState, useCallback } from "react";
 
 import { StatusLabelByCode } from "./status-label";
@@ -142,7 +142,7 @@ function SortableStateCard({
 							placement="bottomRight"
 						>
 							<span className="state-card-more">
-								<MoreOutlined />
+								<EllipsisOutlined />
 							</span>
 						</Dropdown>
 						<span

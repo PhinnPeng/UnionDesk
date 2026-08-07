@@ -11,7 +11,7 @@ import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Button, Space, Switch, Table, Tag } from "antd";
+import { Button, Space, Switch, Table, Tag, Tooltip } from "antd";
 import type { TableColumnsType } from "antd";
 import React, { useMemo } from "react";
 
@@ -141,13 +141,15 @@ export function AttributeSortableTable({
 				<div className="flex justify-center">
 					<Space size={4}>
 						{canUpdate ? (
-							<Button type="link" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)}>
-								编辑
-							</Button>
+							<Tooltip title="编辑">
+								<Button type="link" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)} />
+							</Tooltip>
 						) : null}
 						{canDelete ? (
 							<ConfirmPopover title="确认删除该属性？" onConfirm={() => onDelete(record)}>
-								<Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+								<Tooltip title="删除">
+									<Button type="link" size="small" danger icon={<DeleteOutlined />} />
+								</Tooltip>
 							</ConfirmPopover>
 						) : null}
 					</Space>

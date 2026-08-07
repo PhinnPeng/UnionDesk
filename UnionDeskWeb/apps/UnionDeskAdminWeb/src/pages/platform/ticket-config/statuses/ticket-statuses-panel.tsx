@@ -36,8 +36,8 @@ import {
 	getStatusCategoryLabel,
 } from "./components/status-utils";
 
-import { PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
-import { App, Badge, Button, Card, Empty, Input, Space, Table, Tag, Typography } from "antd";
+import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import { App, Badge, Button, Card, Empty, Input, Space, Table, Tag, Tooltip, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -292,23 +292,24 @@ export function TicketStatusesPanel({
 			render: (_value, record) => (
 				<Space size={8}>
 					<AuthGuarded auth={updatePerm} fallback={null}>
-						<Button
-							type="link"
-							size="small"
-							onClick={() => {
-								setEditing(record);
-								setModalOpen(true);
-							}}
-						>
-							编辑
-						</Button>
+						<Tooltip title="编辑">
+							<Button
+								type="link"
+								size="small"
+								icon={<EditOutlined />}
+								onClick={() => {
+									setEditing(record);
+									setModalOpen(true);
+								}}
+							/>
+						</Tooltip>
 					</AuthGuarded>
 					{!record.is_system
 						? (
 							<AuthGuarded auth={deletePerm} fallback={null}>
-								<Button type="link" size="small" danger onClick={() => handleDelete(record)}>
-									删除
-								</Button>
+								<Tooltip title="删除">
+									<Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)} />
+								</Tooltip>
 							</AuthGuarded>
 						)
 						: null}

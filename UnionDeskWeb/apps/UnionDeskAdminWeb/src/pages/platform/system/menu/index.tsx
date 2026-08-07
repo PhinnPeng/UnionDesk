@@ -11,8 +11,8 @@ import { useAuth } from "#src/hooks/use-auth";
 import { getAllExpandedKeys, getExpandedKeysToLevel } from "#src/utils/get-all-expanded-keys";
 
 import { ConfirmPopover } from "#src/components/confirm-popover";
-import { CompressOutlined, DownOutlined, ExpandOutlined, PlusCircleOutlined, ReloadOutlined, RightOutlined } from "@ant-design/icons";
-import { Button, Card, Space, Tag } from "antd";
+import { CompressOutlined, DeleteOutlined, DownOutlined, EditOutlined, ExpandOutlined, PlusCircleOutlined, PlusOutlined, ReloadOutlined, RightOutlined } from "@ant-design/icons";
+import { Button, Card, Space, Tag, Tooltip } from "antd";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -120,17 +120,18 @@ export default function Menu() {
 							<div className="flex justify-center items-center gap-2">
 								<Tag>系统</Tag>
 								<AuthGuarded key="editable" auth={updateAuth}>
-									<BasicButton
-										type="link"
-										size="small"
-										onClick={() => {
-											setIsOpen(true);
-											setTitle(t("system.menu.editMenu"));
-											setDetailData({ ...record });
-										}}
-									>
-										{t("common.edit")}
-									</BasicButton>
+									<Tooltip title={t("common.edit")}>
+										<BasicButton
+											type="link"
+											size="small"
+											icon={<EditOutlined />}
+											onClick={() => {
+												setIsOpen(true);
+												setTitle(t("system.menu.editMenu"));
+												setDetailData({ ...record });
+											}}
+										/>
+									</Tooltip>
 								</AuthGuarded>
 								<AuthGuarded auth={deleteAuth}>
 									<ConfirmPopover
@@ -139,9 +140,9 @@ export default function Menu() {
 										okText={t("common.confirm")}
 										cancelText={t("common.cancel")}
 									>
-										<BasicButton type="link" size="small" danger>
-											{t("common.delete")}
-										</BasicButton>
+										<Tooltip title={t("common.delete")}>
+											<BasicButton type="link" size="small" danger icon={<DeleteOutlined />} />
+										</Tooltip>
 									</ConfirmPopover>
 								</AuthGuarded>
 							</div>
@@ -153,17 +154,18 @@ export default function Menu() {
 					if (record.nodeType === "catalog") {
 						btns.push(
 							<AuthGuarded key="add-child" auth={createAuth}>
-								<BasicButton
-									type="link"
-									size="small"
-									onClick={() => {
-										setIsOpen(true);
-										setTitle(t("system.menu.addMenu"));
-										setDetailData({ parentId: record.id, nodeType: "menu" });
-									}}
-								>
-									{t("common.add")}
-								</BasicButton>
+								<Tooltip title={t("common.add")}>
+									<BasicButton
+										type="link"
+										size="small"
+										icon={<PlusOutlined />}
+										onClick={() => {
+											setIsOpen(true);
+											setTitle(t("system.menu.addMenu"));
+											setDetailData({ parentId: record.id, nodeType: "menu" });
+										}}
+									/>
+								</Tooltip>
 							</AuthGuarded>,
 						);
 					}
@@ -171,34 +173,36 @@ export default function Menu() {
 					if (record.nodeType === "menu") {
 						btns.push(
 							<AuthGuarded key="add-button" auth={createAuth}>
-								<BasicButton
-									type="link"
-									size="small"
-									onClick={() => {
-										setIsOpen(true);
-										setTitle(t("system.menu.addButton"));
-										setDetailData({ parentId: record.id, nodeType: "button" });
-									}}
-								>
-									{t("system.menu.addButton")}
-								</BasicButton>
+								<Tooltip title={t("system.menu.addButton")}>
+									<BasicButton
+										type="link"
+										size="small"
+										icon={<PlusOutlined />}
+										onClick={() => {
+											setIsOpen(true);
+											setTitle(t("system.menu.addButton"));
+											setDetailData({ parentId: record.id, nodeType: "button" });
+										}}
+									/>
+								</Tooltip>
 							</AuthGuarded>,
 						);
 					}
 
 					btns.push(
 						<AuthGuarded key="editable" auth={updateAuth}>
-							<BasicButton
-								type="link"
-								size="small"
-								onClick={() => {
-									setIsOpen(true);
-									setTitle(t("system.menu.editMenu"));
-									setDetailData({ ...record });
-								}}
-							>
-								{t("common.edit")}
-							</BasicButton>
+							<Tooltip title={t("common.edit")}>
+								<BasicButton
+									type="link"
+									size="small"
+									icon={<EditOutlined />}
+									onClick={() => {
+										setIsOpen(true);
+										setTitle(t("system.menu.editMenu"));
+										setDetailData({ ...record });
+									}}
+								/>
+							</Tooltip>
 						</AuthGuarded>,
 						<AuthGuarded key="delete" auth={deleteAuth}>
 							<ConfirmPopover
@@ -207,9 +211,9 @@ export default function Menu() {
 								okText={t("common.confirm")}
 								cancelText={t("common.cancel")}
 							>
-								<BasicButton type="link" size="small">
-									{t("common.delete")}
-								</BasicButton>
+								<Tooltip title={t("common.delete")}>
+									<BasicButton type="link" size="small" danger icon={<DeleteOutlined />} />
+								</Tooltip>
 							</ConfirmPopover>
 						</AuthGuarded>,
 					);

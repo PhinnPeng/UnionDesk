@@ -17,8 +17,8 @@ import { buildTeamTemplateConfigPath } from "#src/pages/platform/ticket-config/t
 
 import { TeamTemplateFormModal } from "./components/team-template-form-modal";
 
-import { PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
-import { App, Button, Card, Empty, Input, Space, Table, Tag, Typography } from "antd";
+import { DeleteOutlined, PlusOutlined, ReloadOutlined, SearchOutlined, SettingOutlined } from "@ant-design/icons";
+import { App, Button, Card, Empty, Input, Space, Table, Tag, Tooltip, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
@@ -157,20 +157,21 @@ export function TeamTemplatesPanel() {
 			render: (_value, record) => (
 				<Space size={8}>
 					<AuthGuarded auth={PLATFORM_TICKET_CONFIG_TEMPLATE_UPDATE} fallback={null}>
-						<Button
-							type="link"
-							size="small"
-							onClick={() => openConfig(record.id)}
-						>
-							配置
-						</Button>
+						<Tooltip title="配置">
+							<Button
+								type="link"
+								size="small"
+								icon={<SettingOutlined />}
+								onClick={() => openConfig(record.id)}
+							/>
+						</Tooltip>
 					</AuthGuarded>
 					{!record.is_system
 						? (
 							<AuthGuarded auth={PLATFORM_TICKET_CONFIG_TEMPLATE_DELETE} fallback={null}>
-								<Button type="link" size="small" danger onClick={() => handleDelete(record)}>
-									删除
-								</Button>
+								<Tooltip title="删除">
+									<Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)} />
+								</Tooltip>
 							</AuthGuarded>
 						)
 						: null}

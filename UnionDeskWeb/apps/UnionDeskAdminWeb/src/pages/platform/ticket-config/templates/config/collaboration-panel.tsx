@@ -5,8 +5,8 @@ import { AuthGuarded } from "#src/components/auth-guarded";
 import { PLATFORM_TICKET_CONFIG_TEMPLATE_UPDATE } from "#src/pages/platform/domains/platform-domain-permissions";
 import { buildTicketConfigPath } from "#src/pages/platform/ticket-config/ticket-config-path";
 
-import { MoreOutlined, NodeIndexOutlined, PlusOutlined, SettingOutlined } from "@ant-design/icons";
-import { App, Button, Dropdown, Space, Table, Typography } from "antd";
+import { DeleteOutlined, EllipsisOutlined, NodeIndexOutlined, PlusOutlined, SettingOutlined } from "@ant-design/icons";
+import { App, Button, Dropdown, Space, Table, Tooltip, Typography } from "antd";
 import type { MenuProps, TableColumnsType } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
@@ -141,31 +141,34 @@ export function CollaborationPanel({ template, onUpdated }: CollaborationPanelPr
 						key: "remove",
 						danger: true,
 						label: "移除",
+						icon: <DeleteOutlined />,
 						onClick: () => handleRemove(record),
 					},
 				];
 				return (
 					<div className="flex justify-center">
 						<Space size={4}>
-							<Button
-								type="text"
-								size="small"
-								icon={<SettingOutlined />}
-								onClick={() => openTypeConfig(record.ticket_type_id, "attributes")}
-							>
-								属性
-							</Button>
-							<Button
-								type="text"
-								size="small"
-								icon={<NodeIndexOutlined />}
-								onClick={() => openTypeConfig(record.ticket_type_id, "workflow")}
-							>
-								工作流
-							</Button>
+							<Tooltip title="属性">
+								<Button
+									type="text"
+									size="small"
+									icon={<SettingOutlined />}
+									onClick={() => openTypeConfig(record.ticket_type_id, "attributes")}
+								/>
+							</Tooltip>
+							<Tooltip title="工作流">
+								<Button
+									type="text"
+									size="small"
+									icon={<NodeIndexOutlined />}
+									onClick={() => openTypeConfig(record.ticket_type_id, "workflow")}
+								/>
+							</Tooltip>
 							<AuthGuarded auth={PLATFORM_TICKET_CONFIG_TEMPLATE_UPDATE} fallback={null}>
 								<Dropdown menu={{ items: moreItems }} trigger={["click"]}>
-									<Button type="text" size="small" icon={<MoreOutlined />} aria-label="更多" />
+									<Tooltip title="更多">
+										<Button type="text" size="small" icon={<EllipsisOutlined />} aria-label="更多" />
+									</Tooltip>
 								</Dropdown>
 							</AuthGuarded>
 						</Space>

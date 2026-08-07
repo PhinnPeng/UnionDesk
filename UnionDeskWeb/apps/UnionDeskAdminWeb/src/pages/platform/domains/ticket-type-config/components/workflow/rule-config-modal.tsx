@@ -3,7 +3,8 @@ import type {
 	TransitionRule,
 } from "@uniondesk/shared";
 
-import { Button, Modal, Table, Tag } from "antd";
+import { EditOutlined } from "@ant-design/icons";
+import { Button, Modal, Table, Tag, Tooltip } from "antd";
 
 interface RuleConfigModalProps {
 	open: boolean;
@@ -88,9 +89,9 @@ export function RuleConfigModal({
 					{
 						title: "操作",
 						render: (_, record: TransitionRule) => (
-							<Button type="link" size="small" onClick={() => onEditRule(record)}>
-								编辑
-							</Button>
+							<Tooltip title="编辑">
+								<Button type="link" size="small" icon={<EditOutlined />} onClick={() => onEditRule(record)} />
+							</Tooltip>
 						),
 					},
 				]}
