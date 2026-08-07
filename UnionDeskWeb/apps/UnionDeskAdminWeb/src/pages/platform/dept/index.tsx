@@ -11,7 +11,7 @@ import { BasicTable } from "#src/components/basic-table";
 import { getAllExpandedKeys } from "#src/utils/get-all-expanded-keys";
 
 import { ApartmentOutlined, CompressOutlined, DeleteOutlined, DownOutlined, EditOutlined, ExpandOutlined, PlusOutlined, ReloadOutlined, RightOutlined } from "@ant-design/icons";
-import { Alert, App, Button, Empty, Modal, Space, Tag, Typography } from "antd";
+import { Alert, App, Button, Empty, Modal, Space, Tag, Tooltip, Typography } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Detail, type OrganizationFormValues } from "./components/detail";
@@ -248,42 +248,42 @@ export default function PlatformDept() {
 			{
 				title: centeredTitle("操作"),
 				key: "action",
-				width: 180,
+				width: 120,
 				fixed: "right",
 				align: "center",
 				search: false,
 				render: (_, record) => (
 					<div className="flex items-center justify-center gap-2">
 						<AuthGuarded auth="platform.organization.create">
-							<BasicButton
-								type="link"
-								size="small"
-								icon={<PlusOutlined />}
-								onClick={() => openCreateModal(record.id)}
-							>
-								新增下级
-							</BasicButton>
+							<Tooltip title="新增下级">
+								<BasicButton
+									type="link"
+									size="small"
+									icon={<PlusOutlined />}
+									onClick={() => openCreateModal(record.id)}
+								/>
+							</Tooltip>
 						</AuthGuarded>
 						<AuthGuarded auth="platform.organization.update">
-							<BasicButton
-								type="link"
-								size="small"
-								icon={<EditOutlined />}
-								onClick={() => openEditModal(record.id)}
-							>
-								编辑
-							</BasicButton>
+							<Tooltip title="编辑">
+								<BasicButton
+									type="link"
+									size="small"
+									icon={<EditOutlined />}
+									onClick={() => openEditModal(record.id)}
+								/>
+							</Tooltip>
 						</AuthGuarded>
 						<AuthGuarded auth="platform.organization.delete">
-							<BasicButton
-								type="link"
-								size="small"
-								danger
-								icon={<DeleteOutlined />}
-								onClick={() => handleDeleteOrganization(record)}
-							>
-								删除
-							</BasicButton>
+							<Tooltip title="删除">
+								<BasicButton
+									type="link"
+									size="small"
+									danger
+									icon={<DeleteOutlined />}
+									onClick={() => handleDeleteOrganization(record)}
+								/>
+							</Tooltip>
 						</AuthGuarded>
 					</div>
 				),

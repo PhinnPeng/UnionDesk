@@ -4,6 +4,7 @@ import { BasicContent } from "#src/components/basic-content";
 import { PriorityBadge } from "#src/pages/platform/components/priority-badge";
 
 import { claimP0AdminTicket, fetchP0AdminDomainTicketsPage, fetchAdminDomainsPage, toErrorMessage } from "@uniondesk/shared";
+import { PlayCircleOutlined } from "@ant-design/icons";
 import { App, Alert, Button, Card, Select, Space, Table, Tag } from "antd";
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useState } from "react";
@@ -84,7 +85,7 @@ export default function PlatformTicketPool() {
 			key: "op",
 			width: 100,
 			render: (_, row) => (
-				<Button type="link" size="small" onClick={() => void claim(row.id)}>领取</Button>
+				<Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => void claim(row.id)}>领取</Button>
 			),
 		},
 	];

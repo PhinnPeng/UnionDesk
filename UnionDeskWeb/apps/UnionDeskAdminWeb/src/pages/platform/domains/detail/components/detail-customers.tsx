@@ -19,6 +19,7 @@ import {
 } from "../../platform-domain-permissions";
 
 
+import { EyeOutlined, PlayCircleOutlined, StopOutlined } from "@ant-design/icons";
 import {
 	App,
 	Button,
@@ -36,6 +37,7 @@ import {
 	Steps,
 	Table,
 	Tag,
+	Tooltip,
 	Typography,
 } from "antd";
 import type { FormInstance, TableColumnsType } from "antd";
@@ -652,23 +654,29 @@ export function DetailCustomers({ domainId }: DetailCustomersProps) {
 		{
 			title: "操作",
 			key: "actions",
-			width: 140,
+			width: 100,
 			fixed: "right",
 			render: (_, row) => (
 				<Space size="small">
-					<Button type="link" size="small" onClick={() => setViewCustomerId(row.id)}>查看</Button>
+					<Tooltip title="查看">
+						<Button type="link" size="small" icon={<EyeOutlined />} onClick={() => setViewCustomerId(row.id)} />
+					</Tooltip>
 					<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS} fallback={null}>
 						{row.status === "active" ? (
-							<ConfirmPopover
-								title="确认禁用客户"
-								description={`确定将「${row.display_name}」设为禁用吗？`}
-								onConfirm={() => applyStatusChange([row.id], "disabled")}
-							>
-								<Button type="link" size="small">禁用</Button>
-							</ConfirmPopover>
+							<Tooltip title="禁用">
+								<ConfirmPopover
+									title="确认禁用客户"
+									description={`确定将「${row.display_name}」设为禁用吗？`}
+									onConfirm={() => applyStatusChange([row.id], "disabled")}
+								>
+									<Button type="link" size="small" icon={<StopOutlined />} />
+								</ConfirmPopover>
+							</Tooltip>
 						) : null}
 						{row.status === "disabled" ? (
-							<Button type="link" size="small" onClick={() => handleRowEnable(row)}>启用</Button>
+							<Tooltip title="启用">
+								<Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => handleRowEnable(row)} />
+							</Tooltip>
 						) : null}
 					</AuthGuarded>
 				</Space>

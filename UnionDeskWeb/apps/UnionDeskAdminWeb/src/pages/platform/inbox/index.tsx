@@ -3,6 +3,7 @@ import type { P0InboxMessage } from "@uniondesk/shared";
 import { BasicContent } from "#src/components/basic-content";
 
 import { fetchP0InboxPage, fetchP0InboxUnreadCount, markP0InboxMessageRead, toErrorMessage } from "@uniondesk/shared";
+import { CheckOutlined } from "@ant-design/icons";
 import { App, Alert, Button, Card, Space, Table, Tag } from "antd";
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useState } from "react";
@@ -58,7 +59,7 @@ export default function PlatformInbox() {
 			key: "op",
 			width: 120,
 			render: (_, row) => (
-				<Button type="link" size="small" disabled={row.is_read} onClick={() => void markRead(row.id)}>标记已读</Button>
+				<Button type="link" size="small" icon={<CheckOutlined />} disabled={row.is_read} onClick={() => void markRead(row.id)}>标记已读</Button>
 			),
 		},
 	];

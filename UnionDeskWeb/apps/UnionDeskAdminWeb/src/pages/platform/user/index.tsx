@@ -27,11 +27,12 @@ import {
 	DeleteOutlined,
 	EditOutlined,
 	EllipsisOutlined,
+	KeyOutlined,
 	PlusCircleOutlined,
 	SwapOutlined,
 	UserDeleteOutlined,
 } from "@ant-design/icons";
-import { App, Button, Card, Col, Dropdown, Modal, Row, Space, Table, Tag, Typography } from "antd";
+import { App, Button, Card, Col, Dropdown, Modal, Row, Space, Table, Tag, Tooltip, Typography } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -325,37 +326,42 @@ export default function PlatformUser() {
 		{
 			title: centeredTitle("操作"),
 			key: "action",
-			width: 240,
+			width: 120,
 			align: "center",
 			render: (_, record) => (
 				<Space size={8}>
 					<AuthGuarded auth={PLATFORM_USER_ROW_ACTIONS[0].auth}>
-						<Button
-							type="link"
-							size="small"
-							icon={<EditOutlined />}
-							onClick={() => handleOpenEdit(record.id)}
-						>
-							{PLATFORM_USER_ROW_ACTIONS[0].label}
-						</Button>
-					</AuthGuarded>
-					{record.status === "offboard" ? null : (
-						<AuthGuarded auth={PLATFORM_USER_ROW_ACTIONS[1].auth}>
+						<Tooltip title="编辑">
 							<Button
 								type="link"
 								size="small"
-								danger
-								icon={<UserDeleteOutlined />}
-								onClick={() => handleOffboardUsers([record.id])}
-							>
-								{PLATFORM_USER_ROW_ACTIONS[1].label}
-							</Button>
+								icon={<EditOutlined />}
+								onClick={() => handleOpenEdit(record.id)}
+							/>
+						</Tooltip>
+					</AuthGuarded>
+					{record.status === "offboard" ? null : (
+						<AuthGuarded auth={PLATFORM_USER_ROW_ACTIONS[1].auth}>
+							<Tooltip title="离职">
+								<Button
+									type="link"
+									size="small"
+									danger
+									icon={<UserDeleteOutlined />}
+									onClick={() => handleOffboardUsers([record.id])}
+								/>
+							</Tooltip>
 						</AuthGuarded>
 					)}
 					<AuthGuarded auth={PLATFORM_USER_ROW_ACTIONS[2].auth}>
 						<Dropdown
+							trigger={["click"]}
 							menu={{
-								items: [{ key: PLATFORM_USER_ROW_ACTIONS[2].key, label: PLATFORM_USER_ROW_ACTIONS[2].label }],
+								items: [{
+									key: PLATFORM_USER_ROW_ACTIONS[2].key,
+									label: PLATFORM_USER_ROW_ACTIONS[2].label,
+									icon: <KeyOutlined />,
+								}],
 								onClick: ({ key }) => {
 									if (key === PLATFORM_USER_ROW_ACTIONS[2].key) {
 										handleOpenResetPassword(record.id);
@@ -363,9 +369,9 @@ export default function PlatformUser() {
 								},
 							}}
 						>
-							<Button type="link" size="small" icon={<EllipsisOutlined />}>
-								更多
-							</Button>
+							<Tooltip title="更多">
+								<Button type="link" size="small" icon={<EllipsisOutlined />} />
+							</Tooltip>
 						</Dropdown>
 					</AuthGuarded>
 				</Space>

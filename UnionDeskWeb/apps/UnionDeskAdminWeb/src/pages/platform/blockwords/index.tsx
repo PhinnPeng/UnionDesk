@@ -12,7 +12,7 @@ import { BasicContent } from "#src/components/basic-content";
 import { ConfirmPopover } from "#src/components/confirm-popover";
 import { TableSearchForm } from "#src/components/table-search-form";
 
-import { PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import { DeleteOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import {
 	App,
 	Button,
@@ -23,6 +23,7 @@ import {
 	Modal,
 	Space,
 	Table,
+	Tooltip,
 } from "antd";
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -162,7 +163,7 @@ export default function PlatformBlockwordsPage() {
 		{
 			title: "操作",
 			key: "actions",
-			width: 100,
+			width: 80,
 			fixed: "right",
 			render: (_, row) => (
 				<AuthGuarded auth={PLATFORM_BLOCKED_WORD_DELETE} fallback={null}>
@@ -170,7 +171,9 @@ export default function PlatformBlockwordsPage() {
 						title="确认删除该屏蔽词？"
 						onConfirm={() => handleDelete(row.id)}
 					>
-						<Button type="link" size="small" danger>删除</Button>
+						<Tooltip title="删除">
+							<Button type="link" size="small" danger icon={<DeleteOutlined />} />
+						</Tooltip>
 					</ConfirmPopover>
 				</AuthGuarded>
 			),

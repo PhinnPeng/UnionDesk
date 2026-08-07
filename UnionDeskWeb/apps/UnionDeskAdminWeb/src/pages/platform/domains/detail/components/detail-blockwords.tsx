@@ -18,7 +18,7 @@ import {
 } from "../../platform-domain-permissions";
 
 
-import { PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import { DeleteOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import {
 	App,
 	Button,
@@ -29,6 +29,7 @@ import {
 	Modal,
 	Space,
 	Table,
+	Tooltip,
 	Typography,
 } from "antd";
 import type { TableColumnsType } from "antd";
@@ -176,7 +177,7 @@ export function DetailBlockwords({ domainId }: DetailBlockwordsProps) {
 		{
 			title: "操作",
 			key: "actions",
-			width: 100,
+			width: 80,
 			fixed: "right",
 			render: (_, row) => (
 				<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE} fallback={null}>
@@ -184,7 +185,9 @@ export function DetailBlockwords({ domainId }: DetailBlockwordsProps) {
 						title="确认删除该屏蔽词？"
 						onConfirm={() => handleDelete(row.id)}
 					>
-						<Button type="link" size="small" danger>删除</Button>
+						<Tooltip title="删除">
+							<Button type="link" size="small" danger icon={<DeleteOutlined />} />
+						</Tooltip>
 					</ConfirmPopover>
 				</AuthGuarded>
 			),

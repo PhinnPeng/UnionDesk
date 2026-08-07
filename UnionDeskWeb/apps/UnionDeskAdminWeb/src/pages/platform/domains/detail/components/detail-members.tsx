@@ -12,8 +12,8 @@ import {
 } from "@uniondesk/shared";
 
 import { AuthGuarded } from "#src/components/auth-guarded";
-import { ConfirmPopover } from "#src/components/confirm-popover";
 import { TableSearchForm } from "#src/components/table-search-form";
+import { useAuth } from "#src/hooks/use-auth";
 
 import {
 	DOMAIN_MEMBER_CREATE,
@@ -23,13 +23,21 @@ import {
 	DOMAIN_MEMBER_UPDATE_STATUS,
 } from "../../platform-domain-permissions";
 
-import { SearchOutlined } from "@ant-design/icons";
+import {
+	DeleteOutlined,
+	EditOutlined,
+	EllipsisOutlined,
+	PlayCircleOutlined,
+	SearchOutlined,
+	StopOutlined,
+} from "@ant-design/icons";
 import {
 	App,
 	Button,
 	Card,
 	Col,
 	DatePicker,
+	Dropdown,
 	Empty,
 	Form,
 	Input,
@@ -41,6 +49,7 @@ import {
 	Steps,
 	Table,
 	Tag,
+	Tooltip,
 	Typography,
 } from "antd";
 import type { FormInstance, TableColumnsType } from "antd";
@@ -565,6 +574,8 @@ function MembersSearchPanel({ loading, onSearch, onReset }: MembersSearchPanelPr
 
 export function DetailMembers({ domainId }: DetailMembersProps) {
 	const { message, modal } = App.useApp();
+	const { hasPermission } = useAuth();
+	const canDeleteMember = hasPermission(DOMAIN_MEMBER_DELETE);
 	const [loading, setLoading] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [rows, setRows] = useState<DomainMember[]>([]);
@@ -771,47 +782,55 @@ export function DetailMembers({ domainId }: DetailMembersProps) {
 		{
 			title: "操作",
 			key: "actions",
-			width: 220,
+			width: 130,
 			fixed: "right",
 			render: (_, row) => (
 				<Space size="small">
 					<AuthGuarded auth={DOMAIN_MEMBER_UPDATE_ROLES} fallback={null}>
-						<Button type="link" size="small" onClick={() => setEditMember(row)}>编辑角色</Button>
+						<Tooltip title="编辑角色">
+							<Button type="link" size="small" icon={<EditOutlined />} onClick={() => setEditMember(row)} />
+						</Tooltip>
 					</AuthGuarded>
 					<AuthGuarded auth={DOMAIN_MEMBER_UPDATE_STATUS} fallback={null}>
 						{row.status === "active" ? (
-							<Button type="link" size="small" onClick={() => handleRowStatus(row)}>禁用</Button>
+							<Tooltip title="禁用">
+								<Button type="link" size="small" icon={<StopOutlined />} onClick={() => handleRowStatus(row)} />
+							</Tooltip>
 						) : null}
 						{row.status === "disabled" ? (
-							<Button type="link" size="small" onClick={() => handleRowStatus(row)}>启用</Button>
+							<Tooltip title="启用">
+								<Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => handleRowStatus(row)} />
+							</Tooltip>
 						) : null}
 					</AuthGuarded>
-					<AuthGuarded auth={DOMAIN_MEMBER_DELETE} fallback={null}>
-						<ConfirmPopover
-							title="确认移除成员"
-							description={`确定将「${memberDisplayName(row)}」从本域移除吗？`}
-							onConfirm={async () => {
-								setSubmitting(true);
-								try {
-									await deleteDomainMember(domainId, row.id);
-									message.success("已移除成员");
-									await refreshCurrentPage();
-								}
-								catch (error) {
-									message.error(toErrorMessage(error));
-								}
-								finally {
-									setSubmitting(false);
-								}
+					{canDeleteMember ? (
+						<Dropdown
+							trigger={["click"]}
+							menu={{
+								items: [
+									{
+										key: "delete",
+										label: "删除",
+										icon: <DeleteOutlined />,
+										danger: true,
+										onClick: () => confirmDelete(
+											[row.id],
+											"确认移除成员",
+											`确定将「${memberDisplayName(row)}」从本域移除吗？`,
+										),
+									},
+								],
 							}}
 						>
-							<Button type="link" size="small" danger>删除</Button>
-						</ConfirmPopover>
-					</AuthGuarded>
+							<Tooltip title="更多">
+								<Button type="link" size="small" icon={<EllipsisOutlined />} />
+							</Tooltip>
+						</Dropdown>
+					) : null}
 				</Space>
 			),
 		},
-	], [domainId, message, refreshCurrentPage]);
+	], [canDeleteMember, confirmDelete, handleRowStatus, refreshCurrentPage]);
 
 	return (
 		<AuthGuarded auth={DOMAIN_MEMBER_READ} fallback={<Empty description="无权限查看员工管理" />}>

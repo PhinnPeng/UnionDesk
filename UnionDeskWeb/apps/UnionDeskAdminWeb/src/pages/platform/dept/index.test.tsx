@@ -63,8 +63,9 @@ vi.mock("#src/components/auth-guarded", () => ({
 }));
 
 vi.mock("#src/components/basic-button", () => ({
-	BasicButton: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void; icon?: React.ReactNode; [key: string]: unknown }) => (
+	BasicButton: ({ children, onClick, icon }: { children: React.ReactNode; onClick?: () => void; icon?: React.ReactNode; [key: string]: unknown }) => (
 		<button type="button" onClick={onClick}>
+			{icon}
 			{children}
 		</button>
 	),
@@ -138,6 +139,7 @@ vi.mock("antd", () => ({
 	},
 	Space: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	Tag: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+	Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 	Typography: {
 		Text: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
 	},
@@ -315,7 +317,7 @@ describe("PlatformDept page", () => {
 			expect(screen.getByTestId("dept-row-2")).toBeInTheDocument();
 		});
 
-		await userEvent.click(within(screen.getByTestId("dept-row-2")).getByRole("button", { name: "新增下级" }));
+		await userEvent.click(within(screen.getByTestId("dept-row-2")).getByRole("button", { name: "plus" }));
 
 		await waitFor(() => {
 			expect(screen.getByTestId("organization-detail")).toHaveAttribute("data-open", "true");
@@ -323,14 +325,14 @@ describe("PlatformDept page", () => {
 			expect(screen.getByTestId("organization-detail")).toHaveAttribute("data-parent", "运营部");
 		});
 
-		await userEvent.click(within(screen.getByTestId("dept-row-2")).getByRole("button", { name: "编辑" }));
+		await userEvent.click(within(screen.getByTestId("dept-row-2")).getByRole("button", { name: "edit" }));
 
 		await waitFor(() => {
 			expect(screen.getByTestId("organization-detail")).toHaveAttribute("data-mode", "edit");
 			expect(screen.getByTestId("organization-detail")).toHaveAttribute("data-organization", "运营部");
 		});
 
-		await userEvent.click(within(screen.getByTestId("dept-row-2")).getByRole("button", { name: "删除" }));
+		await userEvent.click(within(screen.getByTestId("dept-row-2")).getByRole("button", { name: "delete" }));
 		expect(mocks.confirm).toHaveBeenCalledTimes(1);
 
 		const confirmArgs = mocks.confirm.mock.calls.at(-1)?.[0];
@@ -352,7 +354,7 @@ describe("PlatformDept page", () => {
 			expect(screen.getByTestId("dept-row-2")).toBeInTheDocument();
 		});
 
-		await userEvent.click(within(screen.getByTestId("dept-row-2")).getByRole("button", { name: "新增下级" }));
+		await userEvent.click(within(screen.getByTestId("dept-row-2")).getByRole("button", { name: "plus" }));
 		await mocks.detailProps?.onSubmit({
 			code: "dept-abc12345",
 			name: "子部门",

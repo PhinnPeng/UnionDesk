@@ -4,8 +4,8 @@ import type { IamUser } from "@uniondesk/shared";
 import { fetchPlatformOffboardPoolUsers } from "#src/api/platform/iam";
 import { BasicContent } from "#src/components/basic-content";
 
-import { DownloadOutlined, RollbackOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Col, Row, Space, Table, Tag, Typography } from "antd";
+import { DeleteOutlined, DownloadOutlined, RollbackOutlined } from "@ant-design/icons";
+import { Alert, Button, Card, Col, Row, Space, Table, Tag, Tooltip, Typography } from "antd";
 import { useEffect, useState } from "react";
 
 interface OffboardRow {
@@ -94,11 +94,15 @@ const columns: TableProps<OffboardRow>["columns"] = [
 	{
 		title: "操作",
 		key: "action",
-		width: 180,
+		width: 100,
 		render: () => (
 			<Space size={8}>
-				<Button size="small" type="link" disabled>恢复</Button>
-				<Button size="small" type="link" danger disabled>删除</Button>
+				<Tooltip title="恢复">
+					<Button size="small" type="link" disabled icon={<RollbackOutlined />} />
+				</Tooltip>
+				<Tooltip title="删除">
+					<Button size="small" type="link" danger disabled icon={<DeleteOutlined />} />
+				</Tooltip>
 			</Space>
 		),
 	},

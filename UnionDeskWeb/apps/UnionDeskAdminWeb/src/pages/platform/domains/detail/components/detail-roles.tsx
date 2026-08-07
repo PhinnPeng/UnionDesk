@@ -4,7 +4,8 @@ import { fetchPlatformDomainRolePermissions, fetchPlatformDomainRoles, toErrorMe
 import { AuthGuarded } from "#src/components/auth-guarded";
 import { useAuth } from "#src/hooks/use-auth";
 
-import { App, Button, Descriptions, Drawer, Empty, Spin, Table, Tag, Typography } from "antd";
+import { EyeOutlined } from "@ant-design/icons";
+import { App, Button, Descriptions, Drawer, Empty, Spin, Table, Tag, Tooltip, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -123,10 +124,11 @@ export function DetailRoles({ domainId }: DetailRolesProps) {
 			base.push({
 				title: "操作",
 				key: "actions",
+				width: 90,
 				render: (_, row) => (
-					<Button type="link" size="small" onClick={() => void handleViewPermissions(row)}>
-						查看权限
-					</Button>
+					<Tooltip title="查看权限">
+						<Button type="link" size="small" icon={<EyeOutlined />} onClick={() => void handleViewPermissions(row)} />
+					</Tooltip>
 				),
 			});
 		}

@@ -14,7 +14,8 @@ import {
 } from "#src/api/platform/sla";
 import { BasicContent } from "#src/components/basic-content";
 
-import { App, Button, Card, Form, Input, InputNumber, Modal, Select, Space, Switch, Table, Tabs, Typography } from "antd";
+import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { App, Button, Card, Form, Input, InputNumber, Modal, Select, Space, Switch, Table, Tabs, Tooltip, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { useEffect, useMemo, useState } from "react";
 
@@ -191,23 +192,27 @@ export default function PlatformSlaManagement() {
 		{
 			title: "操作",
 			key: "actions",
-			width: 150,
+			width: 100,
 			render: (_, row) => (
 				<Space>
-					<Button type="link" size="small" onClick={() => openRuleEditor(row)}>编辑</Button>
-					<Button type="link" size="small" danger onClick={async () => {
-						if (!domainId) {
-							return;
-						}
-						try {
-							await deleteSlaRule(domainId, row.id);
-							message.success("SLA 规则已删除");
-							await loadData();
-						}
-						catch (error) {
-							message.error(error instanceof Error ? error.message : "删除失败");
-						}
-					}}>删除</Button>
+					<Tooltip title="编辑">
+						<Button type="link" size="small" icon={<EditOutlined />} onClick={() => openRuleEditor(row)} />
+					</Tooltip>
+					<Tooltip title="删除">
+						<Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={async () => {
+							if (!domainId) {
+								return;
+							}
+							try {
+								await deleteSlaRule(domainId, row.id);
+								message.success("SLA 规则已删除");
+								await loadData();
+							}
+							catch (error) {
+								message.error(error instanceof Error ? error.message : "删除失败");
+							}
+						}} />
+					</Tooltip>
 				</Space>
 			),
 		},
@@ -219,9 +224,11 @@ export default function PlatformSlaManagement() {
 		{
 			title: "操作",
 			key: "actions",
-			width: 150,
+			width: 80,
 			render: (_, row) => (
-				<Button type="link" size="small" onClick={() => openCalendarEditor(row)}>编辑</Button>
+				<Tooltip title="编辑">
+					<Button type="link" size="small" icon={<EditOutlined />} onClick={() => openCalendarEditor(row)} />
+				</Tooltip>
 			),
 		},
 	];

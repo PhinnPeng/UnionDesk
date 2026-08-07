@@ -148,8 +148,8 @@ vi.mock("antd", () => ({
 			message: mocks.messageApi,
 		}),
 	},
-	Button: ({ children, onClick, disabled }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean }) => (
-		<button type="button" onClick={onClick} disabled={disabled}>{children}</button>
+	Button: ({ children, onClick, disabled, icon }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; icon?: React.ReactNode }) => (
+		<button type="button" onClick={onClick} disabled={disabled}>{icon}{children}</button>
 	),
 	Card: ({ title, extra, children }: { title?: React.ReactNode; extra?: React.ReactNode; children: React.ReactNode }) => (
 		<section>
@@ -200,6 +200,7 @@ vi.mock("antd", () => ({
 		);
 	},
 	Tag: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+	Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 	Typography: {
 		Text: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
 		Title: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
@@ -429,7 +430,7 @@ describe("PlatformUser page", () => {
 			expect(screen.getByText("cindy")).toBeInTheDocument();
 		});
 
-		await userEvent.click(within(screen.getByTestId("user-row-2")).getByRole("button", { name: "编辑" }));
+		await userEvent.click(within(screen.getByTestId("user-row-2")).getByRole("button", { name: "edit" }));
 		expect(mocks.detailProps).toMatchObject({
 			open: true,
 			mode: "edit",
@@ -459,7 +460,7 @@ describe("PlatformUser page", () => {
 			expect(screen.getByTestId("user-row-2")).toBeInTheDocument();
 		});
 
-		await userEvent.click(within(screen.getByTestId("user-row-2")).getByRole("button", { name: "离职" }));
+		await userEvent.click(within(screen.getByTestId("user-row-2")).getByRole("button", { name: "user-delete" }));
 		let confirmArgs = mocks.confirm.mock.calls.at(-1)?.[0];
 		await confirmArgs.onOk();
 		expect(mocks.fetchOffboardPlatformUser).toHaveBeenCalledWith(2);
