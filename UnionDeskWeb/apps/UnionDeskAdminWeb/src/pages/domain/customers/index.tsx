@@ -14,6 +14,7 @@ import { AuthGuarded } from "#src/components/auth-guarded";
 import { BasicContent } from "#src/components/basic-content";
 import { ConfirmPopover } from "#src/components/confirm-popover";
 import { TableSearchForm } from "#src/components/table-search-form";
+import { useAuth } from "#src/hooks/use-auth";
 import {
 	DOMAIN_CUSTOMER_CREATE,
 	DOMAIN_CUSTOMER_READ,
@@ -22,7 +23,14 @@ import {
 } from "#src/pages/domain/domain-permissions";
 import { useAuthStore } from "#src/store/auth";
 
-import { SearchOutlined } from "@ant-design/icons";
+import {
+	EditOutlined,
+	EllipsisOutlined,
+	EyeOutlined,
+	PlayCircleOutlined,
+	SearchOutlined,
+	StopOutlined,
+} from "@ant-design/icons";
 import {
 	Alert,
 	App,
@@ -30,6 +38,7 @@ import {
 	Card,
 	Col,
 	Descriptions,
+	Dropdown,
 	Empty,
 	Form,
 	Input,
@@ -41,6 +50,7 @@ import {
 	Steps,
 	Table,
 	Tag,
+	Tooltip,
 	Typography,
 } from "antd";
 import type { FormInstance, TableColumnsType } from "antd";
@@ -149,7 +159,7 @@ function CustomerViewModal({ open, domainId, customerId, onCancel }: CustomerVie
 	const statusTag = customer ? formatStatusTag(customer.status) : null;
 
 	return (
-		<Modal title="查看客户" open={open} footer={null} onCancel={onCancel} destroyOnHidden>
+		<Modal title="客户详情" open={open} footer={null} onCancel={onCancel} destroyOnHidden>
 			{loading ? (
 				<Empty description="加载中..." />
 			) : customer ? (
@@ -448,8 +458,10 @@ function CustomersAddModal({
 
 export default function DomainCustomersPage() {
 	const { message, modal } = App.useApp();
+	const { hasPermission } = useAuth();
 	const defaultBusinessDomainId = useAuthStore(state => state.defaultBusinessDomainId);
 	const accessibleDomains = useAuthStore(state => state.accessibleDomains);
+	const canResetPassword = hasPermission(DOMAIN_CUSTOMER_RESET_PASSWORD);
 
 	const domainId = useMemo(
 		() => resolveBusinessDomainId(defaultBusinessDomainId, accessibleDomains ?? []),
@@ -600,45 +612,60 @@ export default function DomainCustomersPage() {
 		{
 			title: "操作",
 			key: "actions",
-			width: 190,
+			width: 120,
 			align: "center",
 			fixed: "right",
 			render: (_, row) => (
 				<Space size="small">
-					<Button type="link" size="small" onClick={() => setViewCustomerId(row.id)}>查看</Button>
-					<AuthGuarded auth={DOMAIN_CUSTOMER_RESET_PASSWORD} fallback={null}>
-						<ConfirmPopover
-							title="确认重置密码"
-							description={(
-								<>
-									确定重置「{row.display_name}」的密码吗？
-									<br />
-									重置后客户首次登录需强制修改密码。
-								</>
-							)}
-							onConfirm={() => handleResetPassword(row)}
-						>
-							<Button type="link" size="small">重置密码</Button>
-						</ConfirmPopover>
-					</AuthGuarded>
+					<Tooltip title="编辑">
+						<Button type="link" size="small" icon={<EditOutlined />} onClick={() => setViewCustomerId(row.id)} />
+					</Tooltip>
 					<AuthGuarded auth={DOMAIN_CUSTOMER_UPDATE_STATUS} fallback={null}>
 						{row.status === "active" ? (
-							<ConfirmPopover
-								title="确认禁用客户"
-								description={`确定将「${row.display_name}」设为禁用吗？`}
-								onConfirm={() => applyStatusChange(row.id, "disabled")}
-							>
-								<Button type="link" size="small">禁用</Button>
-							</ConfirmPopover>
+							<Tooltip title="禁用">
+								<ConfirmPopover
+									title="确认禁用客户"
+									description={`确定将「${row.display_name}」设为禁用吗？`}
+									onConfirm={() => applyStatusChange(row.id, "disabled")}
+								>
+									<Button type="link" size="small" icon={<StopOutlined />} />
+								</ConfirmPopover>
+							</Tooltip>
 						) : null}
 						{row.status === "disabled" ? (
-							<Button type="link" size="small" onClick={() => handleRowEnable(row)}>启用</Button>
+							<Tooltip title="启用">
+								<Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => handleRowEnable(row)} />
+							</Tooltip>
 						) : null}
 					</AuthGuarded>
+					<Dropdown
+						trigger={["click"]}
+						menu={{
+							items: [
+								...(canResetPassword
+									? [{
+										key: "reset-password",
+										label: "重置密码",
+										onClick: () => handleResetPassword(row),
+									}]
+									: []),
+								{
+									key: "view-detail",
+									label: "查看详情",
+									icon: <EyeOutlined />,
+									onClick: () => setViewCustomerId(row.id),
+								},
+							],
+						}}
+					>
+						<Tooltip title="更多">
+							<Button type="link" size="small" icon={<EllipsisOutlined />} />
+						</Tooltip>
+					</Dropdown>
 				</Space>
 			),
 		},
-	], [applyStatusChange, handleResetPassword, handleRowEnable]);
+	], [applyStatusChange, canResetPassword, handleResetPassword, handleRowEnable]);
 
 	return (
 		<BasicContent>
@@ -693,7 +720,7 @@ export default function DomainCustomersPage() {
 									loading={loading}
 									columns={columns}
 									dataSource={rows}
-									scroll={{ x: 1280 }}
+									scroll={{ x: 1210 }}
 									pagination={{
 										current: page,
 										pageSize,
