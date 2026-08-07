@@ -1,0 +1,30 @@
+{
+  "id": "admin-table-action-icons",
+  "name": "admin-table-action-icons",
+  "title": "AdminWeb 表格操作列统一图标操作语言",
+  "description": "父任务：固化图标词典与规范，分三批改造全部表格操作列",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "phinnpeng",
+  "assignee": "phinnpeng",
+  "createdAt": "2026-08-07",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "master",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "08-07-batch-a-domain-action-icons",
+    "08-07-batch-b-platform-action-icons",
+    "08-07-batch-c-config-system-action-icons"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

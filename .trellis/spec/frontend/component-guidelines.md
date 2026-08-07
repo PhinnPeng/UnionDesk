@@ -117,8 +117,59 @@ Less 内使用 `var(--ant-color-border-secondary)` 等变量。
 </AuthGuarded>
 
 <ConfirmPopover title="确认拔出该属性？" onConfirm={() => onRemove(id)}>
-  <Button type="link" danger>删除</Button>
+  <Button type="link" size="small" danger icon={<DeleteOutlined />} />
 </ConfirmPopover>
+```
+
+---
+
+## 操作列图标语言（Table 操作列统一规范）
+
+数据表格操作列统一使用**纯图标按钮**模式（先例：`pages/domain/customers/index.tsx`）。
+
+### 图标词典（动作 → 图标，全仓唯一映射）
+
+| 动作 | 图标 |
+|---|---|
+| 编辑 | `EditOutlined` |
+| 查看/详情/权限 | `EyeOutlined` |
+| 删除/移除/拔出 | `DeleteOutlined`（danger） |
+| 禁用 / 启用 | `StopOutlined` / `PlayCircleOutlined` |
+| 重置密码 | `KeyOutlined` |
+| 新增下级/添加 | `PlusOutlined` |
+| 更多（下拉 trigger） | `EllipsisOutlined`（禁止 `MoreOutlined`） |
+| 属性/设置 | `SettingOutlined` |
+| 工作流 | `NodeIndexOutlined` |
+| 复制 | `CopyOutlined` |
+| 离职 | `UserDeleteOutlined` |
+| 回退/恢复/拔出 | `RollbackOutlined` |
+
+### 交互规范
+
+- 操作列图标按钮**必须**包裹 `Tooltip`（中文提示）；Modal 内小表格空间受限可省略
+- 主操作区 ≤3 个图标；低频/危险/次要动作收进「更多」`Dropdown`（`trigger={["click"]}`，菜单项带图标，删除项 danger）
+- 破坏性操作必须 `ConfirmPopover`（下拉菜单内改用 `modal.confirm`）二次确认
+- 菜单项权限用 `useAuth().hasPermission(...)` 条件渲染；主区图标按钮用 `AuthGuarded` 包裹
+- 操作列宽度按图标数量收缩（3 图标 ~120，单图标 ~80）
+
+```tsx
+<Tooltip title="编辑">
+  <Button type="link" size="small" icon={<EditOutlined />} />
+</Tooltip>
+<Dropdown
+  trigger={["click"]}
+  menu={{
+    items: [
+      ...(canDelete
+        ? [{ key: "delete", label: "删除", icon: <DeleteOutlined />, danger: true, onClick: () => onDelete(row) }]
+        : []),
+    ],
+  }}
+>
+  <Tooltip title="更多">
+    <Button type="link" size="small" icon={<EllipsisOutlined />} />
+  </Tooltip>
+</Dropdown>
 ```
 
 ---
