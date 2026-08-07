@@ -1041,11 +1041,22 @@ export type P0DomainCustomer = {
   login_name?: string | null;
   phone?: string | null;
   email?: string | null;
+  real_name?: string | null;
+  id_card_no?: string | null;
   status: string;
   source?: string | null;
   activated_at?: string | null;
   tags?: string[] | null;
   created_at?: string | null;
+};
+
+/** 更新域客户资料请求：登录名不可修改；id_card_no 提交脱敏回显值（含 *）时应剔除不发送 */
+export type UpdateDomainCustomerRequest = {
+  display_name: string;
+  real_name?: string;
+  phone: string;
+  email?: string;
+  id_card_no?: string;
 };
 
 export type P0BatchCreateDomainCustomersResult = {

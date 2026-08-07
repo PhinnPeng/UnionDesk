@@ -8,6 +8,8 @@ public class CustomerAccountPo {
     private String nickname;
     private String phone;
     private String email;
+    private String realName;
+    private String idCardNo;
     private String status;
     private String passwordHash;
     private Integer mustChangePassword;
@@ -24,6 +26,10 @@ public class CustomerAccountPo {
     public void setPhone(String phone) { this.phone = phone; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+    public String getRealName() { return realName; }
+    public void setRealName(String realName) { this.realName = realName; }
+    public String getIdCardNo() { return idCardNo; }
+    public void setIdCardNo(String idCardNo) { this.idCardNo = idCardNo; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public String getPasswordHash() { return passwordHash; }

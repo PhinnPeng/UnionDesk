@@ -3,6 +3,7 @@ package com.uniondesk.iam.core;
 import com.uniondesk.auth.core.LoginAccountService;
 import com.uniondesk.iam.entity.CustomerAccountPo;
 import com.uniondesk.iam.repository.CustomerAccountRepository;
+import com.uniondesk.iam.repository.IdentitySubjectRepository;
 import java.util.Optional;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,16 +16,19 @@ public class CustomerAccountService {
 
     private final CustomerAccountRepository customerAccountRepository;
     private final IdentitySubjectService identitySubjectService;
+    private final IdentitySubjectRepository identitySubjectRepository;
     private final LoginAccountService loginAccountService;
     private final PasswordEncoder passwordEncoder;
 
     public CustomerAccountService(
             CustomerAccountRepository customerAccountRepository,
             IdentitySubjectService identitySubjectService,
+            IdentitySubjectRepository identitySubjectRepository,
             LoginAccountService loginAccountService,
             PasswordEncoder passwordEncoder) {
         this.customerAccountRepository = customerAccountRepository;
         this.identitySubjectService = identitySubjectService;
+        this.identitySubjectRepository = identitySubjectRepository;
         this.loginAccountService = loginAccountService;
         this.passwordEncoder = passwordEncoder;
     }
@@ -76,6 +80,33 @@ public class CustomerAccountService {
         loginAccountService.resetPassword(customerAccountId, rawPassword);
     }
 
+    @Transactional
+    public void updateProfile(long customerAccountId, UpdateProfileCommand cmd) {
+        CustomerAccount current = findById(customerAccountId)
+                .orElseThrow(() -> new IllegalArgumentException("客户账号不存在"));
+        String nickname = requireText(cmd.nickname(), "展示名不能为空");
+        String phone = requireText(cmd.phone(), "手机号不能为空");
+        if (!phone.equals(current.phone())) {
+            Long existingSubjectId = identitySubjectRepository.findIdByPhone(phone).orElse(null);
+            if (existingSubjectId != null && existingSubjectId.longValue() != current.subjectId()) {
+                throw new IllegalArgumentException("手机号已被占用");
+            }
+            identitySubjectRepository.updatePhone(current.subjectId(), phone);
+        }
+        CustomerAccountPo po = new CustomerAccountPo();
+        po.setId(customerAccountId);
+        po.setNickname(nickname);
+        po.setPhone(phone);
+        po.setEmail(trimToNull(cmd.email()));
+        po.setRealName(trimToNull(cmd.realName()));
+        po.setIdCardNo(trimToNull(cmd.idCardNo()));
+        try {
+            customerAccountRepository.updateProfile(po);
+        } catch (DuplicateKeyException ex) {
+            throw new IllegalArgumentException("手机号已被占用");
+        }
+    }
+
     private CustomerAccount toCustomerAccount(CustomerAccountPo po) {
         return new CustomerAccount(
                 po.getId(),
@@ -84,6 +115,8 @@ public class CustomerAccountService {
                 po.getNickname(),
                 po.getPhone(),
                 po.getEmail(),
+                po.getRealName(),
+                po.getIdCardNo(),
                 po.getStatus());
     }
 
@@ -105,6 +138,8 @@ public class CustomerAccountService {
             String nickname,
             String phone,
             String email,
+            String realName,
+            String idCardNo,
             String status) {
     }
 
@@ -115,5 +150,13 @@ public class CustomerAccountService {
             String email,
             String password,
             boolean mustChangePassword) {
+    }
+
+    public record UpdateProfileCommand(
+            String nickname,
+            String realName,
+            String phone,
+            String email,
+            String idCardNo) {
     }
 }

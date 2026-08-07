@@ -101,6 +101,15 @@ public class DomainCustomerController {
         return domainCustomerService.updateCustomerStatus(domainId, customerId, request);
     }
 
+    @PutMapping("/customers/{customerId}")
+    @RequirePermission(PermissionCodes.DOMAIN_CUSTOMER_UPDATE)
+    public DomainCustomerDtos.DomainCustomerView updateCustomer(
+            @PathVariable long domainId,
+            @PathVariable long customerId,
+            @Valid @RequestBody DomainCustomerDtos.UpdateDomainCustomerProfileRequest request) {
+        return domainCustomerService.updateCustomerProfile(domainId, customerId, request);
+    }
+
     @PutMapping("/customers/{customerId}/password")
     @RequirePermission(PermissionCodes.DOMAIN_CUSTOMER_RESET_PASSWORD)
     public DomainCustomerDtos.ResetCustomerPasswordResponse resetCustomerPassword(

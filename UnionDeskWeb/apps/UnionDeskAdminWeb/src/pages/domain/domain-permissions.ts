@@ -6,6 +6,7 @@ export const DOMAIN_GENERAL_UPDATE = "domain.general.update";
 
 export const DOMAIN_CUSTOMER_READ = "domain.customer.read";
 export const DOMAIN_CUSTOMER_CREATE = "domain.customer.create";
+export const DOMAIN_CUSTOMER_UPDATE = "domain.customer.update";
 export const DOMAIN_CUSTOMER_UPDATE_STATUS = "domain.customer.update_status";
 export const DOMAIN_CUSTOMER_RESET_PASSWORD = "domain.customer.reset_password";
 

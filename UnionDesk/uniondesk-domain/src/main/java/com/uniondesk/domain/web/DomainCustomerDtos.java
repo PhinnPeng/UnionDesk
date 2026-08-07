@@ -1,6 +1,7 @@
 package com.uniondesk.domain.web;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -26,7 +27,9 @@ public final class DomainCustomerDtos {
             LocalDateTime activated_at,
             LocalDateTime disabled_at,
             LocalDateTime created_at,
-            LocalDateTime updated_at) {
+            LocalDateTime updated_at,
+            String real_name,
+            String id_card_no) {
     }
 
     public record CreateDomainCustomerRequest(
@@ -57,6 +60,17 @@ public final class DomainCustomerDtos {
 
     public record UpdateDomainCustomerStatusRequest(
             @NotBlank String status) {
+    }
+
+    public record UpdateDomainCustomerProfileRequest(
+            @JsonAlias({"display_name", "displayName"})
+            @NotBlank String displayName,
+            @JsonAlias({"real_name", "realName"})
+            String realName,
+            @NotBlank String phone,
+            @Email String email,
+            @JsonAlias({"id_card_no", "idCardNo"})
+            String idCardNo) {
     }
 
     public record ResetCustomerPasswordResponse(

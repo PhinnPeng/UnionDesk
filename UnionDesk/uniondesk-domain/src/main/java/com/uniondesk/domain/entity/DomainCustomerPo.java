@@ -12,6 +12,8 @@ public class DomainCustomerPo {
     private String nickname;
     private String phone;
     private String email;
+    private String realName;
+    private String idCardNo;
     private String status;
     private String source;
     private LocalDateTime activatedAt;
@@ -81,6 +83,22 @@ public class DomainCustomerPo {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getRealName() {
+        return realName;
+    }
+
+    public void setRealName(String realName) {
+        this.realName = realName;
+    }
+
+    public String getIdCardNo() {
+        return idCardNo;
+    }
+
+    public void setIdCardNo(String idCardNo) {
+        this.idCardNo = idCardNo;
     }
 
     public String getStatus() {

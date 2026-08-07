@@ -14,4 +14,6 @@ public interface CustomerAccountMapper {
     void insert(CustomerAccountPo po);
 
     Long selectIdByUsernameOrPhone(@Param("username") String username, @Param("phone") String phone);
+
+    int updateProfile(CustomerAccountPo po);
 }

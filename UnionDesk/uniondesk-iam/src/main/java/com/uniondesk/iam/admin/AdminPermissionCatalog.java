@@ -30,6 +30,7 @@ public final class AdminPermissionCatalog {
             new PermissionDefinition(PermissionCodes.DOMAIN_GENERAL_UPDATE_STATUS, "Update domain status", "domain", "PUT", "/api/v1/admin/domains/*"),
             new PermissionDefinition(PermissionCodes.DOMAIN_CUSTOMER_READ, "View domain customers", "domain", "GET", "/api/v1/admin/domains/*/customers"),
             new PermissionDefinition(PermissionCodes.DOMAIN_CUSTOMER_CREATE, "Create domain customer", "domain", "POST", "/api/v1/admin/domains/*/customers/**"),
+            new PermissionDefinition(PermissionCodes.DOMAIN_CUSTOMER_UPDATE, "Update domain customer", "domain", "PUT", "/api/v1/admin/domains/*/customers/*"),
             new PermissionDefinition(PermissionCodes.DOMAIN_CUSTOMER_UPDATE_STATUS, "Update domain customer status", "domain", "PATCH", "/api/v1/admin/domains/*/customers/*/status"),
             new PermissionDefinition(PermissionCodes.DOMAIN_CUSTOMER_RESET_PASSWORD, "Reset domain customer password", "domain", "PUT", "/api/v1/admin/domains/*/customers/*/password"),
             new PermissionDefinition(PermissionCodes.DOMAIN_BLOCKED_WORD_READ, "View domain blocked words", "domain", "GET", "/api/v1/admin/domains/*/blocked-words"),

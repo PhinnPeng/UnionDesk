@@ -23,6 +23,8 @@ public class DomainCustomerService {
 
     private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
     private static final int PASSWORD_LENGTH = 12;
+    private static final int[] ID_CARD_WEIGHTS = {7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2};
+    private static final String ID_CARD_CHECK_CODES = "10X98765432";
 
     private final DomainCustomerRepository domainCustomerRepository;
     private final DomainService domainService;
@@ -150,7 +152,9 @@ public class DomainCustomerService {
                 "active".equals(status) ? now : current.activated_at(),
                 "disabled".equals(status) ? now : null,
                 current.created_at(),
-                now);
+                now,
+                current.real_name(),
+                current.id_card_no());
     }
 
     @Transactional
@@ -161,6 +165,26 @@ public class DomainCustomerService {
         customerAccountService.resetPassword(customer.customer_account_id(), rawPassword);
         authVersionService.incrementVersion(customer.customer_account_id(), "customer");
         return new DomainCustomerDtos.ResetCustomerPasswordResponse(rawPassword, true);
+    }
+
+    @Transactional
+    public DomainCustomerDtos.DomainCustomerView updateCustomerProfile(
+            long domainId,
+            long customerId,
+            DomainCustomerDtos.UpdateDomainCustomerProfileRequest request) {
+        loadDomain(domainId);
+        DomainCustomerDtos.DomainCustomerView current = loadCustomerById(domainId, customerId);
+        String idCardNo = StringUtils.hasText(request.idCardNo()) ? request.idCardNo().trim() : null;
+        if (idCardNo != null && !isValidIdCardNo(idCardNo)) {
+            throw new IllegalArgumentException("身份证号格式不正确");
+        }
+        customerAccountService.updateProfile(current.customer_account_id(), new CustomerAccountService.UpdateProfileCommand(
+                request.displayName().trim(),
+                StringUtils.hasText(request.realName()) ? request.realName().trim() : null,
+                request.phone().trim(),
+                StringUtils.hasText(request.email()) ? request.email().trim() : null,
+                idCardNo));
+        return loadCustomerById(domainId, customerId);
     }
 
     private String generateRandomPassword() {
@@ -195,7 +219,28 @@ public class DomainCustomerService {
                 po.getActivatedAt(),
                 po.getDisabledAt(),
                 po.getCreatedAt(),
-                po.getUpdatedAt());
+                po.getUpdatedAt(),
+                po.getRealName(),
+                maskIdCardNo(po.getIdCardNo()));
+    }
+
+    private boolean isValidIdCardNo(String raw) {
+        if (raw == null || !raw.matches("^\\d{17}[\\dXx]$")) {
+            return false;
+        }
+        int sum = 0;
+        for (int i = 0; i < 17; i++) {
+            sum += (raw.charAt(i) - '0') * ID_CARD_WEIGHTS[i];
+        }
+        char expected = ID_CARD_CHECK_CODES.charAt(sum % 11);
+        return Character.toUpperCase(raw.charAt(17)) == expected;
+    }
+
+    private String maskIdCardNo(String raw) {
+        if (raw == null || raw.length() < 8) {
+            return raw;
+        }
+        return raw.substring(0, 3) + "***********" + raw.substring(raw.length() - 4);
     }
 
     private CustomerAccountService.CustomerAccount loadCustomerAccount(long customerAccountId) {

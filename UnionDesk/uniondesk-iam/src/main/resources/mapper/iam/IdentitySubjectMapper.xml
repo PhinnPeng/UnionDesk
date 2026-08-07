@@ -31,4 +31,11 @@
         VALUES (#{subjectType}, #{phone}, #{status}, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
     </insert>
 
+    <update id="updatePhone">
+        UPDATE identity_subject
+        SET phone = #{phone},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id}
+    </update>
+
 </mapper>

@@ -10,11 +10,13 @@
         <result property="nickname" column="nickname"/>
         <result property="phone" column="phone"/>
         <result property="email" column="email"/>
+        <result property="realName" column="real_name"/>
+        <result property="idCardNo" column="id_card_no"/>
         <result property="status" column="status"/>
     </resultMap>
 
     <select id="selectById" resultMap="CustomerAccountPo">
-        SELECT id, subject_id, username, nickname, phone, email, status
+        SELECT id, subject_id, username, nickname, phone, email, real_name, id_card_no, status
         FROM customer_account
         WHERE id = #{id}
         LIMIT 1
@@ -36,5 +38,18 @@
     <select id="selectIdByUsernameOrPhone" resultType="java.lang.Long">
         SELECT id FROM customer_account WHERE username = #{username} OR phone = #{phone} LIMIT 1
     </select>
+
+    <update id="updateProfile">
+        UPDATE customer_account
+        SET nickname = #{nickname},
+            phone = #{phone},
+            email = #{email},
+            real_name = #{realName},
+            <if test="idCardNo != null">
+                id_card_no = #{idCardNo},
+            </if>
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id}
+    </update>
 
 </mapper>

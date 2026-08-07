@@ -144,6 +144,8 @@ class DomainCustomerControllerTests {
                 now,
                 null,
                 now,
-                now);
+                now,
+                null,
+                null);
     }
 }

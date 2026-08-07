@@ -14,4 +14,6 @@ public interface IdentitySubjectMapper {
     Long selectMergedIntoId(@Param("id") long id);
 
     void insert(IdentitySubjectPo po);
+
+    void updatePhone(@Param("id") long id, @Param("phone") String phone);
 }

@@ -29,4 +29,8 @@ public class CustomerAccountRepository {
     public Optional<Long> findIdByUsernameOrPhone(String username, String phone) {
         return Optional.ofNullable(mapper.selectIdByUsernameOrPhone(username, phone));
     }
+
+    public void updateProfile(CustomerAccountPo po) {
+        mapper.updateProfile(po);
+    }
 }

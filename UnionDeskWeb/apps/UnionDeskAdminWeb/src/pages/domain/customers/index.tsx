@@ -1,4 +1,4 @@
-import type { DomainMember, P0DomainCustomer } from "@uniondesk/shared";
+import type { DomainMember, P0DomainCustomer, UpdateDomainCustomerRequest } from "@uniondesk/shared";
 import {
 	createDomainCustomerManual,
 	createDomainCustomersFromStaff,
@@ -7,6 +7,7 @@ import {
 	fetchP0DomainCustomersPage,
 	resetDomainCustomerPassword,
 	toErrorMessage,
+	updateDomainCustomer,
 	updateDomainCustomerStatus,
 } from "@uniondesk/shared";
 
@@ -19,6 +20,7 @@ import {
 	DOMAIN_CUSTOMER_CREATE,
 	DOMAIN_CUSTOMER_READ,
 	DOMAIN_CUSTOMER_RESET_PASSWORD,
+	DOMAIN_CUSTOMER_UPDATE,
 	DOMAIN_CUSTOMER_UPDATE_STATUS,
 } from "#src/pages/domain/domain-permissions";
 import { useAuthStore } from "#src/store/auth";
@@ -169,6 +171,8 @@ function CustomerViewModal({ open, domainId, customerId, onCancel }: CustomerVie
 					<Descriptions.Item label="登录名">{customer.login_name ?? "—"}</Descriptions.Item>
 					<Descriptions.Item label="手机">{customer.phone ?? "—"}</Descriptions.Item>
 					<Descriptions.Item label="邮箱">{customer.email ?? "—"}</Descriptions.Item>
+					<Descriptions.Item label="真实姓名">{customer.real_name ?? "—"}</Descriptions.Item>
+					<Descriptions.Item label="身份证号">{customer.id_card_no ?? "—"}</Descriptions.Item>
 					<Descriptions.Item label="状态">
 						{statusTag ? <Tag color={statusTag.color}>{statusTag.label}</Tag> : "—"}
 					</Descriptions.Item>
@@ -188,6 +192,137 @@ interface ResetPasswordResultModalProps {
 	customerName: string;
 	password: string;
 	onClose: () => void;
+}
+
+interface CustomerEditModalProps {
+	open: boolean;
+	domainId: string;
+	customerId: string | null;
+	confirmLoading?: boolean;
+	onCancel: () => void;
+	onSubmit: (payload: UpdateDomainCustomerRequest) => Promise<void>;
+}
+
+interface CustomerEditFormValues {
+	display_name: string;
+	real_name?: string;
+	login_name: string;
+	phone: string;
+	email?: string;
+	id_card_no?: string;
+}
+
+function CustomerEditModal({ open, domainId, customerId, confirmLoading, onCancel, onSubmit }: CustomerEditModalProps) {
+	const { message } = App.useApp();
+	const [form] = Form.useForm<CustomerEditFormValues>();
+	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		if (!open || !domainId || !customerId) {
+			return;
+		}
+		form.resetFields();
+		let cancelled = false;
+		setLoading(true);
+		void fetchDomainCustomer(domainId, customerId)
+			.then((data) => {
+				if (!cancelled) {
+					form.setFieldsValue({
+						display_name: data.display_name,
+						real_name: data.real_name ?? undefined,
+						login_name: data.login_name ?? undefined,
+						phone: data.phone ?? undefined,
+						email: data.email ?? undefined,
+						id_card_no: data.id_card_no ?? undefined,
+					});
+				}
+			})
+			.catch((error) => {
+				if (!cancelled) {
+					message.error(toErrorMessage(error));
+				}
+			})
+			.finally(() => {
+				if (!cancelled) {
+					setLoading(false);
+				}
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [customerId, domainId, form, message, open]);
+
+	const handleSubmit = async () => {
+		try {
+			const values = await form.validateFields();
+			const payload: UpdateDomainCustomerRequest = {
+				display_name: values.display_name,
+				phone: values.phone,
+			};
+			if (values.real_name) {
+				payload.real_name = values.real_name;
+			}
+			if (values.email) {
+				payload.email = values.email;
+			}
+			if (values.id_card_no && !values.id_card_no.includes("*")) {
+				payload.id_card_no = values.id_card_no;
+			}
+			await onSubmit(payload);
+		}
+		catch {
+			// 校验或提交失败
+		}
+	};
+
+	return (
+		<Modal
+			title="编辑客户"
+			open={open}
+			confirmLoading={confirmLoading}
+			onCancel={onCancel}
+			onOk={() => void handleSubmit()}
+			okText="保存"
+			cancelText="取消"
+			destroyOnHidden
+		>
+			<Form form={form} layout="vertical">
+				<Row gutter={16}>
+					<Col span={12}>
+						<Form.Item name="display_name" label="展示名" rules={[{ required: true, message: "请输入展示名" }]}>
+							<Input placeholder="客户展示名称" />
+						</Form.Item>
+					</Col>
+					<Col span={12}>
+						<Form.Item name="real_name" label="真实姓名">
+							<Input placeholder="客户真实姓名" />
+						</Form.Item>
+					</Col>
+					<Col span={12}>
+						<Form.Item name="login_name" label="登录名">
+							<Input disabled placeholder="登录名不可修改" />
+						</Form.Item>
+					</Col>
+					<Col span={12}>
+						<Form.Item name="phone" label="手机" rules={[{ required: true, message: "请输入手机号" }]}>
+							<Input placeholder="手机号" />
+						</Form.Item>
+					</Col>
+					<Col span={12}>
+						<Form.Item name="email" label="邮箱" rules={[{ type: "email", message: "邮箱格式不正确" }]}>
+							<Input placeholder="邮箱" />
+						</Form.Item>
+					</Col>
+					<Col span={12}>
+						<Form.Item name="id_card_no" label="身份证号">
+							<Input placeholder="18 位身份证号（脱敏值可原样保存）" />
+						</Form.Item>
+					</Col>
+				</Row>
+			</Form>
+			{loading ? <Alert type="info" showIcon message="正在加载客户资料..." className="mt-2" /> : null}
+		</Modal>
+	);
 }
 
 function ResetPasswordResultModal({ open, customerName, password, onClose }: ResetPasswordResultModalProps) {
@@ -478,6 +613,7 @@ export default function DomainCustomersPage() {
 	const [keyword, setKeyword] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("");
 	const [addOpen, setAddOpen] = useState(false);
+	const [editCustomerId, setEditCustomerId] = useState<string | null>(null);
 	const [viewCustomerId, setViewCustomerId] = useState<string | null>(null);
 	const [resetResult, setResetResult] = useState<{ customerName: string; password: string } | null>(null);
 
@@ -618,9 +754,11 @@ export default function DomainCustomersPage() {
 			fixed: "right",
 			render: (_, row) => (
 				<Space size="small">
-					<Tooltip title="编辑">
-						<Button type="link" size="small" icon={<EditOutlined />} onClick={() => setViewCustomerId(row.id)} />
-					</Tooltip>
+					<AuthGuarded auth={DOMAIN_CUSTOMER_UPDATE} fallback={null}>
+						<Tooltip title="编辑">
+							<Button type="link" size="small" icon={<EditOutlined />} onClick={() => setEditCustomerId(row.id)} />
+						</Tooltip>
+					</AuthGuarded>
 					<AuthGuarded auth={DOMAIN_CUSTOMER_UPDATE_STATUS} fallback={null}>
 						{row.status === "active" ? (
 							<Tooltip title="禁用">
@@ -785,6 +923,31 @@ export default function DomainCustomersPage() {
 								domainId={domainId}
 								customerId={viewCustomerId}
 								onCancel={() => setViewCustomerId(null)}
+							/>
+							<CustomerEditModal
+								open={editCustomerId != null}
+								domainId={domainId}
+								customerId={editCustomerId}
+								confirmLoading={submitting}
+								onCancel={() => setEditCustomerId(null)}
+								onSubmit={async payload => {
+									if (!editCustomerId) {
+										return;
+									}
+									setSubmitting(true);
+									try {
+										await updateDomainCustomer(domainId, editCustomerId, payload);
+										message.success("已更新客户资料");
+										setEditCustomerId(null);
+										await loadCustomers(page, pageSize, keyword, statusFilter);
+									}
+									catch (error) {
+										message.error(toErrorMessage(error));
+									}
+									finally {
+										setSubmitting(false);
+									}
+								}}
 							/>
 							<ResetPasswordResultModal
 								open={resetResult != null}

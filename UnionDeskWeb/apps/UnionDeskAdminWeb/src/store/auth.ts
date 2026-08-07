@@ -1,4 +1,5 @@
 import type { AuthType, LoginInfo } from "#src/api/user/types";
+import type { UserInfoType } from "#src/api/user/types";
 
 
 
@@ -53,6 +54,37 @@ const initialState: AuthType = {
 	user: null,
 
 };
+
+
+
+async function refreshPermissionSnapshotForUser(
+	userInfo: UserInfoType | null,
+	defaultBusinessDomainId: number,
+	accessibleDomains: Array<{ id: number }>,
+): Promise<void> {
+	if (!userInfo) {
+		return;
+	}
+	const prevPlatformAccess = Boolean(userInfo.platformAccess);
+	const businessDomainAccess = Boolean(userInfo.businessDomainAccess);
+	const snapshot = await fetchPermissionSnapshot(
+		businessDomainAccess
+			? {
+					menuScope: "business",
+					domainId: defaultBusinessDomainId,
+				}
+			: { menuScope: "platform" },
+	);
+	let nextUserInfo = buildUserInfoFromPermissionSnapshot(snapshot, {
+		accessibleDomains,
+		businessDomainAccess,
+	});
+	if (prevPlatformAccess || nextUserInfo.platformAccess) {
+		nextUserInfo = { ...nextUserInfo, platformAccess: true };
+	}
+	useAuthStore.setState({ user: nextUserInfo });
+	useUserStore.getState().setUserInfo(nextUserInfo);
+}
 
 
 
@@ -328,6 +360,20 @@ export const useAuthStore = create<AuthType & AuthAction>()(
 				}
 
 				syncAuthStoreToSharedApi();
+
+				// 刷新页面时静默拉取最新权限快照，权限变更后无需重新登录即可生效
+
+				if (state.token) {
+
+					void refreshPermissionSnapshotForUser(
+						state.user,
+						state.defaultBusinessDomainId,
+						state.accessibleDomains ?? [],
+					).catch(() => {
+						// 快照请求失败时保留旧权限，后续由鉴权守卫兜底
+					});
+
+				}
 
 			}
 

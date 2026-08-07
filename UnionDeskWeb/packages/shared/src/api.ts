@@ -56,6 +56,7 @@ import type {
   P0DomainCustomer,
   P0BatchCreateDomainCustomersResult,
   ResetDomainCustomerPasswordResponse,
+  UpdateDomainCustomerRequest,
   DomainRole,
   DomainPermissionItem,
   DomainRolePermissions,
@@ -1312,6 +1313,8 @@ function normalizeP0DomainCustomer(raw: Record<string, unknown>): P0DomainCustom
           : null,
     phone: raw.phone != null ? String(raw.phone) : null,
     email: raw.email != null ? String(raw.email) : null,
+    real_name: raw.real_name != null ? String(raw.real_name) : null,
+    id_card_no: raw.id_card_no != null ? String(raw.id_card_no) : null,
     status: raw.status != null ? String(raw.status) : "active",
     source: raw.source != null ? String(raw.source) : null,
     activated_at: raw.activated_at != null
@@ -1381,6 +1384,19 @@ export async function updateDomainCustomerStatus(
   const response = await api.patch<Record<string, unknown>>(
     `/admin/domains/${encodeURIComponent(domainId)}/customers/${encodeURIComponent(customerId)}/status`,
     { status },
+  );
+  return normalizeP0DomainCustomer(unwrapApiResponse(response.data) as Record<string, unknown>);
+}
+
+/** `PUT .../customers/{customerId}` — 更新客户资料（登录名不可修改，id_card_no 传脱敏值无效） */
+export async function updateDomainCustomer(
+  domainId: string,
+  customerId: string,
+  payload: UpdateDomainCustomerRequest,
+): Promise<P0DomainCustomer> {
+  const response = await api.put<Record<string, unknown>>(
+    `/admin/domains/${encodeURIComponent(domainId)}/customers/${encodeURIComponent(customerId)}`,
+    payload,
   );
   return normalizeP0DomainCustomer(unwrapApiResponse(response.data) as Record<string, unknown>);
 }

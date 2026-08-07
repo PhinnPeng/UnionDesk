@@ -17,6 +17,7 @@ public final class PermissionCodes {
     public static final String DOMAIN_GENERAL_UPDATE_STATUS = "domain.general.update_status";
     public static final String DOMAIN_CUSTOMER_READ = "domain.customer.read";
     public static final String DOMAIN_CUSTOMER_CREATE = "domain.customer.create";
+    public static final String DOMAIN_CUSTOMER_UPDATE = "domain.customer.update";
     public static final String DOMAIN_CUSTOMER_UPDATE_STATUS = "domain.customer.update_status";
     public static final String DOMAIN_CUSTOMER_RESET_PASSWORD = "domain.customer.reset_password";
     public static final String DOMAIN_BLOCKED_WORD_READ = "domain.blocked_word.read";
