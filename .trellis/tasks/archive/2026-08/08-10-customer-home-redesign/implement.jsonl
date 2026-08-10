@@ -1,0 +1,7 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": "UnionDeskWeb/apps/UnionDeskCustomerWeb/src/styles/tokens.css", "reason": "设计色板与布局 token 改动点"}
+{"file": "UnionDeskWeb/apps/UnionDeskCustomerWeb/src/components/Icons.tsx", "reason": "新增 14 个实心图标组件宿主"}
+{"file": "UnionDeskWeb/apps/UnionDeskCustomerWeb/src/components/AppShell.tsx", "reason": "侧边栏/顶栏重构目标"}
+{"file": "UnionDeskWeb/apps/UnionDeskCustomerWeb/src/pages/home/index.tsx", "reason": "首页重写目标"}
+{"file": "UnionDeskWeb/apps/UnionDeskCustomerWeb/src/styles/app.css", "reason": "壳层与首页样式"}
+{"file": "agent-work/home-figma/", "type": "directory", "reason": "设计图标 SVG path 数据源（临时）"}
