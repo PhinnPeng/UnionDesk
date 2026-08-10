@@ -20,6 +20,7 @@
 | [State Management](./state-management.md) | Zustand + 本地 state | ✅ Filled |
 | [Quality Guidelines](./quality-guidelines.md) | lint、typecheck、测试 | ✅ Filled |
 | [Type Safety](./type-safety.md) | shared 类型、#src 别名 | ✅ Filled |
+| [CustomerWeb 设计落地](./customer-web-design.md) | Figma 132:155 色板 token、侧边栏约定、图标转换、数据绑定 | ✅ Filled |
 
 ---
 

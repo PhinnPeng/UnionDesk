@@ -2,14 +2,24 @@ import { useCustomerPortal } from "@uniondesk/shared";
 import { useMemo, useState, type FormEvent } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
-import { IconBell, IconChat, IconHome, IconSearch, IconTicket, IconUser } from "./Icons";
+import {
+	IconNavBell,
+	IconNavChat,
+	IconNavDomain,
+	IconNavGear,
+	IconNavHome,
+	IconNavMessage,
+	IconNavTicket,
+	IconNavUser,
+	IconSearchSolid,
+} from "./Icons";
 
 const navItems = [
-	{ to: "/home", label: "首页", icon: IconHome, end: true },
-	{ to: "/tickets", label: "工单", icon: IconTicket, end: false },
-	{ to: "/chat", label: "咨询", icon: IconChat, end: false, soon: true },
-	{ to: "/inbox", label: "通知", icon: IconBell, end: false, badge: true },
-	{ to: "/me", label: "我的", icon: IconUser, end: false },
+	{ to: "/home", label: "首页", icon: IconNavHome, end: true },
+	{ to: "/tickets", label: "工单", icon: IconNavTicket, end: false },
+	{ to: "/chat", label: "咨询", icon: IconNavChat, end: false, soon: true },
+	{ to: "/inbox", label: "通知", icon: IconNavBell, end: false, badge: true },
+	{ to: "/me", label: "我的", icon: IconNavUser, end: false },
 ] as const;
 
 function pageTitle(pathname: string): string {
@@ -91,6 +101,8 @@ export default function AppShell() {
 	const [search, setSearch] = useState("");
 
 	const avatarLetter = (portal.account?.displayName?.trim()?.[0] ?? "U").toUpperCase();
+	const displayName = portal.account?.displayName ?? "未登录";
+	const domainName = portal.activeDomain?.name ?? "未选择";
 
 	const onSearch = (event: FormEvent) => {
 		event.preventDefault();
@@ -102,9 +114,57 @@ export default function AppShell() {
 		<div className="ud-stage">
 			<div className="ud-shell">
 				<aside className="ud-rail" aria-label="主导航">
-					<div className="ud-rail__brand" aria-hidden>U</div>
-					<NavItems variant="rail" unreadCount={portal.unreadCount} />
+					<div className="ud-rail__header">
+						<span className="ud-rail__logo" aria-hidden>U</span>
+						<span className="ud-rail__wordmark">UnionDesk</span>
+					</div>
+					<nav className="ud-rail__nav" aria-label="主导航">
+						<NavItems variant="rail" unreadCount={portal.unreadCount} />
+					</nav>
 					<div className="ud-rail__spacer" />
+					<div className="ud-rail__foot">
+						<div className="ud-rail__foot-row--tools">
+							<button
+								type="button"
+								className="ud-rail__foot-btn"
+								onClick={() => navigate("/me")}
+								title="设置"
+							>
+								<IconNavGear />
+							</button>
+							<span className="ud-rail__foot-divider" aria-hidden />
+							<button
+								type="button"
+								className="ud-rail__foot-btn"
+								onClick={() => navigate("/inbox")}
+								title="消息"
+							>
+								<IconNavMessage />
+								{portal.unreadCount > 0
+									? <i className="ud-rail__foot-dot">{portal.unreadCount > 9 ? "9+" : portal.unreadCount}</i>
+									: null}
+							</button>
+						</div>
+						<button
+							type="button"
+							className="ud-rail__foot-link"
+							onClick={() => navigate("/domains")}
+							title="切换业务域"
+						>
+							<IconNavDomain />
+							<span>{domainName}</span>
+							<em aria-hidden>▼</em>
+						</button>
+						<button
+							type="button"
+							className="ud-rail__foot-link"
+							onClick={() => navigate("/me")}
+							title="我的账户"
+						>
+							<span className="ud-rail__avatar">{avatarLetter}</span>
+							<span>{displayName}</span>
+						</button>
+					</div>
 				</aside>
 
 				<div className="ud-shell__body">
@@ -112,13 +172,13 @@ export default function AppShell() {
 						<div className="ud-topbar__left">
 							<h1 className="ud-topbar__title">{title}</h1>
 							<form className="ud-topbar__search" onSubmit={onSearch}>
-								<IconSearch />
+								<IconSearchSolid />
 								<input
 									type="search"
-									placeholder="搜索工单"
+									placeholder="搜索工单、通知..."
 									value={search}
 									onChange={event => setSearch(event.target.value)}
-									aria-label="搜索工单"
+									aria-label="搜索工单、通知"
 								/>
 							</form>
 						</div>
@@ -129,15 +189,14 @@ export default function AppShell() {
 								onClick={() => navigate("/domains")}
 								title="切换业务域"
 							>
-								<strong>{portal.activeDomain?.name ?? "未选择"}</strong>
+								<strong>{domainName}</strong>
 							</button>
 							<button
 								type="button"
-								className="ud-topbar__avatar"
-								onClick={() => navigate("/me")}
-								aria-label="我的账户"
+								className="ud-topbar__submit"
+								onClick={() => navigate("/tickets/new")}
 							>
-								{avatarLetter}
+								提交工单
 							</button>
 						</div>
 					</header>

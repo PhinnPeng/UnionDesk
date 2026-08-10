@@ -39,15 +39,30 @@
   --ud-font: "Plus Jakarta Sans", "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
   --ud-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  --ud-rail-w: 76px;
-  --ud-topbar-h: 56px;
+  --ud-rail-w: 240px;
+  --ud-topbar-h: 64px;
   --ud-dock-h: 42px;
   --ud-dock-fs: 10px;
   --ud-dock-lh: 1.2;
   --ud-dock-line: calc(var(--ud-dock-fs) * var(--ud-dock-lh));
   --ud-dock-pad-x: calc(var(--ud-dock-line) * 2);
   --ud-dock-inset: 14px;
-  --ud-content-max: 1080px;
+  --ud-content-max: 1136px;
   --ud-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ud-shell-bp: 900px;
+
+  /* CustomerWeb 服务台设计稿（Figma 132:155）色板 */
+  --ud-cx-primary: #4f45e5;
+  --ud-cx-primary-strong: #7d3bed;
+  --ud-cx-primary-soft: rgba(79, 69, 229, 0.08);
+  --ud-cx-cyan: #05b5d4;
+  --ud-cx-cyan-soft: rgba(5, 181, 212, 0.08);
+  --ud-cx-green: #0fba82;
+  --ud-cx-green-soft: rgba(15, 186, 130, 0.08);
+  --ud-cx-danger: #f04545;
+  --ud-cx-text: #1f2938;
+  --ud-cx-text-secondary: #6b7080;
+  --ud-cx-text-muted: #9ca3b0;
+  --ud-cx-bg-soft: #f7fafc; /* 搜索框底 */
+  --ud-cx-divider: rgba(0, 0, 0, 0.1);
 }
