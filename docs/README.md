@@ -37,6 +37,7 @@ docs/
 ├── product/
 │   ├── vision.md
 │   ├── prd.md
+│   ├── feature-list.md                # 客户端/管理端双端功能清单（含实现状态，状态基准 2026-08-11）
 │   ├── foundation-rules.md
 │   ├── backlog-epics.md
 │   ├── backlog-stories.md            # L6 迭代任务源

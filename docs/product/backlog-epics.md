@@ -185,4 +185,16 @@ SLA 完整能力、在线咨询、客户端深度联调余量。
 4. 登录日志、操作日志只读可查。
 5. 跨域 API 拒绝（FR-02）有 Story 覆盖。
 
+### 8.1 集团管理目标态与重叠可接受条件
+
+> 目标态：平台统一管理（全局员工库 + 角色模板 + 跨域批量停用）+ 域内实例微调（锁定字段约束），详见任务 `08-11-group-role-management`（研究：`research/group-role-management-model.md`）。
+
+- **重叠可接受四条件**（双控制台对同一数据重叠写入可接受的前提）：
+  1. **同源数据**：双端操作同一数据源（`domain_member` / `domain_customer` / `domain_role`），避免双副本漂移；
+  2. **权限码隔离**：平台 `platform.domain.control.*` 与域端 `domain.*` 分码授权（`hasAnyPermission` OR 放行，但授权对象分离）；
+  3. **完整审计**：管理操作、权限变更写入 `audit_log` / `operation_log` 不可删除；批量操作逐域记录；
+  4. **明确委托模型**：平台 = 统一管人 / 角色模板创建·下发·同步 / 跨域批量停用（step-up）+ 审计监管；域 = 成员日常运营 / 角色实例微调（锁定字段除外）；冲突以「锁定字段 + 同步策略」裁决。
+- **集团统一角色模型**：`role_template`（模板 + 权限包）一次 apply 多域 → 各域 `domain_role` 实例；实例受 `template_id / template_version / locked_fields` 约束；同步策略默认 `immediate`。
+- **US-S1-08 提级 P0**：目标域校验为跨域写前置安全债（FR-02 强化）；**模板/批量 API 上线前必须完成**（见 [`backlog-stories.md`](./backlog-stories.md) US-S1-08）。
+
 详见 [`implementation-inventory.md`](./implementation-inventory.md) 与 [`backlog-stories.md`](./backlog-stories.md) Sprint 1。

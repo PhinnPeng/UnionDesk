@@ -1,0 +1,3 @@
+{"file": "docs/product/prd.md", "reason": "验证 V2.2：版本行、双端全量清单、自洽勾选、待确认标注、无功能定义改动"}
+{"file": "docs/product/feature-list.md", "reason": "验证双端表完整性、10 列齐全、编号与 prd.md 一致、追踪可溯源"}
+{"file": "docs/README.md", "reason": "验证新文档已登记、引用路径有效"}

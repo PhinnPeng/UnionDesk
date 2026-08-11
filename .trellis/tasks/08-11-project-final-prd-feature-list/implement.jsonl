@@ -1,0 +1,6 @@
+{"file": "docs/product/prd.md", "reason": "被修订对象：V2.1 结构、待确认项、四端功能清单原文与详细设计章节"}
+{"file": "docs/product/implementation-inventory.md", "reason": "管理端实现状态基准（Done/Partial/Todo），功能状态列证据"}
+{"file": "docs/product/backlog-epics.md", "reason": "Epic E0–E6 与双端路由口径（§1.2），关联 Epic 列引用"}
+{"file": "docs/product/backlog-stories.md", "reason": "User Story 编号（US-Sx-xx）抽取，追踪列引用"}
+{"file": "docs/product/vision.md", "reason": "MVP 边界与非目标，规划项状态判定依据"}
+{"file": "docs/checklist/product/prd.md", "reason": "PRD 审查结论（Return for Fixes），V2.2 修订方向对照"}

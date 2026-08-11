@@ -69,6 +69,7 @@
 - `role`：角色定义表，当前角色包含 `customer`、`agent`、`domain_admin`、`super_admin`、`platform_admin`、`security_auditor`；目标态中 `platform_admin` 为平台级最高权限，`super_admin` 作为业务域最高角色使用（产品称「所有人」，每域唯一；**不单独设 `owner_id` 列**，由 `domain_member_role` + `super_admin` 表达）。
 - 已拆除：`user_account`、`user_global_role`、`user_domain_role`、`user_organization`（见 Flyway `V20260719100446`）。
 - `customer_business_domain_access`：客户业务域可见/申请关系表（已废弃，用 `domain_customer`）。
+- **角色双轨关系（目标态，规划）**：`domain_role`（含 `domain_role_permission` / `domain_member_role`）= **每域角色实例**（运行时业务角色，成员绑定唯一路径，轨 A）；IAM `role(scope=domain)` + `iam_role_permission` = **控制台权限角色**（定义层，轨 B）。目标态**冻结双轨**：新增角色走模板/域端，旧角色只读保留。**预留规划模型（非现有表，详见任务 `08-11-group-role-management`）**：`role_template` / `role_template_permission` / `role_template_domain`，以及 `domain_role` 扩展列 `template_id` / `template_version` / `locked_fields`（模板来源标记与锁定字段约束）。
 
 ### 3.4 权限与平台菜单
 
