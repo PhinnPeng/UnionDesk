@@ -371,3 +371,214 @@
 | F4.20 | `domain.invitation_code.{read,create,delete}`（平台侧复用） | platform_admin / super_admin | 代码（InvitationCodeController）+ US-S1-03/S1-06 |
 | F4.21 | `platform.organization.*` | platform_admin | 占位但权限已就绪（inventory §2） |
 | F4.22 | —（模板遗留） | — | 无权限码（模板遗留页，demo 路由不受控） |
+
+---
+
+## 9. 页面功能结构树与结构表
+
+> **派生视图**（2026-08-12 新增）：以「页面 → 功能 → 操作」层级组织，源数据 = §2（状态/优先级）、§3/§4（功能明细）、§7（操作矩阵）、§8（权限码表）与 prd.md §4.2/§4.3（页面结构）。**状态与实现以 §2 为准，维护只改源表**；操作、权限码仅引用行号，不重抄内容。
+> **状态标记**（与 §1.2 术语对照）：无标记 = 已实现；`🚧` = 部分；`📅` = 规划中；`🗑` = 占位（模板遗留）。
+> **归属规则**：页面 ↔ 功能多对多，功能仅在其「主承载页」下展开（含操作/权限引用）；其余页面作引用条目（标「→ 主承载」）；无页面功能（F1.5/F2.2/F2.3）显式占位不跳过。
+
+### 9.1 结构树
+
+#### 9.1.1 客户端（CustomerWeb，M1）
+
+- 登录页 `/login`、`/d/:domainCode/login`
+  - F1.6 登录（已实现）· §7 F1.6 行 · §8 F1.6 行（无码：认证豁免）
+- 注册页 `/register`、`/d/:domainCode/register`
+  - F1.7 注册与入域 🚧（本地 mock）· §7 F1.7 行 · §8 F1.7 行（无码：注册公开）
+- 业务域选择页 `/domains`
+  - F1.8 业务域选择与切换 · §7 F1.8 行 · §8 F1.8 行（无码）
+  - F1.7（引用：邀请码加入 mock → 主承载：注册页）
+- 服务首页 `/home`
+  - F1.9 服务首页 · §7 F1.9 行 · §8 F1.9 行（无码）
+- 提单页 `/tickets/new`
+  - F1.1 提交工单（动态表单）🚧 · §7 F1.1 行 · §8 F1.1 行（无码：客户会话）
+  - F1.3 反馈/建议（工单类型路径）· §7 F1.3 行 · §8 F1.3 行（无码：客户会话）
+- 我的工单（列表/详情）`/tickets`、`/tickets/:ticketId`
+  - F1.4 我的工单/咨询历史 🚧 · §7 F1.4 行 · §8 F1.4 行（无码）
+- 在线咨询窗口（占位）`/chat`
+  - F1.2 在线咨询 📅（E5 未排期）· §7 F1.2 行 · §8 F1.2 行（无码）
+- 通知中心 `/inbox`
+  - F1.10 站内信/通知中心 · §7 F1.10 行 · §8 F1.10 行（无码）
+- 个人中心 `/me`
+  - F1.11 个人中心 🚧 · §7 F1.11 行 · §8 F1.11 行（无码）
+- 修改密码页 `/change-password`
+  - F1.12 修改密码 · §7 F1.12 行 · §8 F1.12 行（无码）
+- （无页面）— 全站无入口
+  - F1.5 满意度评价 📅（P1 未拆 Story）· §7 F1.5 行 · §8 F1.5 行（无码）
+
+#### 9.1.2 管理端-业务域端 · 员工端（M2）
+
+- 域端首页/工作台 `/home`
+  - F2.4 业务域端首页/工作台 · §7 F2.4 行 · §8 F2.4 行（domain.home.read）
+- 工单队列与详情处理 `/platform/ticket-pool`、`/platform/ticket-detail`（P0 演示页临时承载，business 端未成品）
+  - F2.1 工单队列与详情处理 🚧 · §7 F2.1 行 · §8 F2.1 行（ticket.* 11 码）
+- （无页面）— E4 未排期
+  - F2.2 SLA 感知与高亮 📅（E4）· §7 F2.2 行 · §8 F2.2 行（domain.sla.*）
+- （无页面）— E5 未排期
+  - F2.3 在线咨询工作台 📅（E5）· §7 F2.3 行 · §8 F2.3 行（无码）
+
+#### 9.1.3 管理端-业务域端 · 域管理后台（M3）
+
+- 域事项配置 `/domain/ticket-config`
+  - F3.1 工单类型设计 · §7 F3.1 行 · §8 F3.1 行（domain.ticket_type.* / platform.domain.control.ticket_type.*）
+  - F3.4 事项属性与状态配置（域内）· §7 F3.4 行 · §8 F3.4 行（domain.ticket_attribute/status.*）
+  - （同源承载：平台端域详情内 `/platform/domains/ticket-type-config/*`、`/platform/domains/ticket/form-design/*`、`/platform/domains/ticket-type-attributes/*` → F3.1/F3.4 引用）
+- 域客户管理 `/domain/customers/list`
+  - F3.3 成员/客户/角色管理 · §7 F3.3 行 · §8 F3.3 行（domain.member/customer/role.*）
+  - F3.5 域客户管理增强 · §7 F3.5 行 · §8 F3.5 行（domain.customer.update/update_status/reset_password）
+- 入域配置 `/domain/onboarding`、`/domain/settings/onboarding`
+  - F3.6 入域配置（域端）· §7 F3.6 行 · §8 F3.6 行（domain.invitation_code.*）
+- 域基础设置 `/domain/settings/basic`
+  - F3.7 域基础设置 · §7 F3.7 行 · §8 F3.7 行（domain.general.*）
+- 域参数配置 `/domain/settings/config`
+  - F3.8 域参数配置（KV）· §7 F3.8 行 · §8 F3.8 行（domain.config.*）
+- 域屏蔽词库 `/domain/settings/blockwords`
+  - F3.9 域屏蔽词库 · §7 F3.9 行 · §8 F3.9 行（domain.blocked_word.*）
+- 域通知配置（占位）`/domain/settings/notifications`
+  - F3.11 域通知配置 📅（占位）· §7 F3.11 行 · §8 F3.11 行（domain.notification_template.*）
+  - F3.2（引用：通知模板占位部分 → 主承载：`/platform/sla-management` SLA 部分）
+- 域运营概览 `/domain/overview`
+  - F3.10 域运营概览 🚧 · §7 F3.10 行 · §8 F3.10 行（domain.overview.read）
+- 域级操作日志/登录日志 `/domain/settings/audit-logs`、`/domain/settings/login-logs`
+  - F3.12 域级操作日志/登录日志 · §7 F3.12 行 · §8 F3.12 行（domain.audit_log.read / domain.login_log.read）
+- 系统角色管理 `/system/role`
+  - F3.13 系统角色管理（域端）· §7 F3.13 行 · §8 F3.13 行（domain.role.*）
+- 系统菜单管理 `/system/menu`
+  - F3.14 系统菜单管理（域端）· §7 F3.14 行 · §8 F3.14 行（domain.menu.*）
+- 系统用户管理（占位）`/system/user`
+  - F3.15 系统用户管理（域端）🗑（模板遗留）· §7 F3.15 行 · §8 F3.15 行（无码）
+- 系统部门管理（占位）`/system/dept`
+  - F3.16 系统部门管理（域端）🗑（模板遗留）· §7 F3.16 行 · §8 F3.16 行（无码）
+- SLA 管理 `/platform/sla-management`
+  - F3.2 SLA 规则与通知模板 🚧（主承载：SLA 已实现部分；通知模板见 `/domain/settings/notifications` 引用）· §7 F3.2 行 · §8 F3.2 行（domain.sla.*）
+
+#### 9.1.4 管理端-平台端（M4）
+
+- 登录页 `/login`（平台/业务域共用）
+  - F4.5 平台端登录与动态菜单 · §7 F4.5 行 · §8 F4.5 行（无码：登录公开）
+- 平台首页仪表盘 `/platform/home`
+  - F4.6 平台首页仪表盘 🚧（demo 数据）· §7 F4.6 行 · §8 F4.6 行（platform.dashboard.read）
+- 用户管理 `/platform/user`
+  - F4.7 用户管理 · §7 F4.7 行 · §8 F4.7 行（platform.user.*）
+  - F4.3 员工账号与离职池 🚧（主承载；离职池子功能见 `/platform/offboard-pool` 引用）· §7 F4.3 行 · §8 F4.3 行（platform.user.* / platform.user.offboard_pool.*）
+- 离职池 `/platform/offboard-pool`
+  - F4.3（引用：离职池列表/一键恢复 → 主承载：`/platform/user`）
+- 组织/部门管理 `/platform/dept`
+  - F4.8 组织/部门管理 · §7 F4.8 行 · §8 F4.8 行（platform.organization.*）
+- 组织配置（占位）`/platform/org-config`
+  - F4.21 组织配置（平台侧）📅（占位）· §7 F4.21 行 · §8 F4.21 行（platform.organization.*）
+- 角色管理 `/platform/role`
+  - F4.9 角色管理 · §7 F4.9 行 · §8 F4.9 行（platform.role.* / platform.role_permission.* / platform.role.bind）
+- 权限管理（重定向）`/platform/permission`
+  - F4.11 权限管理入口 🚧（仅重定向）· §7 F4.11 行 · §8 F4.11 行（复用 platform.role.*）
+- 菜单管理 `/platform/system/menu`
+  - F4.10 菜单管理 · §7 F4.10 行 · §8 F4.10 行（platform.menu.*）
+- 业务域管理（列表/新建向导/详情 10 Tab）`/platform/domains`、`/platform/domains/detail/:domainId`
+  - F4.1 业务域创建与管理 · §7 F4.1 行 · §8 F4.1 行（platform.domain.list.read / platform.domain.create / platform.domain.control.*）
+  - F4.19 域配置 KV（平台侧）· §7 F4.19 行 · §8 F4.19 行（domain.config.*，平台侧复用）
+  - F4.20 客户入域邀请码面板（平台侧）🚧 · §7 F4.20 行 · §8 F4.20 行（domain.invitation_code.*）
+  - F4.2 模板中心 🚧（归属偏差注记：真实页面 `/platform/ticket-config/templates`，菜单已隐藏 V20260726092200）· §7 F4.2 行 · §8 F4.2 行（platform.ticket_config.template.*）
+  - （同源承载：详情 10 Tab → 工单 F3.1 / 成员 F3.3 / 客户 F3.3·F3.5 / 角色 F3.13（只读）/ 屏蔽词 F3.9 / 日志 F3.12 / 配置 F4.19 / 客户入域 F4.20（待确认））
+- 事项类型配置/表单设计器/属性插槽（域详情内）`/platform/domains/ticket-type-config/*`、`/platform/domains/ticket/form-design/*`、`/platform/domains/ticket-type-attributes/*`
+  - F3.1（引用：域详情内工单类型 → 主承载：`/domain/ticket-config`）
+  - F3.4（引用：域详情内属性/状态 → 主承载：`/domain/ticket-config`）
+- 工单池/工单处理面板（P0 演示页）`/platform/ticket-pool`、`/platform/ticket-detail`
+  - F2.1（引用：演示承载 → 归属员工端 M2 主承载）
+- 事项配置 `/platform/ticket-config/*`
+  - F4.14 事项配置（类型/属性/状态/模板）· §7 F4.14 行 · §8 F4.14 行（platform.ticket_config.* 16 码）
+- SLA 管理 `/platform/sla-management`
+  - F4.15 SLA 规则与工作日历 · §7 F4.15 行 · §8 F4.15 行（domain.sla.*，平台侧复用）
+  - F3.2（引用：SLA 部分 → 主承载：本页 F4.15 行）
+- 审计/登录日志统一页 `/platform/audit-logs`
+  - F4.12 审计日志/登录日志（平台统一页）· §7 F4.12 行 · §8 F4.12 行（platform.log.audit.read / platform.log.login.read）
+  - （引用：独立页 `/platform/log/operation-log`、`/platform/log/login-log` 同功能双入口）
+- 全局屏蔽词 `/platform/blockwords`
+  - F4.13 全局屏蔽词 · §7 F4.13 行 · §8 F4.13 行（platform.blocked_word.*）
+- 站内信 `/platform/inbox`
+  - F4.16 站内信（管理端）· §7 F4.16 行 · §8 F4.16 行（inbox.read / inbox.mark_read）
+- 系统设置 `/platform/system-settings`
+  - F4.4 系统设置与安全告警 🚧 · §7 F4.4 行 · §8 F4.4 行（platform.system_config.*）
+- 附件上传 `/platform/attachments`
+  - F4.17 附件上传（MinIO）· §7 F4.17 行 · §8 F4.17 行（attachment.upload / attachment.download）
+- 用户导入导出（占位）`/platform/import-export`
+  - F4.18 用户导入导出 📅（占位）· §7 F4.18 行 · §8 F4.18 行（platform.user.import / platform.user.offboard_pool.export）
+- 域配置 KV `/platform/domain-config`
+  - F4.19（引用：独立页 → 主承载：业务域管理详情「配置」Tab）
+- 客户入域邀请码面板 `/platform/domain-onboarding`
+  - F4.20（引用：独立页 → 主承载：业务域管理详情「客户入域」Tab（待确认））
+- 模板遗留页（占位）`/access/*`、`/route-nest/*`、`/about`、`/outside/*` 等
+  - F4.22 模板遗留页面 🗑（模板遗留）· §7 F4.22 行 · §8 F4.22 行（无码）
+
+### 9.2 结构表（页面级详细说明）
+
+> 列说明：操作/权限码均为 §7/§8 行号引用，内容以源表为准；「承载功能明细」按 F 编号分别标注状态（多 F 页面逐条列出）。
+
+#### 9.2.1 客户端（CustomerWeb，M1）
+
+| 序号 | 页面/模块 | 路由 | 承载功能编号 | 承载功能明细（名称【状态·优先级】） | 操作（§7 引用） | 权限码（§8 引用） | 备注/关键边界 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | 登录页 | `/login`、`/d/:domainCode/login` | F1.6 | F1.6 登录【已实现·P0】 | §7 F1.6 行 | 无码（认证豁免） | 滑块验证 + 记住账号 + 专属域入口；忘记密码为占位 toast |
+| 2 | 注册页 | `/register`、`/d/:domainCode/register` | F1.7 | F1.7 注册与入域【部分·P0】 | §7 F1.7 行 | 无码（注册公开） | 本地 mock，未调真实注册 API（US-S3-02） |
+| 3 | 业务域选择页 | `/domains` | F1.8, F1.7 | F1.8 业务域选择与切换【已实现·P0】；F1.7（引用） | §7 F1.8 行；§7 F1.7 行 | 无码 | 邀请码加入为本地 mock（归 F1.7） |
+| 4 | 服务首页 | `/home` | F1.9 | F1.9 服务首页【已实现·P0】 | §7 F1.9 行 | 无码 | 首页无独立 Story |
+| 5 | 提单页 | `/tickets/new` | F1.1, F1.3 | F1.1 提交工单（动态表单）【部分·P0】；F1.3 反馈/建议【已实现·P0】 | §7 F1.1 行；§7 F1.3 行 | 无码（客户会话） | 动态表单字段未渲染（仅 title/description）；attachmentIds 恒空数组 |
+| 6 | 我的工单（列表/详情） | `/tickets`、`/tickets/:ticketId` | F1.4 | F1.4 我的工单/咨询历史【部分·P0】 | §7 F1.4 行 | 无码 | 咨询历史无；附件展示无 |
+| 7 | 在线咨询窗口（占位） | `/chat` | F1.2 | F1.2 在线咨询【规划中（E5 未排期）·P0】 | §7 F1.2 行 | 无码 | 纯静态占位页 |
+| 8 | 通知中心 | `/inbox` | F1.10 | F1.10 站内信/通知中心【已实现·P0】 | §7 F1.10 行 | 无码 | 底部导航「通知」Tab 带未读 badge |
+| 9 | 个人中心 | `/me` | F1.11 | F1.11 个人中心【部分·P0】 | §7 F1.11 行 | 无码 | 通知偏好为占位 toast |
+| 10 | 修改密码页 | `/change-password` | F1.12 | F1.12 修改密码【已实现·P0】 | §7 F1.12 行 | 无码 | RequireSession 守卫，强制改密不可跳过 |
+| 11 | （无页面） | — | F1.5 | F1.5 满意度评价【规划中（P1）·P0】 | §7 F1.5 行 | 无码 | 全站无入口（P1 未拆 Story） |
+
+#### 9.2.2 管理端-业务域端（M2 员工端 + M3 域管理后台）
+
+| 序号 | 页面/模块 | 路由 | 承载功能编号 | 承载功能明细（名称【状态·优先级】） | 操作（§7 引用） | 权限码（§8 引用） | 备注/关键边界 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 12 | 域端首页/工作台 | `/home` | F2.4 | F2.4 业务域端首页/工作台【已实现·P0】 | §7 F2.4 行 | §8 F2.4 行（domain.home.read） | 按权限过滤快捷入口 |
+| 13 | 工单队列与详情处理 | `/platform/ticket-pool`、`/platform/ticket-detail` | F2.1 | F2.1 工单队列与详情处理【部分·P0】 | §7 F2.1 行 | §8 F2.1 行（ticket.* 11 码） | P0 演示页临时承载；business 端未成品（US-S3-04 Todo） |
+| 14 | （无页面） | — | F2.2 | F2.2 SLA 感知与高亮【规划中（E4）·P0】 | §7 F2.2 行 | §8 F2.2 行（domain.sla.*） | 依赖 F4.15 引擎，未接入工单 UI |
+| 15 | （无页面） | — | F2.3 | F2.3 在线咨询工作台【规划中（E5）·P0】 | §7 F2.3 行 | 无码 | E5 未拆 Story |
+| 16 | 域事项配置 | `/domain/ticket-config` | F3.1, F3.4 | F3.1 工单类型设计【已实现·P0】；F3.4 事项属性与状态配置【已实现·P0】 | §7 F3.1 行；§7 F3.4 行 | §8 F3.1 行（domain.ticket_type.*）；§8 F3.4 行（domain.ticket_attribute/status.*） | 域详情内同源（平台端引用） |
+| 17 | 域客户管理 | `/domain/customers/list` | F3.3, F3.5 | F3.3 成员/客户/角色管理【已实现·P0】；F3.5 域客户管理增强【已实现·P0】 | §7 F3.3 行；§7 F3.5 行 | §8 F3.3 行（domain.member/customer/role.*）；§8 F3.5 行（domain.customer.*） | 最后管理员保护规则；资料编辑/重置密码仅域端可写 |
+| 18 | 入域配置 | `/domain/onboarding`、`/domain/settings/onboarding` | F3.6 | F3.6 入域配置（域端）【已实现·P0】 | §7 F3.6 行 | §8 F3.6 行（domain.invitation_code.*） | 邀请码 + 入域双开关 |
+| 19 | 域基础设置 | `/domain/settings/basic` | F3.7 | F3.7 域基础设置【已实现·P0】 | §7 F3.7 行 | §8 F3.7 行（domain.general.*） | 域名称/LOGO/描述 |
+| 20 | 域参数配置 | `/domain/settings/config` | F3.8 | F3.8 域参数配置（KV）【已实现·P0】 | §7 F3.8 行 | §8 F3.8 行（domain.config.*） | — |
+| 21 | 域屏蔽词库 | `/domain/settings/blockwords` | F3.9 | F3.9 域屏蔽词库【已实现·P0】 | §7 F3.9 行 | §8 F3.9 行（domain.blocked_word.*） | 去首尾空格、禁空词 |
+| 22 | 域通知配置（占位） | `/domain/settings/notifications` | F3.11, F3.2 | F3.11 域通知配置【规划中（占位）·P1】；F3.2（引用：通知模板） | §7 F3.11 行；§7 F3.2 行 | §8 F3.11 行（domain.notification_template.*）；§8 F3.2 行 | 菜单与权限已就绪；F3.2 与 F3.11 语义重叠待澄清 |
+| 23 | 域运营概览 | `/domain/overview` | F3.10 | F3.10 域运营概览【部分·P1】 | §7 F3.10 行 | §8 F3.10 行（domain.overview.read） | 统计「—」、趋势「数据接入中」 |
+| 24 | 域级操作日志/登录日志 | `/domain/settings/audit-logs`、`/domain/settings/login-logs` | F3.12 | F3.12 域级操作日志/登录日志【已实现·P0】 | §7 F3.12 行 | §8 F3.12 行（domain.audit_log.read / domain.login_log.read） | 审计不可删除 |
+| 25 | 系统角色管理（域端） | `/system/role` | F3.13 | F3.13 系统角色管理（域端）【已实现·P0】 | §7 F3.13 行 | §8 F3.13 行（domain.role.*） | 目标态：模板下发角色实例展示锁定字段 |
+| 26 | 系统菜单管理（域端） | `/system/menu` | F3.14 | F3.14 系统菜单管理（域端）【已实现·P0】 | §7 F3.14 行 | §8 F3.14 行（domain.menu.*） | scope=business 筛选 |
+| 27 | 系统用户管理（占位） | `/system/user` | F3.15 | F3.15 系统用户管理（域端）【占位（模板遗留）·P1】 | §7 F3.15 行 | 无码（模板遗留） | 模板残留（单 Input），非业务功能 |
+| 28 | 系统部门管理（占位） | `/system/dept` | F3.16 | F3.16 系统部门管理（域端）【占位（模板遗留）·P1】 | §7 F3.16 行 | 无码（模板遗留） | 模板残留（计数器 demo），非业务功能 |
+| 29 | SLA 管理（域侧） | `/platform/sla-management` | F3.2 | F3.2 SLA 规则与通知模板【部分·P0】（SLA 部分主承载） | §7 F3.2 行 | §8 F3.2 行（domain.sla.*） | 通知模板占位见 `/domain/settings/notifications` |
+
+#### 9.2.3 管理端-平台端（M4）
+
+| 序号 | 页面/模块 | 路由 | 承载功能编号 | 承载功能明细（名称【状态·优先级】） | 操作（§7 引用） | 权限码（§8 引用） | 备注/关键边界 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 30 | 登录页 | `/login` | F4.5 | F4.5 平台端登录与动态菜单【已实现·P0】 | §7 F4.5 行 | 无码（登录公开） | 平台/业务域共用；忘记密码占位 stub |
+| 31 | 平台首页仪表盘 | `/platform/home` | F4.6 | F4.6 平台首页仪表盘【部分·P0】 | §7 F4.6 行 | §8 F4.6 行（platform.dashboard.read） | DemoDataService mock，未接真实聚合 |
+| 32 | 用户管理 | `/platform/user` | F4.7, F4.3 | F4.7 用户管理【已实现·P0】；F4.3 员工账号与离职池【部分·P0】 | §7 F4.7 行；§7 F4.3 行 | §8 F4.7 行（platform.user.*）；§8 F4.3 行（platform.user.offboard_pool.*） | F4.7 永久删除无前端入口；F4.3 CSV 导入未实现；离职池子功能见 `/platform/offboard-pool` |
+| 33 | 离职池 | `/platform/offboard-pool` | F4.3 | F4.3（引用：离职池子功能） | §7 F4.3 行 | §8 F4.3 行 | 离职池含域名/角色/离职时间/操作人 |
+| 34 | 组织/部门管理 | `/platform/dept` | F4.8 | F4.8 组织/部门管理【已实现·P0】 | §7 F4.8 行 | §8 F4.8 行（platform.organization.*） | 树形 CRUD + 循环引用检测 |
+| 35 | 组织配置（占位） | `/platform/org-config` | F4.21 | F4.21 组织配置（平台侧）【规划中（占位）·P1】 | §7 F4.21 行 | §8 F4.21 行（platform.organization.*） | Empty 占位 |
+| 36 | 角色管理 | `/platform/role` | F4.9 | F4.9 角色管理【已实现·P0】 | §7 F4.9 行 | §8 F4.9 行（platform.role.* / platform.role_permission.* / platform.role.bind） | 目标态：新增「模板」Tab（集团任务）；domain scope 双轨冻结 |
+| 37 | 权限管理（重定向） | `/platform/permission` | F4.11 | F4.11 权限管理入口【部分·P1】 | §7 F4.11 行 | 复用 platform.role.* | 仅 `<Navigate to="/platform/role">` |
+| 38 | 菜单管理 | `/platform/system/menu` | F4.10 | F4.10 菜单管理【已实现·P0】 | §7 F4.10 行 | §8 F4.10 行（platform.menu.*） | 菜单/按钮节点标签 |
+| 39 | 业务域管理 | `/platform/domains`、`/platform/domains/detail/:domainId` | F4.1, F4.2, F4.19, F4.20 | F4.1 业务域创建与管理【已实现·P0】；F4.2 模板中心【部分·P0】；F4.19 域配置 KV【已实现·P0】；F4.20 客户入域邀请码面板【部分·P0】 | §7 F4.1 行；§7 F4.2 行；§7 F4.19 行；§7 F4.20 行 | §8 F4.1 行（platform.domain.*）；§8 F4.2 行（platform.ticket_config.template.*）；§8 F4.19 行（domain.config.* 复用）；§8 F4.20 行（domain.invitation_code.*） | F4.2 归属偏差：真实页面 `/platform/ticket-config/templates`（菜单已隐藏）；详情 10 Tab 同源承载 F3.1/F3.3/F3.5/F3.9/F3.12/F3.13/F4.19/F4.20 |
+| 40 | 事项类型配置/表单设计器/属性插槽（域详情内） | `/platform/domains/ticket-type-config/*`、`/platform/domains/ticket/form-design/*`、`/platform/domains/ticket-type-attributes/*` | F3.1, F3.4 | F3.1（引用）；F3.4（引用） | §7 F3.1 行；§7 F3.4 行 | §8 F3.1 行；§8 F3.4 行 | 与域端 `/domain/ticket-config` 同源 |
+| 41 | 工单池/工单处理面板（P0 演示页） | `/platform/ticket-pool`、`/platform/ticket-detail` | F2.1 | F2.1（引用：演示承载，归属员工端 M2） | §7 F2.1 行 | §8 F2.1 行 | 平台端临时演示；business 端成品见 US-S3-04 |
+| 42 | 事项配置 | `/platform/ticket-config/*` | F4.14 | F4.14 事项配置（类型/属性/状态/模板）【已实现·P0】 | §7 F4.14 行 | §8 F4.14 行（platform.ticket_config.* 16 码） | templates 菜单已隐藏；含 Formily 设计器 + React Flow DAG |
+| 43 | SLA 管理 | `/platform/sla-management` | F4.15, F3.2 | F4.15 SLA 规则与工作日历【已实现（未挂验收 Story）·P0】；F3.2（引用：SLA 部分） | §7 F4.15 行；§7 F3.2 行 | §8 F4.15 行（domain.sla.* 平台侧复用）；§8 F3.2 行 | 计时引擎 SlaTimingEngine 已实现 |
+| 44 | 审计/登录日志统一页 | `/platform/audit-logs` | F4.12 | F4.12 审计日志/登录日志（平台统一页）【已实现·P0】 | §7 F4.12 行 | §8 F4.12 行（platform.log.audit.read / platform.log.login.read） | 独立页 `/platform/log/operation-log`、`/platform/log/login-log` 双入口（功能重叠建议收敛）；导出 Todo |
+| 45 | 全局屏蔽词 | `/platform/blockwords` | F4.13 | F4.13 全局屏蔽词【已实现·P0】 | §7 F4.13 行 | §8 F4.13 行（platform.blocked_word.*） | 跨域生效（business_domain_id 为空） |
+| 46 | 站内信 | `/platform/inbox` | F4.16 | F4.16 站内信（管理端）【已实现·P0】 | §7 F4.16 行 | §8 F4.16 行（inbox.read / inbox.mark_read） | — |
+| 47 | 系统设置 | `/platform/system-settings` | F4.4 | F4.4 系统设置与安全告警【部分·P0】 | §7 F4.4 行 | §8 F4.4 行（platform.system_config.*） | 安全告警中心未实现；密码强度/登录锁定/IP 白名单未成品 |
+| 48 | 附件上传 | `/platform/attachments` | F4.17 | F4.17 附件上传（MinIO）【已实现·P0】 | §7 F4.17 行 | §8 F4.17 行（attachment.upload / attachment.download） | 依赖 MinIO 服务（外部依赖 ADR） |
+| 49 | 用户导入导出（占位） | `/platform/import-export` | F4.18 | F4.18 用户导入导出【规划中（占位）·P1】 | §7 F4.18 行 | §8 F4.18 行（platform.user.import / platform.user.offboard_pool.export） | 页面存在，API 待查 |
+| 50 | 域配置 KV | `/platform/domain-config` | F4.19 | F4.19（引用：独立页） | §7 F4.19 行 | §8 F4.19 行 | 与域详情「配置」Tab 同源 |
+| 51 | 客户入域邀请码面板 | `/platform/domain-onboarding` | F4.20 | F4.20（引用：独立页） | §7 F4.20 行 | §8 F4.20 行 | 与域详情「客户入域」Tab 同源（待确认） |
+| 52 | 模板遗留页 | `/access/*`、`/route-nest/*`、`/about`、`/outside/*` 等 | F4.22 | F4.22 模板遗留页面【占位（模板遗留）·P2】 | §7 F4.22 行 | 无码（模板遗留） | react-antd-admin 遗留；非业务功能 |
