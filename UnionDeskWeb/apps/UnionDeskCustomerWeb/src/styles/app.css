@@ -390,7 +390,7 @@
 }
 
 .ud-content {
-  width: min(100% - 40px, var(--ud-content-max));
+  width: calc(100% - 40px);
   margin: 0 auto;
   padding: 22px 0 28px;
   animation: ud-enter 0.18s var(--ud-ease) both;
@@ -452,7 +452,7 @@
   }
 
   .ud-content {
-    width: min(100% - 24px, var(--ud-content-max));
+    width: calc(100% - 24px);
     padding-bottom: calc(var(--ud-dock-h) + var(--ud-dock-inset) + env(safe-area-inset-bottom, 0px) + 24px);
   }
 
@@ -609,7 +609,7 @@
 
 .ud-title {
   margin: 6px 0 0;
-  font-size: clamp(26px, 4vw, 36px);
+  font-size: clamp(26px, 4vw, 44px);
   line-height: 1.15;
   letter-spacing: -0.03em;
   font-weight: 800;
@@ -997,7 +997,7 @@
 
 .ud-domain-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(clamp(280px, 20vw, 400px), 1fr));
   gap: 14px;
 }
 
@@ -1158,8 +1158,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  min-height: 138px;
-  padding: 24px 32px;
+  min-height: clamp(138px, 12vw, 220px);
+  padding: clamp(22px, 2vw, 34px) clamp(24px, 2.5vw, 40px);
   border-radius: 20px;
   background: linear-gradient(90deg, #4f45e5, #7d3bed);
   color: #fff;
@@ -1173,14 +1173,14 @@
 
 .ud-welcome__copy h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: clamp(26px, 2.4vw, 40px);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .ud-welcome__copy p {
   margin: 8px 0 0;
-  font-size: 16px;
+  font-size: clamp(15px, 1.3vw, 19px);
   color: rgba(255, 255, 255, 0.92);
 }
 
@@ -1216,7 +1216,7 @@
 .ud-stat-card {
   display: grid;
   gap: 12px;
-  padding: 25px;
+  padding: clamp(20px, 2vw, 32px);
   border-radius: 16px;
   border: 1px solid rgba(0, 0, 0, 0.04);
   background: #fff;
@@ -1246,7 +1246,7 @@
 }
 
 .ud-stat-card strong {
-  font-size: 32px;
+  font-size: clamp(28px, 2.6vw, 42px);
   font-weight: 800;
   line-height: 1;
 }

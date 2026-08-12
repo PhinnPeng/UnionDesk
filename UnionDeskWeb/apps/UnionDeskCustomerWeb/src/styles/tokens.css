@@ -47,7 +47,6 @@
   --ud-dock-line: calc(var(--ud-dock-fs) * var(--ud-dock-lh));
   --ud-dock-pad-x: calc(var(--ud-dock-line) * 2);
   --ud-dock-inset: 14px;
-  --ud-content-max: 1136px;
   --ud-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ud-shell-bp: 900px;
 
