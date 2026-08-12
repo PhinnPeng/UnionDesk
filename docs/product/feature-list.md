@@ -330,13 +330,13 @@
 | F1.11 | —（认证豁免/公开） | — | 无权限码 |
 | F1.12 | —（认证豁免/公开） | — | 无权限码 |
 | F2.1 | `ticket.{read,create,view.self,view.domain_all,claim,assign,reply.self,reply,close,withdraw.self,merge}` | agent / domain_admin / super_admin（域内置角色） | permission-code-labels.ts（11 码）+ US-S3-04（agent 绑定待联调确认） |
-| F2.2 | `domain.sla.read`（推断） | agent / domain_admin | 推断：依赖 F4.15 引擎（SlaController.java:40）；待确认，以代码为准 |
+| F2.2 | `domain.sla.{read,create,update}` | agent / domain_admin | PermissionCodes.java:170-172（SLA 引擎 SlaController.java:40）；前端门控待功能任务补齐 |
 | F2.3 | —（E5 未排期） | — | 无权限码（E5 未拆 Story） |
 | F2.4 | `domain.home.read` | domain_admin / agent | Flyway V20260728170000（BUSINESS-HOME-MENU） |
 | F3.1 | `platform.domain.control.ticket_type.{read,create,update,delete}`；域端 `domain.ticket_type.*` | platform_admin / super_admin（平台域详情）；domain_admin（域端） | Flyway V202606170001 + PermissionCodes.java:126 |
-| F3.2 | `domain.sla.*`；`domain.notification_template.*`（通知占位，推断） | domain_admin / super_admin | SLA：PermissionCodes.java:171 + SlaController.java:40；通知：占位「菜单与权限已就绪」；待确认，以代码为准 |
+| F3.2 | `domain.sla.*`；`domain.notification_template.{read,update}` | domain_admin / super_admin | SLA：PermissionCodes.java:171 + SlaController.java:40；通知：PermissionCodes.java 注册（gap-research 确认），页面占位「菜单与权限已就绪」 |
 | F3.3 | `domain.member.{read,create,update_roles,update_status,delete}`；`domain.customer.{read,create,update_status}`；`domain.role.*` | domain_admin / super_admin（域内置） | Flyway V202606060001 + US-S2-03/S2-04 |
-| F3.4 | `domain.ticket_type.*`、`domain.ticket_attribute.*`、`domain.ticket_status.*` | domain_admin / super_admin | PermissionCodes.java（domain.ticket_* 族；inventory 缺项，待确认精确迁移） |
+| F3.4 | `domain.ticket_type.*`、`domain.ticket_attribute.*`、`domain.ticket_status.*` | domain_admin / super_admin | PermissionCodes.java:26-33（domain.ticket_* 族，gap-research 确认） |
 | F3.5 | `domain.customer.{update,update_status,reset_password}` | domain_admin / super_admin | Flyway V20260806120000 + PermissionCodes.java:22 |
 | F3.6 | `domain.invitation_code.*`；`domain.general.read` | domain_admin / super_admin | 代码（onboarding 页 auth 数组）+ US-S1-03 |
 | F3.7 | `domain.general.{read,update,update_status}` | domain_admin / super_admin | 代码（域设置控制器）+ US-S2-01 域端版 |
@@ -350,11 +350,11 @@
 | F3.15 | —（模板遗留） | — | 无权限码（模板遗留占位页） |
 | F3.16 | —（模板遗留） | — | 无权限码（模板遗留占位页） |
 | F4.1 | `platform.domain.list.read`、`platform.domain.create`、`platform.domain.control.{entry,overview,read,general.update,general.delete}` 等 | platform_admin / super_admin | Flyway V202605330004/V202605330005 + US-S1-02/S2-01 |
-| F4.2 | `platform.ticket_config.template.*`（推断） | platform_admin | 推断：权限已注册、菜单已隐藏（V20260726092200）；待确认，以代码为准 |
+| F4.2 | `platform.ticket_config.template.*` | platform_admin | PermissionCodes.java + Flyway V20260726092200（权限已注册、菜单已隐藏；gap-research 确认） |
 | F4.3 | `platform.user.{create,disable,offboard,restore,reset_password}`；`platform.user.offboard_pool.{read,export,batch_restore}` | platform_admin / super_admin | PermissionCodes.java:64 + AdminPermissionCatalog.java:107 + US-S1-07 |
-| F4.4 | `platform.system_config.{read,update}`（推断） | platform_admin | PermissionCodes.java:168-169；待确认，以代码为准 |
+| F4.4 | `platform.system_config.{read,update}` | platform_admin | PermissionCodes.java:168-169（gap-research 确认）；前端门控待功能任务补齐 |
 | F4.5 | —（认证豁免/公开） | — | 无权限码（登录公开；动态菜单/权限快照为登录后行为） |
-| F4.6 | `platform.dashboard.read`（推断） | platform_admin | PermissionCodes.java:212；待确认，以代码为准 |
+| F4.6 | `platform.dashboard.read` | platform_admin | PermissionCodes.java:212（gap-research 确认）；前端门控待功能任务补齐 |
 | F4.7 | `platform.user.{read,create,update,disable,reset_password,restore,delete}` | platform_admin / super_admin | PermissionCodes.java + US-S1-07 |
 | F4.8 | `platform.organization.{read,create,update,delete}` | platform_admin / super_admin | PermissionCodes.java + US-S1-07（inventory §2） |
 | F4.9 | `platform.role.{read,create,update,delete}`；`platform.role_permission.*`；`platform.role.bind` | platform_admin / super_admin | PermissionCodes.java:50 + US-S3-00 |
@@ -366,8 +366,8 @@
 | F4.15 | `domain.sla.{read,create,update,delete}`（平台侧复用） | platform_admin / domain_admin | PermissionCodes.java:171 + SlaController.java:40（未挂验收 Story） |
 | F4.16 | `inbox.read`、`inbox.mark_read` | platform_admin / domain_admin | 代码（InboxController）+ P0 inbox 契约 |
 | F4.17 | `attachment.upload`、`attachment.download` | platform_admin / domain_admin / agent（员工会话） | 代码（AttachmentController）+ P0 契约 |
-| F4.18 | `platform.user.import`、`platform.user.offboard_pool.export` | platform_admin | 占位但权限已就绪（inventory §4.1） |
-| F4.19 | 待确认（`platform.domain.control.config.*` 未在 PermissionCodes.java 命中；疑复用 `domain.config.*`） | platform_admin / domain_admin | 未命中 PermissionCodes.java；待确认，以代码为准（域详情「配置」Tab 同源） |
+| F4.18 | `platform.user.import`、`platform.user.offboard_pool.export` | platform_admin | 占位但权限已就绪（gap-research:89 确认） |
+| F4.19 | `domain.config.{read,update}`（平台侧复用，`platform.domain.control.config.*` 不存在） | platform_admin / domain_admin | 复用 `domain.config.*`（DomainConfigController + PermissionCodes.java:166，gap-research:90 实证）；域详情「配置」Tab 同源 |
 | F4.20 | `domain.invitation_code.{read,create,delete}`（平台侧复用） | platform_admin / super_admin | 代码（InvitationCodeController）+ US-S1-03/S1-06 |
 | F4.21 | `platform.organization.*` | platform_admin | 占位但权限已就绪（inventory §2） |
 | F4.22 | —（模板遗留） | — | 无权限码（模板遗留页，demo 路由不受控） |

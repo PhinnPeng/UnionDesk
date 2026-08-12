@@ -83,14 +83,14 @@ public final class PermissionCodes {
     public static final String PLATFORM_DOMAIN_CONTROL_OVERVIEW = "platform.domain.control.overview";
     public static final String PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE = "platform.domain.control.general.update";
     public static final String PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE_STATUS =
-            "platform.domain.control.general.update-status";
+            "platform.domain.control.general.update_status";
     public static final String PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE = "platform.domain.control.general.delete";
     public static final String DOMAIN_ADMIN_CREATE = "platform.domain.create";
     public static final String PLATFORM_DOMAIN_CONTROL_READ = "platform.domain.control.read";
     public static final String PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ = "platform.domain.control.customer.read";
     public static final String PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE = "platform.domain.control.customer.create";
     public static final String PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS =
-            "platform.domain.control.customer.update-status";
+            "platform.domain.control.customer.update_status";
     public static final String PLATFORM_DOMAIN_CONTROL_MEMBER_READ = "platform.domain.control.member.read";
     public static final String PLATFORM_DOMAIN_CONTROL_MEMBER_CREATE = "platform.domain.control.member.create";
     public static final String PLATFORM_DOMAIN_CONTROL_MEMBER_UPDATE_ROLES =

@@ -8,12 +8,12 @@ export const PLATFORM_DOMAIN_CONTROL_ENTRY = "platform.domain.control.entry";
 export const PLATFORM_DOMAIN_CONTROL_OVERVIEW = "platform.domain.control.overview";
 export const PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE = "platform.domain.control.general.update";
 export const PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE_STATUS =
-	"platform.domain.control.general.update-status";
+	"platform.domain.control.general.update_status";
 export const PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE = "platform.domain.control.general.delete";
 export const PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ = "platform.domain.control.customer.read";
 export const PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE = "platform.domain.control.customer.create";
 export const PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS =
-	"platform.domain.control.customer.update-status";
+	"platform.domain.control.customer.update_status";
 export const PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ = "platform.domain.control.blocked_word.read";
 export const PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE = "platform.domain.control.blocked_word.create";
 export const PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE = "platform.domain.control.blocked_word.delete";
