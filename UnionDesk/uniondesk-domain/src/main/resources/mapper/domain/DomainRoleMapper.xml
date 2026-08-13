@@ -9,19 +9,22 @@
         <result property="code" column="code"/>
         <result property="name" column="name"/>
         <result property="preset" column="preset"/>
+        <result property="templateId" column="template_id"/>
+        <result property="templateVersion" column="template_version"/>
+        <result property="lockedFields" column="locked_fields"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <select id="selectByDomainId" resultMap="DomainRolePo">
-        SELECT id, business_domain_id, code, name, preset
+        SELECT id, business_domain_id, code, name, preset, template_id, template_version, locked_fields
         FROM domain_role
         WHERE business_domain_id = #{domainId}
         ORDER BY preset DESC, id ASC
     </select>
 
     <select id="selectByIdAndDomain" resultMap="DomainRolePo">
-        SELECT id, business_domain_id, code, name, preset
+        SELECT id, business_domain_id, code, name, preset, template_id, template_version, locked_fields
         FROM domain_role
         WHERE id = #{id}
           AND business_domain_id = #{domainId}
@@ -57,6 +60,42 @@
               AND code = #{code}
         )
     </insert>
+
+    <select id="countCustomRoles" resultType="int">
+        SELECT COUNT(*)
+        FROM domain_role
+        WHERE business_domain_id = #{domainId}
+          AND preset = 0
+    </select>
+
+    <insert id="insertTemplateInstance">
+        INSERT INTO domain_role (
+            business_domain_id, code, name, preset, template_id, template_version, locked_fields, created_at, updated_at
+        )
+        VALUES (
+            #{domainId}, #{code}, #{name}, 0, #{templateId}, #{templateVersion}, #{lockedFields},
+            CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)
+        )
+    </insert>
+
+    <update id="updateTemplateBinding">
+        UPDATE domain_role
+        SET template_version = #{templateVersion},
+            locked_fields = #{lockedFields},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{roleId}
+          AND business_domain_id = #{domainId}
+    </update>
+
+    <update id="clearTemplateBinding">
+        UPDATE domain_role
+        SET template_id = NULL,
+            template_version = NULL,
+            locked_fields = NULL,
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{roleId}
+          AND business_domain_id = #{domainId}
+    </update>
 
     <update id="update">
         UPDATE domain_role

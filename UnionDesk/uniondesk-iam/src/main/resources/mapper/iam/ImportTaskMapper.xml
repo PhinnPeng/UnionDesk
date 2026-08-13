@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.iam.mapper.ImportTaskMapper">
+
+    <resultMap id="ImportTaskPo" type="com.uniondesk.iam.entity.ImportTaskPo">
+        <id property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="taskType" column="task_type"/>
+        <result property="fileKey" column="file_key"/>
+        <result property="fileName" column="file_name"/>
+        <result property="status" column="status"/>
+        <result property="totalCount" column="total_count"/>
+        <result property="successCount" column="success_count"/>
+        <result property="failCount" column="fail_count"/>
+        <result property="errorSummary" column="error_summary"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="finishedAt" column="finished_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.uniondesk.iam.entity.ImportTaskPo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO import_task (
+            business_domain_id, task_type, file_key, file_name, status,
+            total_count, success_count, fail_count, error_summary, created_by, created_at
+        )
+        VALUES (#{businessDomainId}, #{taskType}, #{fileKey}, #{fileName}, 'pending',
+                0, 0, 0, NULL, #{createdBy}, CURRENT_TIMESTAMP(3))
+    </insert>
+
+    <select id="selectById" resultMap="ImportTaskPo">
+        SELECT id, business_domain_id, task_type, file_key, file_name, status,
+               total_count, success_count, fail_count, error_summary, created_by, created_at, finished_at
+        FROM import_task
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <update id="updateStatus">
+        UPDATE import_task
+        SET status = #{status},
+            finished_at = #{finishedAt}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateResult">
+        UPDATE import_task
+        SET status = #{status},
+            total_count = #{totalCount},
+            success_count = #{successCount},
+            fail_count = #{failCount},
+            error_summary = #{errorSummary},
+            finished_at = #{finishedAt}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

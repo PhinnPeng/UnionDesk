@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.dashboard.mapper.OverviewMapper">
+
+    <select id="countBusinessDomains" resultType="long">
+        SELECT COUNT(*) FROM business_domain d WHERE d.deleted_at IS NULL
+    </select>
+
+    <select id="countStaff" resultType="long">
+        SELECT COUNT(*) FROM staff_account
+    </select>
+
+    <select id="countActiveStaff" resultType="long">
+        SELECT COUNT(*) FROM staff_account
+        WHERE employment_status &lt;&gt; 'offboarded'
+    </select>
+
+    <select id="countDisabledStaff" resultType="long">
+        SELECT COUNT(*) FROM staff_account
+        WHERE employment_status &lt;&gt; 'offboarded'
+          AND status &lt;&gt; 'active'
+    </select>
+
+    <select id="countOffboardedStaff" resultType="long">
+        SELECT COUNT(*) FROM staff_account
+        WHERE employment_status = 'offboarded'
+    </select>
+
+    <select id="countCustomers" resultType="long">
+        SELECT COUNT(*) FROM customer_account
+    </select>
+
+    <select id="countTickets" resultType="long">
+        SELECT COUNT(*) FROM ticket
+    </select>
+
+    <select id="countConsultationSessions" resultType="long">
+        SELECT COUNT(*) FROM consultation_session
+    </select>
+
+    <select id="countLoginLogsSince" resultType="long">
+        SELECT COUNT(*) FROM login_log
+        WHERE created_at &gt;= #{since}
+    </select>
+
+</mapper>

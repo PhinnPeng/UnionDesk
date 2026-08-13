@@ -9,6 +9,9 @@ public class DomainRolePo {
     private String code;
     private String name;
     private Integer preset;
+    private Long templateId;
+    private Integer templateVersion;
+    private String lockedFields;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -50,6 +53,30 @@ public class DomainRolePo {
 
     public void setPreset(Integer preset) {
         this.preset = preset;
+    }
+
+    public Long getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(Long templateId) {
+        this.templateId = templateId;
+    }
+
+    public Integer getTemplateVersion() {
+        return templateVersion;
+    }
+
+    public void setTemplateVersion(Integer templateVersion) {
+        this.templateVersion = templateVersion;
+    }
+
+    public String getLockedFields() {
+        return lockedFields;
+    }
+
+    public void setLockedFields(String lockedFields) {
+        this.lockedFields = lockedFields;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -36,6 +36,32 @@ public class DomainRoleRepository {
         domainRoleMapper.insert(domainId, code, name, preset);
     }
 
+    public int countCustomRoles(long domainId) {
+        return domainRoleMapper.countCustomRoles(domainId);
+    }
+
+    public void insertTemplateInstance(
+            long domainId,
+            String code,
+            String name,
+            long templateId,
+            int templateVersion,
+            String lockedFields) {
+        domainRoleMapper.insertTemplateInstance(domainId, code, name, templateId, templateVersion, lockedFields);
+    }
+
+    public void updateTemplateBinding(
+            long roleId,
+            long domainId,
+            int templateVersion,
+            String lockedFields) {
+        domainRoleMapper.updateTemplateBinding(roleId, domainId, templateVersion, lockedFields);
+    }
+
+    public void clearTemplateBinding(long roleId, long domainId) {
+        domainRoleMapper.clearTemplateBinding(roleId, domainId);
+    }
+
     public int updateRole(String code, String name, long id, long domainId) {
         return domainRoleMapper.update(code, name, id, domainId);
     }

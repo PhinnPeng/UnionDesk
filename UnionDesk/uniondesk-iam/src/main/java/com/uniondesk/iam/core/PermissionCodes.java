@@ -48,6 +48,12 @@ public final class PermissionCodes {
     public static final String PLATFORM_ROLE_PERMISSION_READ = "platform.role_permission.read";
     public static final String PLATFORM_ROLE_PERMISSION_UPDATE = "platform.role_permission.update";
     public static final String PLATFORM_ROLE_BIND = "platform.role.bind";
+    public static final String PLATFORM_ROLE_TEMPLATE_READ = "platform.role_template.read";
+    public static final String PLATFORM_ROLE_TEMPLATE_CREATE = "platform.role_template.create";
+    public static final String PLATFORM_ROLE_TEMPLATE_UPDATE = "platform.role_template.update";
+    public static final String PLATFORM_ROLE_TEMPLATE_DELETE = "platform.role_template.delete";
+    public static final String PLATFORM_ROLE_TEMPLATE_APPLY = "platform.role_template.apply";
+    public static final String PLATFORM_ROLE_TEMPLATE_SYNC = "platform.role_template.sync";
 
     public static final String PLATFORM_ORGANIZATION_READ = "platform.organization.read";
     public static final String PLATFORM_ORGANIZATION_CREATE = "platform.organization.create";

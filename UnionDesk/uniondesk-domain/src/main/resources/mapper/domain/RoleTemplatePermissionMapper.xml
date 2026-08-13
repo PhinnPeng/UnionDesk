@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.domain.mapper.RoleTemplatePermissionMapper">
+
+    <resultMap id="RoleTemplatePermissionPo" type="com.uniondesk.domain.entity.RoleTemplatePermissionPo">
+        <id property="id" column="id"/>
+        <result property="templateId" column="template_id"/>
+        <result property="permissionItemId" column="permission_item_id"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="selectByTemplateId" resultMap="RoleTemplatePermissionPo">
+        SELECT id, template_id, permission_item_id, created_at
+        FROM role_template_permission
+        WHERE template_id = #{templateId}
+        ORDER BY id ASC
+    </select>
+
+    <select id="selectPermissionItemsByTemplateId" resultMap="com.uniondesk.domain.mapper.PermissionItemMapper.PermissionItemPo">
+        SELECT pi.id, pi.code, pi.name, pi.module, pi.type
+        FROM role_template_permission rtp
+        JOIN permission_item pi ON pi.id = rtp.permission_item_id
+        WHERE rtp.template_id = #{templateId}
+        ORDER BY pi.module, pi.type, pi.id
+    </select>
+
+    <delete id="deleteByTemplateId">
+        DELETE FROM role_template_permission WHERE template_id = #{templateId}
+    </delete>
+
+    <insert id="insert">
+        INSERT INTO role_template_permission (template_id, permission_item_id, created_at)
+        VALUES (#{templateId}, #{permissionItemId}, CURRENT_TIMESTAMP(3))
+    </insert>
+
+</mapper>

@@ -178,7 +178,11 @@ public class StaffAccountService {
         }
     }
 
-    private void bindDomainMemberships(long staffAccountId, List<Long> businessDomainIds, List<String> roleCodes) {
+    /**
+     * 绑定员工在指定业务域的角色（角色模板 bind-members 复用入口）。
+     * 注意：对每个业务域会先清空该员工在该域的现有角色再写入 roleCodes。
+     */
+    public void bindDomainMemberships(long staffAccountId, List<Long> businessDomainIds, List<String> roleCodes) {
         if (businessDomainIds == null || businessDomainIds.isEmpty()) {
             return;
         }

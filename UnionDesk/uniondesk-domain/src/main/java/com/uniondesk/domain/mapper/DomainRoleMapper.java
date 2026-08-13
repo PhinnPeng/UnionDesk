@@ -29,6 +29,26 @@ public interface DomainRoleMapper {
             @Param("code") String code,
             @Param("name") String name);
 
+    int countCustomRoles(@Param("domainId") long domainId);
+
+    void insertTemplateInstance(
+            @Param("domainId") long domainId,
+            @Param("code") String code,
+            @Param("name") String name,
+            @Param("templateId") long templateId,
+            @Param("templateVersion") int templateVersion,
+            @Param("lockedFields") String lockedFields);
+
+    void updateTemplateBinding(
+            @Param("roleId") long roleId,
+            @Param("domainId") long domainId,
+            @Param("templateVersion") int templateVersion,
+            @Param("lockedFields") String lockedFields);
+
+    void clearTemplateBinding(
+            @Param("roleId") long roleId,
+            @Param("domainId") long domainId);
+
     int update(
             @Param("code") String code,
             @Param("name") String name,

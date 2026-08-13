@@ -1,10 +1,13 @@
 package com.uniondesk.domain.core;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uniondesk.auth.core.UserContextHolder;
 import com.uniondesk.common.event.DomainRoleChangedEvent;
 import com.uniondesk.common.event.UnionDeskEventPublisher;
 import com.uniondesk.domain.entity.DomainRolePo;
 import com.uniondesk.domain.entity.PermissionItemPo;
+import com.uniondesk.domain.entity.RoleTemplatePo;
 import com.uniondesk.domain.repository.DomainRoleRepository;
 import com.uniondesk.domain.web.DomainRoleDtos;
 import java.util.LinkedHashSet;
@@ -17,17 +20,23 @@ import org.springframework.util.StringUtils;
 @Service
 public class DomainRoleService {
 
+    /** foundation-rules §3.2：每业务域自定义角色最多 20 个（不含预设角色） */
+    public static final int MAX_CUSTOM_ROLES_PER_DOMAIN = 20;
+
     private final DomainRoleRepository domainRoleRepository;
     private final DomainService domainService;
     private final UnionDeskEventPublisher eventPublisher;
+    private final ObjectMapper objectMapper;
 
     public DomainRoleService(
             DomainRoleRepository domainRoleRepository,
             DomainService domainService,
-            UnionDeskEventPublisher eventPublisher) {
+            UnionDeskEventPublisher eventPublisher,
+            ObjectMapper objectMapper) {
         this.domainRoleRepository = domainRoleRepository;
         this.domainService = domainService;
         this.eventPublisher = eventPublisher;
+        this.objectMapper = objectMapper;
     }
 
     public List<DomainRoleDtos.DomainRoleView> listRoles(long domainId) {
@@ -40,10 +49,11 @@ public class DomainRoleService {
     @Transactional
     public DomainRoleDtos.DomainRoleView createRole(long domainId, DomainRoleDtos.CreateDomainRoleRequest request) {
         requireDomain(domainId);
+        ensureCustomRoleCapacity(domainId);
         domainRoleRepository.insertRole(domainId, request.code().trim(), request.name().trim(), 0);
         Long roleId = domainRoleRepository.findRoleIdByDomainAndCode(domainId, request.code().trim());
         if (roleId == null) {
-            throw new IllegalStateException("domain role create failed");
+            throw new IllegalStateException("域角色创建失败");
         }
         publishRoleChanged(domainId, roleId, request.name().trim(), request.code().trim(),
                 "create", null, null);
@@ -77,9 +87,12 @@ public class DomainRoleService {
             long domainId,
             long roleId,
             DomainRoleDtos.UpdateDomainRolePermissionRequest request) {
-        DomainRoleDtos.DomainRoleView role = loadRole(domainId, roleId);
-        if (role.preset()) {
+        DomainRolePo role = requireRole(domainId, roleId);
+        if (role.getPreset() != null && role.getPreset() == 1) {
             throw new IllegalArgumentException("preset role cannot be updated");
+        }
+        if (role.getTemplateId() != null && isLockedField(role.getLockedFields(), RoleTemplatePo.LOCK_FIELD_PERMISSIONS)) {
+            throw DomainErrorCodes.ROLE_TEMPLATE_LOCKED_FIELD.toException();
         }
         List<Long> permissionItemIds = normalizeIds(request.permission_item_ids());
         if (!permissionItemIds.isEmpty()) {
@@ -89,8 +102,83 @@ public class DomainRoleService {
         for (Long permissionItemId : permissionItemIds) {
             domainRoleRepository.insertRolePermission(roleId, permissionItemId);
         }
-        publishRoleChanged(domainId, roleId, role.name(), role.code(), "update_permissions", null, null);
+        publishRoleChanged(domainId, roleId, role.getName(), role.getCode(), "update_permissions", null, null);
         return getRolePermissions(domainId, roleId);
+    }
+
+    /**
+     * 模板下发：在指定业务域创建角色模板实例（含模板字段回填与权限包复制），逐域调用（每域独立事务）。
+     */
+    @Transactional
+    public long createTemplateInstance(
+            long domainId,
+            String code,
+            String name,
+            long templateId,
+            int templateVersion,
+            String lockedFields,
+            List<Long> permissionItemIds) {
+        requireDomain(domainId);
+        ensureCustomRoleCapacity(domainId);
+        domainRoleRepository.insertTemplateInstance(domainId, code, name, templateId, templateVersion, lockedFields);
+        Long roleId = domainRoleRepository.findRoleIdByDomainAndCode(domainId, code);
+        if (roleId == null) {
+            throw new IllegalStateException("域角色实例创建失败");
+        }
+        replaceRolePermissions(roleId, permissionItemIds);
+        publishRoleChanged(domainId, roleId, name, code, "create", null, null);
+        return roleId;
+    }
+
+    /**
+     * 模板同步：将模板当前版本与权限包同步到已下发的域角色实例（每域独立事务）。
+     */
+    @Transactional
+    public void syncTemplateInstance(
+            long domainId,
+            long roleId,
+            int templateVersion,
+            String lockedFields,
+            List<Long> permissionItemIds) {
+        requireDomain(domainId);
+        DomainRolePo role = requireRole(domainId, roleId);
+        domainRoleRepository.updateTemplateBinding(roleId, domainId, templateVersion, lockedFields);
+        replaceRolePermissions(roleId, permissionItemIds);
+        publishRoleChanged(domainId, roleId, role.getName(), role.getCode(), "update_permissions", null, null);
+    }
+
+    private void replaceRolePermissions(long roleId, List<Long> permissionItemIds) {
+        domainRoleRepository.deleteRolePermissions(roleId);
+        for (Long permissionItemId : permissionItemIds) {
+            domainRoleRepository.insertRolePermission(roleId, permissionItemId);
+        }
+    }
+
+    private void ensureCustomRoleCapacity(long domainId) {
+        if (domainRoleRepository.countCustomRoles(domainId) >= MAX_CUSTOM_ROLES_PER_DOMAIN) {
+            throw new IllegalArgumentException("该业务域自定义角色数量已达上限（20 个）");
+        }
+    }
+
+    private boolean isLockedField(String lockedFieldsJson, String field) {
+        if (!StringUtils.hasText(lockedFieldsJson)) {
+            return false;
+        }
+        try {
+            List<String> fields = objectMapper.readValue(lockedFieldsJson, new TypeReference<List<String>>() { });
+            return fields != null && fields.contains(field);
+        }
+        catch (Exception ex) {
+            return false;
+        }
+    }
+
+    private DomainRolePo requireRole(long domainId, long roleId) {
+        DomainRolePo po = domainRoleRepository.findRoleByIdAndDomain(roleId, domainId);
+        if (po == null) {
+            throw new IllegalArgumentException("域角色不存在");
+        }
+        return po;
     }
 
     @Transactional
