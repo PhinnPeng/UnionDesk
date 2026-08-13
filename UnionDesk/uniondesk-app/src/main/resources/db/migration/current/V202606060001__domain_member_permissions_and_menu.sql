@@ -31,13 +31,13 @@ SELECT 'domain.member.delete', '删除成员', '软删除业务域成员', 'doma
 WHERE NOT EXISTS (SELECT 1 FROM iam_permission WHERE code = 'domain.member.delete');
 
 INSERT INTO iam_admin_menu (code, node_type, scope, name, route_path, component_key, permission_code, parent_id, order_no, icon, hidden, status, required)
-SELECT 'PLATFORM-DOMAIN-MEMBERS', 'catalog', 'domain', '员工管理', NULL, NULL, NULL,
+SELECT 'PLATFORM-DOMAIN-MEMBERS', 'catalog', 'business', '员工管理', NULL, NULL, NULL,
        (SELECT id FROM iam_admin_menu WHERE code = 'PLATFORM-DOMAIN-DETAIL' LIMIT 1),
        12, NULL, 1, 1, 0
 WHERE NOT EXISTS (SELECT 1 FROM iam_admin_menu WHERE code = 'PLATFORM-DOMAIN-MEMBERS');
 
 INSERT INTO iam_admin_menu (code, node_type, scope, name, permission_code, parent_id, order_no, status, required)
-SELECT 'TMP-BTN-DOMAIN-MEMBER-READ', 'button', 'domain', '查看成员', 'domain.member.read',
+SELECT 'TMP-BTN-DOMAIN-MEMBER-READ', 'button', 'business', '查看成员', 'domain.member.read',
        (SELECT id FROM iam_admin_menu WHERE code = 'PLATFORM-DOMAIN-MEMBERS' LIMIT 1),
        0, 1, 0
 WHERE NOT EXISTS (
@@ -45,7 +45,7 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO iam_admin_menu (code, node_type, scope, name, permission_code, parent_id, order_no, status, required)
-SELECT 'TMP-BTN-DOMAIN-MEMBER-CREATE', 'button', 'domain', '添加成员', 'domain.member.create',
+SELECT 'TMP-BTN-DOMAIN-MEMBER-CREATE', 'button', 'business', '添加成员', 'domain.member.create',
        (SELECT id FROM iam_admin_menu WHERE code = 'PLATFORM-DOMAIN-MEMBERS' LIMIT 1),
        1, 1, 0
 WHERE NOT EXISTS (
@@ -53,7 +53,7 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO iam_admin_menu (code, node_type, scope, name, permission_code, parent_id, order_no, status, required)
-SELECT 'TMP-BTN-DOMAIN-MEMBER-UPDATE-ROLES', 'button', 'domain', '编辑成员角色', 'domain.member.update_roles',
+SELECT 'TMP-BTN-DOMAIN-MEMBER-UPDATE-ROLES', 'button', 'business', '编辑成员角色', 'domain.member.update_roles',
        (SELECT id FROM iam_admin_menu WHERE code = 'PLATFORM-DOMAIN-MEMBERS' LIMIT 1),
        2, 1, 0
 WHERE NOT EXISTS (
@@ -61,7 +61,7 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO iam_admin_menu (code, node_type, scope, name, permission_code, parent_id, order_no, status, required)
-SELECT 'TMP-BTN-DOMAIN-MEMBER-UPDATE-STATUS', 'button', 'domain', '启停成员', 'domain.member.update_status',
+SELECT 'TMP-BTN-DOMAIN-MEMBER-UPDATE-STATUS', 'button', 'business', '启停成员', 'domain.member.update_status',
        (SELECT id FROM iam_admin_menu WHERE code = 'PLATFORM-DOMAIN-MEMBERS' LIMIT 1),
        3, 1, 0
 WHERE NOT EXISTS (
@@ -69,7 +69,7 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO iam_admin_menu (code, node_type, scope, name, permission_code, parent_id, order_no, status, required)
-SELECT 'TMP-BTN-DOMAIN-MEMBER-DELETE', 'button', 'domain', '删除成员', 'domain.member.delete',
+SELECT 'TMP-BTN-DOMAIN-MEMBER-DELETE', 'button', 'business', '删除成员', 'domain.member.delete',
        (SELECT id FROM iam_admin_menu WHERE code = 'PLATFORM-DOMAIN-MEMBERS' LIMIT 1),
        4, 1, 0
 WHERE NOT EXISTS (

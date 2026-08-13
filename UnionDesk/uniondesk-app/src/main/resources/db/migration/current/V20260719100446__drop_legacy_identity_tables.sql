@@ -17,6 +17,12 @@ ALTER TABLE ticket DROP FOREIGN KEY fk_ticket_assigned_to;
 ALTER TABLE ticket DROP FOREIGN KEY fk_ticket_customer;
 ALTER TABLE ticket_event_log DROP FOREIGN KEY fk_ticket_event_operator;
 ALTER TABLE ticket_reply DROP FOREIGN KEY fk_ticket_reply_sender;
+-- 补：fresh-install 时以下 FK 仍指向 user_account，须一并卸除（联调库为手工卸除，迁移内缺失）
+--   auth_login_log.fk_auth_login_log_user（rebaseline 创建）
+--   business_domain.fk_business_domain_created_by / fk_business_domain_updated_by（V202605200003 创建）
+ALTER TABLE auth_login_log DROP FOREIGN KEY fk_auth_login_log_user;
+ALTER TABLE business_domain DROP FOREIGN KEY fk_business_domain_created_by;
+ALTER TABLE business_domain DROP FOREIGN KEY fk_business_domain_updated_by;
 
 -- 2) 卸掉遗留表自身外键，再 DROP
 ALTER TABLE user_domain_role DROP FOREIGN KEY fk_udr_user;
