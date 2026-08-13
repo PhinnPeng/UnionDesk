@@ -5,6 +5,8 @@ import { domain } from "#src/router/extra-info";
 import { lazy } from "react";
 
 const DomainOverview = lazy(() => import("#src/pages/domain/overview"));
+const DomainTicketQueue = lazy(() => import("#src/pages/domain/ticket-queue"));
+const DomainTicketQueueDetail = lazy(() => import("#src/pages/domain/ticket-queue/detail"));
 const DomainBasic = lazy(() => import("#src/pages/domain/basic"));
 const DomainMembers = lazy(() => import("#src/pages/domain/members"));
 const DomainRoles = lazy(() => import("#src/pages/domain/roles"));
@@ -13,6 +15,7 @@ const DomainOnboarding = lazy(() => import("#src/pages/domain/onboarding"));
 const DomainTicketConfig = lazy(() => import("#src/pages/domain/ticket-config"));
 const DomainTicketTypeConfig = lazy(() => import("#src/pages/domain/ticket-config/type-config"));
 const DomainBlockwords = lazy(() => import("#src/pages/domain/blockwords"));
+const DomainSla = lazy(() => import("#src/pages/domain/sla"));
 const DomainNotifications = lazy(() => import("#src/pages/domain/notifications"));
 const DomainConfig = lazy(() => import("#src/pages/domain/config"));
 const DomainAuditLogs = lazy(() => import("#src/pages/domain/audit-logs"));
@@ -45,17 +48,38 @@ const routes: AppRouteRecordRaw[] = [
 			scope: "business",
 			hideInMenu: true,
 		},
-		children: [
-			{
-				path: "/domain/overview",
-				Component: DomainOverview,
-				handle: {
-					icon: "DashboardOutlined",
-					title: "运营概览",
-					scope: "business",
-					auth: "domain.overview.read",
+			children: [
+				{
+					path: "/domain/overview",
+					Component: DomainOverview,
+					handle: {
+						icon: "DashboardOutlined",
+						title: "运营概览",
+						scope: "business",
+						auth: "domain.overview.read",
+					},
 				},
-			},
+				{
+					path: "/domain/ticket-queue",
+					Component: DomainTicketQueue,
+					handle: {
+						icon: "ProfileOutlined",
+						title: "工单队列",
+						scope: "business",
+						auth: "ticket.view.domain_all",
+					},
+				},
+				{
+					path: "/domain/ticket-queue/:ticketId",
+					Component: DomainTicketQueueDetail,
+					handle: {
+						icon: "ProfileOutlined",
+						title: "工单详情",
+						scope: "business",
+						auth: "ticket.view.domain_all",
+						hideInMenu: true,
+					},
+				},
 			{
 				path: "/domain/ticket-config",
 				Component: DomainTicketConfig,
@@ -163,6 +187,16 @@ const routes: AppRouteRecordRaw[] = [
 					scope: "business",
 					auth: "domain.blocked_word.read",
 					hideInMenu: true,
+				},
+			},
+			{
+				path: "/domain/sla",
+				Component: DomainSla,
+				handle: {
+					icon: "FieldTimeOutlined",
+					title: "SLA 管理",
+					scope: "business",
+					auth: "domain.sla.read",
 				},
 			},
 			{

@@ -45,7 +45,12 @@ export const DOMAIN_TICKET_STATUS_DELETE = "domain.ticket_status.delete";
 export const DOMAIN_AUDIT_LOG_READ = "domain.audit_log.read";
 export const DOMAIN_LOGIN_LOG_READ = "domain.login_log.read";
 
+export const DOMAIN_SLA_READ = "domain.sla.read";
+export const DOMAIN_SLA_CREATE = "domain.sla.create";
+export const DOMAIN_SLA_UPDATE = "domain.sla.update";
+
 export const DOMAIN_NOTIFICATION_TEMPLATE_READ = "domain.notification_template.read";
+export const DOMAIN_NOTIFICATION_TEMPLATE_UPDATE = "domain.notification_template.update";
 
 export const DOMAIN_ROLE_READ = "domain.role.read";
 export const DOMAIN_ROLE_CREATE = "domain.role.create";

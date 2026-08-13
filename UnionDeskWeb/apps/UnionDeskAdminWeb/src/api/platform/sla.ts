@@ -88,3 +88,7 @@ export function updateSlaCalendar(domainId: number, calendarId: number, payload:
 		json: payload,
 	});
 }
+
+export function deleteSlaCalendar(domainId: number, calendarId: number): Promise<void> {
+	return backendRequest.delete(`v1/admin/domains/${domainId}/sla-calendars/${calendarId}`).then(() => undefined);
+}
