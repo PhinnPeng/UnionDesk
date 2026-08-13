@@ -87,6 +87,14 @@
         ORDER BY business_domain_id
     </select>
 
+    <select id="selectCustomerDomainMemberships" resultType="java.lang.Long">
+        SELECT business_domain_id
+        FROM domain_customer
+        WHERE customer_account_id = #{userId}
+          AND deleted_at IS NULL
+        ORDER BY business_domain_id
+    </select>
+
     <select id="selectAllDomainIds" resultType="java.lang.Long">
         SELECT id FROM business_domain WHERE deleted_at IS NULL ORDER BY id
     </select>

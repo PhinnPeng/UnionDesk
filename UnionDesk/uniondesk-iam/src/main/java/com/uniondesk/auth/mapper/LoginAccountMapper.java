@@ -22,6 +22,8 @@ public interface LoginAccountMapper {
 
     List<Long> selectCustomerAccessibleDomainIds(@Param("userId") long userId);
 
+    List<Long> selectCustomerDomainMemberships(@Param("userId") long userId);
+
     List<Long> selectAllDomainIds();
 
     List<Long> selectStaffAccessibleDomainIds(@Param("userId") long userId);

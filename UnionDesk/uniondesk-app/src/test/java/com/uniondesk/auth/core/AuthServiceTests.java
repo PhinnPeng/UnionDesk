@@ -15,6 +15,8 @@ import com.uniondesk.auth.core.AuthClientService.AuthClient;
 import com.uniondesk.auth.core.LoginAccountService.LoginAccount;
 import com.uniondesk.auth.core.LoginConfigService.LoginConfig;
 import com.uniondesk.auth.web.AuthDtos;
+import com.uniondesk.common.web.AccountAccessException;
+import com.uniondesk.common.web.ErrorCodes;
 import com.uniondesk.domain.core.DomainCustomerService;
 import com.uniondesk.domain.core.DomainService;
 import com.uniondesk.domain.core.InvitationCodeService;
@@ -139,6 +141,21 @@ class AuthServiceTests {
                 });
     }
 
+    private LoginConfig loginConfigWithoutCaptcha() {
+        return new LoginConfig(
+                true,
+                true,
+                true,
+                true,
+                false,
+                false,
+                null,
+                null,
+                604800,
+                10,
+                LocalDateTime.now(CLOCK));
+    }
+
     @Test
     void loginSucceedsWithEmailIdentifierAndCreatesSession() {
         LoginAccount account = new LoginAccount(1L, "customer", "13800000000", "customer@uniondesk.local",
@@ -250,6 +267,74 @@ class AuthServiceTests {
         assertThat(response.clientCode()).isEqualTo("ud-customer-web");
         assertThat(response.riskLoginNotified()).isFalse();
         verify(trustedLoginIpService).upsertAndPrune(2L, "127.0.0.1");
+    }
+
+    @Test
+    void customerLoginRejectsDisabledAccountWithAccountDisabledCode() {
+        LoginAccount account = new LoginAccount(2L, "customer", "13900000000", "customer@uniondesk.local",
+                passwordEncoder.encode("customer123"), 0, "customer", "disabled", 0);
+        LoginConfig config = loginConfigWithoutCaptcha();
+
+        when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginAccountService.findByIdentifier("customer", LoginIdentifierType.USERNAME, "customer"))
+                .thenReturn(Optional.of(account));
+
+        assertThatThrownBy(() -> authService.login(
+                new AuthDtos.LoginRequest("customer", "customer123", null, null),
+                "ud-customer-web",
+                "127.0.0.1",
+                "JUnit"))
+                .isInstanceOf(AccountAccessException.class)
+                .hasMessage(ErrorCodes.AUTH_ACCOUNT_DISABLED.message());
+    }
+
+    @Test
+    void customerLoginRejectsWhenAllDomainMembershipsDisabled() {
+        LoginAccount account = new LoginAccount(2L, "customer", "13900000000", "customer@uniondesk.local",
+                passwordEncoder.encode("customer123"), 1, "customer", "active", 0);
+        LoginConfig config = loginConfigWithoutCaptcha();
+
+        when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginAccountService.findByIdentifier("customer", LoginIdentifierType.USERNAME, "customer"))
+                .thenReturn(Optional.of(account));
+        when(loginAccountService.loadAccessibleDomainIds(2L, "customer", null)).thenReturn(List.of());
+        when(loginAccountService.hasAnyDomainMembership(2L)).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.login(
+                new AuthDtos.LoginRequest("customer", "customer123", null, null),
+                "ud-customer-web",
+                "127.0.0.1",
+                "JUnit"))
+                .isInstanceOf(AccountAccessException.class)
+                .hasMessage(ErrorCodes.AUTH_NO_ACCESSIBLE_DOMAIN.message());
+    }
+
+    @Test
+    void customerLoginWithNoMembershipStillSucceedsWithoutDomain() {
+        LoginAccount account = new LoginAccount(2L, "customer", "13900000000", "customer@uniondesk.local",
+                passwordEncoder.encode("customer123"), 1, "customer", "active", 0);
+        LoginConfig config = loginConfigWithoutCaptcha();
+
+        when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginAccountService.findByIdentifier("customer", LoginIdentifierType.USERNAME, "customer"))
+                .thenReturn(Optional.of(account));
+        when(iamService.listUserRoleCodesByClient(2L, "ud-customer-web")).thenReturn(List.of("customer"));
+        when(loginAccountService.loadAccessibleDomainIds(2L, "customer", null)).thenReturn(List.of());
+        when(loginAccountService.hasAnyDomainMembership(2L)).thenReturn(false);
+        when(loginSessionService.createSession(any(LoginSessionService.CreateSessionCommand.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0, LoginSessionService.CreateSessionCommand.class).sid());
+
+        AuthDtos.LoginResponse response = authService.login(
+                new AuthDtos.LoginRequest("customer", "customer123", null, null),
+                "ud-customer-web",
+                "127.0.0.1",
+                "JUnit");
+
+        assertThat(response.defaultBusinessDomainId()).isEqualTo(0L);
+        assertThat(response.accessibleDomains()).isEmpty();
     }
 
     @Test

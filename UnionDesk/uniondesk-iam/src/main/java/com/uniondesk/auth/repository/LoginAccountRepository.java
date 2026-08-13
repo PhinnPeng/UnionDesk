@@ -43,6 +43,10 @@ public class LoginAccountRepository {
         return mapper.selectCustomerAccessibleDomainIds(userId);
     }
 
+    public List<Long> findCustomerDomainMemberships(long userId) {
+        return mapper.selectCustomerDomainMemberships(userId);
+    }
+
     public List<Long> findAllDomainIds() {
         return mapper.selectAllDomainIds();
     }

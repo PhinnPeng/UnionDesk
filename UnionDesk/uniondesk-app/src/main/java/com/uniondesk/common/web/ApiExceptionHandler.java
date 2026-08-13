@@ -27,6 +27,11 @@ public class ApiExceptionHandler {
         return toResponse(ErrorCodes.AUTH_LOGIN_FAILED);
     }
 
+    @ExceptionHandler(AccountAccessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccountAccess(AccountAccessException ex) {
+        return toResponse(ex.errorCode());
+    }
+
     @ExceptionHandler(AuthCaptchaException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthCaptcha(AuthCaptchaException ex) {
         return toResponse(ErrorCodes.AUTH_CAPTCHA_FAILED);

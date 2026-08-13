@@ -7,6 +7,8 @@ import com.uniondesk.auth.core.LoginSessionService.OnlineSession;
 import com.uniondesk.auth.web.AuthDtos;
 import com.uniondesk.common.demo.DemoDtos.BusinessDomainView;
 import com.uniondesk.common.demo.DemoDtos.LoginUserView;
+import com.uniondesk.common.web.AccountAccessException;
+import com.uniondesk.common.web.ErrorCodes;
 import com.uniondesk.domain.core.DomainCustomerService;
 import com.uniondesk.domain.core.DomainService;
 import com.uniondesk.domain.core.DomainAccessPolicy;
@@ -242,9 +244,19 @@ public class AuthService {
                         null, null, identifierType, request.username(), "account_not_found",
                         clientIp, userAgent, authClient.clientCode(), portalType, null, null));
         if (account.status() != 1) {
-            throw failLogin(
-                    account.id(), account.username(), identifierType, request.username(), "account_disabled",
-                    clientIp, userAgent, authClient.clientCode(), portalType, null, null);
+            loginAuditService.record(loginAuditService.loginFailure(
+                    null,
+                    null,
+                    portalType,
+                    authClient.clientCode(),
+                    null,
+                    account.username(),
+                    identifierType.name(),
+                    request.username(),
+                    "account_disabled",
+                    clientIp,
+                    userAgent));
+            throw new AccountAccessException(ErrorCodes.AUTH_ACCOUNT_DISABLED);
         }
         if (!passwordEncoder.matches(request.password(), account.passwordHash())) {
             throw failLogin(
@@ -256,6 +268,22 @@ public class AuthService {
         String effectiveRole = roles.isEmpty() ? "customer" : roles.get(0);
         List<String> responseRoles = roles.isEmpty() ? List.of("customer") : roles;
         List<Long> joinedDomainIds = loginAccountService.loadAccessibleDomainIds(account.id(), "customer", null);
+        // 已加入过域但所有域成员均被禁用：拒绝登录，避免写入 business_domain_id=0 触发会话表外键失败
+        if (joinedDomainIds.isEmpty() && loginAccountService.hasAnyDomainMembership(account.id())) {
+            loginAuditService.record(loginAuditService.loginFailure(
+                    null,
+                    null,
+                    portalType,
+                    authClient.clientCode(),
+                    null,
+                    account.username(),
+                    identifierType.name(),
+                    request.username(),
+                    "no_accessible_domain",
+                    clientIp,
+                    userAgent));
+            throw new AccountAccessException(ErrorCodes.AUTH_NO_ACCESSIBLE_DOMAIN);
+        }
         // 0 域客户：不注入平台默认域，避免“假加入”导致误进 /home
         List<BusinessDomainView> accessibleDomains = joinedDomainIds.isEmpty()
                 ? List.of()

@@ -83,6 +83,14 @@ public class LoginAccountService {
                 .orElseThrow(() -> new IllegalStateException("no active business domain configured"));
     }
 
+    /**
+     * 客户是否曾加入过任一业务域（含已禁用的域成员）。
+     * 用于区分「已入域但成员关系全部被禁用」与「从未加入任何域」两种无可用域的场景。
+     */
+    public boolean hasAnyDomainMembership(long userId) {
+        return !loginAccountRepository.findCustomerDomainMemberships(userId).isEmpty();
+    }
+
     public void updatePassword(String accountType, long accountId, String rawPassword) {
         String passwordHash = passwordEncoder.encode(rawPassword);
         if ("customer".equalsIgnoreCase(normalizeAccountType(accountType))) {
