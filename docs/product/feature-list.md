@@ -58,8 +58,7 @@
 ## 2. 管理端-业务域端（AdminWeb / Business）
 
 > 权限列：写典型权限码，完整列表见附录。
-
-### 2.1 员工端（M2）
+> 模块：F2.x = 员工端（M2，工单/咨询工作台）；F3.x = 域管理后台（M3，配置/管理）。
 
 | 编号 | 功能名称 | 页面 | 菜单路径 | 路由 | 功能简述 | 关键操作 | 状态 | 权限码 | 备注/边界 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -67,11 +66,6 @@
 | F2.2 | SLA 感知与高亮 | 工单队列/详情（页内增强，无独立页） | 无（随 F2.1 页面） | — | 列表/详情高亮 SLA 即将超时或已超时工单 | —（规划中） | 📅 | `domain.sla.{read,create,update}` | 依赖 F4.15 SlaTimingEngine（已实现），未接入工单 UI；E4 Stretch 未排期 |
 | F2.3 | 在线咨询工作台 | 在线咨询工作台（目标态新增·页面未建） | 无 | `/consult-workbench`（建议） | 手动接入排队客户，实时聊天，一键转工单 | 接入、聊天、撤回（2 分钟内消息）、转工单（规划中） | 📅 | 无码（E5 未拆 Story） | E5 未排期；转工单带客户信息+会话摘要 |
 | F2.4 | 业务域端首页 / 工作台 | 域端首页/工作台 | 概览（业务端一级菜单 `BUSINESS-HOME-MENU`，V20260728170000；V20260728194500 更名「概览」） | `/home` | 当前域+按权限过滤快捷入口+概览说明 | 快捷入口跳转（按权限过滤） | ✅ | `domain.home.read` | 权限/菜单来自 V20260728170000（BUSINESS-HOME-MENU）；FR-03 无权限入口不可见 |
-
-### 2.2 域管理后台（M3）
-
-| 编号 | 功能名称 | 页面 | 菜单路径 | 路由 | 功能简述 | 关键操作 | 状态 | 权限码 | 备注/边界 |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | F3.1 | 工单类型设计 | 域事项配置（Drawer 三 Tab） | 事项配置（业务端一级 `BUSINESS-DOMAIN-TICKET-CONFIG`，V20260727183000；V20260801180000 提至 order 30） | `/domain/ticket-config`；平台域详情内 `/platform/domains/ticket-type-config/*`、`/platform/domains/ticket/form-design/*` | 类型 CRUD + Formily 表单设计（title/description 锁定）+ React Flow 状态流 DAG | 增、删、改、查、预置「反馈」「建议」启停 | ✅ | 域端 `domain.ticket_type.*`；平台域详情 `platform.domain.control.ticket_type.*` | TR-01 至少一个终态（违反保存失败+中文）；US-S3-01 AC2 系统字段锁定；域详情内同源（见附录B） |
 | F3.2 | SLA 规则与通知模板 | 域 SLA 规则（目标态新增·页面未建，SLA 部分主承载）+ 域通知配置（占位） | SLA：无（现状复用平台 `/platform/sla-management`）；通知：系统设置 > 功能配置 > 通知配置（`BUSINESS-DOMAIN-NOTIFICATIONS`，V20260801191000） | `/domain/settings/sla`（建议）；现状 `/platform/sla-management`、`/domain/settings/notifications` | 本域默认+按类型 SLA（首响/解决时限/违约动作），事件通知模板 | SLA 增删改查（复用 F4.15）、通知模板配置（占位） | 🚧 | `domain.sla.*`；`domain.notification_template.{read,update}` | 通知模板为占位（菜单与权限已就绪）；2026-08-12 决策：SLA 域端新建独立页，平台级 SLA 保留；与 F3.11 语义重叠待澄清 |
 | F3.3 | 成员 / 客户 / 角色管理 | 域成员管理/域客户管理/域角色管理 | 组织成员 > 员工管理（`BUSINESS-DOMAIN-SETTINGS-ORG` order 35，V20260801192000）；客户管理 > 客户列表；组织成员 > 角色管理 | `/domain/settings/members`、`/domain/customers/list`、`/domain/settings/roles` | 域成员（平台员工添加/改角色/启停/移除）、域客户（列表/手动添加/启停）、域角色（预置+自定义） | 成员增、移除、改角色、启停；客户手动添加、启停；角色增删改 | ✅ | `domain.member.*`、`domain.customer.{read,create,update_status}`、`domain.role.*` | 最后 `domain_admin`/`super_admin` 保护；同一员工同域不可重复添加；与平台域详情 Tab 同源双入口（权限码 OR，见附录B）；目标态：角色实例受模板锁定字段约束 |
