@@ -7,6 +7,8 @@ public enum ErrorCodes {
     AUTH_LOGIN_FAILED(10001, "用户名或密码错误", HttpStatus.UNAUTHORIZED),
     AUTH_ACCOUNT_DISABLED(10004, "账号暂不可用，请联系管理员", HttpStatus.UNAUTHORIZED),
     AUTH_NO_ACCESSIBLE_DOMAIN(10005, "当前没有可用的访问域", HttpStatus.UNAUTHORIZED),
+    AUTH_ACCOUNT_LOCKED(10006, "登录失败次数过多，账号已临时锁定，请稍后再试", HttpStatus.UNAUTHORIZED),
+    AUTH_IP_NOT_ALLOWED(10007, "当前网络环境不允许登录，请联系管理员", HttpStatus.UNAUTHORIZED),
     AUTH_CAPTCHA_FAILED(10003, "验证码校验失败", HttpStatus.BAD_REQUEST),
     AUTH_CLIENT_CODE_MISSING(40102, "客户端标识缺失", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(40101, "未登录或登录已过期", HttpStatus.UNAUTHORIZED),

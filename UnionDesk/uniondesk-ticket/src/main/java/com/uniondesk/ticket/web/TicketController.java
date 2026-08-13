@@ -2,6 +2,7 @@ package com.uniondesk.ticket.web;
 
 import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.auth.core.UserContextHolder;
+import com.uniondesk.common.web.PageResult;
 import com.uniondesk.iam.core.PermissionCodes;
 import com.uniondesk.iam.core.RequirePermission;
 import com.uniondesk.ticket.core.TicketService;
@@ -81,12 +82,28 @@ public class TicketController {
 
     @GetMapping("/admin/domains/{domain_id}/tickets")
     @RequirePermission(value = PermissionCodes.TICKET_VIEW_DOMAIN_ALL, domainIdParam = "domain_id")
-    public TicketListView listAdminTickets(
+    public PageResult<TicketService.TicketRow> listAdminTickets(
             @PathVariable("domain_id") long domainId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(name = "page_size", required = false) Integer pageSize,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long assignee,
+            @RequestParam(required = false) String priority,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "false") boolean assigned_to_me,
             @RequestParam(defaultValue = "100") int limit) {
-        List<TicketService.TicketRow> items = ticketService.listTickets(domainId, status, limit);
-        return new TicketListView(items.size(), items);
+        // 兼容旧调用：未传 page_size 时回退到 limit（保持原有一次拉取行为）
+        int effectivePageSize = pageSize != null ? pageSize : limit;
+        return ticketService.listAdminTickets(
+                requireCurrent(),
+                domainId,
+                page,
+                effectivePageSize,
+                status,
+                assignee,
+                priority,
+                keyword,
+                assigned_to_me);
     }
 
     @GetMapping("/admin/domains/{domain_id}/tickets/{ticket_id}")

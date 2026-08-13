@@ -225,6 +225,13 @@ class AuthControllerTests {
                         "wechat-hint",
                         7200,
                         5,
+                        8,
+                        false,
+                        false,
+                        5,
+                        30,
+                        false,
+                        "",
                         LocalDateTime.parse("2026-04-21T08:00:00")));
 
         mockMvc.perform(put("/api/v1/auth/login-config")
@@ -262,6 +269,13 @@ class AuthControllerTests {
                         "wechat-hint",
                         7200,
                         5,
+                        8,
+                        false,
+                        false,
+                        5,
+                        30,
+                        false,
+                        "",
                         LocalDateTime.parse("2026-04-21T08:00:00")));
 
         mockMvc.perform(put("/api/v1/auth/login-config")

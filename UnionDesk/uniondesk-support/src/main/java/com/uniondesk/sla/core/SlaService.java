@@ -114,6 +114,14 @@ public class SlaService {
     }
 
     @Transactional
+    public void deleteSlaCalendar(long businessDomainId, long calendarId) {
+        int updated = slaRepository.deleteCalendarByIdAndDomainId(calendarId, businessDomainId);
+        if (updated == 0) {
+            throw new IllegalArgumentException("sla calendar not found");
+        }
+    }
+
+    @Transactional
     public void deleteSlaRule(long businessDomainId, long ruleId) {
         int updated = slaRepository.deleteRuleByIdAndDomainId(ruleId, businessDomainId);
         if (updated == 0) {

@@ -85,4 +85,11 @@ public class SlaController {
             @Valid @RequestBody SlaService.SlaCalendarCommand request) {
         return slaService.updateSlaCalendar(domainId, calendarId, request);
     }
+
+    @DeleteMapping("/sla-calendars/{calendarId}")
+    @RequirePermission(value = PermissionCodes.DOMAIN_SLA_UPDATE, domainIdParam = "domainId")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteSlaCalendar(@PathVariable long domainId, @PathVariable long calendarId) {
+        slaService.deleteSlaCalendar(domainId, calendarId);
+    }
 }

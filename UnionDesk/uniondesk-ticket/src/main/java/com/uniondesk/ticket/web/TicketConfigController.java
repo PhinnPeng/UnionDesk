@@ -204,7 +204,10 @@ public class TicketConfigController {
     }
 
     @GetMapping("/admin/domains/{domain_id}/ticket-statuses")
-    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_READ, domainIdParam = "domain_id")
+    @RequirePermission(value = {
+            PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_READ,
+            PermissionCodes.DOMAIN_TICKET_STATUS_READ
+    }, domainIdParam = "domain_id")
     public TicketStatusDtos.TicketStatusListView listDomainTicketStatuses(
             @PathVariable("domain_id") long domainId,
             @RequestParam(required = false) String keyword,

@@ -130,7 +130,14 @@ public class AuthController {
                 request.captchaHint(),
                 request.wechatHint(),
                 request.sessionTtlSeconds(),
-                request.maxActiveSessionsPerUser()));
+                request.maxActiveSessionsPerUser(),
+                request.passwordMinLength(),
+                request.passwordRequireMixed(),
+                request.loginFailLockEnabled(),
+                request.loginFailMaxAttempts(),
+                request.loginFailLockMinutes(),
+                request.ipWhitelistEnabled(),
+                request.ipWhitelist()));
         return toLoginConfigView(config);
     }
 
@@ -194,6 +201,13 @@ public class AuthController {
                 config.wechatHint(),
                 config.sessionTtlSeconds(),
                 config.maxActiveSessionsPerUser(),
+                config.passwordMinLength(),
+                config.passwordRequireMixed(),
+                config.loginFailLockEnabled(),
+                config.loginFailMaxAttempts(),
+                config.loginFailLockMinutes(),
+                config.ipWhitelistEnabled(),
+                config.ipWhitelist(),
                 config.updatedAt());
     }
 

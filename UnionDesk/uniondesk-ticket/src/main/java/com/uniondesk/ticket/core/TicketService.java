@@ -10,6 +10,7 @@ import com.uniondesk.notification.core.NotificationCenterService;
 import com.uniondesk.sla.core.SlaService;
 import com.uniondesk.common.event.TicketStatusChangedEvent;
 import com.uniondesk.common.event.UnionDeskEventPublisher;
+import com.uniondesk.common.web.PageResult;
 import com.uniondesk.ticket.entity.AuditLogPo;
 import com.uniondesk.ticket.entity.IdentitySubjectPo;
 import com.uniondesk.ticket.entity.QuickReplyTemplatePo;
@@ -429,8 +430,38 @@ public class TicketService {
     }
 
     @Transactional(readOnly = true)
-    public List<TicketRow> listTickets(long businessDomainId, String status, int limit) {
-        return listTicketsInternal(businessDomainId, null, status, limit);
+    public PageResult<TicketRow> listAdminTickets(
+            UserContext context,
+            long businessDomainId,
+            int page,
+            int pageSize,
+            String status,
+            Long assigneeStaffAccountId,
+            String priority,
+            String keyword,
+            boolean assignedToMe) {
+        Long effectiveAssignee = assignedToMe ? context.userId() : assigneeStaffAccountId;
+        String normalizedStatus = StringUtils.hasText(status) ? status.trim() : null;
+        String normalizedPriority = StringUtils.hasText(priority) ? priority.trim() : null;
+        String normalizedKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null;
+        int normalizedPage = Math.max(page, 1);
+        int normalizedPageSize = Math.min(Math.max(pageSize, 1), 200);
+        long total = ticketRepository.countTickets(
+                businessDomainId, null, normalizedStatus, effectiveAssignee, normalizedPriority, normalizedKeyword);
+        long offset = (long) (normalizedPage - 1) * normalizedPageSize;
+        List<TicketRow> items = ticketRepository.listTicketsPage(
+                        businessDomainId,
+                        null,
+                        normalizedStatus,
+                        effectiveAssignee,
+                        normalizedPriority,
+                        normalizedKeyword,
+                        normalizedPageSize,
+                        offset)
+                .stream()
+                .map(this::toTicketRow)
+                .toList();
+        return new PageResult<>(total, items);
     }
 
     @Transactional(readOnly = true)

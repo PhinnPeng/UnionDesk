@@ -19,6 +19,22 @@ public interface TicketMapper {
                                      @Param("status") String status,
                                      @Param("limit") int limit);
 
+    long countTickets(@Param("domainId") long domainId,
+                      @Param("customerId") Long customerId,
+                      @Param("status") String status,
+                      @Param("assignee") Long assignee,
+                      @Param("priority") String priority,
+                      @Param("keyword") String keyword);
+
+    List<TicketDetailPo> listTicketsPage(@Param("domainId") long domainId,
+                                         @Param("customerId") Long customerId,
+                                         @Param("status") String status,
+                                         @Param("assignee") Long assignee,
+                                         @Param("priority") String priority,
+                                         @Param("keyword") String keyword,
+                                         @Param("limit") int limit,
+                                         @Param("offset") long offset);
+
     Long findIdByTicketNo(@Param("ticketNo") String ticketNo);
 
     int updateStatus(@Param("ticketId") long ticketId,

@@ -16,4 +16,9 @@ public interface LoginLogMapper {
     Long selectSubjectIdByCustomerAccountId(@Param("customerAccountId") long customerAccountId);
 
     Long selectSubjectIdByStaffAccountId(@Param("staffAccountId") long staffAccountId);
+
+    int countPasswordFailuresSince(
+            @Param("loginName") String loginName,
+            @Param("portalType") String portalType,
+            @Param("since") LocalDateTime since);
 }

@@ -124,6 +124,9 @@ public class AuthService {
             authCaptchaService.consumeToken(request.captchaToken());
         }
         String portalType = portalTypeForClient(authClient);
+        if (!"customer".equals(portalType) && config.ipWhitelistEnabled() && !isIpWhitelisted(config.ipWhitelist(), clientIp)) {
+            throw new AccountAccessException(ErrorCodes.AUTH_IP_NOT_ALLOWED);
+        }
         if (!isIdentifierTypeEnabled(config, identifierType) || !config.passwordLoginEnabled()) {
             loginAuditService.record(loginAuditService.loginFailure(
                     null,
@@ -159,6 +162,7 @@ public class AuthService {
                     account.id(), account.username(), identifierType, request.username(), "account_offboarded",
                     clientIp, userAgent, clientCode, portalType, null, loginAuditService.resolveStaffSubjectId(account.id()));
         }
+        checkLoginLocked(config, account.username(), "staff");
         if (!passwordEncoder.matches(request.password(), account.passwordHash())) {
             throw failLogin(
                     account.id(), account.username(), identifierType, request.username(), "password_mismatch",
@@ -258,6 +262,7 @@ public class AuthService {
                     userAgent));
             throw new AccountAccessException(ErrorCodes.AUTH_ACCOUNT_DISABLED);
         }
+        checkLoginLocked(config, account.username(), "customer");
         if (!passwordEncoder.matches(request.password(), account.passwordHash())) {
             throw failLogin(
                     account.id(), account.username(), identifierType, request.username(), "password_mismatch",
@@ -475,6 +480,7 @@ public class AuthService {
         if (resetToken == null) {
             throw new AuthenticationFailedException("invalid reset token");
         }
+        validatePasswordPolicy(newPassword);
         loginAccountService.updatePassword(resetToken.accountType(), resetToken.accountId(), newPassword);
         authVersionService.incrementVersion(resetToken.accountId(), resetToken.accountType());
     }
@@ -487,6 +493,7 @@ public class AuthService {
         if (!passwordEncoder.matches(oldPassword, account.passwordHash())) {
             throw new AuthenticationFailedException("invalid credentials");
         }
+        validatePasswordPolicy(newPassword);
         loginAccountService.updatePassword(accountType, account.id(), newPassword);
         authVersionService.incrementVersion(account.id(), accountType);
     }
@@ -775,6 +782,64 @@ public class AuthService {
 
     private String portalTypeForClient(AuthClient authClient) {
         return "customer".equalsIgnoreCase(authClient.allowedAccountType()) ? "customer" : "staff";
+    }
+
+    /**
+     * 连续失败锁定检查：窗口期内（自最近一次登录成功以来）密码错误次数达到阈值则拒绝登录。
+     * 锁定开关默认关闭，开启后按 login_fail_lock_minutes 窗口滑动自动解锁。
+     */
+    private void checkLoginLocked(LoginConfig config, String loginName, String portalType) {
+        if (!config.loginFailLockEnabled()) {
+            return;
+        }
+        LocalDateTime since = LocalDateTime.now(clock).minusMinutes(config.loginFailLockMinutes());
+        int failures = loginAuditService.countRecentPasswordFailures(loginName, portalType, since);
+        if (failures >= config.loginFailMaxAttempts()) {
+            throw new AccountAccessException(ErrorCodes.AUTH_ACCOUNT_LOCKED);
+        }
+    }
+
+    private boolean isIpWhitelisted(String whitelist, String clientIp) {
+        if (!StringUtils.hasText(whitelist) || !StringUtils.hasText(clientIp)) {
+            return false;
+        }
+        String normalizedIp = clientIp.trim();
+        for (String entry : whitelist.split(",")) {
+            if (normalizedIp.equals(entry.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 密码强度策略校验（改密/重置密码时执行）。默认最小长度 8 位，字母数字混合默认不启用。
+     */
+    private void validatePasswordPolicy(String newPassword) {
+        LoginConfig config = loginConfigService.loadConfig();
+        if (newPassword.length() < config.passwordMinLength()) {
+            throw new IllegalArgumentException("新密码长度不能少于 " + config.passwordMinLength() + " 位");
+        }
+        if (config.passwordRequireMixed() && !containsLetterAndDigit(newPassword)) {
+            throw new IllegalArgumentException("新密码必须同时包含字母和数字");
+        }
+    }
+
+    private boolean containsLetterAndDigit(String value) {
+        boolean hasLetter = false;
+        boolean hasDigit = false;
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if (Character.isLetter(ch)) {
+                hasLetter = true;
+            } else if (Character.isDigit(ch)) {
+                hasDigit = true;
+            }
+            if (hasLetter && hasDigit) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String portalTypeForClientCode(String clientCode) {

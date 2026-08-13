@@ -58,4 +58,9 @@
         WHERE id = #{id} AND business_domain_id = #{businessDomainId}
     </update>
 
+    <delete id="deleteByIdAndDomainId">
+        DELETE FROM sla_calendar
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+    </delete>
+
 </mapper>

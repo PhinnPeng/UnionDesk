@@ -36,6 +36,22 @@ public class TicketRepository {
         return mapper.listTickets(domainId, customerId, status, limit);
     }
 
+    public long countTickets(long domainId, Long customerId, String status, Long assignee, String priority, String keyword) {
+        return mapper.countTickets(domainId, customerId, status, assignee, priority, keyword);
+    }
+
+    public List<TicketDetailPo> listTicketsPage(
+            long domainId,
+            Long customerId,
+            String status,
+            Long assignee,
+            String priority,
+            String keyword,
+            int limit,
+            long offset) {
+        return mapper.listTicketsPage(domainId, customerId, status, assignee, priority, keyword, limit, offset);
+    }
+
     public long findIdByTicketNo(String ticketNo) {
         Long id = mapper.findIdByTicketNo(ticketNo);
         if (id == null) {

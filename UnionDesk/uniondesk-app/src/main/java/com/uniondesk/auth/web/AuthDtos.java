@@ -198,6 +198,13 @@ public final class AuthDtos {
             String wechatHint,
             int sessionTtlSeconds,
             int maxActiveSessionsPerUser,
+            int passwordMinLength,
+            boolean passwordRequireMixed,
+            boolean loginFailLockEnabled,
+            int loginFailMaxAttempts,
+            int loginFailLockMinutes,
+            boolean ipWhitelistEnabled,
+            String ipWhitelist,
             LocalDateTime updatedAt) {
     }
 
@@ -211,7 +218,14 @@ public final class AuthDtos {
             String captchaHint,
             String wechatHint,
             Integer sessionTtlSeconds,
-            Integer maxActiveSessionsPerUser) {
+            Integer maxActiveSessionsPerUser,
+            Integer passwordMinLength,
+            Boolean passwordRequireMixed,
+            Boolean loginFailLockEnabled,
+            Integer loginFailMaxAttempts,
+            Integer loginFailLockMinutes,
+            Boolean ipWhitelistEnabled,
+            String ipWhitelist) {
     }
 
     public record SessionView(

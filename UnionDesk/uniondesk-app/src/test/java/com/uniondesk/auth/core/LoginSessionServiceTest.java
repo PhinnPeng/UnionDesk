@@ -45,6 +45,13 @@ class LoginSessionServiceTest {
                 null,
                 7_200,
                 10,
+                8,
+                false,
+                false,
+                5,
+                30,
+                false,
+                "",
                 LocalDateTime.of(2026, 5, 1, 0, 0)));
         when(loginSessionRepository.findBySidAndType("sid-1", "login")).thenReturn(Optional.of(activeState));
 

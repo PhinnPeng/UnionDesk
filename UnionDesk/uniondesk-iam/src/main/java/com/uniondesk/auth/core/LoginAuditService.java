@@ -54,6 +54,13 @@ public class LoginAuditService {
         return loginAuditRepository.findSubjectIdByStaffAccountId(staffAccountId);
     }
 
+    /**
+     * 统计窗口期内（自最近一次登录成功以来）的密码错误次数，用于连续失败锁定判断。
+     */
+    public int countRecentPasswordFailures(String loginName, String portalType, LocalDateTime since) {
+        return loginAuditRepository.countPasswordFailuresSince(loginName, normalizePortalType(portalType), since);
+    }
+
     public String maskIdentifier(String identifier, String identifierType) {
         if (!StringUtils.hasText(identifier)) {
             return "***";

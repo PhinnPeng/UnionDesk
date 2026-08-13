@@ -88,6 +88,10 @@ public class SlaRepository {
         slaCalendarMapper.updateByIdAndDomainId(po);
     }
 
+    public int deleteCalendarByIdAndDomainId(long calendarId, long domainId) {
+        return slaCalendarMapper.deleteByIdAndDomainId(calendarId, domainId);
+    }
+
     // --- Ticket SLA ---
 
     public SlaTicketPo findSlaSnapshot(long ticketId, long domainId) {

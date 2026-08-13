@@ -63,4 +63,21 @@
         SELECT subject_id FROM staff_account WHERE id = #{staffAccountId} LIMIT 1
     </select>
 
+    <select id="countPasswordFailuresSince" resultType="int">
+        SELECT COUNT(*)
+        FROM login_log l
+        WHERE l.login_name = #{loginName}
+          AND l.portal_type = #{portalType}
+          AND l.result = 'failure'
+          AND l.fail_reason = 'password_mismatch'
+          AND l.created_at &gt;= #{since}
+          AND l.created_at &gt; COALESCE((
+              SELECT MAX(s.created_at)
+              FROM login_log s
+              WHERE s.login_name = #{loginName}
+                AND s.portal_type = #{portalType}
+                AND s.result = 'success'
+          ), #{since})
+    </select>
+
 </mapper>

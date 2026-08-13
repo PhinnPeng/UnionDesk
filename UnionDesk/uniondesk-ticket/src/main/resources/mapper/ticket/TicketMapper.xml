@@ -147,6 +147,88 @@
         LIMIT #{limit}
     </select>
 
+    <select id="countTickets" resultType="long">
+        SELECT COUNT(*)
+        FROM ticket t
+        WHERE t.business_domain_id = #{domainId}
+        <if test="customerId != null">
+            AND t.customer_id = #{customerId}
+        </if>
+        <if test="status != null and status != ''">
+            AND t.status = #{status}
+        </if>
+        <if test="assignee != null">
+            AND t.assignee_staff_account_id = #{assignee}
+        </if>
+        <if test="priority != null and priority != ''">
+            AND t.priority = #{priority}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND t.title LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+    </select>
+
+    <select id="listTicketsPage" resultMap="TicketDetailPo">
+        SELECT
+            t.id,
+            t.ticket_no,
+            t.business_domain_id,
+            d.code AS business_domain_code,
+            d.name AS business_domain_name,
+            t.ticket_type_id,
+            tt.name AS ticket_type_name,
+            t.customer_id,
+            t.assigned_to,
+            t.title,
+            t.description,
+            t.status,
+            t.priority,
+            t.source,
+            t.result,
+            t.version,
+            CAST(t.custom_fields AS CHAR) AS custom_fields_json,
+            t.sla_first_response_deadline,
+            t.sla_resolution_deadline,
+            t.sla_first_responded_at,
+            t.sla_resolved_at,
+            t.sla_status,
+            t.sla_paused_duration,
+            t.sla_pause_started_at,
+            t.created_at,
+            t.updated_at,
+            (
+                SELECT MAX(r.created_at)
+                FROM ticket_reply r
+                WHERE r.ticket_id = t.id
+            ) AS last_reply_at,
+            COALESCE((
+                SELECT COUNT(*)
+                FROM ticket_reply r
+                WHERE r.ticket_id = t.id
+            ), 0) AS reply_count
+        FROM ticket t
+        JOIN business_domain d ON d.id = t.business_domain_id
+        JOIN ticket_type tt ON tt.id = t.ticket_type_id
+        WHERE t.business_domain_id = #{domainId}
+        <if test="customerId != null">
+            AND t.customer_id = #{customerId}
+        </if>
+        <if test="status != null and status != ''">
+            AND t.status = #{status}
+        </if>
+        <if test="assignee != null">
+            AND t.assignee_staff_account_id = #{assignee}
+        </if>
+        <if test="priority != null and priority != ''">
+            AND t.priority = #{priority}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND t.title LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY t.updated_at DESC, t.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
     <select id="findIdByTicketNo" resultType="java.lang.Long">
         SELECT id
         FROM ticket

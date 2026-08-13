@@ -22,4 +22,8 @@ public interface SlaCalendarMapper {
     void insert(SlaCalendarPo po);
 
     void updateByIdAndDomainId(SlaCalendarPo po);
+
+    int deleteByIdAndDomainId(
+            @Param("id") long id,
+            @Param("domainId") long domainId);
 }

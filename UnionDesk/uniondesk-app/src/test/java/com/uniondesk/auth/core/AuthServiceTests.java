@@ -153,6 +153,13 @@ class AuthServiceTests {
                 null,
                 604800,
                 10,
+                8,
+                false,
+                false,
+                5,
+                30,
+                false,
+                "",
                 LocalDateTime.now(CLOCK));
     }
 
@@ -171,6 +178,13 @@ class AuthServiceTests {
                 null,
                 604800,
                 10,
+                8,
+                false,
+                false,
+                5,
+                30,
+                false,
+                "",
                 LocalDateTime.now(CLOCK));
 
         when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
@@ -215,6 +229,13 @@ class AuthServiceTests {
                 null,
                 604800,
                 10,
+                8,
+                false,
+                false,
+                5,
+                30,
+                false,
+                "",
                 LocalDateTime.now(CLOCK));
 
         when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
@@ -247,6 +268,13 @@ class AuthServiceTests {
                 null,
                 604800,
                 10,
+                8,
+                false,
+                false,
+                5,
+                30,
+                false,
+                "",
                 LocalDateTime.now(CLOCK));
 
         when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
@@ -352,6 +380,13 @@ class AuthServiceTests {
                 null,
                 604800,
                 10,
+                8,
+                false,
+                false,
+                5,
+                30,
+                false,
+                "",
                 LocalDateTime.now(CLOCK));
 
         when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
@@ -396,6 +431,13 @@ class AuthServiceTests {
                 null,
                 604800,
                 10,
+                8,
+                false,
+                false,
+                5,
+                30,
+                false,
+                "",
                 LocalDateTime.now(CLOCK));
 
         when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
@@ -439,6 +481,13 @@ class AuthServiceTests {
                 null,
                 604800,
                 10,
+                8,
+                false,
+                false,
+                5,
+                30,
+                false,
+                "",
                 LocalDateTime.now(CLOCK));
 
         when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
@@ -478,6 +527,13 @@ class AuthServiceTests {
                 null,
                 604800,
                 10,
+                8,
+                false,
+                false,
+                5,
+                30,
+                false,
+                "",
                 LocalDateTime.now(CLOCK));
 
         when(authClientService.findByCode("ud-admin-web")).thenReturn(Optional.of(new AuthClient("ud-admin-web", "admin", 1)));
@@ -581,6 +637,13 @@ class AuthServiceTests {
                 null,
                 604800,
                 10,
+                8,
+                false,
+                false,
+                5,
+                30,
+                false,
+                "",
                 LocalDateTime.now(CLOCK));
 
         when(authClientService.findByCode("ud-admin-web")).thenReturn(Optional.of(new AuthClient("ud-admin-web", "admin", 1)));
@@ -600,7 +663,7 @@ class AuthServiceTests {
         LoginAccount account = new LoginAccount(2L, "admin", "13900000000", "admin@uniondesk.local",
                 passwordEncoder.encode("admin123"), 1, "admin", "active", 0);
         LoginConfig config = new LoginConfig(
-                true, true, true, true, false, false, null, null, 604800, 10, LocalDateTime.now(CLOCK));
+                true, true, true, true, false, false, null, null, 604800, 10, 8, false, false, 5, 30, false, "", LocalDateTime.now(CLOCK));
 
         when(authClientService.findByCode("ud-admin-web")).thenReturn(Optional.of(new AuthClient("ud-admin-web", "admin", 1)));
         when(loginConfigService.loadConfig()).thenReturn(config);
@@ -629,7 +692,7 @@ class AuthServiceTests {
         LoginAccount account = new LoginAccount(2L, "admin", "13900000000", "admin@uniondesk.local",
                 passwordEncoder.encode("admin123"), 1, "admin", "active", 0);
         LoginConfig config = new LoginConfig(
-                true, true, true, true, false, false, null, null, 604800, 10, LocalDateTime.now(CLOCK));
+                true, true, true, true, false, false, null, null, 604800, 10, 8, false, false, 5, 30, false, "", LocalDateTime.now(CLOCK));
 
         when(authClientService.findByCode("ud-admin-web")).thenReturn(Optional.of(new AuthClient("ud-admin-web", "admin", 1)));
         when(loginConfigService.loadConfig()).thenReturn(config);
@@ -710,6 +773,177 @@ class AuthServiceTests {
         assertThat(response.refreshToken()).contains(".");
         assertThat(response.tokenType()).isEqualTo("Bearer");
         verify(loginSessionService).updateBusinessDomainAndRefreshToken(eq("sid-100"), eq(20L), anyString());
+    }
+
+    private LoginConfig loginConfigWithSecurityPolicy(
+            int passwordMinLength,
+            boolean passwordRequireMixed,
+            boolean lockEnabled,
+            int maxAttempts,
+            int lockMinutes,
+            boolean ipWhitelistEnabled,
+            String ipWhitelist) {
+        return new LoginConfig(
+                true,
+                true,
+                true,
+                true,
+                false,
+                false,
+                null,
+                null,
+                604800,
+                10,
+                passwordMinLength,
+                passwordRequireMixed,
+                lockEnabled,
+                maxAttempts,
+                lockMinutes,
+                ipWhitelistEnabled,
+                ipWhitelist,
+                LocalDateTime.now(CLOCK));
+    }
+
+    @Test
+    void staffLoginRejectsWhenIpNotInWhitelist() {
+        LoginAccount account = new LoginAccount(2L, "admin", "13900000000", "admin@uniondesk.local",
+                passwordEncoder.encode("admin123"), 1, "admin", "active", 0);
+        LoginConfig config = loginConfigWithSecurityPolicy(8, false, false, 5, 30, true, "10.0.0.1, 10.0.0.2");
+
+        when(authClientService.findByCode("ud-admin-web")).thenReturn(Optional.of(new AuthClient("ud-admin-web", "admin", 1)));
+        when(loginConfigService.loadConfig()).thenReturn(config);
+
+        assertThatThrownBy(() -> authService.login(
+                new AuthDtos.LoginRequest("admin", "admin123", null, null),
+                "ud-admin-web",
+                "127.0.0.1",
+                "JUnit"))
+                .isInstanceOf(AccountAccessException.class)
+                .hasMessage(ErrorCodes.AUTH_IP_NOT_ALLOWED.message());
+        verify(loginAuditService, never()).record(any());
+    }
+
+    @Test
+    void staffLoginAllowsIpInWhitelist() {
+        LoginAccount account = new LoginAccount(2L, "admin", "13900000000", "admin@uniondesk.local",
+                passwordEncoder.encode("admin123"), 1, "admin", "active", 0);
+        LoginConfig config = loginConfigWithSecurityPolicy(8, false, false, 5, 30, true, "10.0.0.1, 127.0.0.1");
+
+        when(authClientService.findByCode("ud-admin-web")).thenReturn(Optional.of(new AuthClient("ud-admin-web", "admin", 1)));
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginAccountService.findByIdentifier("admin", LoginIdentifierType.USERNAME, "staff"))
+                .thenReturn(Optional.of(account));
+        when(iamService.listUserRoleCodesByClient(2L, "ud-admin-web")).thenReturn(List.of("super_admin"));
+        when(loginAccountService.loadAccessibleDomainIds(2L, List.of("super_admin"))).thenReturn(List.of(10L));
+        stubDomainView(10L);
+        when(loginSessionService.createSession(any(LoginSessionService.CreateSessionCommand.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0, LoginSessionService.CreateSessionCommand.class).sid());
+
+        AuthDtos.LoginResponse response = authService.login(
+                new AuthDtos.LoginRequest("admin", "admin123", null, null),
+                "ud-admin-web",
+                "127.0.0.1",
+                "JUnit");
+
+        assertThat(response.sid()).isNotBlank();
+    }
+
+    @Test
+    void customerLoginRejectsWhenLockedByConsecutiveFailures() {
+        LoginAccount account = new LoginAccount(1L, "customer", "13800000000", "customer@uniondesk.local",
+                passwordEncoder.encode("customer123"), 1, "customer", "active", 0);
+        LoginConfig config = loginConfigWithSecurityPolicy(8, false, true, 5, 30, false, "");
+
+        when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginAccountService.findByIdentifier("customer", LoginIdentifierType.USERNAME, "customer"))
+                .thenReturn(Optional.of(account));
+        when(loginAuditService.countRecentPasswordFailures(eq("customer"), eq("customer"), any(LocalDateTime.class))).thenReturn(5);
+
+        assertThatThrownBy(() -> authService.login(
+                new AuthDtos.LoginRequest("customer", "customer123", null, null),
+                "ud-customer-web",
+                "127.0.0.1",
+                "JUnit"))
+                .isInstanceOf(AccountAccessException.class)
+                .hasMessage(ErrorCodes.AUTH_ACCOUNT_LOCKED.message());
+        verify(loginSessionService, never()).createSession(any());
+    }
+
+    @Test
+    void loginLockCheckSkippedWhenLockDisabled() {
+        LoginAccount account = new LoginAccount(1L, "customer", "13800000000", "customer@uniondesk.local",
+                passwordEncoder.encode("customer123"), 1, "customer", "active", 0);
+        LoginConfig config = loginConfigWithSecurityPolicy(8, false, false, 5, 30, false, "");
+
+        when(authClientService.findByCode("ud-customer-web")).thenReturn(Optional.of(new AuthClient("ud-customer-web", "customer", 1)));
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginAccountService.findByIdentifier("customer", LoginIdentifierType.USERNAME, "customer"))
+                .thenReturn(Optional.of(account));
+        when(loginAccountService.loadAccessibleDomainIds(1L, "customer", null)).thenReturn(List.of(1L));
+        stubDomainView(1L);
+        when(loginSessionService.createSession(any(LoginSessionService.CreateSessionCommand.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0, LoginSessionService.CreateSessionCommand.class).sid());
+
+        AuthDtos.LoginResponse response = authService.login(
+                new AuthDtos.LoginRequest("customer", "customer123", null, null),
+                "ud-customer-web",
+                "127.0.0.1",
+                "JUnit");
+
+        assertThat(response.sid()).isNotBlank();
+        verify(loginAuditService, never()).countRecentPasswordFailures(anyString(), anyString(), any(LocalDateTime.class));
+    }
+
+    @Test
+    void changePasswordRejectsShortPassword() {
+        LoginAccount account = new LoginAccount(1L, "customer", "13800000000", "customer@uniondesk.local",
+                passwordEncoder.encode("customer123"), 1, "customer", "active", 0);
+        LoginConfig config = loginConfigWithSecurityPolicy(8, false, false, 5, 30, false, "");
+        UserContext context = new UserContext(1L, "customer", 10L, "sid-100", "ud-customer-web");
+
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginAccountService.findById(1L, "customer")).thenReturn(Optional.of(account));
+
+        assertThatThrownBy(() -> authService.changePassword(context, "customer123", "short"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("新密码长度不能少于 8 位");
+        verify(loginAccountService, never()).updatePassword(anyString(), anyLong(), anyString());
+    }
+
+    @Test
+    void changePasswordRejectsNonMixedPasswordWhenRequired() {
+        LoginAccount account = new LoginAccount(1L, "customer", "13800000000", "customer@uniondesk.local",
+                passwordEncoder.encode("customer123"), 1, "customer", "active", 0);
+        LoginConfig config = loginConfigWithSecurityPolicy(8, true, false, 5, 30, false, "");
+        UserContext context = new UserContext(1L, "customer", 10L, "sid-100", "ud-customer-web");
+
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginAccountService.findById(1L, "customer")).thenReturn(Optional.of(account));
+
+        assertThatThrownBy(() -> authService.changePassword(context, "customer123", "abcdefgh"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("新密码必须同时包含字母和数字");
+        verify(loginAccountService, never()).updatePassword(anyString(), anyLong(), anyString());
+    }
+
+    @Test
+    void resetPasswordRejectsShortPassword() {
+        LoginConfig config = loginConfigWithSecurityPolicy(8, false, false, 5, 30, false, "");
+        when(loginConfigService.loadConfig()).thenReturn(config);
+        when(loginSessionService.consumePasswordResetToken("token-1")).thenReturn(new LoginSessionService.PasswordResetToken(
+                "token-1",
+                1L,
+                "customer",
+                "ud-customer-web",
+                LocalDateTime.now(CLOCK).plusMinutes(30),
+                "valid",
+                "cus***"));
+
+        assertThatThrownBy(() -> authService.resetPassword("token-1", "short"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("新密码长度不能少于 8 位");
+        verify(loginAccountService, never()).updatePassword(anyString(), anyLong(), anyString());
     }
 
     private void stubDomainView(long domainId) {

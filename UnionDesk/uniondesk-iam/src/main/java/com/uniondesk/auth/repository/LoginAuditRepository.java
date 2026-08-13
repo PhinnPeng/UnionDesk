@@ -2,6 +2,7 @@ package com.uniondesk.auth.repository;
 
 import com.uniondesk.auth.entity.LoginLogPo;
 import com.uniondesk.auth.mapper.LoginLogMapper;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.stereotype.Repository;
 
@@ -28,5 +29,9 @@ public class LoginAuditRepository {
 
     public Long findSubjectIdByStaffAccountId(long staffAccountId) {
         return mapper.selectSubjectIdByStaffAccountId(staffAccountId);
+    }
+
+    public int countPasswordFailuresSince(String loginName, String portalType, LocalDateTime since) {
+        return mapper.countPasswordFailuresSince(loginName, portalType, since);
     }
 }
