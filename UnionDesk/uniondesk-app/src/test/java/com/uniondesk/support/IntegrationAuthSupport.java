@@ -3,6 +3,7 @@ package com.uniondesk.support;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uniondesk.auth.core.AuthCaptchaService;
+import java.util.List;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
@@ -171,5 +172,134 @@ public final class IntegrationAuthSupport {
                         """,
                 customerAccountId,
                 domainId);
+    }
+
+    /**
+     * 新建业务域员工账号（真实登录用）：
+     * 插入 identity_subject + staff_account（{noop} 测试密码占位）+ domain_member(active) + domain_member_role 绑定，
+     * 并确保 domain_role 存在（preset 角色直接复用，缺失按需插入）。
+     * 返回 staff_account.id，可配合 {@link #loginAccessToken} 真实登录换取 accessToken。
+     */
+    public static long insertDomainStaff(
+            JdbcTemplate jdbcTemplate,
+            long domainId,
+            String loginName,
+            String password,
+            String roleCode) {
+        String phone = "139" + String.format("%08d", Math.floorMod(loginName.hashCode(), 100000000));
+        jdbcTemplate.update("""
+                        INSERT INTO identity_subject (subject_type, phone, status)
+                        VALUES ('person', ?, 'active')
+                        """,
+                phone);
+        Long subjectId = jdbcTemplate.queryForObject(
+                "SELECT id FROM identity_subject WHERE phone = ? LIMIT 1",
+                Long.class,
+                phone);
+        if (subjectId == null) {
+            throw new IllegalStateException("identity subject not created: " + loginName);
+        }
+        jdbcTemplate.update("""
+                        INSERT INTO staff_account (
+                            subject_id, username, real_name, nickname, phone, email, password_hash,
+                            must_change_password, status, employment_status, source, auth_version,
+                            password_changed_at, created_at, updated_at
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, CONCAT('{noop}', ?), 0, 'active', 'active', 'test', 1,
+                            CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
+                        """,
+                subjectId,
+                loginName,
+                loginName,
+                loginName,
+                phone,
+                loginName + "@uniondesk.local",
+                password);
+        Long staffAccountId = jdbcTemplate.queryForObject(
+                "SELECT id FROM staff_account WHERE username = ? LIMIT 1",
+                Long.class,
+                loginName);
+        if (staffAccountId == null) {
+            throw new IllegalStateException("staff account not created: " + loginName);
+        }
+        jdbcTemplate.update("""
+                        INSERT INTO domain_member (
+                            staff_account_id, business_domain_id, status, source,
+                            activated_at, disabled_at, deleted_at, created_at, updated_at
+                        )
+                        VALUES (?, ?, 'active', 'test',
+                            CURRENT_TIMESTAMP(3), NULL, NULL, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
+                        """,
+                staffAccountId,
+                domainId);
+        Long domainMemberId = jdbcTemplate.queryForObject(
+                """
+                        SELECT id
+                        FROM domain_member
+                        WHERE staff_account_id = ? AND business_domain_id = ?
+                        LIMIT 1
+                        """,
+                Long.class,
+                staffAccountId,
+                domainId);
+        Long domainRoleId = ensureDomainRole(jdbcTemplate, domainId, roleCode);
+        if (domainMemberId == null) {
+            throw new IllegalStateException("domain member not created: " + loginName);
+        }
+        jdbcTemplate.update("""
+                        INSERT INTO domain_member_role (domain_member_id, domain_role_id, created_at)
+                        VALUES (?, ?, CURRENT_TIMESTAMP(3))
+                        """,
+                domainMemberId,
+                domainRoleId);
+        return staffAccountId;
+    }
+
+    /**
+     * 确保域内存在指定 code 的 domain_role（preset 角色复用，缺失按需插入），返回其 id。
+     */
+    private static long ensureDomainRole(JdbcTemplate jdbcTemplate, long domainId, String roleCode) {
+        List<Long> ids = jdbcTemplate.query(
+                """
+                        SELECT id
+                        FROM domain_role
+                        WHERE business_domain_id = ? AND code = ?
+                        LIMIT 1
+                        """,
+                (rs, rowNum) -> rs.getLong(1),
+                domainId,
+                roleCode);
+        if (!ids.isEmpty()) {
+            return ids.get(0);
+        }
+        String roleName = roleCode;
+        List<String> names = jdbcTemplate.query(
+                "SELECT name FROM role WHERE code = ? LIMIT 1",
+                (rs, rowNum) -> rs.getString(1),
+                roleCode);
+        if (!names.isEmpty()) {
+            roleName = names.get(0);
+        }
+        jdbcTemplate.update("""
+                        INSERT INTO domain_role (business_domain_id, code, name, preset, created_at, updated_at)
+                        VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
+                        """,
+                domainId,
+                roleCode,
+                roleName);
+        Long domainRoleId = jdbcTemplate.queryForObject(
+                """
+                        SELECT id
+                        FROM domain_role
+                        WHERE business_domain_id = ? AND code = ?
+                        LIMIT 1
+                        """,
+                Long.class,
+                domainId,
+                roleCode);
+        if (domainRoleId == null) {
+            throw new IllegalStateException("domain role not created: " + roleCode);
+        }
+        return domainRoleId;
     }
 }

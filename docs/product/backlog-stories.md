@@ -222,12 +222,13 @@
 
 ### US-S1-08 跨域访问拒绝
 
-- **Epic**: E1 | **Sprint**: S1（**暂缓，不纳入 S1 Committed 签 off**）| **SP**: 3 | **状态**: Todo
+- **Epic**: E1 | **Sprint**: S1（**暂缓，不纳入 S1 Committed 签 off**）| **SP**: 3 | **状态**: Done
 - **AC**:
   1. A 域身份访问 B 域数据返回 403 或空集
 - **规则**: FR-02
 - **备注**（2026-05-26）：团队决定 **S1 不做** 本 Story，后续迭代再处理；`implementation-inventory` §4.5 现状仍有效，签 off 不阻塞。  
-  **（2026-08-11 提级 P0）**：集团统一角色/跨域批量（任务 `08-11-group-role-management`）前置安全债，目标域校验（FR-02 强化），**模板/批量 API 上线前必须完成**。
+  **（2026-08-11 提级 P0）**：集团统一角色/跨域批量（任务 `08-11-group-role-management`）前置安全债，目标域校验（FR-02 强化），**模板/批量 API 上线前必须完成**。  
+  **（2026-08-13 Done）**：目标域校验（`@RequirePermission(domainIdParam)` + `PermissionScopePolicy`）落地，任务 `08-12-p0-cross-domain-security` 归档；`DomainScopedPermissionIntegrationTest` 覆盖跨域 403 / 本域 200 / 平台豁免。
 
 ### US-S1-09 登录日志与操作日志（管理端）
 
@@ -461,7 +462,8 @@
   4. 完成原 **US-S1-04**、**US-S1-05** backlog 状态更新为 Done。
 - **规则**: DR-01、DR-02
 - **DB 增量**: 无（除非邀请码表缺口）
-- **备注**: S1 暂缓 Story 并入 S3
+- **备注**: S1 暂缓 Story 并入 S3  
+  **（2026-08-13 承接中）**：08-13 客户授权链已完成主链路；US-S3-02 承接 08-13-customer-register-api 待立项
 
 ### US-S3-03 CustomerWeb 提单与我的工单
 
@@ -476,7 +478,8 @@
   5. `pnpm run typecheck` 通过（含 CustomerWeb）。
 - **规则**: FR-05、FR-06、TR-03
 - **DB 增量**: 无
-- **备注**: 依赖 US-S3-01（至少 1 个启用类型）、US-S3-02（客户账号）
+- **备注**: 依赖 US-S3-01（至少 1 个启用类型）、US-S3-02（客户账号）  
+  **（2026-08-13 承接中）**：08-13 客户授权链已完成主链路；US-S3-02 承接 08-13-customer-register-api 待立项
 
 ### US-S3-04 员工端工单队列与处理
 

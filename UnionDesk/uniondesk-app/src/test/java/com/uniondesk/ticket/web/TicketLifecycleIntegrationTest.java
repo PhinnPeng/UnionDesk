@@ -98,8 +98,7 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
         long domainId = defaultDomainId(jdbcTemplate);
         long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
         String customerToken = registerCustomer(domainId, "ticket_customer_claim", "customer123");
-        String adminToken = IntegrationAuthSupport.loginAccessToken(
-                mockMvc, objectMapper, IntegrationAuthSupport.ADMIN_CLIENT_CODE, "admin", "admin123");
+        String adminToken = staffToken("ticket_agent_claim", "agent123", "agent");
 
         long ticketId = createTicket(customerToken, domainId, ticketTypeId, "领取后回复", "需要客服跟进");
 
@@ -109,7 +108,7 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.ClaimTicketCommand(1L))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(ticketId));
+                .andExpect(jsonPath("$.data.id").value(ticketId));
 
         mockMvc.perform(post("/api/v1/admin/domains/{domainId}/tickets/{ticketId}/replies", domainId, ticketId)
                         .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
@@ -121,7 +120,7 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                                 null,
                                 List.of()))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").exists());
+                .andExpect(jsonPath("$.data.id").exists());
 
         mockMvc.perform(patch("/api/v1/admin/domains/{domainId}/tickets/{ticketId}/status", domainId, ticketId)
                         .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
@@ -133,20 +132,20 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                                 null,
                                 "已关闭"))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(ticketId));
+                .andExpect(jsonPath("$.data.id").value(ticketId));
 
         mockMvc.perform(get("/api/v1/admin/domains/{domainId}/tickets/{ticketId}", domainId, ticketId)
                         .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
                         .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.ticket.status").value("closed"))
-                .andExpect(jsonPath("$.ticket.version").value(4))
-                .andExpect(jsonPath("$.replies.length()").value(1))
-                .andExpect(jsonPath("$.history.length()").value(4))
-                .andExpect(jsonPath("$.history[0].action").value("create"))
-                .andExpect(jsonPath("$.history[1].action").value("claim"))
-                .andExpect(jsonPath("$.history[2].action").value("reply"))
-                .andExpect(jsonPath("$.history[3].action").value("status_change"));
+                .andExpect(jsonPath("$.data.ticket.status").value("closed"))
+                .andExpect(jsonPath("$.data.ticket.version").value(4))
+                .andExpect(jsonPath("$.data.replies.length()").value(1))
+                .andExpect(jsonPath("$.data.history.length()").value(4))
+                .andExpect(jsonPath("$.data.history[0].action").value("create"))
+                .andExpect(jsonPath("$.data.history[1].action").value("claim"))
+                .andExpect(jsonPath("$.data.history[2].action").value("reply"))
+                .andExpect(jsonPath("$.data.history[3].action").value("status_change"));
 
         Integer replyCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM ticket_reply WHERE ticket_id = ?",
@@ -160,8 +159,8 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
         long domainId = defaultDomainId(jdbcTemplate);
         long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
         String customerToken = registerCustomer(domainId, "ticket_customer_merge", "customer123");
-        String adminToken = IntegrationAuthSupport.loginAccessToken(
-                mockMvc, objectMapper, IntegrationAuthSupport.ADMIN_CLIENT_CODE, "admin", "admin123");
+        // agent 缺 ticket.merge 授权（S5 任务补码），merge 用例使用 domain_admin 账号
+        String adminToken = staffToken("ticket_domain_admin_merge", "domainadmin123", "domain_admin");
 
         long sourceTicketId = createTicket(customerToken, domainId, ticketTypeId, "待合并工单", "这是源工单");
         long targetTicketId = createTicket(customerToken, domainId, ticketTypeId, "主工单", "这是目标工单");
@@ -181,7 +180,7 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                                 ticketVersion(sourceTicketId),
                                 2L))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(sourceTicketId));
+                .andExpect(jsonPath("$.data.id").value(sourceTicketId));
 
         mockMvc.perform(post("/api/v1/admin/domains/{domainId}/tickets/{ticketId}/replies", domainId, sourceTicketId)
                         .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
@@ -193,7 +192,7 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                                 null,
                                 List.of()))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").exists());
+                .andExpect(jsonPath("$.data.id").exists());
 
         mockMvc.perform(post("/api/v1/admin/domains/{domainId}/tickets/{ticketId}/merge", domainId, sourceTicketId)
                         .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
@@ -204,20 +203,20 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                                 targetTicketId,
                                 "重复工单"))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(sourceTicketId));
+                .andExpect(jsonPath("$.data.id").value(sourceTicketId));
 
         mockMvc.perform(get("/api/v1/admin/domains/{domainId}/tickets/{ticketId}", domainId, sourceTicketId)
                         .header("Authorization", IntegrationAuthSupport.bearer(adminToken))
                         .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.ticket.status").value("merged"))
-                .andExpect(jsonPath("$.ticket.version").value(5))
-                .andExpect(jsonPath("$.history.length()").value(5))
-                .andExpect(jsonPath("$.history[0].action").value("create"))
-                .andExpect(jsonPath("$.history[1].action").value("claim"))
-                .andExpect(jsonPath("$.history[2].action").value("assign"))
-                .andExpect(jsonPath("$.history[3].action").value("reply"))
-                .andExpect(jsonPath("$.history[4].action").value("merge"));
+                .andExpect(jsonPath("$.data.ticket.status").value("merged"))
+                .andExpect(jsonPath("$.data.ticket.version").value(5))
+                .andExpect(jsonPath("$.data.history.length()").value(5))
+                .andExpect(jsonPath("$.data.history[0].action").value("create"))
+                .andExpect(jsonPath("$.data.history[1].action").value("claim"))
+                .andExpect(jsonPath("$.data.history[2].action").value("assign"))
+                .andExpect(jsonPath("$.data.history[3].action").value("reply"))
+                .andExpect(jsonPath("$.data.history[4].action").value("merge"));
 
         Long relationTargetId = jdbcTemplate.queryForObject(
                 "SELECT target_ticket_id FROM ticket_relation WHERE source_ticket_id = ? ORDER BY id DESC LIMIT 1",
@@ -231,8 +230,7 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
         long domainId = defaultDomainId(jdbcTemplate);
         long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
         String customerToken = registerCustomer(domainId, "ticket_customer_conflict", "customer123");
-        String adminToken = IntegrationAuthSupport.loginAccessToken(
-                mockMvc, objectMapper, IntegrationAuthSupport.ADMIN_CLIENT_CODE, "admin", "admin123");
+        String adminToken = staffToken("ticket_agent_conflict", "agent123", "agent");
 
         long ticketId = createTicket(customerToken, domainId, ticketTypeId, "版本冲突", "请不要重复处理");
 
@@ -250,8 +248,7 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
         long domainId = defaultDomainId(jdbcTemplate);
         long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
         String customerToken = registerCustomer(domainId, "ticket_customer_close", "customer123");
-        String adminToken = IntegrationAuthSupport.loginAccessToken(
-                mockMvc, objectMapper, IntegrationAuthSupport.ADMIN_CLIENT_CODE, "admin", "admin123");
+        String adminToken = staffToken("ticket_agent_close", "agent123", "agent");
 
         long ticketId = createTicket(customerToken, domainId, ticketTypeId, "非法流转", "直接关闭应该被拒绝");
 
@@ -271,6 +268,13 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
     private String registerCustomer(long domainId, String username, String password) throws Exception {
         return IntegrationAuthSupport.registerCustomerAccessToken(
                 mockMvc, objectMapper, jdbcTemplate, domainId, username, password).accessToken();
+    }
+
+    private String staffToken(String loginName, String password, String roleCode) throws Exception {
+        long domainId = defaultDomainId(jdbcTemplate);
+        IntegrationAuthSupport.insertDomainStaff(jdbcTemplate, domainId, loginName, password, roleCode);
+        return IntegrationAuthSupport.loginAccessToken(
+                mockMvc, objectMapper, IntegrationAuthSupport.ADMIN_CLIENT_CODE, loginName, password);
     }
 
     private long createTicket(String customerToken, long domainId, long ticketTypeId, String title, String description) throws Exception {

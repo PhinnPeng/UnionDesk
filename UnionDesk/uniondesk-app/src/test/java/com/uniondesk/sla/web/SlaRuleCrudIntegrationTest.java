@@ -51,12 +51,17 @@ class SlaRuleCrudIntegrationTest extends IntegrationTestSupport {
     @MockBean
     private AuthCaptchaService authCaptchaService;
 
-    private String adminToken;
+    private String domainAdminToken;
 
     @BeforeEach
     void setUp() throws Exception {
         IntegrationAuthSupport.mockCaptchaBypass(authCaptchaService);
-        adminToken = adminAccessToken(mockMvc, objectMapper);
+        long domainId = defaultDomainId(jdbcTemplate);
+        String loginName = "sla_domain_admin";
+        String password = "sla123456";
+        IntegrationAuthSupport.insertDomainStaff(jdbcTemplate, domainId, loginName, password, "domain_admin");
+        domainAdminToken = IntegrationAuthSupport.loginAccessToken(
+                mockMvc, objectMapper, IntegrationAuthSupport.ADMIN_CLIENT_CODE, loginName, password);
     }
 
     @Test
@@ -78,13 +83,13 @@ class SlaRuleCrudIntegrationTest extends IntegrationTestSupport {
                                 false,
                                 Map.of("raise_priority_to", "urgent", "sla_status", "escalated")))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Initial SLA"))
-                .andExpect(jsonPath("$.firstResponseMinutes").value(30))
+                .andExpect(jsonPath("$.data.name").value("Initial SLA"))
+                .andExpect(jsonPath("$.data.firstResponseMinutes").value(30))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
-        long ruleId = objectMapper.readTree(createResponse).get("id").asLong();
+        long ruleId = objectMapper.readTree(createResponse).path("data").get("id").asLong();
 
         mockMvc.perform(put("/api/v1/admin/domains/{domainId}/sla-rules/{ruleId}", domainId, ruleId)
                         .header("Authorization", bearer())
@@ -100,15 +105,15 @@ class SlaRuleCrudIntegrationTest extends IntegrationTestSupport {
                                 true,
                                 Map.of("raise_priority_to", "high", "sla_status", "breached")))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Updated SLA"))
-                .andExpect(jsonPath("$.isUrgentConfig").value(true));
+                .andExpect(jsonPath("$.data.name").value("Updated SLA"))
+                .andExpect(jsonPath("$.data.isUrgentConfig").value(true));
 
         mockMvc.perform(get("/api/v1/admin/domains/{domainId}/sla-rules", domainId)
                         .header("Authorization", bearer())
                         .header("X-UD-Client-Code", "ud-admin-web"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.total").value(1))
-                .andExpect(jsonPath("$.list[0].name").value("Updated SLA"));
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].name").value("Updated SLA"));
     }
 
     @Test
@@ -123,12 +128,12 @@ class SlaRuleCrudIntegrationTest extends IntegrationTestSupport {
                                 "Working Calendar",
                                 Map.of("timezone", "UTC", "working_days", List.of(1, 2, 3, 4, 5))))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Working Calendar"))
+                .andExpect(jsonPath("$.data.name").value("Working Calendar"))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
-        long calendarId = objectMapper.readTree(createResponse).get("id").asLong();
+        long calendarId = objectMapper.readTree(createResponse).path("data").get("id").asLong();
         SlaService.SlaCalendarCommand updateCommand = new SlaService.SlaCalendarCommand(
                 "Holiday Calendar",
                 Map.of("timezone", "Asia/Shanghai", "working_days", List.of(1, 2, 3)));
@@ -139,14 +144,14 @@ class SlaRuleCrudIntegrationTest extends IntegrationTestSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateCommand)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Holiday Calendar"));
+                .andExpect(jsonPath("$.data.name").value("Holiday Calendar"));
 
         mockMvc.perform(get("/api/v1/admin/domains/{domainId}/sla-calendars", domainId)
                         .header("Authorization", bearer())
                         .header("X-UD-Client-Code", "ud-admin-web"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.total").value(1))
-                .andExpect(jsonPath("$.list[0].config.timezone").value("Asia/Shanghai"));
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].config.timezone").value("Asia/Shanghai"));
     }
 
     @Test
@@ -163,9 +168,9 @@ class SlaRuleCrudIntegrationTest extends IntegrationTestSupport {
                         .header("Authorization", bearer())
                         .header("X-UD-Client-Code", "ud-admin-web"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.total").value(2))
-                .andExpect(jsonPath("$.list").isArray())
-                .andExpect(jsonPath("$.list.length()").value(1));
+                .andExpect(jsonPath("$.data.total").value(2))
+                .andExpect(jsonPath("$.data.list").isArray())
+                .andExpect(jsonPath("$.data.list.length()").value(1));
 
         mockMvc.perform(get("/api/v1/admin/domains/{domainId}/sla-rules", domainId)
                         .queryParam("page", "2")
@@ -173,9 +178,9 @@ class SlaRuleCrudIntegrationTest extends IntegrationTestSupport {
                         .header("Authorization", bearer())
                         .header("X-UD-Client-Code", "ud-admin-web"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.total").value(2))
-                .andExpect(jsonPath("$.list.length()").value(1))
-                .andExpect(jsonPath("$.list[0].name").value("Paging SLA A"));
+                .andExpect(jsonPath("$.data.total").value(2))
+                .andExpect(jsonPath("$.data.list.length()").value(1))
+                .andExpect(jsonPath("$.data.list[0].name").value("Paging SLA A"));
     }
 
     private void createRule(String name, long domainId, long ticketTypeId, int firstResponseMinutes, int resolutionMinutes) {
@@ -193,6 +198,6 @@ class SlaRuleCrudIntegrationTest extends IntegrationTestSupport {
     }
 
     private String bearer() {
-        return "Bearer " + adminToken;
+        return "Bearer " + domainAdminToken;
     }
 }

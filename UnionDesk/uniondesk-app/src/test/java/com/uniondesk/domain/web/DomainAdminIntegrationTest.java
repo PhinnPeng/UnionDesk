@@ -54,8 +54,8 @@ class DomainAdminIntegrationTest {
                         .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE)
                         .header("Authorization", IntegrationAuthSupport.bearer(accessToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value((int) domainId))
-                .andExpect(jsonPath("$.code").exists());
+                .andExpect(jsonPath("$.data.id").value((int) domainId))
+                .andExpect(jsonPath("$.data.code").exists());
 
         mockMvc.perform(put("/api/v1/admin/domains/{domainId}", domainId)
                         .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE)
@@ -67,6 +67,6 @@ class DomainAdminIntegrationTest {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Default Domain Updated"));
+                .andExpect(jsonPath("$.data.name").value("Default Domain Updated"));
     }
 }
