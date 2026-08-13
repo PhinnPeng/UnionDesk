@@ -1,4 +1,4 @@
-import { useCustomerPortal } from "@uniondesk/shared";
+import { registerCustomerLive, useCustomerPortal } from "@uniondesk/shared";
 import { useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -37,7 +37,7 @@ export default function RegisterPage() {
 		event.preventDefault();
 		setLoading(true);
 		try {
-			portal.register({
+			await registerCustomerLive({
 				loginName: form.loginName.trim(),
 				password: form.password,
 				displayName: form.displayName.trim(),
@@ -64,7 +64,7 @@ export default function RegisterPage() {
 				return;
 			}
 
-			toast.success("注册成功（本地演示）");
+			toast.success("注册成功");
 			navigate("/domains", { replace: true });
 		}
 		catch (error) {

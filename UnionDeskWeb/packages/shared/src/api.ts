@@ -16,6 +16,7 @@ import type {
   CreateMenuPayload,
   CreateRolePayload,
   CreateTicketRequest,
+  CustomerSatisfactionView,
   DemoTicket,
   IamResource,
   IamRole,
@@ -26,6 +27,8 @@ import type {
   LoginConfig,
   LoginRequest,
   LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
   SetDefaultDomainRequest,
   SetDefaultDomainResponse,
   SwitchDomainRequest,
@@ -486,6 +489,29 @@ export async function logout(): Promise<void> {
     }
   } finally {
     clearAuthSession();
+  }
+}
+
+/** `POST /auth/register` — 注册即登录即入域；成功后直接建立客户会话（参考 login :446） */
+export async function register(payload: RegisterRequest, options?: LoginOptions): Promise<RegisterResponse> {
+  try {
+    const response = await api.post<RegisterResponse>("/auth/register", payload);
+    const registerResponse = unwrapApiResponse(response.data);
+    saveAuthSession({
+      username: payload.loginName,
+      accessToken: registerResponse.accessToken,
+      refreshToken: registerResponse.refreshToken,
+      role: "customer",
+      clientCode: resolveClientCode() ?? "ud-customer-web",
+      sid: null,
+      userId: registerResponse.accountId,
+      businessDomainId: payload.domainId ?? null,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60_000).toISOString(),
+      authenticatedAt: new Date().toISOString(),
+    }, options);
+    return registerResponse;
+  } catch (error) {
+    throw toError(error);
   }
 }
 
@@ -2606,6 +2632,38 @@ export async function withdrawCustomerMyTicket(
     const response = await api.post<{ id: number }>(
       `/domains/${domainId}/tickets/my/${ticketId}/withdraw`,
       payload,
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** `GET /domains/{domain_id}/tickets/my/{ticket_id}/satisfaction` — 未评价时返回 null */
+export async function fetchSatisfactionStatus(
+  domainId: number,
+  ticketId: number,
+): Promise<CustomerSatisfactionView | null> {
+  try {
+    const response = await api.get<CustomerSatisfactionView | null>(
+      `/domains/${domainId}/tickets/my/${ticketId}/satisfaction`,
+    );
+    return unwrapApiResponse(response.data) ?? null;
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** `POST /domains/{domain_id}/tickets/my/{ticket_id}/satisfaction` — 提交满意度评价（仅一次） */
+export async function submitSatisfaction(
+  domainId: number,
+  ticketId: number,
+  payload: { rating: number; comment?: string },
+): Promise<CustomerSatisfactionView> {
+  try {
+    const response = await api.post<CustomerSatisfactionView>(
+      `/domains/${domainId}/tickets/my/${ticketId}/satisfaction`,
+      { rating: payload.rating, comment: payload.comment?.trim() ?? "" },
     );
     return unwrapApiResponse(response.data);
   } catch (error) {

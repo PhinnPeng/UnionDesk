@@ -54,6 +54,23 @@ export type LoginResponse = {
   mustChangePassword?: boolean;
 };
 
+export type RegisterRequest = {
+  loginName: string;
+  password: string;
+  displayName?: string;
+  phone: string;
+  email?: string;
+  domainId?: number | null;
+  invitationCode?: string;
+  captchaToken?: string;
+};
+
+export type RegisterResponse = {
+  accessToken: string;
+  refreshToken: string;
+  accountId: number;
+};
+
 export type SetDefaultDomainRequest = {
   domainId: number;
 };
@@ -556,6 +573,14 @@ export type P0InboxPageResponse = {
   total: number;
   unread_count: number;
   list: P0InboxMessage[];
+};
+
+export type CustomerSatisfactionView = {
+  id: number;
+  rating: number;
+  comment: string | null;
+  status: string;
+  createdAt: string;
 };
 
 export type P0AdminTicketListItem = {

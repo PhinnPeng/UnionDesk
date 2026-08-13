@@ -3,13 +3,16 @@ import {
   fetchDomains,
   fetchP0InboxPage,
   fetchP0InboxUnreadCount,
+  fetchSatisfactionStatus,
   getCustomerMyTicketDetail,
   listCustomerDomainTicketTypes,
   listCustomerMyTickets,
   login,
   logout,
   markP0InboxMessageRead,
+  register,
   replyCustomerMyTicket,
+  submitSatisfaction,
   switchDomain,
   withdrawCustomerMyTicket,
   type CustomerTicketRow,
@@ -27,10 +30,11 @@ import {
   type CustomerPortalTicket,
   type CustomerPortalTicketStatus,
   type CustomerPortalTypeOption,
+  type CustomerRegisterPayload,
   type CustomerTicketCreatePayload,
 } from "./customer-portal";
 import { loadAuthSession } from "./storage";
-import type { LoginResponse, P0InboxMessage } from "./types";
+import type { CustomerSatisfactionView, LoginResponse, P0InboxMessage } from "./types";
 
 function mapStatus(status: string): CustomerPortalTicketStatus {
   const normalized = status.trim().toLowerCase();
@@ -137,6 +141,47 @@ export async function loginCustomerLive(payload: CustomerLoginPayload): Promise<
     riskLoginNotified: Boolean(response.riskLoginNotified),
     mustChangePassword: Boolean(response.mustChangePassword),
   };
+}
+
+/** 真实注册（注册即登录即入域）：调 register → 按返回会话恢复门户快照 → 刷新工单/类型 */
+export async function registerCustomerLive(payload: CustomerRegisterPayload): Promise<CustomerPortalSnapshot> {
+  const response = await register(
+    {
+      loginName: payload.loginName.trim(),
+      password: payload.password,
+      displayName: payload.displayName.trim(),
+      phone: payload.phone.trim(),
+      ...(payload.email?.trim() ? { email: payload.email.trim() } : {}),
+      ...(payload.domainId != null ? { domainId: payload.domainId } : {}),
+      ...(payload.invitationCode?.trim() ? { invitationCode: payload.invitationCode.trim() } : {}),
+    },
+    { skipPermissionSnapshot: true, persistMode: "local" },
+  );
+  const domains = await fetchDomains();
+  hydrateCustomerPortalFromLogin({
+    accessToken: response.accessToken,
+    refreshToken: response.refreshToken,
+    sid: "",
+    role: "customer",
+    clientCode: "ud-customer-web",
+    tokenType: "Bearer",
+    expiresInSeconds: 3600,
+    user: {
+      id: response.accountId,
+      username: payload.loginName.trim(),
+      mobile: payload.phone.trim(),
+      email: payload.email?.trim() || null,
+      roles: ["customer"],
+    },
+    accessibleDomains: domains,
+    defaultBusinessDomainId: payload.domainId ?? 0,
+    mustChangePassword: false,
+  });
+  if (payload.domainId) {
+    await refreshCustomerTicketsLive(payload.domainId).catch(() => undefined);
+    await refreshCustomerTicketTypesLive(payload.domainId).catch(() => undefined);
+  }
+  return getCustomerPortalSnapshot();
 }
 
 export async function logoutCustomerLive(): Promise<void> {
@@ -296,4 +341,27 @@ export async function fetchCustomerInboxLive(): Promise<{
 
 export async function markCustomerInboxReadLive(messageId: number): Promise<void> {
   await markP0InboxMessageRead(String(messageId));
+}
+
+/** 查询当前域工单的满意度评价状态（未评价返回 null） */
+export async function fetchSatisfactionLive(ticketId: number): Promise<CustomerSatisfactionView | null> {
+  const session = loadAuthSession();
+  const domainId = session?.businessDomainId;
+  if (domainId == null) {
+    throw new Error("请先选择业务域");
+  }
+  return fetchSatisfactionStatus(domainId, ticketId);
+}
+
+/** 提交当前域工单的满意度评价（后端保证仅一次） */
+export async function submitSatisfactionLive(
+  ticketId: number,
+  payload: { rating: number; comment?: string },
+): Promise<CustomerSatisfactionView> {
+  const session = loadAuthSession();
+  const domainId = session?.businessDomainId;
+  if (domainId == null) {
+    throw new Error("请先选择业务域");
+  }
+  return submitSatisfaction(domainId, ticketId, payload);
 }
