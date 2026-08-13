@@ -10,6 +10,18 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "../../components/Toast";
 import { formatDateTime } from "../../utils/date";
 
+/** 通知跳转解析：历史工单通知的 jumpUrl 为 API 路径（/api/v1/domains/...），转换为前端路由；/workspace 回首页 */
+function resolveJumpUrl(jumpUrl: string): string {
+	if (jumpUrl.startsWith("/workspace")) {
+		return "/home";
+	}
+	const ticketMatch = jumpUrl.match(/^\/api\/v1\/domains\/\d+\/tickets\/my\/(\d+)/);
+	if (ticketMatch) {
+		return `/tickets/${ticketMatch[1]}`;
+	}
+	return jumpUrl || "/home";
+}
+
 export default function InboxPage() {
 	const toast = useToast();
 	const navigate = useNavigate();
@@ -99,10 +111,7 @@ export default function InboxPage() {
 												if (!item.isRead) {
 													void handleMarkRead(item);
 												}
-												const jump = item.jumpUrl?.startsWith("/workspace")
-													? "/home"
-													: (item.jumpUrl || "/home");
-												navigate(jump);
+												navigate(resolveJumpUrl(item.jumpUrl || ""));
 											}}
 										>
 											查看

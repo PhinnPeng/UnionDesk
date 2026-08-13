@@ -28,5 +28,12 @@ public class NotificationEventListener {
                 event.customerId(),
                 event.actorUserId(),
                 event.newStatus());
+        if ("closed".equalsIgnoreCase(event.newStatus())) {
+            notificationCenterService.notifyTicketSatisfactionInvite(
+                    event.businessDomainId(),
+                    event.ticketId(),
+                    event.customerId(),
+                    event.actorUserId());
+        }
     }
 }

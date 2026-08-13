@@ -113,6 +113,27 @@ public class NotificationCenterService {
     }
 
     /**
+     * 工单关闭后发送满意度评价邀请（客户门户）。
+     * 注意：jumpUrl 使用前端路由（区别于历史工单通知的 API 路径）。
+     */
+    @Transactional
+    public NotificationDispatchResult notifyTicketSatisfactionInvite(
+            long businessDomainId,
+            long ticketId,
+            long recipientUserId,
+            long operatorUserId) {
+        return sendTicketNotification(
+                businessDomainId,
+                ticketId,
+                recipientUserId,
+                operatorUserId,
+                "ticket.satisfaction_invite",
+                "工单服务评价邀请",
+                "您的工单已关闭，欢迎对本次服务进行评价。",
+                "/tickets/%d".formatted(ticketId));
+    }
+
+    /**
      * 客户新登录 IP 风险提醒。无可用业务域时降级为仅审计（由调用方写 login_log），不写站内信。
      */
     @Transactional

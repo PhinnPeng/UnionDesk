@@ -1,8 +1,12 @@
 import {
+	fetchSatisfactionLive,
 	getCustomerTicketLive,
 	replyCustomerTicketLive,
+	submitSatisfactionLive,
+	trackEvent,
 	withdrawCustomerTicketLive,
 	type CustomerPortalTicket,
+	type CustomerSatisfactionView,
 } from "@uniondesk/shared";
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -11,6 +15,42 @@ import { IconBack } from "../../components/Icons";
 import { StatusTag } from "../../components/StatusTag";
 import { useToast } from "../../components/Toast";
 import { formatDateTime } from "../../utils/date";
+
+const STAR_ACTIVE_COLOR = "#f5a623";
+const STAR_INACTIVE_COLOR = "#d1d5db";
+
+type StarRatingProps = {
+	value: number;
+	onChange?: (value: number) => void;
+	readOnly?: boolean;
+};
+
+function StarRating({ value, onChange, readOnly }: StarRatingProps) {
+	return (
+		<div className="ud-row" style={{ gap: 4 }}>
+			{[1, 2, 3, 4, 5].map(star => (
+				<button
+					key={star}
+					type="button"
+					disabled={readOnly}
+					aria-label={`${star} 星`}
+					style={{
+						background: "none",
+						border: "none",
+						padding: "0 2px",
+						fontSize: 26,
+						lineHeight: 1,
+						cursor: readOnly ? "default" : "pointer",
+						color: star <= value ? STAR_ACTIVE_COLOR : STAR_INACTIVE_COLOR,
+					}}
+					onClick={() => onChange?.(star)}
+				>
+					★
+				</button>
+			))}
+		</div>
+	);
+}
 
 export default function TicketDetailPage() {
 	const toast = useToast();
@@ -22,6 +62,25 @@ export default function TicketDetailPage() {
 	const [loading, setLoading] = useState(true);
 	const [reply, setReply] = useState("");
 	const [submitting, setSubmitting] = useState(false);
+	const [satisfaction, setSatisfaction] = useState<CustomerSatisfactionView | null>(null);
+	const [rating, setRating] = useState(0);
+	const [comment, setComment] = useState("");
+	const [submittingSatisfaction, setSubmittingSatisfaction] = useState(false);
+
+	const loadSatisfaction = async (target: CustomerPortalTicket | null) => {
+		if (!target || (target.status !== "closed" && target.status !== "resolved")) {
+			setSatisfaction(null);
+			return;
+		}
+		try {
+			const result = await fetchSatisfactionLive(target.id);
+			setSatisfaction(result);
+			trackEvent("satisfaction.view", { ticketId: target.id });
+		}
+		catch (error) {
+			setSatisfaction(null);
+		}
+	};
 
 	const reload = async () => {
 		if (!Number.isFinite(ticketId)) {
@@ -34,6 +93,7 @@ export default function TicketDetailPage() {
 			const detail = await getCustomerTicketLive(ticketId);
 			setTicket(detail?.ticket ?? null);
 			setVersion(detail?.version ?? 0);
+			await loadSatisfaction(detail?.ticket ?? null);
 		}
 		catch (error) {
 			toast.error(error instanceof Error ? error.message : "加载失败");
@@ -96,6 +156,27 @@ export default function TicketDetailPage() {
 		}
 	};
 
+	const handleSubmitSatisfaction = async () => {
+		if (rating < 1) {
+			return;
+		}
+		setSubmittingSatisfaction(true);
+		try {
+			await submitSatisfactionLive(ticket.id, { rating, comment: comment.trim() });
+			trackEvent("satisfaction.submit", { ticketId: ticket.id, rating });
+			toast.success("感谢您的评价");
+			setRating(0);
+			setComment("");
+			await reload();
+		}
+		catch (error) {
+			toast.error(error instanceof Error ? error.message : "提交失败");
+		}
+		finally {
+			setSubmittingSatisfaction(false);
+		}
+	};
+
 	return (
 		<div className="ud-stack ud-stack--lg">
 			<div className="ud-row">
@@ -154,6 +235,50 @@ export default function TicketDetailPage() {
 									{submitting ? "发送中…" : "发送"}
 								</button>
 							</form>
+						)
+						: null}
+
+					{ticket.status === "closed" || ticket.status === "resolved"
+						? (
+							<section className="ud-glass ud-glass--lg" style={{ padding: 18 }}>
+								<h2 className="ud-section-title">服务评价</h2>
+								{satisfaction
+									? (
+										<div className="ud-stack" style={{ marginTop: 12, gap: 8 }}>
+											<div className="ud-row">
+												<StarRating value={satisfaction.rating} readOnly />
+												<span className="ud-muted" style={{ fontSize: 12 }}>
+													已评价 · {formatDateTime(satisfaction.createdAt)}
+												</span>
+											</div>
+											{satisfaction.comment
+												? <p className="ud-muted" style={{ margin: 0 }}>{satisfaction.comment}</p>
+												: null}
+										</div>
+									)
+									: (
+										<div className="ud-stack" style={{ marginTop: 12, gap: 10 }}>
+											<p className="ud-muted" style={{ margin: 0 }}>请为本次服务打分（1-5 星）：</p>
+											<StarRating value={rating} onChange={setRating} />
+											<textarea
+												className="ud-textarea"
+												placeholder="说说您的体验（选填）…"
+												value={comment}
+												onChange={event => setComment(event.target.value)}
+											/>
+											<div>
+												<button
+													type="button"
+													className="ud-btn ud-btn--primary"
+													disabled={submittingSatisfaction || rating < 1}
+													onClick={() => void handleSubmitSatisfaction()}
+												>
+													{submittingSatisfaction ? "提交中…" : "提交评价"}
+												</button>
+											</div>
+										</div>
+									)}
+							</section>
 						)
 						: null}
 				</div>
