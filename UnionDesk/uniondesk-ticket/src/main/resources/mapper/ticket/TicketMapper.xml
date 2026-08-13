@@ -28,6 +28,7 @@
         <result property="slaStatus" column="sla_status"/>
         <result property="slaPausedDuration" column="sla_paused_duration"/>
         <result property="slaPauseStartedAt" column="sla_pause_started_at"/>
+        <result property="breachActionJson" column="breach_action_json"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
         <result property="lastReplyAt" column="last_reply_at"/>
@@ -76,6 +77,19 @@
             t.sla_status,
             t.sla_paused_duration,
             t.sla_pause_started_at,
+            (
+                SELECT sr.breach_action_json
+                FROM sla_rule sr
+                WHERE sr.business_domain_id = t.business_domain_id
+                  AND (sr.ticket_type_id = t.ticket_type_id OR sr.ticket_type_id IS NULL)
+                  AND (sr.priority_level_id IS NULL OR EXISTS (
+                      SELECT 1
+                      FROM ticket_priority_level tpl
+                      WHERE tpl.id = sr.priority_level_id AND tpl.code = t.priority
+                  ))
+                ORDER BY sr.priority_level_id IS NOT NULL DESC, sr.ticket_type_id IS NOT NULL DESC, sr.id DESC
+                LIMIT 1
+            ) AS breach_action_json,
             t.created_at,
             t.updated_at,
             (

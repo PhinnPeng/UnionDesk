@@ -28,6 +28,7 @@ public class TicketDetailPo {
     private String slaStatus;
     private int slaPausedDuration;
     private LocalDateTime slaPauseStartedAt;
+    private String breachActionJson;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime lastReplyAt;
@@ -223,6 +224,14 @@ public class TicketDetailPo {
 
     public void setSlaPauseStartedAt(LocalDateTime slaPauseStartedAt) {
         this.slaPauseStartedAt = slaPauseStartedAt;
+    }
+
+    public String getBreachActionJson() {
+        return breachActionJson;
+    }
+
+    public void setBreachActionJson(String breachActionJson) {
+        this.breachActionJson = breachActionJson;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -124,7 +124,12 @@ public class TicketService {
     @Transactional
     public TicketSubmissionResult createCustomerTicket(UserContext context, long businessDomainId, CreateTicketCommand command) {
         requireCustomer(context);
-        ensureCustomerInDomain(context.userId(), businessDomainId);
+        return createTicketForCustomer(context, businessDomainId, context.userId(), command);
+    }
+
+    @Transactional
+    public TicketSubmissionResult createTicketForCustomer(UserContext context, long businessDomainId, long customerUserId, CreateTicketCommand command) {
+        ensureCustomerInDomain(customerUserId, businessDomainId);
         DomainRow domain = loadDomain(businessDomainId);
         String ticketNo = nextTicketNo(domain.id(), domain.code());
         PeeledFormValues peeled = peelSystemFormValues(command);
@@ -152,7 +157,7 @@ public class TicketService {
         TicketPo ticketPo = new TicketPo();
         ticketPo.setTicketNo(ticketNo);
         ticketPo.setBusinessDomainId(businessDomainId);
-        ticketPo.setCustomerId(context.userId());
+        ticketPo.setCustomerId(customerUserId);
         ticketPo.setTicketTypeId(content.ticketTypeId());
         ticketPo.setTitle(content.title());
         ticketPo.setDescription(content.description());
@@ -181,7 +186,7 @@ public class TicketService {
         }
 
         slaService.applyOnCreate(businessDomainId, ticketId, content.ticketTypeId());
-        notificationCenterService.notifyTicketCreated(businessDomainId, ticketId, context.userId(), context.userId());
+        notificationCenterService.notifyTicketCreated(businessDomainId, ticketId, customerUserId, context.userId());
 
         return new TicketSubmissionResult(ticketId, ticketNo);
     }
@@ -850,6 +855,7 @@ public class TicketService {
                 po.getSlaStatus(),
                 po.getSlaPausedDuration(),
                 po.getSlaPauseStartedAt(),
+                po.getBreachActionJson(),
                 po.getCreatedAt(),
                 po.getUpdatedAt(),
                 po.getLastReplyAt(),
@@ -1025,6 +1031,7 @@ public class TicketService {
             String slaStatus,
             int slaPausedDuration,
             LocalDateTime slaPauseStartedAt,
+            String breachActionJson,
             LocalDateTime createdAt,
             LocalDateTime updatedAt,
             LocalDateTime lastReplyAt,

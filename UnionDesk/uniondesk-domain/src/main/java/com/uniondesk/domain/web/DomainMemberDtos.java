@@ -62,4 +62,21 @@ public final class DomainMemberDtos {
     public record UpdateDomainMemberRolesRequest(
             @NotNull List<Long> role_ids) {
     }
+
+    // --- P1-2 跨域批量停用（design §5：TR-04 逐域部分成功） ---
+
+    public record BatchStatusRequest(
+            @NotEmpty List<Long> domain_ids,
+            @NotBlank String status) {
+    }
+
+    public record BatchDomainFailure(
+            long domain_id,
+            String reason) {
+    }
+
+    public record BatchStatusResult(
+            List<Long> success,
+            List<BatchDomainFailure> failed) {
+    }
 }

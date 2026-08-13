@@ -21,7 +21,7 @@ class PlatformDomainRoleControllerTests {
     @Test
     void listPlatformDomainRolesReturnsArray() throws Exception {
         MockMvc mockMvc = mockMvc();
-        when(domainRoleService.listRoles(1L)).thenReturn(List.of(new DomainRoleDtos.DomainRoleView(21L, 1L, "domain_admin", "业务域管理员", true)));
+        when(domainRoleService.listRoles(1L)).thenReturn(List.of(new DomainRoleDtos.DomainRoleView(21L, 1L, "domain_admin", "业务域管理员", true, null, null, null, null, null, null)));
 
         mockMvc.perform(get("/api/v1/admin/domains/1/platform-roles"))
                 .andExpect(status().isOk())

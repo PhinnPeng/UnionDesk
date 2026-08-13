@@ -353,6 +353,7 @@ class TicketWorkflowTests {
                 "tracking",
                 0,
                 null,
+                null,
                 LocalDateTime.parse("2026-05-03T07:00:00"),
                 LocalDateTime.parse("2026-05-03T07:00:00"),
                 null,

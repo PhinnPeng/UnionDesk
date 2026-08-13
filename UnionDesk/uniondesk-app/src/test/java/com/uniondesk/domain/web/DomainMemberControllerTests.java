@@ -153,6 +153,6 @@ class DomainMemberControllerTests {
                 null,
                 null,
                 now,
-                List.of(new DomainRoleDtos.DomainRoleView(21L, 1L, "domain_admin", "业务域管理员", true)));
+                List.of(new DomainRoleDtos.DomainRoleView(21L, 1L, "domain_admin", "业务域管理员", true, null, null, null, null, null, null)));
     }
 }

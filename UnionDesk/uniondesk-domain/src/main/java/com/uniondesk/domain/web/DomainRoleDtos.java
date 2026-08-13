@@ -14,7 +14,13 @@ public final class DomainRoleDtos {
             long business_domain_id,
             String code,
             String name,
-            boolean preset) {
+            boolean preset,
+            Long template_id,
+            Integer template_version,
+            List<String> locked_fields,
+            String template_name,
+            Integer template_latest_version,
+            String sync_mode) {
     }
 
     public record DomainRolePermissionView(

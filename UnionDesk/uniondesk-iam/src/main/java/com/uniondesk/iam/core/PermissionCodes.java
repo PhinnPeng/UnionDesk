@@ -71,6 +71,7 @@ public final class PermissionCodes {
     public static final String PLATFORM_USER_OFFBOARD_POOL_EXPORT = "platform.user.offboard_pool.export";
     public static final String PLATFORM_USER_OFFBOARD_POOL_BATCH_RESTORE = "platform.user.offboard_pool.batch_restore";
     public static final String PLATFORM_USER_DELETE = "platform.user.delete";
+    public static final String PLATFORM_USER_DOMAIN_BATCH_STATUS = "platform.user.domain_batch_status";
 
     public static final String PLATFORM_PERMISSION_MANAGE = "platform.permission.manage";
     public static final String PLATFORM_LOG_AUDIT_READ = "platform.log.audit.read";
@@ -213,7 +214,10 @@ public final class PermissionCodes {
     public static final String INBOX_READ = "inbox.read";
     public static final String INBOX_MARK_READ = "inbox.mark_read";
 
+    public static final String CONSULTATION_VIEW = "consultation.view";
     public static final String CONSULTATION_REPLY = "consultation.reply";
+    public static final String CONSULTATION_CONVERT = "consultation.convert";
+    public static final String CONSULTATION_CUSTOMER = "consultation.customer";
 
     public static final String PLATFORM_DASHBOARD_READ = "platform.dashboard.read";
 

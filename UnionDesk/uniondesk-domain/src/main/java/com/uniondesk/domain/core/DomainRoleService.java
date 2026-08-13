@@ -7,8 +7,10 @@ import com.uniondesk.common.event.DomainRoleChangedEvent;
 import com.uniondesk.common.event.UnionDeskEventPublisher;
 import com.uniondesk.domain.entity.DomainRolePo;
 import com.uniondesk.domain.entity.PermissionItemPo;
+import com.uniondesk.domain.entity.RoleTemplateDomainPo;
 import com.uniondesk.domain.entity.RoleTemplatePo;
 import com.uniondesk.domain.repository.DomainRoleRepository;
+import com.uniondesk.domain.repository.RoleTemplateRepository;
 import com.uniondesk.domain.web.DomainRoleDtos;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -27,16 +29,19 @@ public class DomainRoleService {
     private final DomainService domainService;
     private final UnionDeskEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
+    private final RoleTemplateRepository roleTemplateRepository;
 
     public DomainRoleService(
             DomainRoleRepository domainRoleRepository,
             DomainService domainService,
             UnionDeskEventPublisher eventPublisher,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            RoleTemplateRepository roleTemplateRepository) {
         this.domainRoleRepository = domainRoleRepository;
         this.domainService = domainService;
         this.eventPublisher = eventPublisher;
         this.objectMapper = objectMapper;
+        this.roleTemplateRepository = roleTemplateRepository;
     }
 
     public List<DomainRoleDtos.DomainRoleView> listRoles(long domainId) {
@@ -247,12 +252,49 @@ public class DomainRoleService {
     }
 
     private DomainRoleDtos.DomainRoleView toRoleView(DomainRolePo po) {
+        Long templateId = po.getTemplateId();
+        String templateName = null;
+        Integer templateLatestVersion = null;
+        String syncMode = null;
+        List<String> lockedFields = null;
+        if (templateId != null) {
+            RoleTemplatePo template = roleTemplateRepository.findById(templateId);
+            if (template != null) {
+                templateName = template.getName();
+                templateLatestVersion = template.getVersion() == null ? 1 : template.getVersion();
+            }
+            RoleTemplateDomainPo applied = roleTemplateRepository.findDomainByTemplateAndDomain(
+                    templateId, po.getBusinessDomainId());
+            if (applied != null) {
+                syncMode = applied.getSyncMode();
+            }
+            lockedFields = parseLockedFields(po.getLockedFields());
+        }
         return new DomainRoleDtos.DomainRoleView(
                 po.getId(),
                 po.getBusinessDomainId(),
                 po.getCode(),
                 po.getName(),
-                po.getPreset() != null && po.getPreset() == 1);
+                po.getPreset() != null && po.getPreset() == 1,
+                templateId,
+                po.getTemplateVersion(),
+                lockedFields,
+                templateName,
+                templateLatestVersion,
+                syncMode);
+    }
+
+    private List<String> parseLockedFields(String lockedFieldsJson) {
+        if (!StringUtils.hasText(lockedFieldsJson)) {
+            return List.of();
+        }
+        try {
+            List<String> fields = objectMapper.readValue(lockedFieldsJson, new TypeReference<List<String>>() { });
+            return fields == null ? List.of() : fields;
+        }
+        catch (Exception ex) {
+            return List.of();
+        }
     }
 
     private DomainRoleDtos.PermissionItemView toPermissionItemView(PermissionItemPo po) {

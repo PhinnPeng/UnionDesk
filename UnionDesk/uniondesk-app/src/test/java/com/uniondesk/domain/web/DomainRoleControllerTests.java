@@ -27,7 +27,7 @@ class DomainRoleControllerTests {
     @Test
     void listRolesReturnsArray() throws Exception {
         MockMvc mockMvc = mockMvc();
-        when(domainRoleService.listRoles(1L)).thenReturn(List.of(new DomainRoleDtos.DomainRoleView(21L, 1L, "domain_admin", "业务域管理员", true)));
+        when(domainRoleService.listRoles(1L)).thenReturn(List.of(new DomainRoleDtos.DomainRoleView(21L, 1L, "domain_admin", "业务域管理员", true, null, null, null, null, null, null)));
 
         mockMvc.perform(get("/api/v1/admin/domains/1/roles"))
                 .andExpect(status().isOk())
@@ -37,7 +37,7 @@ class DomainRoleControllerTests {
     @Test
     void createRoleReturnsView() throws Exception {
         MockMvc mockMvc = mockMvc();
-        when(domainRoleService.createRole(eq(1L), any())).thenReturn(new DomainRoleDtos.DomainRoleView(22L, 1L, "ops", "运营", false));
+        when(domainRoleService.createRole(eq(1L), any())).thenReturn(new DomainRoleDtos.DomainRoleView(22L, 1L, "ops", "运营", false, null, null, null, null, null, null));
 
         mockMvc.perform(post("/api/v1/admin/domains/1/roles")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -55,7 +55,7 @@ class DomainRoleControllerTests {
     @Test
     void updateRoleReturnsView() throws Exception {
         MockMvc mockMvc = mockMvc();
-        when(domainRoleService.updateRole(eq(1L), eq(22L), any())).thenReturn(new DomainRoleDtos.DomainRoleView(22L, 1L, "ops", "运营升级", false));
+        when(domainRoleService.updateRole(eq(1L), eq(22L), any())).thenReturn(new DomainRoleDtos.DomainRoleView(22L, 1L, "ops", "运营升级", false, null, null, null, null, null, null));
 
         mockMvc.perform(put("/api/v1/admin/domains/1/roles/22")
                         .contentType(MediaType.APPLICATION_JSON)

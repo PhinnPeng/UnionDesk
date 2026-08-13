@@ -8,6 +8,7 @@ public final class AuditActionCodes {
     public static final String PLATFORM_DOMAIN_DELETE = "platform.domain.delete";
     public static final String PLATFORM_ROLE_PERMISSIONS_UPDATE = "platform.role.permissions.update";
     public static final String PLATFORM_DOMAIN_MEMBER_UPDATE_STATUS = "platform.domain.member.update_status";
+    public static final String PLATFORM_USER_DOMAIN_BATCH_STATUS = "platform.user.domain_batch_status";
     public static final String DOMAIN_MEMBER_CREATE = "domain.member.create";
     public static final String DOMAIN_MEMBER_UPDATE_ROLES = "domain.member.update_roles";
     public static final String DOMAIN_MEMBER_REMOVE = "domain.member.remove";

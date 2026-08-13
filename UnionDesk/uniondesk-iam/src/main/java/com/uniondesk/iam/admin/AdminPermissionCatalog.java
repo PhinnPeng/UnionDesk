@@ -114,6 +114,7 @@ public final class AdminPermissionCatalog {
             new PermissionDefinition(PermissionCodes.PLATFORM_USER_OFFBOARD_POOL_EXPORT, "Export offboard pool", "platform", null, null),
             new PermissionDefinition(PermissionCodes.PLATFORM_USER_OFFBOARD_POOL_BATCH_RESTORE, "Batch restore offboard pool", "platform", null, null),
             new PermissionDefinition(PermissionCodes.PLATFORM_USER_DELETE, "Delete platform user", "platform", "DELETE", "/api/v1/admin/staff/*"),
+            new PermissionDefinition(PermissionCodes.PLATFORM_USER_DOMAIN_BATCH_STATUS, "Batch disable domain members", "platform", "POST", "/api/v1/admin/staff/*/domain-members/batch-status"),
             new PermissionDefinition(PermissionCodes.PLATFORM_PERMISSION_MANAGE, "Manage permissions", "platform", "PUT", "/api/v1/auth/login-config"),
             new PermissionDefinition(PermissionCodes.DOMAIN_READ, "View business domains", "domain", "GET", "/api/v1/domains/**"),
             new PermissionDefinition(PermissionCodes.PLATFORM_LOG_AUDIT_READ, "View platform audit logs", "platform", "GET", "/api/v1/admin/audit-logs"),

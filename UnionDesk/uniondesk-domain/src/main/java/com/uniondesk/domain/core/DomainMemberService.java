@@ -172,6 +172,34 @@ public class DomainMemberService {
         return getMember(domainId, memberId);
     }
 
+    /**
+     * P1-2 跨域批量停用的单域执行（design §5 TR-04 逐域事务）：由批量入口逐域调用，每域独立事务。
+     * 成员不存在或已是停用状态时不报错，由调用方按部分成功语义归入结果。
+     */
+    @Transactional
+    public void disableDomainMemberByStaffAccount(long staffAccountId, long domainId) {
+        requireDomain(domainId);
+        Long memberId = domainMemberRepository.findMemberIdByDomainAndStaff(domainId, staffAccountId);
+        if (memberId == null) {
+            throw new IllegalArgumentException("该员工未加入该业务域");
+        }
+        DomainMemberPo member = loadMember(domainId, memberId);
+        if ("disabled".equals(member.getStatus())) {
+            return;
+        }
+        List<String> roleCodes = domainMemberRepository.findRoleCodesByMemberId(memberId);
+        if (roleCodes.contains("domain_admin")) {
+            guardLastDomainAdmin(domainId, memberId);
+        }
+        if (roleCodes.contains("super_admin")) {
+            guardLastDomainSuperAdmin(domainId, memberId);
+        }
+        int updated = domainMemberRepository.updateMemberStatus("disabled", memberId, domainId);
+        if (updated == 0) {
+            throw new IllegalArgumentException("该员工在该业务域的成员记录不存在");
+        }
+    }
+
     @Transactional
     public DomainMemberDtos.DomainMemberView updateMemberRoles(long domainId, long memberId, DomainMemberDtos.UpdateDomainMemberRolesRequest request) {
         DomainMemberPo member = loadMember(domainId, memberId);
@@ -301,7 +329,13 @@ public class DomainMemberService {
                 po.getBusinessDomainId(),
                 po.getCode(),
                 po.getName(),
-                po.getPreset() != null && po.getPreset() == 1);
+                po.getPreset() != null && po.getPreset() == 1,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
     }
 
     private DomainMemberDtos.StaffCandidateView toStaffCandidateView(StaffCandidatePo po) {

@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.consultation.mapper.ConsultationMapper">
+
+    <resultMap id="ConsultationSessionPo" type="com.uniondesk.consultation.entity.ConsultationSessionPo">
+        <id property="id" column="id"/>
+        <result property="sessionNo" column="session_no"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="businessDomainName" column="business_domain_name"/>
+        <result property="customerId" column="customer_id"/>
+        <result property="sessionStatus" column="session_status"/>
+        <result property="assignedTo" column="assigned_to"/>
+        <result property="lastMessageAt" column="last_message_at"/>
+        <result property="closedAt" column="closed_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="messageCount" column="message_count"/>
+        <result property="linkedTicketNo" column="linked_ticket_no"/>
+    </resultMap>
+
+    <resultMap id="ConsultationMessagePo" type="com.uniondesk.consultation.entity.ConsultationMessagePo">
+        <id property="id" column="id"/>
+        <result property="consultationSessionId" column="consultation_session_id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="sessionNo" column="session_no"/>
+        <result property="seqNo" column="seq_no"/>
+        <result property="senderUserId" column="sender_user_id"/>
+        <result property="senderRole" column="sender_role"/>
+        <result property="messageType" column="message_type"/>
+        <result property="content" column="content"/>
+        <result property="payloadJson" column="payload_json"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <sql id="sessionSelectColumns">
+        SELECT
+            s.id,
+            s.session_no,
+            s.business_domain_id,
+            d.name AS business_domain_name,
+            s.customer_id,
+            s.session_status,
+            s.assigned_to,
+            s.last_message_at,
+            s.closed_at,
+            s.created_at,
+            s.updated_at,
+            COALESCE((
+                SELECT COUNT(*)
+                FROM consultation_message m
+                WHERE m.consultation_session_id = s.id
+            ), 0) AS message_count,
+            (
+                SELECT t.ticket_no
+                FROM consultation_ticket_link l
+                JOIN ticket t ON t.id = l.ticket_id
+                WHERE l.consultation_session_id = s.id
+                LIMIT 1
+            ) AS linked_ticket_no
+        FROM consultation_session s
+        JOIN business_domain d ON d.id = s.business_domain_id
+    </sql>
+
+    <select id="selectBySessionNoAndDomain" resultMap="ConsultationSessionPo">
+        <include refid="sessionSelectColumns"/>
+        WHERE s.session_no = #{sessionNo}
+          AND s.business_domain_id = #{domainId}
+        LIMIT 1
+    </select>
+
+    <select id="selectPageByDomain" resultMap="ConsultationSessionPo">
+        <include refid="sessionSelectColumns"/>
+        WHERE s.business_domain_id = #{domainId}
+        <if test="status != null and status != ''">
+            AND s.session_status = #{status}
+        </if>
+        ORDER BY s.updated_at DESC, s.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByDomain" resultType="long">
+        SELECT COUNT(1)
+        FROM consultation_session
+        WHERE business_domain_id = #{domainId}
+        <if test="status != null and status != ''">
+            AND session_status = #{status}
+        </if>
+    </select>
+
+    <select id="selectByCustomerId" resultMap="ConsultationSessionPo">
+        <include refid="sessionSelectColumns"/>
+        WHERE s.business_domain_id = #{domainId}
+          AND s.customer_id = #{customerId}
+        ORDER BY s.updated_at DESC, s.id DESC
+    </select>
+
+    <select id="nextSessionSequence" resultType="long">
+        SELECT COALESCE(MAX(CAST(SUBSTRING(session_no, 3) AS UNSIGNED)), 0) + 1
+        FROM consultation_session
+        WHERE session_no LIKE #{prefix}
+    </select>
+
+    <insert id="insertSession" parameterType="com.uniondesk.consultation.entity.ConsultationSessionPo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO consultation_session (
+            session_no, business_domain_id, customer_id, session_status,
+            assigned_to, last_message_at, closed_at
+        )
+        VALUES (
+            #{sessionNo}, #{businessDomainId}, #{customerId}, #{sessionStatus},
+            #{assignedTo}, #{lastMessageAt}, #{closedAt}
+        )
+    </insert>
+
+    <select id="selectMessagesBySession" resultMap="ConsultationMessagePo">
+        SELECT
+            m.id,
+            m.consultation_session_id,
+            m.business_domain_id,
+            s.session_no,
+            m.seq_no,
+            m.sender_user_id,
+            m.sender_role,
+            m.message_type,
+            m.content,
+            CAST(m.payload AS CHAR) AS payload_json,
+            m.created_at
+        FROM consultation_message m
+        JOIN consultation_session s ON s.id = m.consultation_session_id
+        WHERE m.consultation_session_id = #{sessionId}
+        ORDER BY m.seq_no
+    </select>
+
+    <select id="nextSeqNo" resultType="int">
+        SELECT COALESCE(MAX(seq_no), 0) + 1
+        FROM consultation_message
+        WHERE consultation_session_id = #{sessionId}
+    </select>
+
+    <insert id="insertMessage" parameterType="com.uniondesk.consultation.entity.ConsultationMessagePo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO consultation_message (
+            consultation_session_id, business_domain_id, seq_no, sender_user_id,
+            sender_role, message_type, content, payload
+        )
+        VALUES (
+            #{consultationSessionId}, #{businessDomainId}, #{seqNo}, #{senderUserId},
+            #{senderRole}, #{messageType}, #{content}, #{payloadJson}
+        )
+    </insert>
+
+    <update id="updateLastMessageAt">
+        UPDATE consultation_session
+        SET last_message_at = #{lastMessageAt}
+        WHERE id = #{sessionId}
+    </update>
+
+    <update id="updateAssignedToIfNull">
+        UPDATE consultation_session
+        SET assigned_to = #{assignedTo}
+        WHERE id = #{sessionId}
+          AND assigned_to IS NULL
+    </update>
+
+    <update id="closeSession">
+        UPDATE consultation_session
+        SET session_status = 'closed',
+            closed_at = #{closedAt}
+        WHERE id = #{sessionId}
+          AND session_status &lt;&gt; 'closed'
+    </update>
+
+    <select id="selectLinkedTicketNo" resultType="java.lang.String">
+        SELECT t.ticket_no
+        FROM consultation_ticket_link l
+        JOIN ticket t ON t.id = l.ticket_id
+        WHERE l.consultation_session_id = #{sessionId}
+        LIMIT 1
+    </select>
+
+    <insert id="insertTicketLink">
+        INSERT INTO consultation_ticket_link (
+            consultation_session_id, ticket_id, business_domain_id, converted_by
+        )
+        VALUES (
+            #{sessionId}, #{ticketId}, #{domainId}, #{convertedBy}
+        )
+    </insert>
+
+</mapper>
