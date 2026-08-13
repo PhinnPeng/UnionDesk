@@ -2,6 +2,18 @@ import { requestBackendJson } from "#src/api/backend";
 
 import type { PageResult } from "./audit";
 
+export type AdminTicketListQuery = {
+	page: number
+	page_size: number
+	status?: string
+	/** 按受理人（员工账号 ID）筛选 */
+	assignee?: number
+	priority?: string
+	keyword?: string
+	/** 只看分配给我的待办 */
+	assigned_to_me?: boolean
+}
+
 export interface TicketRow {
 	id: number
 	ticketNo: string
@@ -97,6 +109,25 @@ export interface MergeTicketCommand {
 
 function withDomainPath(domainId: number, ticketId: number, suffix = "") {
 	return `v1/admin/domains/${domainId}/tickets/${ticketId}${suffix}`;
+}
+
+function buildQuery(params: Record<string, unknown>) {
+	const query = new URLSearchParams();
+	for (const [key, value] of Object.entries(params)) {
+		if (value === undefined || value === null || value === "") {
+			continue;
+		}
+		query.set(key, String(value));
+	}
+	return query.toString();
+}
+
+export function fetchAdminDomainTicketsPage(
+	domainId: number,
+	params: AdminTicketListQuery,
+): Promise<PageResult<TicketRow>> {
+	const query = buildQuery(params as Record<string, unknown>);
+	return requestBackendJson<PageResult<TicketRow>>(`v1/admin/domains/${domainId}/tickets${query ? `?${query}` : ""}`);
 }
 
 export function fetchTicketDetail(domainId: number, ticketId: number): Promise<TicketDetailResult> {

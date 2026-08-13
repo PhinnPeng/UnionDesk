@@ -104,6 +104,13 @@ export type LoginConfig = {
   captchaHint?: string | null;
   sessionTtlSeconds: number;
   maxActiveSessionsPerUser: number;
+  passwordMinLength?: number;
+  passwordRequireMixed?: boolean;
+  loginFailLockEnabled?: boolean;
+  loginFailMaxAttempts?: number;
+  loginFailLockMinutes?: number;
+  ipWhitelistEnabled?: boolean;
+  ipWhitelist?: string | null;
   updatedAt?: string | null;
 };
 
@@ -163,6 +170,13 @@ export type UpdateLoginConfigRequest = {
   wechatHint?: string | null;
   sessionTtlSeconds?: number;
   maxActiveSessionsPerUser?: number;
+  passwordMinLength?: number;
+  passwordRequireMixed?: boolean;
+  loginFailLockEnabled?: boolean;
+  loginFailMaxAttempts?: number;
+  loginFailLockMinutes?: number;
+  ipWhitelistEnabled?: boolean;
+  ipWhitelist?: string | null;
 };
 
 export type SessionView = {
@@ -845,6 +859,24 @@ export type UpdateTicketStatusDefinitionBody = {
   name?: string;
   description?: string;
   category?: TicketStatusDefinitionCategory;
+};
+
+/** 业务域优先级级别（`GET /api/v1/admin/domains/{domainId}/priority-levels`） */
+export type DomainPriorityLevelView = {
+  id: string;
+  domain_id: string;
+  code: string;
+  name: string;
+  display_label?: string | null;
+  color?: string | null;
+  icon?: string | null;
+  sort_order: number;
+  is_default: boolean;
+};
+
+export type DomainPriorityLevelList = {
+  total: number;
+  items: DomainPriorityLevelView[];
 };
 
 export type TeamTemplateItem = {

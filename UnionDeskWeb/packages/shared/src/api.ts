@@ -65,6 +65,7 @@ import type {
   DomainRolePermissions,
   DomainMember,
   DomainStaffCandidate,
+  DomainPriorityLevelList,
   BlockedWord,
   BlockedWordBatchResult,
   CreateDomainTicketTemplateBody,
@@ -346,6 +347,13 @@ export const defaultLoginConfig: LoginConfig = {
   captchaHint: null,
   sessionTtlSeconds: 7 * 24 * 60 * 60,
   maxActiveSessionsPerUser: 10,
+  passwordMinLength: 8,
+  passwordRequireMixed: false,
+  loginFailLockEnabled: false,
+  loginFailMaxAttempts: 5,
+  loginFailLockMinutes: 30,
+  ipWhitelistEnabled: false,
+  ipWhitelist: "",
   updatedAt: null
 };
 
@@ -2105,6 +2113,14 @@ export async function deleteDomainTicketStatus(domainId: string, statusId: strin
   await api.delete(
     `/admin/domains/${encodeURIComponent(domainId)}/ticket-statuses/${encodeURIComponent(statusId)}`,
   );
+}
+
+/** `GET /api/v1/admin/domains/{domainId}/priority-levels` */
+export async function fetchDomainPriorityLevels(domainId: string): Promise<DomainPriorityLevelList> {
+  const response = await api.get<DomainPriorityLevelList>(
+    `/admin/domains/${encodeURIComponent(domainId)}/priority-levels`,
+  );
+  return unwrapApiResponse(response.data) ?? { total: 0, items: [] };
 }
 
 /** `GET /api/v1/platform/ticket-team-templates` */
