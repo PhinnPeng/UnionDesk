@@ -10,6 +10,7 @@ import type {
 	SetDefaultDomainResponse,
 	SwitchDomainRequest,
 	SwitchDomainResponse,
+	UpdateLoginConfigRequest,
 } from "@uniondesk/shared";
 
 import type { LoginInfo } from "#src/api/user/types";
@@ -28,10 +29,18 @@ export type {
 	SetDefaultDomainResponse,
 	SwitchDomainRequest,
 	SwitchDomainResponse,
+	UpdateLoginConfigRequest,
 };
 
 export function fetchLoginConfig(): Promise<LoginConfig> {
 	return requestBackendJson<LoginConfig>("v1/auth/login-config");
+}
+
+export function updateLoginConfig(payload: UpdateLoginConfigRequest): Promise<LoginConfig> {
+	return requestBackendJson<LoginConfig>("v1/auth/login-config", {
+		method: "PUT",
+		json: payload,
+	});
 }
 
 export function createCaptchaChallenge(): Promise<CaptchaChallengeResponse> {

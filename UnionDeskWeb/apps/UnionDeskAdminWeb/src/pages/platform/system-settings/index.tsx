@@ -1,13 +1,33 @@
+import { fetchLoginConfig, updateLoginConfig } from "#src/api/auth";
 import { fetchSystemConfig, updateSystemConfig } from "#src/api/platform/system-config";
 import { BasicContent } from "#src/components/basic-content";
 
-import { App, Button, Card, Form, Input, Select, Space, Typography } from "antd";
+import { App, Button, Card, Form, Input, InputNumber, Select, Space, Switch, Typography } from "antd";
 import { useEffect, useState } from "react";
+
+function splitIpList(value?: string | null): string[] {
+	if (!value) {
+		return [];
+	}
+	return value
+		.split(/[,，\n]/)
+		.map(item => item.trim())
+		.filter(Boolean);
+}
+
+function joinIpList(items?: string[]): string {
+	return (items ?? [])
+		.map(item => item.trim())
+		.filter(Boolean)
+		.join(",");
+}
 
 export default function PlatformSystemSettings() {
 	const { message } = App.useApp();
 	const [loading, setLoading] = useState(false);
+	const [securityLoading, setSecurityLoading] = useState(false);
 	const [form] = Form.useForm();
+	const [securityForm] = Form.useForm();
 
 	useEffect(() => {
 		let ignore = false;
@@ -41,6 +61,39 @@ export default function PlatformSystemSettings() {
 		};
 	}, [form, message]);
 
+	useEffect(() => {
+		let ignore = false;
+		void (async () => {
+			setSecurityLoading(true);
+			try {
+				const data = await fetchLoginConfig();
+				if (ignore) {
+					return;
+				}
+				securityForm.setFieldsValue({
+					passwordMinLength: data.passwordMinLength ?? 8,
+					passwordRequireMixed: data.passwordRequireMixed ?? false,
+					loginFailLockEnabled: data.loginFailLockEnabled ?? false,
+					loginFailMaxAttempts: data.loginFailMaxAttempts ?? 5,
+					loginFailLockMinutes: data.loginFailLockMinutes ?? 30,
+					ipWhitelistEnabled: data.ipWhitelistEnabled ?? false,
+					ipWhitelist: splitIpList(data.ipWhitelist).join("\n"),
+				});
+			}
+			catch (error) {
+				message.error(error instanceof Error ? error.message : "加载安全策略失败");
+			}
+			finally {
+				if (!ignore) {
+					setSecurityLoading(false);
+				}
+			}
+		})();
+		return () => {
+			ignore = true;
+		};
+	}, [securityForm, message]);
+
 	const onSave = async () => {
 		const values = await form.validateFields().catch(() => null);
 		if (!values) {
@@ -56,6 +109,28 @@ export default function PlatformSystemSettings() {
 				})),
 			});
 			message.success("系统设置已保存");
+		}
+		catch (error) {
+			message.error(error instanceof Error ? error.message : "保存失败");
+		}
+	};
+
+	const onSaveSecurityPolicy = async () => {
+		const values = await securityForm.validateFields().catch(() => null);
+		if (!values) {
+			return;
+		}
+		try {
+			await updateLoginConfig({
+				passwordMinLength: values.passwordMinLength,
+				passwordRequireMixed: values.passwordRequireMixed,
+				loginFailLockEnabled: values.loginFailLockEnabled,
+				loginFailMaxAttempts: values.loginFailMaxAttempts,
+				loginFailLockMinutes: values.loginFailLockMinutes,
+				ipWhitelistEnabled: values.ipWhitelistEnabled,
+				ipWhitelist: joinIpList(splitIpList(values.ipWhitelist)),
+			});
+			message.success("安全策略已保存");
 		}
 		catch (error) {
 			message.error(error instanceof Error ? error.message : "保存失败");
@@ -114,16 +189,70 @@ export default function PlatformSystemSettings() {
 								</Space>
 							)}
 						</Form.List>
-					</Form>
 
+						<div className="flex justify-end">
+							<Button type="primary" loading={loading} onClick={() => void onSave()}>
+								保存设置
+							</Button>
+						</div>
+					</Form>
+				</Space>
+			</Card>
+
+			<Card
+				title="安全策略"
+				bordered={false}
+				className="mt-4"
+				extra={<Typography.Text type="secondary">密码强度、登录失败锁定与 IP 白名单统一维护</Typography.Text>}
+			>
+				<Form form={securityForm} layout="vertical" disabled={securityLoading}>
+					<div className="grid gap-4 lg:grid-cols-2">
+						<Form.Item
+							label="密码最小长度（位）"
+							name="passwordMinLength"
+							rules={[{ required: true, message: "请输入密码最小长度" }]}
+						>
+							<InputNumber min={1} max={64} className="w-full" placeholder="默认 8" />
+						</Form.Item>
+						<Form.Item label="密码需同时包含字母和数字" name="passwordRequireMixed" valuePropName="checked">
+							<Switch />
+						</Form.Item>
+						<Form.Item label="启用连续失败锁定" name="loginFailLockEnabled" valuePropName="checked">
+							<Switch />
+						</Form.Item>
+						<Form.Item
+							label="失败次数阈值"
+							name="loginFailMaxAttempts"
+							rules={[{ required: true, message: "请输入失败次数阈值" }]}
+						>
+							<InputNumber min={1} max={100} className="w-full" placeholder="默认 5" />
+						</Form.Item>
+						<Form.Item
+							label="锁定时长（分钟）"
+							name="loginFailLockMinutes"
+							rules={[{ required: true, message: "请输入锁定分钟数" }]}
+						>
+							<InputNumber min={1} max={1440} className="w-full" placeholder="默认 30" />
+						</Form.Item>
+						<Form.Item
+							label="启用 IP 白名单"
+							name="ipWhitelistEnabled"
+							valuePropName="checked"
+							tooltip="开启后仅允许列表中的 IP 登录管理端"
+						>
+							<Switch />
+						</Form.Item>
+					</div>
+					<Form.Item label="白名单 IP 列表（每行一个，或逗号分隔）" name="ipWhitelist">
+						<Input.TextArea rows={3} placeholder={"例如：\n10.0.0.1\n10.0.0.2"} />
+					</Form.Item>
 					<div className="flex justify-end">
-						<Button type="primary" loading={loading} onClick={() => void onSave()}>
-							保存设置
+						<Button type="primary" loading={securityLoading} onClick={() => void onSaveSecurityPolicy()}>
+							保存安全策略
 						</Button>
 					</div>
-				</Space>
+				</Form>
 			</Card>
 		</BasicContent>
 	);
 }
-
