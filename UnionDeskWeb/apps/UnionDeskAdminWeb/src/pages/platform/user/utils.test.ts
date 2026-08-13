@@ -45,9 +45,9 @@ const users: IamUser[] = [
 describe("platform user utils", () => {
 	it("keeps the action order and permission codes", () => {
 		expect(PLATFORM_USER_TOOLBAR_ACTIONS.map(item => item.label)).toEqual(["新增用户", "批量离职", "导入导出"]);
-		expect(PLATFORM_USER_ROW_ACTIONS.map(item => item.label)).toEqual(["编辑", "离职", "重置密码"]);
+		expect(PLATFORM_USER_ROW_ACTIONS.map(item => item.label)).toEqual(["编辑", "离职", "重置密码", "跨域批量停用"]);
 		expect(PLATFORM_USER_TOOLBAR_ACTIONS.map(item => item.auth)).toEqual(["platform.user.create", "platform.user.disable", "platform.user.import"]);
-		expect(PLATFORM_USER_ROW_ACTIONS.map(item => item.auth)).toEqual(["platform.user.update", "platform.user.disable", "platform.user.reset_password"]);
+		expect(PLATFORM_USER_ROW_ACTIONS.map(item => item.auth)).toEqual(["platform.user.update", "platform.user.disable", "platform.user.reset_password", "platform.user.domain_batch_status"]);
 	});
 
 	it("maps user rows with department and role labels", () => {

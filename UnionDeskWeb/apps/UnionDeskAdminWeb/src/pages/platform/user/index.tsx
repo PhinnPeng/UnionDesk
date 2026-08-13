@@ -24,6 +24,7 @@ import { filterAssignablePlatformRoles } from "#src/pages/system/role/utils";
 
 import {
 	ApartmentOutlined,
+	BlockOutlined,
 	DeleteOutlined,
 	EditOutlined,
 	EllipsisOutlined,
@@ -33,9 +34,11 @@ import {
 	UserDeleteOutlined,
 } from "@ant-design/icons";
 import { App, Button, Card, Col, Dropdown, Modal, Row, Space, Table, Tag, Tooltip, Typography } from "antd";
+import type { MenuProps } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { BatchDisableModal } from "./components/batch-disable-modal";
 import { DeptTreeBlock } from "./components/dept-tree-block";
 import { Detail } from "./components/detail";
 import { ResetPasswordModal } from "./components/reset-password-modal";
@@ -103,6 +106,7 @@ export default function PlatformUser() {
 	const navigate = useNavigate();
 	const { hasPermission } = useAuth();
 	const canReadOffboardPool = hasPermission("platform.user.offboard_pool.read");
+	const canBatchDisable = hasPermission(PLATFORM_USER_ROW_ACTIONS[3].auth);
 
 	const [users, setUsers] = useState<IamUser[]>([]);
 	const [offboardUsers, setOffboardUsers] = useState<IamUser[]>([]);
@@ -116,6 +120,7 @@ export default function PlatformUser() {
 	const [detailMode, setDetailMode] = useState<"create" | "edit">("create");
 	const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 	const [resetPasswordUserId, setResetPasswordUserId] = useState<number | null>(null);
+	const [batchDisableUserId, setBatchDisableUserId] = useState<number | null>(null);
 
 	const reloadUsers = useCallback(async () => {
 		setLoading(true);
@@ -240,6 +245,29 @@ export default function PlatformUser() {
 		setResetPasswordUserId(null);
 	};
 
+	const handleOpenBatchDisable = (userId: number) => {
+		setBatchDisableUserId(userId);
+	};
+
+	const moreActionItems = useMemo<NonNullable<MenuProps["items"]>>(() => {
+		const items: NonNullable<MenuProps["items"]> = [];
+		if (hasPermission(PLATFORM_USER_ROW_ACTIONS[2].auth)) {
+			items.push({
+				key: PLATFORM_USER_ROW_ACTIONS[2].key,
+				label: PLATFORM_USER_ROW_ACTIONS[2].label,
+				icon: <KeyOutlined />,
+			});
+		}
+		if (canBatchDisable) {
+			items.push({
+				key: PLATFORM_USER_ROW_ACTIONS[3].key,
+				label: PLATFORM_USER_ROW_ACTIONS[3].label,
+				icon: <BlockOutlined />,
+			});
+		}
+		return items;
+	}, [canBatchDisable, hasPermission]);
+
 	const handleImportExport = () => {
 		navigate("/platform/import-export");
 	};
@@ -353,27 +381,26 @@ export default function PlatformUser() {
 							</Tooltip>
 						</AuthGuarded>
 					)}
-					<AuthGuarded auth={PLATFORM_USER_ROW_ACTIONS[2].auth}>
-						<Dropdown
-							trigger={["click"]}
-							menu={{
-								items: [{
-									key: PLATFORM_USER_ROW_ACTIONS[2].key,
-									label: PLATFORM_USER_ROW_ACTIONS[2].label,
-									icon: <KeyOutlined />,
-								}],
-								onClick: ({ key }) => {
-									if (key === PLATFORM_USER_ROW_ACTIONS[2].key) {
-										handleOpenResetPassword(record.id);
-									}
-								},
-							}}
-						>
-							<Tooltip title="更多">
-								<Button type="link" size="small" icon={<EllipsisOutlined />} />
-							</Tooltip>
-						</Dropdown>
-					</AuthGuarded>
+						{moreActionItems.length > 0 && (
+							<Dropdown
+								trigger={["click"]}
+								menu={{
+									items: moreActionItems,
+									onClick: ({ key }) => {
+										if (key === PLATFORM_USER_ROW_ACTIONS[2].key) {
+											handleOpenResetPassword(record.id);
+										}
+										else if (key === PLATFORM_USER_ROW_ACTIONS[3].key) {
+											handleOpenBatchDisable(record.id);
+										}
+									},
+								}}
+							>
+								<Tooltip title="更多">
+									<Button type="link" size="small" icon={<EllipsisOutlined />} />
+								</Tooltip>
+							</Dropdown>
+						)}
 				</Space>
 			),
 		},
@@ -482,6 +509,12 @@ export default function PlatformUser() {
 				onSuccess={user => {
 					syncUsers([user]);
 				}}
+			/>
+
+			<BatchDisableModal
+				open={batchDisableUserId != null}
+				user={batchDisableUserId == null ? null : userByIdMap.get(batchDisableUserId) ?? null}
+				onClose={() => setBatchDisableUserId(null)}
 			/>
 		</BasicContent>
 	);

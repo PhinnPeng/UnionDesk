@@ -23,6 +23,8 @@ import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 
+import { describeSlaDeadline, parseBreachActionHints, slaDeadlineToneClass, slaStatusMeta } from "./sla-display";
+
 type ReplyPreset = {
 	label: string
 	value: string
@@ -38,17 +40,18 @@ async function uploadTicketAttachment(domainId: number, file: File) {
 	return uploadAttachment(domainId, file, "ticket");
 }
 
-function getSlaLabel(ticket: TicketDetailResult["ticket"]) {
-	if (!ticket.slaStatus) {
-		return "-";
-	}
-	const colors: Record<string, string> = {
-		tracking: "blue",
-		breached: "red",
-		stopped: "default",
-		resolved: "green",
-	};
-	return <Tag color={colors[ticket.slaStatus] ?? "blue"}>{ticket.slaStatus}</Tag>;
+function SlaDeadlineDisplay({ deadline, completedAt, completedLabel }: {
+	deadline?: string | null
+	completedAt?: string | null
+	completedLabel: string
+}) {
+	const state = describeSlaDeadline(deadline, completedAt, completedLabel);
+	return (
+		<>
+			<span className={slaDeadlineToneClass[state.tone]}>{state.text}</span>
+			{deadline ? <div className="text-xs text-slate-400">{formatTime(deadline)}</div> : null}
+		</>
+	);
 }
 
 function formatTime(value?: string | null) {
@@ -311,6 +314,7 @@ export default function DomainTicketQueueDetailPage() {
 	};
 
 	const ticketPriority = detail ? priorityMap[detail.ticket.priority] : undefined;
+	const breachHints = detail ? parseBreachActionHints(detail.ticket.breachActionJson) : [];
 
 	return (
 		<BasicContent>
@@ -382,9 +386,32 @@ export default function DomainTicketQueueDetailPage() {
 												{statusMap[detail.ticket.status]?.name ?? detail.ticket.status}
 											</Tag>
 										</Descriptions.Item>
-										<Descriptions.Item label="SLA 状态">{getSlaLabel(detail.ticket)}</Descriptions.Item>
-										<Descriptions.Item label="SLA 首响截止">{formatTime(detail.ticket.slaFirstResponseDeadline)}</Descriptions.Item>
-										<Descriptions.Item label="SLA 解决截止">{formatTime(detail.ticket.slaResolutionDeadline)}</Descriptions.Item>
+										<Descriptions.Item label="SLA 状态">
+											<Tag color={slaStatusMeta(detail.ticket.slaStatus).color}>
+												{slaStatusMeta(detail.ticket.slaStatus).text}
+											</Tag>
+										</Descriptions.Item>
+										<Descriptions.Item label="SLA 首响">
+											<SlaDeadlineDisplay
+												deadline={detail.ticket.slaFirstResponseDeadline}
+												completedAt={detail.ticket.slaFirstRespondedAt}
+												completedLabel="已响应"
+											/>
+										</Descriptions.Item>
+										<Descriptions.Item label="SLA 解决">
+											<SlaDeadlineDisplay
+												deadline={detail.ticket.slaResolutionDeadline}
+												completedAt={detail.ticket.slaResolvedAt}
+												completedLabel="已解决"
+											/>
+										</Descriptions.Item>
+										{breachHints.length > 0 ? (
+											<Descriptions.Item label="SLA 超时动作">
+												{breachHints.map(hint => (
+													<Tag key={hint} color="warning">{hint}</Tag>
+												))}
+											</Descriptions.Item>
+										) : null}
 										<Descriptions.Item label="最后回复">{formatTime(detail.ticket.lastReplyAt)}</Descriptions.Item>
 										<Descriptions.Item label="创建时间">{formatTime(detail.ticket.createdAt)}</Descriptions.Item>
 										<Descriptions.Item label="更新时间">{formatTime(detail.ticket.updatedAt)}</Descriptions.Item>

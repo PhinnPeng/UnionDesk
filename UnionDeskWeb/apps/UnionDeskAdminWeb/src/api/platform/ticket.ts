@@ -39,6 +39,7 @@ export interface TicketRow {
 	slaStatus?: string | null
 	slaPausedDuration?: number
 	slaPauseStartedAt?: string | null
+	breachActionJson?: string | null
 	createdAt?: string | null
 	updatedAt?: string | null
 	lastReplyAt?: string | null

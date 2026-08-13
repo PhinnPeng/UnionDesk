@@ -63,6 +63,11 @@ export const PLATFORM_USER_ROW_ACTIONS = [
 		label: "重置密码",
 		auth: "platform.user.reset_password",
 	},
+	{
+		key: "batchDisable",
+		label: "跨域批量停用",
+		auth: "platform.user.domain_batch_status",
+	},
 ] as const;
 
 export function resolvePlatformUserStatus(user: IamUser): PlatformUserStatus {

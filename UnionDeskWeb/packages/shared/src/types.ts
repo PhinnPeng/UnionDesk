@@ -570,7 +570,8 @@ export type P0StepUpResponse = {
 export const P0_STEP_UP_OPERATION = {
   DELETE_BUSINESS_DOMAIN: "business_domain.delete",
   PLATFORM_ROLES_ASSIGN: "staff.platform_roles",
-  DOMAIN_SUPER_ADMIN_GRANT: "domain.super_admin.grant"
+  DOMAIN_SUPER_ADMIN_GRANT: "domain.super_admin.grant",
+  STAFF_DOMAIN_BATCH_STATUS: "staff.domain_batch_status"
 } as const;
 
 export type P0InboxMessage = {
@@ -634,6 +635,18 @@ export type DomainRole = {
   code: string;
   name: string;
   preset: boolean;
+  /** 模板来源（模板下发实例时非空） */
+  template_id?: string | null;
+  /** 实例下发时的模板版本（漂移对比基准） */
+  template_version?: number | null;
+  /** 锁定字段列表（继承模板，域端不可修改） */
+  locked_fields?: string[] | null;
+  /** 来源模板名称 */
+  template_name?: string | null;
+  /** 模板当前版本 */
+  template_latest_version?: number | null;
+  /** 下发同步模式（immediate/manual），role_template_domain.sync_mode */
+  sync_mode?: string | null;
 };
 
 export type DomainPermissionItem = {

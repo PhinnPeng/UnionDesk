@@ -1451,12 +1451,19 @@ export async function resetDomainCustomerPassword(
 }
 
 function normalizeDomainRole(raw: Record<string, unknown>): DomainRole {
+  const lockedRaw = raw.locked_fields;
   return {
     id: String(raw.id ?? ""),
     business_domain_id: String(raw.business_domain_id ?? raw.businessDomainId ?? ""),
     code: String(raw.code ?? ""),
     name: String(raw.name ?? ""),
     preset: Boolean(raw.preset),
+    template_id: raw.template_id != null ? String(raw.template_id) : null,
+    template_version: raw.template_version != null ? Number(raw.template_version) : null,
+    locked_fields: Array.isArray(lockedRaw) ? lockedRaw.map(item => String(item)) : null,
+    template_name: raw.template_name != null ? String(raw.template_name) : null,
+    template_latest_version: raw.template_latest_version != null ? Number(raw.template_latest_version) : null,
+    sync_mode: raw.sync_mode != null ? String(raw.sync_mode) : null,
   };
 }
 
@@ -2525,6 +2532,144 @@ export function sendConsultationMessage(payload: SendConsultationMessagePayload)
 }
 
 export { clearAuthSession, saveTicketMeta };
+
+// --- 在线咨询（生产端点，后端 uniondesk-ticket ConsultationRuntimeController）---
+
+export type ConsultationSessionRow = {
+  id: number;
+  sessionNo: string;
+  businessDomainId: number;
+  businessDomainName: string;
+  customerId: number;
+  sessionStatus: string;
+  assignedTo?: number | null;
+  linkedTicketNo?: string | null;
+  lastMessageAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+};
+
+export type ConsultationMessageRow = {
+  id: number;
+  sessionNo: string;
+  seqNo: number;
+  businessDomainId: number;
+  senderRole: string;
+  messageType: string;
+  content: string;
+  payloadJson?: string | null;
+  createdAt: string;
+};
+
+export type ConsultationConvertResult = {
+  session: ConsultationSessionRow;
+  ticketId: number;
+  ticketNo: string;
+};
+
+/** 客户发起咨询：`POST /api/v1/domains/{domain_id}/consultations` */
+export async function createCustomerConsultation(domainId: number, content: string): Promise<ConsultationSessionRow> {
+  try {
+    const response = await api.post<ConsultationSessionRow>(`/domains/${domainId}/consultations`, { content });
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客户我的咨询会话列表：`GET /api/v1/domains/{domain_id}/consultations/my` */
+export async function listCustomerMyConsultations(domainId: number): Promise<ConsultationSessionRow[]> {
+  try {
+    const response = await api.get<ConsultationSessionRow[]>(`/domains/${domainId}/consultations/my`);
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客户查看我的会话消息：`GET /api/v1/domains/{domain_id}/consultations/my/{session_no}/messages` */
+export async function getMyConsultationMessages(domainId: number, sessionNo: string): Promise<ConsultationMessageRow[]> {
+  try {
+    const response = await api.get<ConsultationMessageRow[]>(
+      `/domains/${domainId}/consultations/my/${encodeURIComponent(sessionNo)}/messages`,
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客户在我的会话中发送消息：`POST /api/v1/domains/{domain_id}/consultations/my/{session_no}/messages` */
+export async function replyCustomerConsultation(domainId: number, sessionNo: string, content: string): Promise<ConsultationMessageRow> {
+  try {
+    const response = await api.post<ConsultationMessageRow>(
+      `/domains/${domainId}/consultations/my/${encodeURIComponent(sessionNo)}/messages`,
+      { content },
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客服会话列表：`GET /api/v1/admin/domains/{domain_id}/consultations` */
+export async function listAdminConsultations(
+  domainId: number,
+  options?: { page?: number; pageSize?: number; status?: string },
+): Promise<P0PageResult<ConsultationSessionRow>> {
+  try {
+    const response = await api.get<P0PageResult<ConsultationSessionRow>>(
+      `/admin/domains/${domainId}/consultations`,
+      { params: { page: options?.page ?? 1, page_size: options?.pageSize ?? 20, status: options?.status } },
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客服查看会话消息：`GET /api/v1/admin/domains/{domain_id}/consultations/{session_no}/messages` */
+export async function getAdminConsultationMessages(domainId: number, sessionNo: string): Promise<ConsultationMessageRow[]> {
+  try {
+    const response = await api.get<ConsultationMessageRow[]>(
+      `/admin/domains/${domainId}/consultations/${encodeURIComponent(sessionNo)}/messages`,
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客服回复会话：`POST /api/v1/admin/domains/{domain_id}/consultations/{session_no}/messages` */
+export async function replyAdminConsultation(domainId: number, sessionNo: string, content: string): Promise<ConsultationMessageRow> {
+  try {
+    const response = await api.post<ConsultationMessageRow>(
+      `/admin/domains/${domainId}/consultations/${encodeURIComponent(sessionNo)}/messages`,
+      { content },
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客服转工单：`POST /api/v1/admin/domains/{domain_id}/consultations/{session_no}/ticket` */
+export async function convertConsultationToTicket(
+  domainId: number,
+  sessionNo: string,
+  payload?: { ticketTypeId?: number; title?: string; description?: string; priority?: string },
+): Promise<ConsultationConvertResult> {
+  try {
+    const response = await api.post<ConsultationConvertResult>(
+      `/admin/domains/${domainId}/consultations/${encodeURIComponent(sessionNo)}/ticket`,
+      payload ?? {},
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
 
 // --- Customer portal (live) ticket APIs ---
 

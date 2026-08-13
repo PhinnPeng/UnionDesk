@@ -126,6 +126,34 @@ export async function fetchRestorePlatformUser(id: number): Promise<IamUser> {
 	return toIamUser(updated);
 }
 
+/** 跨域批量停用单域结果（TR-04 部分成功） */
+export interface DomainBatchFailure {
+	domain_id: number
+	reason: string
+}
+
+/** 跨域批量停用结果 */
+export interface DomainBatchStatusResult {
+	success: number[]
+	failed: DomainBatchFailure[]
+}
+
+/** 跨域批量停用：`POST v1/admin/staff/{staffId}/domain-members/batch-status`（需 step-up 令牌） */
+export async function batchDisableDomainMembers(
+	staffId: number,
+	domainIds: number[],
+	stepUpToken: string,
+): Promise<DomainBatchStatusResult> {
+	return requestBackendJson<DomainBatchStatusResult>(`v1/admin/staff/${staffId}/domain-members/batch-status`, {
+		method: "POST",
+		json: {
+			domain_ids: domainIds,
+			status: "disabled",
+		},
+		headers: { "X-UD-Step-Up-Token": stepUpToken },
+	});
+}
+
 export interface AdminPermissionCodeView {
 	code: string
 	name: string
@@ -134,7 +162,8 @@ export interface AdminPermissionCodeView {
 	pathPattern: string
 }
 
-export function fetchAdminPermissionCodes(scope?: string): Promise<AdminPermissionCodeView[]> {
+export async function fetchAdminPermissionCodes(scope?: string): Promise<AdminPermissionCodeView[]> {
 	const query = scope ? `?scope=${encodeURIComponent(scope)}` : "";
-	return requestBackendJson<AdminPermissionCodeView[]>(`v1/iam/admin-permission-codes${query}`);
+	const result = await requestBackendJson<{ total: number; items: AdminPermissionCodeView[] }>(`v1/iam/admin-permission-codes${query}`);
+	return (result?.items ?? []).filter((item): item is AdminPermissionCodeView => Boolean(item));
 }

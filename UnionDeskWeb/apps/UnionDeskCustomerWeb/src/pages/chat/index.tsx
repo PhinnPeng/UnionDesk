@@ -1,15 +1,279 @@
-import { Link } from "react-router-dom";
+import {
+	createCustomerConsultation,
+	getMyConsultationMessages,
+	listCustomerMyConsultations,
+	replyCustomerConsultation,
+	toErrorMessage,
+	useCustomerPortal,
+	type ConsultationMessageRow,
+	type ConsultationSessionRow,
+} from "@uniondesk/shared";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+
+import { useToast } from "../../components/Toast";
+import { formatDateTime } from "../../utils/date";
+
+const POLL_INTERVAL_MS = 3000;
+
+function statusLabel(status: string): string {
+	if (status === "closed") {
+		return "已关闭";
+	}
+	return "进行中";
+}
+
+function sessionPreview(session: ConsultationSessionRow): string {
+	if (session.linkedTicketNo) {
+		return `已转工单 ${session.linkedTicketNo}`;
+	}
+	return `${statusLabel(session.sessionStatus)} · ${session.messageCount} 条消息`;
+}
 
 export default function ChatPage() {
+	const portal = useCustomerPortal();
+	const toast = useToast();
+	const domainId = portal.activeDomain?.id ?? 0;
+
+	const [sessions, setSessions] = useState<ConsultationSessionRow[]>([]);
+	const [activeSessionNo, setActiveSessionNo] = useState<string | null>(null);
+	const [messages, setMessages] = useState<ConsultationMessageRow[]>([]);
+	const [draft, setDraft] = useState("");
+	const [sending, setSending] = useState(false);
+	const [createOpen, setCreateOpen] = useState(false);
+	const [createDraft, setCreateDraft] = useState("");
+	const [creating, setCreating] = useState(false);
+	const messageEndRef = useRef<HTMLDivElement | null>(null);
+
+	const activeSession = sessions.find(item => item.sessionNo === activeSessionNo) ?? null;
+
+	const loadSessions = useCallback(async () => {
+		if (!domainId) {
+			return;
+		}
+		try {
+			const rows = await listCustomerMyConsultations(domainId);
+			setSessions(rows);
+			setActiveSessionNo(prev => {
+				if (prev && rows.some(item => item.sessionNo === prev)) {
+					return prev;
+				}
+				return rows[0]?.sessionNo ?? null;
+			});
+		}
+		catch (error) {
+			toast.error(toErrorMessage(error));
+		}
+	}, [domainId, toast]);
+
+	const loadMessages = useCallback(async (sessionNo: string) => {
+		if (!domainId) {
+			return;
+		}
+		try {
+			const rows = await getMyConsultationMessages(domainId, sessionNo);
+			setMessages(rows);
+		}
+		catch (error) {
+			toast.error(toErrorMessage(error));
+		}
+	}, [domainId, toast]);
+
+	useEffect(() => {
+		void loadSessions();
+	}, [loadSessions]);
+
+	useEffect(() => {
+		if (!activeSessionNo) {
+			setMessages([]);
+			return;
+		}
+		void loadMessages(activeSessionNo);
+		const timer = window.setInterval(() => {
+			void loadMessages(activeSessionNo);
+		}, POLL_INTERVAL_MS);
+		return () => window.clearInterval(timer);
+	}, [activeSessionNo, loadMessages]);
+
+	useEffect(() => {
+		messageEndRef.current?.scrollIntoView({ block: "end" });
+	}, [messages]);
+
+	const handleSend = async (event: FormEvent) => {
+		event.preventDefault();
+		const content = draft.trim();
+		if (!content || !activeSessionNo || !domainId) {
+			return;
+		}
+		setSending(true);
+		try {
+			const row = await replyCustomerConsultation(domainId, activeSessionNo, content);
+			setMessages(prev => [...prev, row]);
+			setDraft("");
+			await loadSessions();
+		}
+		catch (error) {
+			toast.error(toErrorMessage(error));
+		}
+		finally {
+			setSending(false);
+		}
+	};
+
+	const handleCreate = async (event: FormEvent) => {
+		event.preventDefault();
+		const content = createDraft.trim();
+		if (!content || !domainId) {
+			return;
+		}
+		setCreating(true);
+		try {
+			const session = await createCustomerConsultation(domainId, content);
+			setCreateOpen(false);
+			setCreateDraft("");
+			setActiveSessionNo(session.sessionNo);
+			await loadSessions();
+			toast.success("咨询已发起");
+		}
+		catch (error) {
+			toast.error(toErrorMessage(error));
+		}
+		finally {
+			setCreating(false);
+		}
+	};
+
 	return (
-		<section className="ud-glass ud-glass--lg ud-chat-soon">
-			<div className="ud-chat-soon__icon" aria-hidden />
-			<p className="ud-kicker">二期能力</p>
-			<h1 className="ud-title" style={{ fontSize: 28 }}>在线咨询即将开放</h1>
-			<p className="ud-subtitle" style={{ maxWidth: 420, margin: "8px auto 20px" }}>
-				当前可提交工单并跟踪进度。咨询上线后，可在此发起实时会话，也可从会话转工单。
-			</p>
-			<Link to="/tickets/new" className="ud-btn ud-btn--primary">去提交工单</Link>
-		</section>
+		<div className="ud-stack ud-stack--lg">
+			<header className="ud-row ud-row--between">
+				<div>
+					<p className="ud-kicker">在线服务</p>
+					<h1 className="ud-title" style={{ fontSize: 28 }}>在线咨询</h1>
+					<p className="ud-subtitle" style={{ marginBottom: 0 }}>
+						与客服在线沟通，需要时可将会话转为工单继续跟进。
+					</p>
+				</div>
+				<button
+					type="button"
+					className="ud-btn ud-btn--primary"
+					onClick={() => setCreateOpen(true)}
+				>
+					发起咨询
+				</button>
+			</header>
+
+			<div className="ud-chat-layout">
+				<aside className="ud-glass ud-chat-sessions" aria-label="咨询会话列表">
+					{sessions.length === 0
+						? <div className="ud-chat-sessions__empty">暂无咨询会话</div>
+						: sessions.map(item => (
+							<button
+								key={item.sessionNo}
+								type="button"
+								className={item.sessionNo === activeSessionNo ? "ud-chat-session is-active" : "ud-chat-session"}
+								onClick={() => setActiveSessionNo(item.sessionNo)}
+							>
+								<strong>{item.businessDomainName}</strong>
+								<span className={item.sessionStatus === "closed" ? "ud-chat-session__meta is-closed" : "ud-chat-session__meta"}>
+									{sessionPreview(item)}
+								</span>
+								<span className="ud-chat-session__time">{formatDateTime(item.updatedAt)}</span>
+							</button>
+						))}
+				</aside>
+
+				<section className="ud-glass ud-chat-panel">
+					{!activeSession
+						? <div className="ud-chat-panel__empty">选择左侧会话开始沟通</div>
+						: (
+							<>
+								<header className="ud-chat-panel__head">
+									<div>
+										<strong>{activeSession.businessDomainName}</strong>
+										<span className={activeSession.sessionStatus === "closed" ? "ud-tag" : "ud-tag ud-tag--blue"}>
+											{statusLabel(activeSession.sessionStatus)}
+										</span>
+										{activeSession.linkedTicketNo
+											? <span className="ud-tag ud-tag--green">已转工单 {activeSession.linkedTicketNo}</span>
+											: null}
+									</div>
+								</header>
+								<div className="ud-chat-messages">
+									{messages.length === 0
+										? <div className="ud-chat-panel__empty">暂无消息，发送第一条消息开始咨询</div>
+										: messages.map(item => (
+											<div
+												key={item.id}
+												className={item.senderRole === "customer" ? "ud-chat-msg ud-chat-msg--mine" : "ud-chat-msg"}
+											>
+												<div className="ud-chat-msg__bubble">
+													<p>{item.content}</p>
+													<span className="ud-chat-msg__time">{formatDateTime(item.createdAt)}</span>
+												</div>
+											</div>
+										))}
+									<div ref={messageEndRef} />
+								</div>
+								<form className="ud-chat-composer" onSubmit={handleSend}>
+									<textarea
+										className="ud-textarea"
+										rows={3}
+										placeholder="输入消息内容…"
+										value={draft}
+										disabled={activeSession.sessionStatus === "closed"}
+										onChange={event => setDraft(event.target.value)}
+									/>
+									<button
+										type="submit"
+										className="ud-btn ud-btn--primary"
+										disabled={sending || !draft.trim() || activeSession.sessionStatus === "closed"}
+									>
+										{sending ? "发送中…" : "发送"}
+									</button>
+								</form>
+							</>
+						)}
+				</section>
+			</div>
+
+			{createOpen
+				? (
+					<div className="ud-modal" role="dialog" aria-modal="true" aria-label="发起咨询">
+						<form className="ud-modal__card" onSubmit={handleCreate}>
+							<h2 className="ud-title" style={{ fontSize: 20 }}>发起咨询</h2>
+							<p className="ud-muted" style={{ margin: "4px 0 12px" }}>
+								当前业务域：{portal.activeDomain?.name ?? "未选择"}
+							</p>
+							<textarea
+								className="ud-textarea"
+								rows={4}
+								autoFocus
+								placeholder="请描述您想咨询的问题…"
+								value={createDraft}
+								onChange={event => setCreateDraft(event.target.value)}
+							/>
+							<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+								<button
+									type="button"
+									className="ud-btn ud-btn--ghost"
+									onClick={() => {
+										setCreateOpen(false);
+										setCreateDraft("");
+									}}
+								>
+									取消
+								</button>
+								<button
+									type="submit"
+									className="ud-btn ud-btn--primary"
+									disabled={creating || !createDraft.trim()}
+								>
+									{creating ? "提交中…" : "发起"}
+								</button>
+							</div>
+						</form>
+					</div>
+				)
+				: null}
+		</div>
 	);
 }

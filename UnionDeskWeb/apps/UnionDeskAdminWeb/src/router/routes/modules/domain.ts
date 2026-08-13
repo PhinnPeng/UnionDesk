@@ -16,6 +16,7 @@ const DomainTicketConfig = lazy(() => import("#src/pages/domain/ticket-config"))
 const DomainTicketTypeConfig = lazy(() => import("#src/pages/domain/ticket-config/type-config"));
 const DomainBlockwords = lazy(() => import("#src/pages/domain/blockwords"));
 const DomainSla = lazy(() => import("#src/pages/domain/sla"));
+const DomainConsultations = lazy(() => import("#src/pages/domain/consultations"));
 const DomainNotifications = lazy(() => import("#src/pages/domain/notifications"));
 const DomainConfig = lazy(() => import("#src/pages/domain/config"));
 const DomainAuditLogs = lazy(() => import("#src/pages/domain/audit-logs"));
@@ -197,6 +198,16 @@ const routes: AppRouteRecordRaw[] = [
 					title: "SLA 管理",
 					scope: "business",
 					auth: "domain.sla.read",
+				},
+			},
+			{
+				path: "/domain/consultations",
+				Component: DomainConsultations,
+				handle: {
+					icon: "CustomerServiceOutlined",
+					title: "在线咨询",
+					scope: "business",
+					auth: "consultation.view",
 				},
 			},
 			{

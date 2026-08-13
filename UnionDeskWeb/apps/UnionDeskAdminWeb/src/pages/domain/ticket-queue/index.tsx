@@ -23,6 +23,8 @@ import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 
+import { describeSlaDeadline, slaDeadlineToneClass, slaStatusMeta } from "./sla-display";
+
 interface QueueSearchValues {
 	keyword?: string;
 	status?: string;
@@ -241,6 +243,22 @@ export default function DomainTicketQueuePage() {
 		return <PriorityBadge code={priority} name={meta?.display_label ?? meta?.name} color={meta?.color} icon={meta?.icon} />;
 	}, [priorityMap]);
 
+	const renderSla = useCallback((row: TicketRow) => {
+		const statusMeta = slaStatusMeta(row.slaStatus);
+		if (!row.slaStatus && !row.slaFirstResponseDeadline && !row.slaResolutionDeadline) {
+			return <span className="text-slate-400">—</span>;
+		}
+		const firstResponse = describeSlaDeadline(row.slaFirstResponseDeadline, row.slaFirstRespondedAt, "已响应");
+		const resolution = describeSlaDeadline(row.slaResolutionDeadline, row.slaResolvedAt, "已解决");
+		return (
+			<Space direction="vertical" size={2} className="text-xs">
+				<Tag color={statusMeta.color}>{statusMeta.text}</Tag>
+				<span className={slaDeadlineToneClass[firstResponse.tone]}>首响 {firstResponse.text}</span>
+				<span className={slaDeadlineToneClass[resolution.tone]}>解决 {resolution.text}</span>
+			</Space>
+		);
+	}, []);
+
 	const columns: TableColumnsType<TicketRow> = useMemo(() => [
 		{
 			title: "编号",
@@ -271,6 +289,12 @@ export default function DomainTicketQueuePage() {
 			dataIndex: "priority",
 			width: 110,
 			render: value => renderPriority(value),
+		},
+		{
+			title: "SLA",
+			key: "sla",
+			width: 180,
+			render: (_, row) => renderSla(row),
 		},
 		{
 			title: "受理人",
@@ -312,7 +336,7 @@ export default function DomainTicketQueuePage() {
 				</Space>
 			),
 		},
-	], [handleClaim, handleClose, openAssign, renderPriority, renderStatus]);
+	], [handleClaim, handleClose, openAssign, renderPriority, renderSla, renderStatus]);
 
 	return (
 		<BasicContent>
@@ -367,7 +391,7 @@ export default function DomainTicketQueuePage() {
 								loading={loading}
 								columns={columns}
 								dataSource={rows}
-								scroll={{ x: 1100 }}
+								scroll={{ x: 1300 }}
 								pagination={{
 									current: page,
 									pageSize,

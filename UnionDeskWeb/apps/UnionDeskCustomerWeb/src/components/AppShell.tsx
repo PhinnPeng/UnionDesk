@@ -17,7 +17,7 @@ import {
 const navItems = [
 	{ to: "/home", label: "首页", icon: IconNavHome, end: true },
 	{ to: "/tickets", label: "工单", icon: IconNavTicket, end: false },
-	{ to: "/chat", label: "咨询", icon: IconNavChat, end: false, soon: true },
+	{ to: "/chat", label: "咨询", icon: IconNavChat, end: false },
 	{ to: "/inbox", label: "通知", icon: IconNavBell, end: false, badge: true },
 	{ to: "/me", label: "我的", icon: IconNavUser, end: false },
 ] as const;
@@ -64,25 +64,17 @@ function NavItems({
 		<>
 			{navItems.map((item) => {
 				const Icon = item.icon;
-				const isChat = "soon" in item && item.soon;
 				return (
 					<NavLink
 						key={item.to}
 						to={item.to}
 						end={"end" in item ? item.end : false}
 						className={({ isActive }) =>
-							[
-								itemClass,
-								isActive ? "is-active" : "",
-								isChat && variant === "rail" ? "ud-rail__item--soon" : "",
-							]
-								.filter(Boolean)
-								.join(" ")
+							[itemClass, isActive ? "is-active" : ""].filter(Boolean).join(" ")
 						}
 					>
 						<Icon />
 						<span>{item.label}</span>
-						{isChat && variant === "rail" ? <span className="ud-rail__soon">二期</span> : null}
 						{"badge" in item && item.badge && unreadCount > 0
 							? <i className={badgeClass}>{unreadCount > 9 ? "9+" : unreadCount}</i>
 							: null}

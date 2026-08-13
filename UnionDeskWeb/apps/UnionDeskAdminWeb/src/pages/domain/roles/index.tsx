@@ -35,6 +35,7 @@ import {
 } from "@ant-design/icons";
 import {
 	App,
+	Alert,
 	Button,
 	Card,
 	Checkbox,
@@ -104,6 +105,19 @@ function translateRoleError(error: unknown): string {
 		return "域角色不存在";
 	}
 	return message;
+}
+
+/** 模板实例且权限包为锁定字段 → 域端只读（后端 403 校验，前端配合禁用） */
+function isPermissionsLocked(role: DomainRole): boolean {
+	return Boolean(role.template_id) && (role.locked_fields ?? []).includes("permissions");
+}
+
+/** manual 同步策略下实例版本落后模板版本的版本数（0 表示无漂移） */
+function behindTemplateVersions(role: DomainRole): number {
+	if (role.sync_mode !== "manual" || role.template_version == null || role.template_latest_version == null) {
+		return 0;
+	}
+	return Math.max(0, role.template_latest_version - role.template_version);
 }
 
 export default function DomainRolesPage() {
@@ -245,15 +259,16 @@ export default function DomainRolesPage() {
 		setAllPermissionItems([]);
 		setCheckedPermissionIds([]);
 		try {
+			const editable = canUpdatePermissions && !role.preset && !isPermissionsLocked(role);
 			const [assigned, catalog] = await Promise.all([
 				fetchDomainRolePermissions(domainId, role.id),
-				canUpdatePermissions && !role.preset
+				editable
 					? fetchDomainPermissionItems(domainId)
 					: Promise.resolve([] as DomainPermissionItem[]),
 			]);
 			const assignedIds = assigned.permission_items.map(item => item.id);
 			setCheckedPermissionIds(assignedIds);
-			if (canUpdatePermissions && !role.preset) {
+			if (editable) {
 				setAllPermissionItems(catalog);
 			}
 			else {
@@ -301,8 +316,10 @@ export default function DomainRolesPage() {
 	);
 
 	const editablePermissions = Boolean(
-		selectedRole && canUpdatePermissions && !selectedRole.preset,
+		selectedRole && canUpdatePermissions && !selectedRole.preset && !isPermissionsLocked(selectedRole),
 	);
+
+	const permissionsLocked = Boolean(selectedRole && isPermissionsLocked(selectedRole));
 
 	const columns: TableColumnsType<DomainRole> = useMemo(() => {
 		const base: TableColumnsType<DomainRole> = [
@@ -327,6 +344,29 @@ export default function DomainRolesPage() {
 				),
 			},
 			{
+				title: "来源",
+				key: "source",
+				width: 220,
+				render: (_, row) => {
+					if (!row.template_id) {
+						return <Tag>本域创建</Tag>;
+					}
+					const behind = behindTemplateVersions(row);
+					return (
+						<Space size={4} wrap>
+							<Tag color="purple">
+								模板：{row.template_name ?? `#${row.template_id}`}
+								{" "}
+								v{row.template_version ?? "?"}
+							</Tag>
+							{behind > 0 && (
+								<Tag color="orange">落后 {behind} 版本</Tag>
+							)}
+						</Space>
+					);
+				},
+			},
+			{
 				title: "操作",
 				key: "actions",
 				width: 130,
@@ -334,7 +374,7 @@ export default function DomainRolesPage() {
 					<Space size="small">
 						{canViewPermissions
 							? (
-								<Tooltip title={canUpdatePermissions && !row.preset ? "配置权限" : "查看权限"}>
+								<Tooltip title={canUpdatePermissions && !row.preset && !isPermissionsLocked(row) ? "配置权限" : "查看权限"}>
 									<Button
 										type="link"
 										size="small"
@@ -508,9 +548,39 @@ export default function DomainRolesPage() {
 								<Spin />
 							</div>
 						)
-						: allPermissionItems.length === 0
-							? <Empty description="暂无权限项" />
-							: (
+						: permissionsLocked
+							? (
+								<div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+									<Alert
+										type="info"
+										showIcon
+										message="模板锁定字段，域端不可修改"
+										description="该角色由模板下发，权限包为锁定字段，域端不可修改；如需调整请联系平台管理员修改模板后同步。"
+									/>
+									{allPermissionItems.length === 0
+										? <Empty description="暂无权限项" />
+										: [...permissionGroups.entries()].map(([moduleKey, items]) => (
+											<div key={moduleKey}>
+												<Title level={5} style={{ marginBottom: 8, fontSize: 14 }}>
+													{moduleKey}
+												</Title>
+												<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+													{items.map(item => (
+														<div key={item.id}>
+															{item.name || item.code}
+															{" "}
+															<Text code>{item.code}</Text>
+															{item.type ? <Tag style={{ marginLeft: 8 }}>{item.type}</Tag> : null}
+														</div>
+													))}
+												</div>
+											</div>
+										))}
+								</div>
+							)
+							: allPermissionItems.length === 0
+								? <Empty description="暂无权限项" />
+								: (
 								<div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 									{editablePermissions
 										? (
