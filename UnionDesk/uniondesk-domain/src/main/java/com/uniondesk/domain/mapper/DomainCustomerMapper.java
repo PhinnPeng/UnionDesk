@@ -31,6 +31,10 @@ public interface DomainCustomerMapper {
             @Param("domainId") long domainId,
             @Param("customerAccountId") long customerAccountId);
 
+    int countActiveByDomainAndCustomer(
+            @Param("domainId") long domainId,
+            @Param("customerAccountId") long customerAccountId);
+
     int updateStatus(
             @Param("status") String status,
             @Param("activatedAt") LocalDateTime activatedAt,

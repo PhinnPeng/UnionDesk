@@ -571,6 +571,17 @@ public class AuthService {
         }
         String reusePolicy = determineReusePolicy(operationCode);
         String stepUpToken = UUID.randomUUID().toString();
+        loginSessionService.createStepUpToken(new LoginSessionService.CreateStepUpTokenCommand(
+                stepUpToken,
+                context.userId(),
+                context.clientCode(),
+                accountType,
+                context.role(),
+                context.businessDomainId(),
+                maskIdentifier(account.username(), LoginIdentifierType.USERNAME),
+                LocalDateTime.now(clock).plusSeconds(900),
+                null,
+                null));
         return new AuthDtos.StepUpResponse(stepUpToken, "session_15m", 900, reusePolicy, operationCode);
     }
 

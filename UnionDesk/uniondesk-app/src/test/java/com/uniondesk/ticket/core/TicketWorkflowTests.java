@@ -77,6 +77,8 @@ class TicketWorkflowTests {
     @Mock
     private StaffAccountRepository staffAccountRepository;
     @Mock
+    private com.uniondesk.domain.repository.DomainCustomerRepository domainCustomerRepository;
+    @Mock
     private TicketTypeRepository ticketTypeRepository;
     @Mock
     private TicketTypeAttributeSlotService ticketTypeAttributeSlotService;
@@ -113,6 +115,7 @@ class TicketWorkflowTests {
                 userAccountRepository,
                 customerAccountRepository,
                 staffAccountRepository,
+                domainCustomerRepository,
                 ticketTypeRepository,
                 ticketTypeAttributeSlotService,
                 new ObjectMapper(),

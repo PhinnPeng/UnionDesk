@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.attachment.core.AttachmentService;
+import com.uniondesk.common.web.ErrorCodes;
+import com.uniondesk.domain.repository.DomainCustomerRepository;
 import com.uniondesk.notification.core.NotificationCenterService;
 import com.uniondesk.sla.core.SlaService;
 import com.uniondesk.common.event.TicketStatusChangedEvent;
@@ -40,9 +42,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class TicketService {
@@ -60,6 +64,7 @@ public class TicketService {
     private final UserAccountRepository userAccountRepository;
     private final CustomerAccountRepository customerAccountRepository;
     private final StaffAccountRepository staffAccountRepository;
+    private final DomainCustomerRepository domainCustomerRepository;
     private final TicketTypeRepository ticketTypeRepository;
     private final TicketTypeAttributeSlotService ticketTypeAttributeSlotService;
     private final ObjectMapper objectMapper;
@@ -82,6 +87,7 @@ public class TicketService {
             UserAccountRepository userAccountRepository,
             CustomerAccountRepository customerAccountRepository,
             StaffAccountRepository staffAccountRepository,
+            DomainCustomerRepository domainCustomerRepository,
             TicketTypeRepository ticketTypeRepository,
             TicketTypeAttributeSlotService ticketTypeAttributeSlotService,
             ObjectMapper objectMapper,
@@ -102,6 +108,7 @@ public class TicketService {
         this.userAccountRepository = userAccountRepository;
         this.customerAccountRepository = customerAccountRepository;
         this.staffAccountRepository = staffAccountRepository;
+        this.domainCustomerRepository = domainCustomerRepository;
         this.ticketTypeRepository = ticketTypeRepository;
         this.ticketTypeAttributeSlotService = ticketTypeAttributeSlotService;
         this.objectMapper = objectMapper;
@@ -115,6 +122,8 @@ public class TicketService {
 
     @Transactional
     public TicketSubmissionResult createCustomerTicket(UserContext context, long businessDomainId, CreateTicketCommand command) {
+        requireCustomer(context);
+        ensureCustomerInDomain(context.userId(), businessDomainId);
         DomainRow domain = loadDomain(businessDomainId);
         String ticketNo = nextTicketNo(domain.id(), domain.code());
         PeeledFormValues peeled = peelSystemFormValues(command);
@@ -381,6 +390,24 @@ public class TicketService {
                 ticketWatcherService.listStaffIds(ticketId));
     }
 
+    @Transactional(readOnly = true)
+    public TicketDetailResult getCustomerTicketDetail(UserContext context, long businessDomainId, long ticketId) {
+        requireCustomer(context);
+        requireTicketOwner(loadTicketRow(businessDomainId, ticketId), context.userId());
+        return getTicketDetail(businessDomainId, ticketId);
+    }
+
+    @Transactional
+    public TicketActionResult replyCustomerTicket(
+            UserContext context,
+            long businessDomainId,
+            long ticketId,
+            ReplyTicketCommand command) {
+        requireCustomer(context);
+        requireTicketOwner(loadTicketRow(businessDomainId, ticketId), context.userId());
+        return replyTicket(context, businessDomainId, ticketId, command);
+    }
+
     @Transactional
     public TicketActionResult replaceTicketWatchers(
             UserContext context,
@@ -517,6 +544,18 @@ public class TicketService {
     private void requireCustomer(UserContext context) {
         if (!isCustomerRole(context)) {
             throw new IllegalArgumentException("only customer can perform this action");
+        }
+    }
+
+    private void requireTicketOwner(TicketRow ticket, long customerUserId) {
+        if (ticket.customerId() != customerUserId) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN.message());
+        }
+    }
+
+    private void ensureCustomerInDomain(long customerAccountId, long businessDomainId) {
+        if (domainCustomerRepository.countActiveByDomainAndCustomer(businessDomainId, customerAccountId) == 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN.message());
         }
     }
 

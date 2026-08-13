@@ -8,4 +8,13 @@
         VALUES (#{attachmentId}, #{targetType}, #{targetId}, #{relationType})
     </insert>
 
+    <select id="countLinkedToCustomerTicket" resultType="int">
+        SELECT COUNT(*)
+        FROM attachment_ref ar
+        JOIN ticket t ON t.id = ar.target_id
+        WHERE ar.attachment_id = #{attachmentId}
+          AND ar.target_type = 'ticket'
+          AND t.customer_id = #{customerId}
+    </select>
+
 </mapper>

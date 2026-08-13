@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端审查清单"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "审计 vs 日志（客户操作落审计）"}

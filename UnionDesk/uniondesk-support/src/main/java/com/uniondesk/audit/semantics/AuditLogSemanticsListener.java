@@ -3,7 +3,9 @@ package com.uniondesk.audit.semantics;
 import com.uniondesk.common.audit.AuditActionCodes;
 import com.uniondesk.common.audit.AuditDetailTextBuilder;
 import com.uniondesk.common.audit.AuditTargetFormatter;
+import com.uniondesk.common.event.DomainMemberChangedEvent;
 import com.uniondesk.common.event.DomainMemberStatusChangedEvent;
+import com.uniondesk.common.event.DomainRoleChangedEvent;
 import com.uniondesk.common.event.RolePermissionsChangedEvent;
 import com.uniondesk.iam.repository.AdminMenuRepository;
 import java.util.ArrayList;
@@ -53,6 +55,7 @@ public class AuditLogSemanticsListener {
                 domainId,
                 event.operatorUserId(),
                 "staff",
+                "domain",
                 AuditTargetFormatter.formatRole(event.roleName(), event.roleCode()),
                 AuditActionCodes.PLATFORM_ROLE_PERMISSIONS_UPDATE,
                 detail,
@@ -72,8 +75,72 @@ public class AuditLogSemanticsListener {
                 event.businessDomainId(),
                 event.operatorUserId(),
                 "staff",
+                "domain",
                 memberTarget,
                 AuditActionCodes.PLATFORM_DOMAIN_MEMBER_UPDATE_STATUS,
+                detail,
+                "success",
+                null);
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onDomainMemberChanged(DomainMemberChangedEvent event) {
+        String action = switch (event.changeType()) {
+            case "create" -> AuditActionCodes.DOMAIN_MEMBER_CREATE;
+            case "update_roles" -> AuditActionCodes.DOMAIN_MEMBER_UPDATE_ROLES;
+            case "remove" -> AuditActionCodes.DOMAIN_MEMBER_REMOVE;
+            default -> null;
+        };
+        if (action == null) {
+            return;
+        }
+        String memberTarget = AuditTargetFormatter.formatMember(
+                event.displayName(), event.loginName(), event.memberId());
+        String detail = AuditDetailTextBuilder.buildMemberChangeDetail(
+                memberTarget,
+                event.changeType(),
+                event.beforeRoleCodes(),
+                event.afterRoleCodes());
+        auditLogWriter.write(
+                event.businessDomainId(),
+                event.operatorUserId(),
+                "staff",
+                "domain",
+                memberTarget,
+                action,
+                detail,
+                "success",
+                null);
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onDomainRoleChanged(DomainRoleChangedEvent event) {
+        String action = switch (event.changeType()) {
+            case "create" -> AuditActionCodes.DOMAIN_ROLE_CREATE;
+            case "update" -> AuditActionCodes.DOMAIN_ROLE_UPDATE;
+            case "update_permissions" -> AuditActionCodes.DOMAIN_ROLE_UPDATE_PERMISSIONS;
+            case "delete" -> AuditActionCodes.DOMAIN_ROLE_DELETE;
+            default -> null;
+        };
+        if (action == null) {
+            return;
+        }
+        String roleTarget = AuditTargetFormatter.formatRole(event.roleName(), event.roleCode());
+        String detail = AuditDetailTextBuilder.buildRoleChangeDetail(
+                event.roleName(),
+                event.roleCode(),
+                event.changeType(),
+                event.previousName(),
+                event.previousCode());
+        auditLogWriter.write(
+                event.businessDomainId(),
+                event.operatorUserId(),
+                "staff",
+                "domain",
+                roleTarget,
+                action,
                 detail,
                 "success",
                 null);

@@ -56,6 +56,24 @@
           AND p.status = 1
           AND p.code IN
         <foreach collection="codes" item="code" open="(" separator="," close=")">#{code}</foreach>
+        UNION ALL
+        SELECT
+            'domain' AS role_level,
+            'domain' AS binding_scope,
+            dc.business_domain_id,
+            p.permission_scope
+        FROM customer_account ca
+        JOIN domain_customer dc ON dc.customer_account_id = ca.id
+            AND dc.status = 'active'
+            AND dc.deleted_at IS NULL
+        JOIN role r ON r.code = 'customer'
+            AND r.scope = 'domain'
+        JOIN iam_role_permission rp ON rp.role_id = r.id
+        JOIN iam_permission p ON p.id = rp.permission_id
+        WHERE ca.id = #{userId}
+          AND p.status = 1
+          AND p.code IN
+        <foreach collection="codes" item="code" open="(" separator="," close=")">#{code}</foreach>
     </select>
 
     <delete id="deleteRolePermissionsByCatalog">

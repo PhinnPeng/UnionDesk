@@ -11,6 +11,7 @@ public class PermissionScopePolicy {
     private static final String ROLE_LEVEL_DOMAIN = "domain";
     private static final String PERMISSION_SCOPE_PLATFORM = "platform";
     private static final String PERMISSION_SCOPE_DOMAIN = "domain";
+    private static final String PERMISSION_SCOPE_SHARED = "shared";
 
     public boolean canRoleOwnPermission(String roleLevel, String permissionScope) {
         return canRoleOwnPermission(roleLevel, permissionScope, null);
@@ -26,11 +27,14 @@ public class PermissionScopePolicy {
             }
             return normalizedCode == null || normalizedCode.startsWith("platform.");
         }
-        if (!ROLE_LEVEL_DOMAIN.equals(normalizedRoleLevel)
-                || !PERMISSION_SCOPE_DOMAIN.equals(normalizedPermissionScope)) {
+        if (!ROLE_LEVEL_DOMAIN.equals(normalizedRoleLevel)) {
             return false;
         }
-        return normalizedCode == null || !normalizedCode.startsWith("platform.");
+        if (PERMISSION_SCOPE_DOMAIN.equals(normalizedPermissionScope)
+                || PERMISSION_SCOPE_SHARED.equals(normalizedPermissionScope)) {
+            return normalizedCode == null || !normalizedCode.startsWith("platform.");
+        }
+        return false;
     }
 
     public boolean isPermissionEffective(

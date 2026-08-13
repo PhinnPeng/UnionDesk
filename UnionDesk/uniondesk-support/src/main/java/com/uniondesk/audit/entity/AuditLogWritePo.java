@@ -5,6 +5,7 @@ public class AuditLogWritePo {
     private long businessDomainId;
     private long operatorSubjectId;
     private String operatorActorType;
+    private String point;
     private String target;
     private String action;
     private String detail;
@@ -33,6 +34,14 @@ public class AuditLogWritePo {
 
     public void setOperatorActorType(String operatorActorType) {
         this.operatorActorType = operatorActorType;
+    }
+
+    public String getPoint() {
+        return point;
+    }
+
+    public void setPoint(String point) {
+        this.point = point;
     }
 
     public String getTarget() {

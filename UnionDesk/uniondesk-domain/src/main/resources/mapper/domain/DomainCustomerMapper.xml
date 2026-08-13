@@ -126,6 +126,15 @@
           AND deleted_at IS NULL
     </select>
 
+    <select id="countActiveByDomainAndCustomer" resultType="int">
+        SELECT COUNT(*)
+        FROM domain_customer
+        WHERE business_domain_id = #{domainId}
+          AND customer_account_id = #{customerAccountId}
+          AND status = 'active'
+          AND deleted_at IS NULL
+    </select>
+
     <update id="updateStatus">
         UPDATE domain_customer
         SET status = #{status},

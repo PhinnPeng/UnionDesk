@@ -1,0 +1,4 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/tasks/08-11-group-role-management/research/dual-console-permission-design-review.md", "reason": "R1 目标域校验证据（RequirePermissionInterceptor:38）与 hasPermissionForDomains 现状"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "403+中文错误语义"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "审计 vs 日志（audit_log 扩展）"}

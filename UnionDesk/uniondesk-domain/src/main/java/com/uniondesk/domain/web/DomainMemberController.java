@@ -30,10 +30,10 @@ public class DomainMemberController {
     }
 
     @GetMapping("/members")
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_MEMBER_READ,
             PermissionCodes.DOMAIN_MEMBER_READ
-    })
+    }, domainIdParam = "domainId")
     public PageResult<DomainMemberDtos.DomainMemberView> listMembers(
             @PathVariable("domainId") long domainId,
             @RequestParam(name = "page", defaultValue = "1") int page,
@@ -50,10 +50,10 @@ public class DomainMemberController {
     }
 
     @GetMapping("/members/staff-candidates")
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_MEMBER_CREATE,
             PermissionCodes.DOMAIN_MEMBER_CREATE
-    })
+    }, domainIdParam = "domainId")
     public PageResult<DomainMemberDtos.StaffCandidateView> listStaffCandidates(
             @PathVariable("domainId") long domainId,
             @RequestParam(name = "page", defaultValue = "1") int page,
@@ -64,10 +64,10 @@ public class DomainMemberController {
 
     @PostMapping("/members")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_MEMBER_CREATE,
             PermissionCodes.DOMAIN_MEMBER_CREATE
-    })
+    }, domainIdParam = "domainId")
     public DomainMemberDtos.DomainMemberView createMember(
             @PathVariable("domainId") long domainId,
             @Valid @RequestBody DomainMemberDtos.CreateDomainMemberRequest request) {
@@ -76,10 +76,10 @@ public class DomainMemberController {
 
     @PostMapping("/members/with-staff")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_MEMBER_CREATE,
             PermissionCodes.DOMAIN_MEMBER_CREATE
-    })
+    }, domainIdParam = "domainId")
     public DomainMemberDtos.DomainMemberView createMemberWithStaff(
             @PathVariable("domainId") long domainId,
             @Valid @RequestBody DomainMemberDtos.CreateMemberWithStaffRequest request) {
@@ -87,10 +87,10 @@ public class DomainMemberController {
     }
 
     @PutMapping("/members/{memberId}/roles")
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_MEMBER_UPDATE_ROLES,
             PermissionCodes.DOMAIN_MEMBER_UPDATE_ROLES
-    })
+    }, domainIdParam = "domainId")
     public DomainMemberDtos.DomainMemberView updateMemberRoles(
             @PathVariable("domainId") long domainId,
             @PathVariable("memberId") long memberId,
@@ -99,10 +99,10 @@ public class DomainMemberController {
     }
 
     @PutMapping("/members/{memberId}/status")
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_MEMBER_UPDATE_STATUS,
             PermissionCodes.DOMAIN_MEMBER_UPDATE_STATUS
-    })
+    }, domainIdParam = "domainId")
     public DomainMemberDtos.DomainMemberView updateMemberStatus(
             @PathVariable("domainId") long domainId,
             @PathVariable("memberId") long memberId,
@@ -112,10 +112,10 @@ public class DomainMemberController {
 
     @DeleteMapping("/members/{memberId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_MEMBER_DELETE,
             PermissionCodes.DOMAIN_MEMBER_DELETE
-    })
+    }, domainIdParam = "domainId")
     public void deleteMember(@PathVariable("domainId") long domainId, @PathVariable("memberId") long memberId) {
         domainMemberService.deleteMember(domainId, memberId);
     }

@@ -1,5 +1,8 @@
 package com.uniondesk.domain.core;
 
+import com.uniondesk.auth.core.UserContextHolder;
+import com.uniondesk.common.event.DomainRoleChangedEvent;
+import com.uniondesk.common.event.UnionDeskEventPublisher;
 import com.uniondesk.domain.entity.DomainRolePo;
 import com.uniondesk.domain.entity.PermissionItemPo;
 import com.uniondesk.domain.repository.DomainRoleRepository;
@@ -16,10 +19,15 @@ public class DomainRoleService {
 
     private final DomainRoleRepository domainRoleRepository;
     private final DomainService domainService;
+    private final UnionDeskEventPublisher eventPublisher;
 
-    public DomainRoleService(DomainRoleRepository domainRoleRepository, DomainService domainService) {
+    public DomainRoleService(
+            DomainRoleRepository domainRoleRepository,
+            DomainService domainService,
+            UnionDeskEventPublisher eventPublisher) {
         this.domainRoleRepository = domainRoleRepository;
         this.domainService = domainService;
+        this.eventPublisher = eventPublisher;
     }
 
     public List<DomainRoleDtos.DomainRoleView> listRoles(long domainId) {
@@ -37,6 +45,8 @@ public class DomainRoleService {
         if (roleId == null) {
             throw new IllegalStateException("domain role create failed");
         }
+        publishRoleChanged(domainId, roleId, request.name().trim(), request.code().trim(),
+                "create", null, null);
         return loadRole(domainId, roleId);
     }
 
@@ -49,6 +59,7 @@ public class DomainRoleService {
         String code = StringUtils.hasText(request.code()) ? request.code().trim() : existing.code();
         String name = StringUtils.hasText(request.name()) ? request.name().trim() : existing.name();
         domainRoleRepository.updateRole(code, name, roleId, domainId);
+        publishRoleChanged(domainId, roleId, name, code, "update", existing.name(), existing.code());
         return loadRole(domainId, roleId);
     }
 
@@ -78,6 +89,7 @@ public class DomainRoleService {
         for (Long permissionItemId : permissionItemIds) {
             domainRoleRepository.insertRolePermission(roleId, permissionItemId);
         }
+        publishRoleChanged(domainId, roleId, role.name(), role.code(), "update_permissions", null, null);
         return getRolePermissions(domainId, roleId);
     }
 
@@ -93,6 +105,29 @@ public class DomainRoleService {
         }
         domainRoleRepository.deleteRolePermissions(roleId);
         domainRoleRepository.deleteRoleByIdAndDomain(roleId, domainId);
+        publishRoleChanged(domainId, roleId, role.name(), role.code(), "delete", null, null);
+    }
+
+    private void publishRoleChanged(
+            long domainId,
+            long roleId,
+            String roleName,
+            String roleCode,
+            String changeType,
+            String previousName,
+            String previousCode) {
+        long operatorUserId = UserContextHolder.current()
+                .map(context -> context.userId())
+                .orElse(0L);
+        eventPublisher.publish(new DomainRoleChangedEvent(
+                domainId,
+                roleId,
+                roleName,
+                roleCode,
+                operatorUserId,
+                changeType,
+                previousName,
+                previousCode));
     }
 
     public List<DomainRoleDtos.PermissionItemView> listPermissionItems(long domainId) {

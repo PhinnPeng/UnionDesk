@@ -1,6 +1,7 @@
 package com.uniondesk.iam.web;
 
 import com.uniondesk.auth.core.AuthVersionService;
+import com.uniondesk.auth.core.LoginSessionService;
 import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.auth.core.UserContextHolder;
 import com.uniondesk.common.web.PageResult;
@@ -37,16 +38,19 @@ public class StaffController {
     private final PlatformRoleService platformRoleService;
     private final OrganizationService organizationService;
     private final AuthVersionService authVersionService;
+    private final LoginSessionService loginSessionService;
 
     public StaffController(
             StaffAccountService staffAccountService,
             PlatformRoleService platformRoleService,
             OrganizationService organizationService,
-            AuthVersionService authVersionService) {
+            AuthVersionService authVersionService,
+            LoginSessionService loginSessionService) {
         this.staffAccountService = staffAccountService;
         this.platformRoleService = platformRoleService;
         this.organizationService = organizationService;
         this.authVersionService = authVersionService;
+        this.loginSessionService = loginSessionService;
     }
 
     @GetMapping
@@ -172,6 +176,10 @@ public class StaffController {
             @Valid @RequestBody StaffDtos.UpdatePlatformRolesRequest request,
             @org.springframework.web.bind.annotation.RequestHeader(value = "X-UD-Step-Up-Token", required = false) String stepUpToken) {
         if (stepUpToken == null || stepUpToken.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN.message());
+        }
+        UserContext context = UserContextHolder.requireCurrent();
+        if (!loginSessionService.validateStepUpToken(stepUpToken, context.userId(), context.clientCode())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN.message());
         }
 

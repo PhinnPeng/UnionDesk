@@ -88,6 +88,36 @@ public final class AuditDetailTextBuilder {
         return finalizeDetail(lines);
     }
 
+    public static String buildMemberChangeDetail(
+            String memberTarget,
+            String changeType,
+            List<String> beforeRoleCodes,
+            List<String> afterRoleCodes) {
+        List<String> lines = new ArrayList<>();
+        lines.add("成员：%s".formatted(memberTarget));
+        if (StringUtils.hasText(changeType)) {
+            lines.add(memberChangeDescription(changeType));
+        }
+        appendChange(lines, "角色", formatRoleCodes(beforeRoleCodes), formatRoleCodes(afterRoleCodes));
+        return finalizeDetail(lines);
+    }
+
+    public static String buildRoleChangeDetail(
+            String roleName,
+            String roleCode,
+            String changeType,
+            String previousName,
+            String previousCode) {
+        List<String> lines = new ArrayList<>();
+        lines.add("角色：%s（%s）".formatted(roleName, roleCode));
+        if (StringUtils.hasText(changeType)) {
+            lines.add(roleChangeDescription(changeType));
+        }
+        appendChange(lines, "角色名称", blankToDash(previousName), blankToDash(roleName));
+        appendChange(lines, "角色编码", blankToDash(previousCode), blankToDash(roleCode));
+        return finalizeDetail(lines);
+    }
+
     private static void appendPathSection(List<String> lines, String title, List<String> paths) {
         if (paths == null || paths.isEmpty()) {
             return;
@@ -146,6 +176,35 @@ public final class AuditDetailTextBuilder {
             case "disabled", "0" -> "禁用";
             default -> status.trim();
         };
+    }
+
+    private static String memberChangeDescription(String changeType) {
+        return switch (changeType.trim().toLowerCase()) {
+            case "create" -> "操作：新增成员";
+            case "update_roles" -> "操作：调整成员角色";
+            case "remove" -> "操作：移除成员";
+            default -> changeType.trim();
+        };
+    }
+
+    private static String roleChangeDescription(String changeType) {
+        return switch (changeType.trim().toLowerCase()) {
+            case "create" -> "操作：新增角色";
+            case "update" -> "操作：更新角色";
+            case "update_permissions" -> "操作：更新角色权限";
+            case "delete" -> "操作：删除角色";
+            default -> changeType.trim();
+        };
+    }
+
+    private static String formatRoleCodes(List<String> roleCodes) {
+        if (roleCodes == null || roleCodes.isEmpty()) {
+            return null;
+        }
+        return String.join("、", roleCodes.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .toList());
     }
 
     private static String blankToDash(String value) {

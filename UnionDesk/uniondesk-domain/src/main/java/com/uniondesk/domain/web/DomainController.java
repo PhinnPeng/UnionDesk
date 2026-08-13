@@ -38,7 +38,7 @@ public class DomainController {
     }
 
     @GetMapping("/domains/{id}")
-    @RequirePermission(PermissionCodes.DOMAIN_READ)
+    @RequirePermission(value = PermissionCodes.DOMAIN_READ, domainIdParam = "id")
     public DomainDtos.DomainView get(@PathVariable long id) {
         return domainService.getDomain(id);
     }
@@ -56,11 +56,11 @@ public class DomainController {
     }
 
     @GetMapping("/admin/domains/{id}")
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_ENTRY,
             PermissionCodes.DOMAIN_GENERAL_READ,
             PermissionCodes.DOMAIN_INVITATION_CODE_READ
-    })
+    }, domainIdParam = "id")
     public DomainDtos.DomainView getAdmin(@PathVariable long id) {
         return domainService.getDomain(id);
     }
@@ -73,18 +73,18 @@ public class DomainController {
     }
 
     @PutMapping("/admin/domains/{id}")
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE,
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_GENERAL_UPDATE_STATUS,
             PermissionCodes.DOMAIN_GENERAL_UPDATE
-    })
+    }, domainIdParam = "id")
     public DomainDtos.DomainView updateAdmin(@PathVariable long id, @Valid @RequestBody DomainDtos.UpdateDomainRequest request) {
         return domainService.updateDomain(id, request);
     }
 
     @DeleteMapping("/admin/domains/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_GENERAL_DELETE, domainIdParam = "id")
     public void deleteAdmin(@PathVariable long id) {
         domainService.deleteDomain(id);
     }

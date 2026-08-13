@@ -10,4 +10,10 @@ import java.lang.annotation.Target;
 public @interface RequirePermission {
 
     String[] value();
+
+    /**
+     * 目标业务域的 URI 模板变量名（如 "domainId"、"id"）。
+     * 非空时按该业务域进行域级权限校验，防止域角色跨域越权；为空保持原有全局校验。
+     */
+    String domainIdParam() default "";
 }

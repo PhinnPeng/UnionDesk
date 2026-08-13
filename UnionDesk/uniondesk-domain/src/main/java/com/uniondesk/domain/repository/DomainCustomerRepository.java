@@ -52,6 +52,10 @@ public class DomainCustomerRepository {
         return domainCustomerMapper.countByDomainAndCustomer(domainId, customerAccountId);
     }
 
+    public int countActiveByDomainAndCustomer(long domainId, long customerAccountId) {
+        return domainCustomerMapper.countActiveByDomainAndCustomer(domainId, customerAccountId);
+    }
+
     public int updateStatus(
             String status, LocalDateTime activatedAt, LocalDateTime disabledAt, long id, long domainId) {
         return domainCustomerMapper.updateStatus(status, activatedAt, disabledAt, id, domainId);

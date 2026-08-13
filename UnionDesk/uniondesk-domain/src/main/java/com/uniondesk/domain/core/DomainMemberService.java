@@ -1,6 +1,7 @@
 package com.uniondesk.domain.core;
 
 import com.uniondesk.auth.core.UserContextHolder;
+import com.uniondesk.common.event.DomainMemberChangedEvent;
 import com.uniondesk.common.event.DomainMemberStatusChangedEvent;
 import com.uniondesk.common.event.UnionDeskEventPublisher;
 import com.uniondesk.common.web.PageResult;
@@ -87,6 +88,7 @@ public class DomainMemberService {
         List<String> newRoleCodes = domainMemberRepository.findRoleCodesByIds(domainId, normalizeIds(request.role_ids()));
         guardSingleDomainOwner(domainId, memberId, newRoleCodes);
         replaceMemberRoles(domainId, memberId, request.role_ids());
+        publishMemberChanged(domainId, memberId, staffAccountId, "create", List.of(), newRoleCodes, null, null);
         return getMember(domainId, memberId);
     }
 
@@ -129,6 +131,8 @@ public class DomainMemberService {
                 List.of(domainId),
                 List.of()));
         long memberId = requireMemberId(domainId, created.id());
+        publishMemberChanged(domainId, memberId, created.id(), "create", List.of(), roleCodes,
+                request.real_name(), request.username());
         return getMember(domainId, memberId);
     }
 
@@ -170,7 +174,7 @@ public class DomainMemberService {
 
     @Transactional
     public DomainMemberDtos.DomainMemberView updateMemberRoles(long domainId, long memberId, DomainMemberDtos.UpdateDomainMemberRolesRequest request) {
-        loadMember(domainId, memberId);
+        DomainMemberPo member = loadMember(domainId, memberId);
         List<String> currentRoleCodes = domainMemberRepository.findRoleCodesByMemberId(memberId);
         List<Long> newRoleIds = normalizeIds(request.role_ids());
         List<String> newRoleCodes = domainMemberRepository.findRoleCodesByIds(domainId, newRoleIds);
@@ -182,12 +186,14 @@ public class DomainMemberService {
         }
         guardSingleDomainOwner(domainId, memberId, newRoleCodes);
         replaceMemberRoles(domainId, memberId, newRoleIds);
+        publishMemberChanged(domainId, memberId, member.getStaffAccountId(), "update_roles",
+                currentRoleCodes, newRoleCodes, null, null);
         return getMember(domainId, memberId);
     }
 
     @Transactional
     public void deleteMember(long domainId, long memberId) {
-        loadMember(domainId, memberId);
+        DomainMemberPo member = loadMember(domainId, memberId);
         List<String> currentRoleCodes = domainMemberRepository.findRoleCodesByMemberId(memberId);
         if (currentRoleCodes.contains("domain_admin")) {
             guardLastDomainAdmin(domainId, memberId);
@@ -199,6 +205,30 @@ public class DomainMemberService {
         if (updated == 0) {
             throw new IllegalArgumentException("domain member not found");
         }
+        publishMemberChanged(domainId, memberId, member.getStaffAccountId(), "remove",
+                currentRoleCodes, List.of(), null, null);
+    }
+
+    private void publishMemberChanged(
+            long domainId,
+            long memberId,
+            long staffAccountId,
+            String changeType,
+            List<String> beforeRoleCodes,
+            List<String> afterRoleCodes,
+            String displayName,
+            String loginName) {
+        long operatorUserId = UserContextHolder.current().map(context -> context.userId()).orElse(0L);
+        eventPublisher.publish(new DomainMemberChangedEvent(
+                domainId,
+                memberId,
+                staffAccountId,
+                operatorUserId,
+                changeType,
+                beforeRoleCodes,
+                afterRoleCodes,
+                displayName,
+                loginName));
     }
 
     void guardLastDomainAdmin(long domainId, long memberId) {

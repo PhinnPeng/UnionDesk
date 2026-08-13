@@ -16,4 +16,8 @@ public class AttachmentRefRepository {
     public void save(AttachmentRefPo po) {
         mapper.insert(po);
     }
+
+    public int countLinkedToCustomerTicket(long attachmentId, long customerId) {
+        return mapper.countLinkedToCustomerTicket(attachmentId, customerId);
+    }
 }

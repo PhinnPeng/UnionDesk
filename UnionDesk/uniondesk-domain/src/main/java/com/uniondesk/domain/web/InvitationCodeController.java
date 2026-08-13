@@ -27,7 +27,7 @@ public class InvitationCodeController {
     }
 
     @GetMapping("/invitation-codes")
-    @RequirePermission(PermissionCodes.DOMAIN_INVITATION_CODE_READ)
+    @RequirePermission(value = PermissionCodes.DOMAIN_INVITATION_CODE_READ, domainIdParam = "domainId")
     public PageResult<InvitationCodeDtos.InvitationCodeView> listInvitationCodes(
             @PathVariable long domainId,
             @RequestParam(defaultValue = "1") int page,
@@ -37,7 +37,7 @@ public class InvitationCodeController {
 
     @PostMapping("/invitation-codes")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.DOMAIN_INVITATION_CODE_CREATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_INVITATION_CODE_CREATE, domainIdParam = "domainId")
     public InvitationCodeDtos.InvitationCodeView createInvitationCode(
             @PathVariable long domainId,
             @Valid @RequestBody InvitationCodeDtos.CreateInvitationCodeRequest request) {
@@ -46,7 +46,7 @@ public class InvitationCodeController {
 
     @DeleteMapping("/invitation-codes/{codeId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.DOMAIN_INVITATION_CODE_DELETE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_INVITATION_CODE_DELETE, domainIdParam = "domainId")
     public void deleteInvitationCode(@PathVariable long domainId, @PathVariable long codeId) {
         invitationCodeService.deleteInvitationCode(domainId, codeId);
     }

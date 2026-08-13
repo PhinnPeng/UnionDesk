@@ -26,6 +26,7 @@ public class AuditLogWriter {
             Long businessDomainId,
             long operatorUserId,
             String operatorActorType,
+            String point,
             String target,
             String action,
             String detail,
@@ -36,6 +37,7 @@ public class AuditLogWriter {
             po.setBusinessDomainId(businessDomainId == null ? 0L : businessDomainId);
             po.setOperatorSubjectId(identityResolutionRepository.ensureIdentitySubject(operatorUserId));
             po.setOperatorActorType(operatorActorType);
+            po.setPoint(point);
             po.setTarget(target);
             po.setAction(action);
             po.setDetail(detail);

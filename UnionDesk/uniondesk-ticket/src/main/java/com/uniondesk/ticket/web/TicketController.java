@@ -36,7 +36,7 @@ public class TicketController {
 
     @PostMapping("/domains/{domain_id}/tickets")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.TICKET_CREATE)
+    @RequirePermission(value = PermissionCodes.TICKET_CREATE, domainIdParam = "domain_id")
     public TicketService.TicketSubmissionResult createCustomerTicket(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody TicketService.CreateTicketCommand request) {
@@ -44,7 +44,7 @@ public class TicketController {
     }
 
     @GetMapping("/domains/{domain_id}/tickets/my")
-    @RequirePermission(PermissionCodes.TICKET_VIEW_SELF)
+    @RequirePermission(value = PermissionCodes.TICKET_VIEW_SELF, domainIdParam = "domain_id")
     public TicketListView listCustomerTickets(
             @PathVariable("domain_id") long domainId,
             @RequestParam(required = false) String status,
@@ -54,24 +54,24 @@ public class TicketController {
     }
 
     @GetMapping("/domains/{domain_id}/tickets/my/{ticket_id}")
-    @RequirePermission(PermissionCodes.TICKET_VIEW_SELF)
+    @RequirePermission(value = PermissionCodes.TICKET_VIEW_SELF, domainIdParam = "domain_id")
     public TicketService.TicketDetailResult getCustomerTicketDetail(
             @PathVariable("domain_id") long domainId,
             @PathVariable("ticket_id") long ticketId) {
-        return ticketService.getTicketDetail(domainId, ticketId);
+        return ticketService.getCustomerTicketDetail(requireCurrent(), domainId, ticketId);
     }
 
     @PostMapping("/domains/{domain_id}/tickets/my/{ticket_id}/replies")
-    @RequirePermission(PermissionCodes.TICKET_REPLY_SELF)
+    @RequirePermission(value = PermissionCodes.TICKET_REPLY_SELF, domainIdParam = "domain_id")
     public TicketService.TicketActionResult replyCustomerTicket(
             @PathVariable("domain_id") long domainId,
             @PathVariable("ticket_id") long ticketId,
             @Valid @RequestBody TicketService.ReplyTicketCommand request) {
-        return ticketService.replyTicket(requireCurrent(), domainId, ticketId, request);
+        return ticketService.replyCustomerTicket(requireCurrent(), domainId, ticketId, request);
     }
 
     @PostMapping("/domains/{domain_id}/tickets/my/{ticket_id}/withdraw")
-    @RequirePermission(PermissionCodes.TICKET_WITHDRAW_SELF)
+    @RequirePermission(value = PermissionCodes.TICKET_WITHDRAW_SELF, domainIdParam = "domain_id")
     public TicketService.TicketActionResult withdrawCustomerTicket(
             @PathVariable("domain_id") long domainId,
             @PathVariable("ticket_id") long ticketId,
@@ -80,7 +80,7 @@ public class TicketController {
     }
 
     @GetMapping("/admin/domains/{domain_id}/tickets")
-    @RequirePermission(PermissionCodes.TICKET_VIEW_DOMAIN_ALL)
+    @RequirePermission(value = PermissionCodes.TICKET_VIEW_DOMAIN_ALL, domainIdParam = "domain_id")
     public TicketListView listAdminTickets(
             @PathVariable("domain_id") long domainId,
             @RequestParam(required = false) String status,
@@ -90,7 +90,7 @@ public class TicketController {
     }
 
     @GetMapping("/admin/domains/{domain_id}/tickets/{ticket_id}")
-    @RequirePermission(PermissionCodes.TICKET_VIEW_DOMAIN_ALL)
+    @RequirePermission(value = PermissionCodes.TICKET_VIEW_DOMAIN_ALL, domainIdParam = "domain_id")
     public TicketService.TicketDetailResult getAdminTicketDetail(
             @PathVariable("domain_id") long domainId,
             @PathVariable("ticket_id") long ticketId) {
@@ -98,7 +98,7 @@ public class TicketController {
     }
 
     @PostMapping("/admin/domains/{domain_id}/tickets/{ticket_id}/claim")
-    @RequirePermission(PermissionCodes.TICKET_CLAIM)
+    @RequirePermission(value = PermissionCodes.TICKET_CLAIM, domainIdParam = "domain_id")
     public TicketService.TicketActionResult claimTicket(
             @PathVariable("domain_id") long domainId,
             @PathVariable("ticket_id") long ticketId,
@@ -107,7 +107,7 @@ public class TicketController {
     }
 
     @PostMapping("/admin/domains/{domain_id}/tickets/{ticket_id}/assign")
-    @RequirePermission(PermissionCodes.TICKET_ASSIGN)
+    @RequirePermission(value = PermissionCodes.TICKET_ASSIGN, domainIdParam = "domain_id")
     public TicketService.TicketActionResult assignTicket(
             @PathVariable("domain_id") long domainId,
             @PathVariable("ticket_id") long ticketId,
@@ -116,7 +116,7 @@ public class TicketController {
     }
 
     @PostMapping("/admin/domains/{domain_id}/tickets/{ticket_id}/watchers")
-    @RequirePermission(PermissionCodes.TICKET_ASSIGN)
+    @RequirePermission(value = PermissionCodes.TICKET_ASSIGN, domainIdParam = "domain_id")
     public TicketService.TicketActionResult replaceTicketWatchers(
             @PathVariable("domain_id") long domainId,
             @PathVariable("ticket_id") long ticketId,
@@ -125,7 +125,7 @@ public class TicketController {
     }
 
     @PostMapping("/admin/domains/{domain_id}/tickets/{ticket_id}/replies")
-    @RequirePermission(PermissionCodes.TICKET_REPLY)
+    @RequirePermission(value = PermissionCodes.TICKET_REPLY, domainIdParam = "domain_id")
     public TicketService.TicketActionResult replyAdminTicket(
             @PathVariable("domain_id") long domainId,
             @PathVariable("ticket_id") long ticketId,
@@ -134,7 +134,7 @@ public class TicketController {
     }
 
     @PatchMapping("/admin/domains/{domain_id}/tickets/{ticket_id}/status")
-    @RequirePermission(PermissionCodes.TICKET_CLOSE)
+    @RequirePermission(value = PermissionCodes.TICKET_CLOSE, domainIdParam = "domain_id")
     public TicketService.TicketActionResult changeTicketStatus(
             @PathVariable("domain_id") long domainId,
             @PathVariable("ticket_id") long ticketId,
@@ -143,7 +143,7 @@ public class TicketController {
     }
 
     @GetMapping("/admin/domains/{domain_id}/tickets/{ticket_id}/history")
-    @RequirePermission(PermissionCodes.TICKET_VIEW_DOMAIN_ALL)
+    @RequirePermission(value = PermissionCodes.TICKET_VIEW_DOMAIN_ALL, domainIdParam = "domain_id")
     public TicketHistoryListView listTicketHistory(
             @PathVariable("domain_id") long domainId,
             @PathVariable("ticket_id") long ticketId) {
@@ -152,7 +152,7 @@ public class TicketController {
     }
 
     @PostMapping("/admin/domains/{domain_id}/tickets/{ticket_id}/merge")
-    @RequirePermission(PermissionCodes.TICKET_MERGE)
+    @RequirePermission(value = PermissionCodes.TICKET_MERGE, domainIdParam = "domain_id")
     public TicketService.TicketActionResult mergeTicket(
             @PathVariable("domain_id") long domainId,
             @PathVariable("ticket_id") long ticketId,

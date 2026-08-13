@@ -43,10 +43,10 @@ public class AuditLogController {
     }
 
     @GetMapping("/domains/{domainId}/audit-logs")
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_AUDIT_LOG_READ,
             PermissionCodes.DOMAIN_AUDIT_LOG_READ
-    })
+    }, domainIdParam = "domainId")
     public PageResult<AuditDtos.AuditLogView> listDomainAuditLogs(
             @PathVariable long domainId,
             @RequestParam(defaultValue = "1") int page,

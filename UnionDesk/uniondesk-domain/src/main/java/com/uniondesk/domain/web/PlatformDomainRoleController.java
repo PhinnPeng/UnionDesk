@@ -23,14 +23,14 @@ public class PlatformDomainRoleController {
     }
 
     @GetMapping
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_ROLES_READ)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_ROLES_READ, domainIdParam = "domainId")
     public DomainRoleDtos.DomainRoleListView listPlatformDomainRoles(@PathVariable("domainId") long domainId) {
         List<DomainRoleDtos.DomainRoleView> items = domainRoleService.listRoles(domainId);
         return new DomainRoleDtos.DomainRoleListView(items.size(), items);
     }
 
     @GetMapping("/{roleId}/permissions")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_ROLES_PERMISSIONS_READ)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_ROLES_PERMISSIONS_READ, domainIdParam = "domainId")
     public DomainRoleDtos.DomainRolePermissionView getPlatformDomainRolePermissions(
             @PathVariable("domainId") long domainId,
             @PathVariable("roleId") long roleId) {

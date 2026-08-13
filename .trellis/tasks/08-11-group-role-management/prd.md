@@ -21,7 +21,7 @@
 - D4 满额域（≤20 自定义角色）冲突策略：**跳过 + 提示**
 - D5 IAM `role(scope=domain)` 双轨：**冻结**（新角色走模板/域端，旧角色只读保留）；`domain_role` = 运行时业务角色、IAM domain 角色 = 控制台权限角色（S4 双轨关系按此文档化）
 - D6 批量停用域集：先手选域（不做组织预筛）
-- D7 跨域批量停用启用 **step-up 二次认证**（与域删除同级）
+- D7 跨域批量停用启用 **step-up 二次认证**（与域删除同级）；**接通真实令牌校验**（`LoginSessionService.validateStepUpToken`，含存量 `updatePlatformRoles` 一并修复，2026-08-12 验证确认）
 - D8 **P0 前置安全债**：US-S1-08（目标域校验）+ 审计补齐，模板/批量 API 上线前必须完成（跨域写放大器）
 - D9 职责矩阵（新目标态）：平台 = 统一管人 + 模板创建/下发/同步 + 跨域批量停用 + 审计监管；域 = 成员日常运营 + 实例微调（锁定字段除外）；冲突以「锁定字段 + 同步策略」裁决
 
@@ -29,7 +29,7 @@
 
 - `POST /api/v1/iam/role-templates`（建模板）
 - `POST /api/v1/iam/role-templates/{id}/apply`（body: `domain_ids[]`）
-- `POST /api/v1/admin/staff/{staffId}/domain-members/batch-status`（body: `domain_ids[]`, status='disabled'，TR-04 部分成功语义）
+- `POST /api/v1/admin/staff/{staffId}/domain-members/batch-status`（body: `domain_ids[]`, status='disabled'，TR-04 部分成功语义；权限码 `platform.user.domain_batch_status`，2026-08-12 决策改名——全仓员工码统一 `platform.user.*`）
 
 ## 迁移路径（分阶段）
 
@@ -44,10 +44,20 @@
 - 现状：`docs/product/feature-list.md` §8 权限码对照表（F3.13/F4.9）、`docs/architecture/data-model.md`、`foundation-rules.md`
 - 方案 D（平台只读）已作废，以本文档为准
 
-## Acceptance Criteria（规划态占位，task.py start 前细化）
+## Acceptance Criteria
 
-- [ ] AC1 模板 CRUD + 多域 apply 生成各域实例（锁定字段约束生效）
-- [ ] AC2 跨域批量停用员工（多域、部分成功语义、step-up）
-- [ ] AC3 US-S1-08 目标域校验通过（跨域写拒绝）
-- [ ] AC4 域内实例微调受锁定字段约束；模板变更按同步策略传播
-- [ ] AC5 审计完整（含 console 维度与批量操作的逐域记录）
+- [ ] AC1（P1-1）模板 CRUD：`role_template` / `role_template_permission` / `role_template_domain` 三表建表（Flyway）；创建模板含权限包 + `locked_fields` + `sync_strategy`
+- [ ] AC2（P1-1）多域 apply：一次 apply 多个业务域 → 各域生成 `domain_role` 实例（`template_id`/`template_version`/`locked_fields` 回填）；满额域（≤20）跳过 + 中文提示，返回逐域结果（部分成功）
+- [ ] AC3（P1-2）跨域批量停用：`batch-status` 接口对选中员工 × 域集一次性置 `disabled`，返回 `{success:[domainId...], failed:[{domainId,reason}...]}`；前置 **step-up 二次认证**（与域删除同级），**令牌经 `validateStepUpToken` 真实校验**，无效/过期/缺失 → 403 + 中文（含存量 `updatePlatformRoles` 同规修复）
+- [ ] AC4（P0-①）目标域校验：A 域管理员调用 B 域资源（含模板/批量 API）→ 403 + 中文；平台管理员批量跨域正常通过（US-S1-08）
+- [ ] AC5（P1-1）锁定字段：域端修改 `locked_fields` 内字段（默认权限包）→ 403 + 中文；非锁定字段（名称/成员）可微调
+- [ ] AC6（P1-1）同步策略：`immediate` 模板权限变更自动下发各实例（被域覆盖项跳过并审计）；`manual` 域端展示「落后 N 版本」漂移提示（`template_version` 对比）
+- [ ] AC7（P0-②/P1-2）审计：成员增删/改角色、域角色 CRUD、模板 apply/sync/unapply、跨域批量停用逐域落 `audit_log`；含操作入口端点列 `point`（platform/domain）可区分操作端
+
+## Out of Scope
+
+- 共享角色模型（模型 1）——已否决，采用模型 3（D1）
+- 组织树预筛选域（D6 先手选域）；组织/部门模型对接
+- `role(scope=domain)` 双轨治理落地（P3 后置，MVP 不做，轨 B 冻结 D5）
+- `immediate` 异步队列、模板版本历史（P3 后置）
+- ≤20 上限放宽（当前仅补校验，不调整上限）

@@ -19,6 +19,13 @@ public final class AuditActionCatalog {
         register(AuditActionCodes.PLATFORM_DOMAIN_DELETE, "业务域删除");
         register(AuditActionCodes.PLATFORM_ROLE_PERMISSIONS_UPDATE, "角色权限更新");
         register(AuditActionCodes.PLATFORM_DOMAIN_MEMBER_UPDATE_STATUS, "域成员状态变更");
+        register(AuditActionCodes.DOMAIN_MEMBER_CREATE, "域成员新增");
+        register(AuditActionCodes.DOMAIN_MEMBER_UPDATE_ROLES, "域成员角色变更");
+        register(AuditActionCodes.DOMAIN_MEMBER_REMOVE, "域成员移除");
+        register(AuditActionCodes.DOMAIN_ROLE_CREATE, "域角色新增");
+        register(AuditActionCodes.DOMAIN_ROLE_UPDATE, "域角色更新");
+        register(AuditActionCodes.DOMAIN_ROLE_UPDATE_PERMISSIONS, "域角色权限更新");
+        register(AuditActionCodes.DOMAIN_ROLE_DELETE, "域角色删除");
 
         alias(AuditActionCodes.LEGACY_DOMAIN_CREATE, AuditActionCodes.PLATFORM_DOMAIN_CREATE);
         alias(AuditActionCodes.LEGACY_DOMAIN_UPDATE, AuditActionCodes.PLATFORM_DOMAIN_UPDATE);

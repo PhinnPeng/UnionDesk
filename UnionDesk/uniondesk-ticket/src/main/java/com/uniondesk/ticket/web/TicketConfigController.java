@@ -41,14 +41,14 @@ public class TicketConfigController {
     }
 
     @GetMapping("/admin/domains/{domain_id}/ticket-types")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ, domainIdParam = "domain_id")
     public TicketConfigDtos.TicketTypeListView listTicketTypes(@PathVariable("domain_id") long domainId) {
         List<TicketConfigDtos.TicketTypeView> items = ticketConfigService.listTicketTypes(domainId);
         return new TicketConfigDtos.TicketTypeListView(items.size(), items);
     }
 
     @GetMapping("/domains/{domain_id}/ticket-types")
-    @RequirePermission({PermissionCodes.TICKET_CREATE, PermissionCodes.TICKET_VIEW_SELF})
+    @RequirePermission(value = {PermissionCodes.TICKET_CREATE, PermissionCodes.TICKET_VIEW_SELF}, domainIdParam = "domain_id")
     public TicketConfigDtos.CustomerTicketTypeListView listCustomerTicketTypes(
             @PathVariable("domain_id") long domainId) {
         List<TicketConfigDtos.CustomerTicketTypeView> items = ticketConfigService.listCustomerTicketTypes(domainId);
@@ -57,7 +57,7 @@ public class TicketConfigController {
 
     @PostMapping("/admin/domains/{domain_id}/ticket-types")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_CREATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_CREATE, domainIdParam = "domain_id")
     public TicketConfigDtos.TicketTypeView createTicketType(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody TicketConfigDtos.CreateTicketTypeRequest request) {
@@ -66,7 +66,7 @@ public class TicketConfigController {
 
     @PostMapping("/admin/domains/{domain_id}/ticket-types/from-platform")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_CREATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_CREATE, domainIdParam = "domain_id")
     public TicketConfigDtos.TicketTypeListView importPlatformTicketTypes(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody TicketConfigDtos.ImportPlatformTicketTypesRequest request) {
@@ -75,7 +75,7 @@ public class TicketConfigController {
     }
 
     @PutMapping("/admin/domains/{domain_id}/ticket-types/{type_id}")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE, domainIdParam = "domain_id")
     public TicketConfigDtos.TicketTypeView updateTicketType(
             @PathVariable("domain_id") long domainId,
             @PathVariable("type_id") long typeId,
@@ -84,7 +84,7 @@ public class TicketConfigController {
     }
 
     @PutMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/form-schema/draft")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE, domainIdParam = "domain_id")
     public TicketConfigDtos.TicketTypeView saveFormSchemaDraft(
             @PathVariable("domain_id") long domainId,
             @PathVariable("type_id") long typeId,
@@ -93,7 +93,7 @@ public class TicketConfigController {
     }
 
     @PostMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/form-schema/publish")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE, domainIdParam = "domain_id")
     public TicketConfigDtos.TicketTypeView publishFormSchema(
             @PathVariable("domain_id") long domainId,
             @PathVariable("type_id") long typeId,
@@ -102,7 +102,7 @@ public class TicketConfigController {
     }
 
     @PostMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/form-release/draft")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE, domainIdParam = "domain_id")
     public TicketConfigDtos.TicketTypeView saveFormReleaseDraft(
             @PathVariable("domain_id") long domainId,
             @PathVariable("type_id") long typeId) {
@@ -110,7 +110,7 @@ public class TicketConfigController {
     }
 
     @PostMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/form-release/publish")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE, domainIdParam = "domain_id")
     public TicketConfigDtos.TicketTypeView publishFormRelease(
             @PathVariable("domain_id") long domainId,
             @PathVariable("type_id") long typeId) {
@@ -121,7 +121,7 @@ public class TicketConfigController {
             "/admin/domains/{domain_id}/ticket-types/{type_id}/form-release/versions",
             "/admin/domains/{domain_id}/ticket-types/{type_id}/form-schema/versions"
     })
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ, domainIdParam = "domain_id")
     public TicketConfigDtos.FormSchemaVersionsView listFormReleaseVersions(
             @PathVariable("domain_id") long domainId,
             @PathVariable("type_id") long typeId) {
@@ -129,7 +129,7 @@ public class TicketConfigController {
     }
 
     @GetMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/form-schema/versions/{version_no}")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ, domainIdParam = "domain_id")
     public TicketConfigDtos.FormSchemaVersionDetailView getFormSchemaVersion(
             @PathVariable("domain_id") long domainId,
             @PathVariable("type_id") long typeId,
@@ -138,7 +138,7 @@ public class TicketConfigController {
     }
 
     @PostMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/form-schema/versions/{version_no}/rollback")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE, domainIdParam = "domain_id")
     public TicketConfigDtos.TicketTypeView rollbackFormSchemaVersion(
             @PathVariable("domain_id") long domainId,
             @PathVariable("type_id") long typeId,
@@ -147,7 +147,7 @@ public class TicketConfigController {
     }
 
     @GetMapping("/admin/domains/{domain_id}/ticket-attributes")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_READ)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_READ, domainIdParam = "domain_id")
     public TicketAttributeDtos.TicketAttributeListView listDomainTicketAttributes(
             @PathVariable("domain_id") long domainId,
             @RequestParam(required = false) String keyword,
@@ -158,7 +158,7 @@ public class TicketConfigController {
 
     @PostMapping("/admin/domains/{domain_id}/ticket-attributes")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_CREATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_CREATE, domainIdParam = "domain_id")
     public TicketAttributeDtos.TicketAttributeView createDomainTicketAttribute(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody TicketAttributeDtos.CreateTicketAttributeRequest request) {
@@ -167,7 +167,7 @@ public class TicketConfigController {
 
     @PostMapping("/admin/domains/{domain_id}/ticket-attributes/from-platform")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_CREATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_CREATE, domainIdParam = "domain_id")
     public TicketAttributeDtos.TicketAttributeListView importPlatformTicketAttributes(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody TicketAttributeDtos.ImportPlatformTicketAttributesRequest request) {
@@ -177,7 +177,7 @@ public class TicketConfigController {
     }
 
     @PutMapping("/admin/domains/{domain_id}/ticket-attributes/{attribute_id}")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_UPDATE, domainIdParam = "domain_id")
     public TicketAttributeDtos.TicketAttributeView updateDomainTicketAttribute(
             @PathVariable("domain_id") long domainId,
             @PathVariable("attribute_id") long attributeId,
@@ -187,7 +187,7 @@ public class TicketConfigController {
 
     @DeleteMapping("/admin/domains/{domain_id}/ticket-attributes/{attribute_id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_DELETE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_DELETE, domainIdParam = "domain_id")
     public void deleteDomainTicketAttribute(
             @PathVariable("domain_id") long domainId,
             @PathVariable("attribute_id") long attributeId) {
@@ -196,7 +196,7 @@ public class TicketConfigController {
 
     @PutMapping("/admin/domains/{domain_id}/ticket-attributes/reorder")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_ATTRIBUTE_UPDATE, domainIdParam = "domain_id")
     public void reorderDomainTicketAttributes(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody TicketAttributeDtos.ReorderTicketAttributesRequest request) {
@@ -204,7 +204,7 @@ public class TicketConfigController {
     }
 
     @GetMapping("/admin/domains/{domain_id}/ticket-statuses")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_READ)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_READ, domainIdParam = "domain_id")
     public TicketStatusDtos.TicketStatusListView listDomainTicketStatuses(
             @PathVariable("domain_id") long domainId,
             @RequestParam(required = false) String keyword,
@@ -215,7 +215,7 @@ public class TicketConfigController {
 
     @PostMapping("/admin/domains/{domain_id}/ticket-statuses")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_CREATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_CREATE, domainIdParam = "domain_id")
     public TicketStatusDtos.TicketStatusView createDomainTicketStatus(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody TicketStatusDtos.CreateTicketStatusRequest request) {
@@ -224,7 +224,7 @@ public class TicketConfigController {
 
     @PostMapping("/admin/domains/{domain_id}/ticket-statuses/from-platform")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_CREATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_CREATE, domainIdParam = "domain_id")
     public TicketStatusDtos.TicketStatusListView importPlatformTicketStatuses(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody TicketStatusDtos.ImportPlatformTicketStatusesRequest request) {
@@ -234,7 +234,7 @@ public class TicketConfigController {
     }
 
     @PutMapping("/admin/domains/{domain_id}/ticket-statuses/{status_id}")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_UPDATE, domainIdParam = "domain_id")
     public TicketStatusDtos.TicketStatusView updateDomainTicketStatus(
             @PathVariable("domain_id") long domainId,
             @PathVariable("status_id") long statusId,
@@ -244,7 +244,7 @@ public class TicketConfigController {
 
     @DeleteMapping("/admin/domains/{domain_id}/ticket-statuses/{status_id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_DELETE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_STATUS_DELETE, domainIdParam = "domain_id")
     public void deleteDomainTicketStatus(
             @PathVariable("domain_id") long domainId,
             @PathVariable("status_id") long statusId) {
@@ -252,7 +252,7 @@ public class TicketConfigController {
     }
 
     @GetMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/attribute-slots")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ, domainIdParam = "domain_id")
     public TicketAttributeDtos.AttributeSlotListView listAttributeSlots(
             @PathVariable("domain_id") long domainId,
             @PathVariable("type_id") long typeId) {
@@ -262,7 +262,7 @@ public class TicketConfigController {
 
     @PostMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/attribute-slots")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE, domainIdParam = "domain_id")
     public TicketAttributeDtos.AttributeSlotView insertAttributeSlot(
             @PathVariable("domain_id") long domainId,
             @PathVariable("type_id") long typeId,
@@ -271,7 +271,7 @@ public class TicketConfigController {
     }
 
     @PutMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/attribute-slots/{slot_id}")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE, domainIdParam = "domain_id")
     public TicketAttributeDtos.AttributeSlotView updateAttributeSlot(
             @PathVariable("domain_id") long domainId,
             @PathVariable("type_id") long typeId,
@@ -282,7 +282,7 @@ public class TicketConfigController {
 
     @DeleteMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/attribute-slots/{slot_id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE, domainIdParam = "domain_id")
     public void removeAttributeSlot(
             @PathVariable("domain_id") long domainId,
             @PathVariable("type_id") long typeId,
@@ -292,7 +292,7 @@ public class TicketConfigController {
 
     @PutMapping("/admin/domains/{domain_id}/ticket-types/{type_id}/attribute-slots/reorder")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE, domainIdParam = "domain_id")
     public void reorderAttributeSlots(
             @PathVariable("domain_id") long domainId,
             @PathVariable("type_id") long typeId,
@@ -302,13 +302,13 @@ public class TicketConfigController {
 
     @DeleteMapping("/admin/domains/{domain_id}/ticket-types/{type_id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_DELETE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_DELETE, domainIdParam = "domain_id")
     public void deleteTicketType(@PathVariable("domain_id") long domainId, @PathVariable("type_id") long typeId) {
         ticketConfigService.deleteTicketType(domainId, typeId);
     }
 
     @GetMapping("/admin/domains/{domain_id}/ticket-templates")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_READ, domainIdParam = "domain_id")
     public TicketConfigDtos.TicketTemplateListView listTicketTemplates(@PathVariable("domain_id") long domainId) {
         List<TicketConfigDtos.TicketTemplateView> items = ticketConfigService.listTicketTemplates(domainId);
         return new TicketConfigDtos.TicketTemplateListView(items.size(), items);
@@ -316,7 +316,7 @@ public class TicketConfigController {
 
     @PostMapping("/admin/domains/{domain_id}/ticket-templates")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_CREATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_CREATE, domainIdParam = "domain_id")
     public TicketConfigDtos.TicketTemplateView createTicketTemplate(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody TicketConfigDtos.CreateTicketTemplateRequest request) {
@@ -324,7 +324,7 @@ public class TicketConfigController {
     }
 
     @PutMapping("/admin/domains/{domain_id}/ticket-templates/{template_id}")
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_UPDATE, domainIdParam = "domain_id")
     public TicketConfigDtos.TicketTemplateView updateTicketTemplate(
             @PathVariable("domain_id") long domainId,
             @PathVariable("template_id") long templateId,
@@ -334,7 +334,7 @@ public class TicketConfigController {
 
     @DeleteMapping("/admin/domains/{domain_id}/ticket-templates/{template_id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_DELETE)
+    @RequirePermission(value = PermissionCodes.PLATFORM_DOMAIN_CONTROL_TICKET_TYPE_DELETE, domainIdParam = "domain_id")
     public void deleteTicketTemplate(@PathVariable("domain_id") long domainId, @PathVariable("template_id") long templateId) {
         ticketConfigService.deleteTicketTemplate(domainId, templateId);
     }
@@ -343,7 +343,7 @@ public class TicketConfigController {
             "/admin/domains/{domain_id}/quick-replies",
             "/admin/domains/{domain_id}/quick-reply-templates"
     })
-    @RequirePermission(PermissionCodes.DOMAIN_QUICK_REPLY_READ)
+    @RequirePermission(value = PermissionCodes.DOMAIN_QUICK_REPLY_READ, domainIdParam = "domain_id")
     public TicketConfigDtos.QuickReplyListView listQuickReplies(@PathVariable("domain_id") long domainId) {
         List<TicketConfigDtos.QuickReplyView> items = ticketConfigService.listQuickReplies(domainId);
         return new TicketConfigDtos.QuickReplyListView(items.size(), items);
@@ -354,7 +354,7 @@ public class TicketConfigController {
             "/admin/domains/{domain_id}/quick-reply-templates"
     })
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.DOMAIN_QUICK_REPLY_CREATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_QUICK_REPLY_CREATE, domainIdParam = "domain_id")
     public TicketConfigDtos.QuickReplyView createQuickReply(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody TicketConfigDtos.CreateQuickReplyRequest request) {
@@ -365,7 +365,7 @@ public class TicketConfigController {
             "/admin/domains/{domain_id}/quick-replies/{reply_id}",
             "/admin/domains/{domain_id}/quick-reply-templates/{reply_id}"
     })
-    @RequirePermission(PermissionCodes.DOMAIN_QUICK_REPLY_UPDATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_QUICK_REPLY_UPDATE, domainIdParam = "domain_id")
     public TicketConfigDtos.QuickReplyView updateQuickReply(
             @PathVariable("domain_id") long domainId,
             @PathVariable("reply_id") long replyId,
@@ -378,13 +378,13 @@ public class TicketConfigController {
             "/admin/domains/{domain_id}/quick-reply-templates/{reply_id}"
     })
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.DOMAIN_QUICK_REPLY_DELETE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_QUICK_REPLY_DELETE, domainIdParam = "domain_id")
     public void deleteQuickReply(@PathVariable("domain_id") long domainId, @PathVariable("reply_id") long replyId) {
         ticketConfigService.deleteQuickReply(domainId, replyId);
     }
 
     @GetMapping("/admin/domains/{domain_id}/priority-levels")
-    @RequirePermission(PermissionCodes.DOMAIN_PRIORITY_LEVEL_READ)
+    @RequirePermission(value = PermissionCodes.DOMAIN_PRIORITY_LEVEL_READ, domainIdParam = "domain_id")
     public TicketConfigDtos.PriorityLevelListView listPriorityLevels(@PathVariable("domain_id") long domainId) {
         List<TicketConfigDtos.PriorityLevelView> items = ticketConfigService.listPriorityLevels(domainId);
         return new TicketConfigDtos.PriorityLevelListView(items.size(), items);
@@ -392,7 +392,7 @@ public class TicketConfigController {
 
     @PostMapping("/admin/domains/{domain_id}/priority-levels")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.DOMAIN_PRIORITY_LEVEL_CREATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_PRIORITY_LEVEL_CREATE, domainIdParam = "domain_id")
     public TicketConfigDtos.PriorityLevelView createPriorityLevel(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody TicketConfigDtos.CreatePriorityLevelRequest request) {
@@ -400,7 +400,7 @@ public class TicketConfigController {
     }
 
     @PutMapping("/admin/domains/{domain_id}/priority-levels/{level_id}")
-    @RequirePermission(PermissionCodes.DOMAIN_PRIORITY_LEVEL_UPDATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_PRIORITY_LEVEL_UPDATE, domainIdParam = "domain_id")
     public TicketConfigDtos.PriorityLevelView updatePriorityLevel(
             @PathVariable("domain_id") long domainId,
             @PathVariable("level_id") long levelId,
@@ -410,7 +410,7 @@ public class TicketConfigController {
 
     @DeleteMapping("/admin/domains/{domain_id}/priority-levels/{level_id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.DOMAIN_PRIORITY_LEVEL_DELETE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_PRIORITY_LEVEL_DELETE, domainIdParam = "domain_id")
     public void deletePriorityLevel(@PathVariable("domain_id") long domainId, @PathVariable("level_id") long levelId) {
         ticketConfigService.deletePriorityLevel(domainId, levelId);
     }

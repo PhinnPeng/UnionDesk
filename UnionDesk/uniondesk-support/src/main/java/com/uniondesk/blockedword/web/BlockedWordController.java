@@ -27,10 +27,10 @@ public class BlockedWordController {
     }
 
     @GetMapping
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_READ,
             PermissionCodes.DOMAIN_BLOCKED_WORD_READ
-    })
+    }, domainIdParam = "domain_id")
     public PageResult<BlockedWordDtos.BlockedWordView> listBlockedWords(
             @PathVariable("domain_id") long domainId,
             @RequestParam(defaultValue = "1") int page,
@@ -41,10 +41,10 @@ public class BlockedWordController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE,
             PermissionCodes.DOMAIN_BLOCKED_WORD_CREATE
-    })
+    }, domainIdParam = "domain_id")
     public BlockedWordDtos.BlockedWordView createBlockedWord(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody BlockedWordDtos.CreateBlockedWordRequest request) {
@@ -53,10 +53,10 @@ public class BlockedWordController {
 
     @PostMapping("/batch")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_CREATE,
             PermissionCodes.DOMAIN_BLOCKED_WORD_CREATE
-    })
+    }, domainIdParam = "domain_id")
     public BlockedWordDtos.BatchCreateBlockedWordResult createBlockedWordsBatch(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody BlockedWordDtos.BatchCreateBlockedWordRequest request) {
@@ -65,10 +65,10 @@ public class BlockedWordController {
 
     @DeleteMapping("/{word_id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_BLOCKED_WORD_DELETE,
             PermissionCodes.DOMAIN_BLOCKED_WORD_DELETE
-    })
+    }, domainIdParam = "domain_id")
     public void deleteBlockedWord(
             @PathVariable("domain_id") long domainId,
             @PathVariable("word_id") long wordId) {

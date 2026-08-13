@@ -161,6 +161,15 @@
             WHERE dm.staff_account_id = #{userId}
               AND dm.status = 'active'
               AND dm.deleted_at IS NULL
+            UNION
+            SELECT r2.code AS code
+            FROM customer_account ca
+            JOIN domain_customer dc ON dc.customer_account_id = ca.id
+                AND dc.status = 'active'
+                AND dc.deleted_at IS NULL
+            JOIN role r2 ON r2.code = 'customer'
+                AND r2.scope = 'domain'
+            WHERE ca.id = #{userId}
         ) ur ON ur.code = r.code
         JOIN iam_role_resource irr ON irr.role_id = r.id
         JOIN iam_resource ir ON ir.id = irr.resource_id

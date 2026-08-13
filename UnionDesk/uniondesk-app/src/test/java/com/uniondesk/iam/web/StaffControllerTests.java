@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.uniondesk.auth.core.AuthVersionService;
+import com.uniondesk.auth.core.LoginSessionService;
 import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.auth.core.UserContextHolder;
 import com.uniondesk.common.web.ApiExceptionHandler;
@@ -32,6 +33,7 @@ class StaffControllerTests {
     private final PlatformRoleService platformRoleService = mock(PlatformRoleService.class);
     private final OrganizationService organizationService = mock(OrganizationService.class);
     private final AuthVersionService authVersionService = mock(AuthVersionService.class);
+    private final LoginSessionService loginSessionService = mock(LoginSessionService.class);
 
     @AfterEach
     void clearContext() {
@@ -269,6 +271,7 @@ class StaffControllerTests {
     void updatePlatformRolesRejectsInvalidRoleSet() throws Exception {
         MockMvc mockMvc = mockMvc();
         UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-1", "ud-admin-web"));
+        when(loginSessionService.validateStepUpToken("step-up-token-1", 2L, "ud-admin-web")).thenReturn(true);
         when(platformRoleService.getCurrentPlatformRoles(2L)).thenReturn(List.of("platform_admin"));
         when(staffAccountService.findById(1L)).thenReturn(Optional.of(staffAccount(1L, "admin", "active")));
         when(platformRoleService.getCurrentPlatformRoles(1L)).thenReturn(List.of("platform_admin"));
@@ -287,9 +290,30 @@ class StaffControllerTests {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void updatePlatformRolesRejectsInvalidStepUpToken() throws Exception {
+        MockMvc mockMvc = mockMvc();
+        UserContextHolder.set(new UserContext(2L, "super_admin", 10L, "sid-1", "ud-admin-web"));
+        when(loginSessionService.validateStepUpToken("step-up-token-invalid", 2L, "ud-admin-web")).thenReturn(false);
+        when(platformRoleService.getCurrentPlatformRoles(2L)).thenReturn(List.of("platform_admin"));
+        when(staffAccountService.findById(1L)).thenReturn(Optional.of(staffAccount(1L, "admin", "active")));
+        when(platformRoleService.getCurrentPlatformRoles(1L)).thenReturn(List.of("platform_admin"));
+
+        mockMvc.perform(put("/api/v1/admin/staff/1/platform-roles")
+                        .header("X-UD-Step-Up-Token", "step-up-token-invalid")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "roleCodes": ["platform_admin"]
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("40301"));
+    }
+
     private MockMvc mockMvc() {
         return MockMvcBuilders.standaloneSetup(new StaffController(
-                        staffAccountService, platformRoleService, organizationService, authVersionService))
+                        staffAccountService, platformRoleService, organizationService, authVersionService, loginSessionService))
                 .setControllerAdvice(new ApiExceptionHandler())
                 .build();
     }

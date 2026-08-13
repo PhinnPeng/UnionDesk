@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,6 +39,24 @@ class SlaTimingEngineTest extends IntegrationTestSupport {
 
     @Autowired
     private Clock clock;
+
+    @BeforeEach
+    void setUp() {
+        // 客户提单要求客户在域内存在 active 的 domain_customer 关系（FR-05）
+        jdbcTemplate.update("""
+                        INSERT INTO domain_customer (
+                            customer_account_id, business_domain_id, status, source,
+                            activated_at, disabled_at, deleted_at, created_at, updated_at
+                        )
+                        VALUES (1, ?, 'active', 'manual',
+                            CURRENT_TIMESTAMP(3), NULL, NULL, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
+                        ON DUPLICATE KEY UPDATE
+                            status = 'active',
+                            deleted_at = NULL,
+                            activated_at = COALESCE(activated_at, CURRENT_TIMESTAMP(3))
+                        """,
+                defaultDomainId(jdbcTemplate));
+    }
 
     @Test
     void createCustomerTicketAppliesConfiguredDeadlines() {

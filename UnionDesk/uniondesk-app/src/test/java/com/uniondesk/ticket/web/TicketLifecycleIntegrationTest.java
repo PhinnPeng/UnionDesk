@@ -75,16 +75,16 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.WithdrawTicketCommand(1L, "已经解决"))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(ticketId));
+                .andExpect(jsonPath("$.data.id").value(ticketId));
 
         mockMvc.perform(get("/api/v1/domains/{domainId}/tickets/my/{ticketId}", domainId, ticketId)
                         .header("Authorization", IntegrationAuthSupport.bearer(customerToken))
                         .header("X-UD-Client-Code", IntegrationAuthSupport.CUSTOMER_CLIENT_CODE))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.ticket.status").value("withdrawn"))
-                .andExpect(jsonPath("$.history.length()").value(2))
-                .andExpect(jsonPath("$.history[0].action").value("create"))
-                .andExpect(jsonPath("$.history[1].action").value("withdraw"));
+                .andExpect(jsonPath("$.data.ticket.status").value("withdrawn"))
+                .andExpect(jsonPath("$.data.history.length()").value(2))
+                .andExpect(jsonPath("$.data.history[0].action").value("create"))
+                .andExpect(jsonPath("$.data.history[1].action").value("withdraw"));
 
         Integer historyCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM ticket_history WHERE ticket_id = ?",
@@ -290,7 +290,7 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        return readJson(response).get("id").asLong();
+        return readJson(response).path("data").get("id").asLong();
     }
 
     private long ticketVersion(long ticketId) {

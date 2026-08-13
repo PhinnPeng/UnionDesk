@@ -24,7 +24,7 @@ public class NotificationTemplateController {
     }
 
     @GetMapping
-    @RequirePermission(PermissionCodes.DOMAIN_NOTIFICATION_TEMPLATE_READ)
+    @RequirePermission(value = PermissionCodes.DOMAIN_NOTIFICATION_TEMPLATE_READ, domainIdParam = "domainId")
     public PageResult<NotificationTemplateService.NotificationTemplateView> list(
             @PathVariable long domainId,
             @RequestParam(defaultValue = "1") int page,
@@ -33,7 +33,7 @@ public class NotificationTemplateController {
     }
 
     @PutMapping("/{templateId}")
-    @RequirePermission(PermissionCodes.DOMAIN_NOTIFICATION_TEMPLATE_UPDATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_NOTIFICATION_TEMPLATE_UPDATE, domainIdParam = "domainId")
     public NotificationTemplateService.NotificationTemplateView update(
             @PathVariable long domainId,
             @PathVariable long templateId,

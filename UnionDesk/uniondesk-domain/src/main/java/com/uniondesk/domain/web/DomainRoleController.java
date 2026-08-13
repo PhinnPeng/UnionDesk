@@ -27,7 +27,7 @@ public class DomainRoleController {
     }
 
     @GetMapping("/roles")
-    @RequirePermission(PermissionCodes.DOMAIN_ROLE_READ)
+    @RequirePermission(value = PermissionCodes.DOMAIN_ROLE_READ, domainIdParam = "domainId")
     public DomainRoleDtos.DomainRoleListView listRoles(@PathVariable("domainId") long domainId) {
         List<DomainRoleDtos.DomainRoleView> items = domainRoleService.listRoles(domainId);
         return new DomainRoleDtos.DomainRoleListView(items.size(), items);
@@ -35,7 +35,7 @@ public class DomainRoleController {
 
     @PostMapping("/roles")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission(PermissionCodes.DOMAIN_ROLE_CREATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_ROLE_CREATE, domainIdParam = "domainId")
     public DomainRoleDtos.DomainRoleView createRole(
             @PathVariable("domainId") long domainId,
             @Valid @RequestBody DomainRoleDtos.CreateDomainRoleRequest request) {
@@ -43,7 +43,7 @@ public class DomainRoleController {
     }
 
     @PutMapping("/roles/{roleId}")
-    @RequirePermission(PermissionCodes.DOMAIN_ROLE_UPDATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_ROLE_UPDATE, domainIdParam = "domainId")
     public DomainRoleDtos.DomainRoleView updateRole(
             @PathVariable("domainId") long domainId,
             @PathVariable("roleId") long roleId,
@@ -52,7 +52,7 @@ public class DomainRoleController {
     }
 
     @GetMapping("/roles/{roleId}/permissions")
-    @RequirePermission(PermissionCodes.DOMAIN_ROLE_PERMISSION_READ)
+    @RequirePermission(value = PermissionCodes.DOMAIN_ROLE_PERMISSION_READ, domainIdParam = "domainId")
     public DomainRoleDtos.DomainRolePermissionView getRolePermissions(
             @PathVariable("domainId") long domainId,
             @PathVariable("roleId") long roleId) {
@@ -60,7 +60,7 @@ public class DomainRoleController {
     }
 
     @PutMapping("/roles/{roleId}/permissions")
-    @RequirePermission(PermissionCodes.DOMAIN_ROLE_PERMISSION_UPDATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_ROLE_PERMISSION_UPDATE, domainIdParam = "domainId")
     public DomainRoleDtos.DomainRolePermissionView updateRolePermissions(
             @PathVariable("domainId") long domainId,
             @PathVariable("roleId") long roleId,
@@ -70,7 +70,7 @@ public class DomainRoleController {
 
     @DeleteMapping("/roles/{roleId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequirePermission(PermissionCodes.DOMAIN_ROLE_DELETE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_ROLE_DELETE, domainIdParam = "domainId")
     public void deleteRole(
             @PathVariable("domainId") long domainId,
             @PathVariable("roleId") long roleId) {
@@ -78,7 +78,7 @@ public class DomainRoleController {
     }
 
     @GetMapping("/permission-items")
-    @RequirePermission(PermissionCodes.DOMAIN_ROLE_READ)
+    @RequirePermission(value = PermissionCodes.DOMAIN_ROLE_READ, domainIdParam = "domainId")
     public DomainRoleDtos.PermissionItemListView listPermissionItems(@PathVariable("domainId") long domainId) {
         List<DomainRoleDtos.PermissionItemView> items = domainRoleService.listPermissionItems(domainId);
         return new DomainRoleDtos.PermissionItemListView(items.size(), items);

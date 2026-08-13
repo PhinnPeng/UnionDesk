@@ -8,7 +8,9 @@ import com.uniondesk.attachment.repository.AttachmentRefRepository;
 import com.uniondesk.attachment.repository.FileAttachmentRepository;
 import com.uniondesk.attachment.storage.AttachmentObjectStorage;
 import com.uniondesk.auth.core.UserContext;
+import com.uniondesk.auth.core.UserContextHolder;
 import com.uniondesk.common.repository.IdentityResolutionRepository;
+import com.uniondesk.common.web.ErrorCodes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
@@ -18,9 +20,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AttachmentService {
@@ -150,8 +154,22 @@ public class AttachmentService {
     public AttachmentDownloadAccess resolveDownloadAccess(long attachmentId) {
         AttachmentFileView view = findAttachment(attachmentId);
         requireObjectStorage(view);
+        UserContextHolder.current()
+                .filter(context -> "customer".equals(context.role()))
+                .ifPresent(context -> requireCustomerOwnership(context, view));
         AttachmentObjectStorage.PresignedUrl presigned = objectStorage.presignGet(view.storageKey());
         return new AttachmentDownloadAccess(presigned.url(), presigned.expiresInSeconds(), STORAGE_TYPE_OBJECT);
+    }
+
+    private void requireCustomerOwnership(UserContext context, AttachmentFileView view) {
+        long subjectId = identityResolutionRepository.ensureIdentitySubject(context.userId());
+        if (view.uploaderSubjectId() != null && view.uploaderSubjectId() == subjectId) {
+            return;
+        }
+        if (attachmentRefRepository.countLinkedToCustomerTicket(view.id(), context.userId()) > 0) {
+            return;
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, ErrorCodes.FORBIDDEN.message());
     }
 
     @Transactional

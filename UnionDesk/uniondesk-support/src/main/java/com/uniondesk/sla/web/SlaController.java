@@ -28,7 +28,7 @@ public class SlaController {
     }
 
     @GetMapping("/sla-rules")
-    @RequirePermission(PermissionCodes.DOMAIN_SLA_READ)
+    @RequirePermission(value = PermissionCodes.DOMAIN_SLA_READ, domainIdParam = "domainId")
     public PageResult<SlaService.SlaRuleView> listSlaRules(
             @PathVariable long domainId,
             @RequestParam(defaultValue = "1") int page,
@@ -37,7 +37,7 @@ public class SlaController {
     }
 
     @PostMapping("/sla-rules")
-    @RequirePermission(PermissionCodes.DOMAIN_SLA_CREATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_SLA_CREATE, domainIdParam = "domainId")
     public SlaService.SlaRuleView createSlaRule(
             @PathVariable long domainId,
             @Valid @RequestBody SlaService.SlaRuleCommand request) {
@@ -45,7 +45,7 @@ public class SlaController {
     }
 
     @PutMapping("/sla-rules/{ruleId}")
-    @RequirePermission(PermissionCodes.DOMAIN_SLA_UPDATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_SLA_UPDATE, domainIdParam = "domainId")
     public SlaService.SlaRuleView updateSlaRule(
             @PathVariable long domainId,
             @PathVariable long ruleId,
@@ -54,14 +54,14 @@ public class SlaController {
     }
 
     @DeleteMapping("/sla-rules/{ruleId}")
-    @RequirePermission(PermissionCodes.DOMAIN_SLA_UPDATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_SLA_UPDATE, domainIdParam = "domainId")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteSlaRule(@PathVariable long domainId, @PathVariable long ruleId) {
         slaService.deleteSlaRule(domainId, ruleId);
     }
 
     @GetMapping("/sla-calendars")
-    @RequirePermission(PermissionCodes.DOMAIN_SLA_READ)
+    @RequirePermission(value = PermissionCodes.DOMAIN_SLA_READ, domainIdParam = "domainId")
     public PageResult<SlaService.SlaCalendarView> listSlaCalendars(
             @PathVariable long domainId,
             @RequestParam(defaultValue = "1") int page,
@@ -70,7 +70,7 @@ public class SlaController {
     }
 
     @PostMapping("/sla-calendars")
-    @RequirePermission(PermissionCodes.DOMAIN_SLA_CREATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_SLA_CREATE, domainIdParam = "domainId")
     public SlaService.SlaCalendarView createSlaCalendar(
             @PathVariable long domainId,
             @Valid @RequestBody SlaService.SlaCalendarCommand request) {
@@ -78,7 +78,7 @@ public class SlaController {
     }
 
     @PutMapping("/sla-calendars/{calendarId}")
-    @RequirePermission(PermissionCodes.DOMAIN_SLA_UPDATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_SLA_UPDATE, domainIdParam = "domainId")
     public SlaService.SlaCalendarView updateSlaCalendar(
             @PathVariable long domainId,
             @PathVariable long calendarId,

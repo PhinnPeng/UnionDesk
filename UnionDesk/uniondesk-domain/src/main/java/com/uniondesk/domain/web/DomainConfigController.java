@@ -22,13 +22,13 @@ public class DomainConfigController {
     }
 
     @GetMapping
-    @RequirePermission(PermissionCodes.DOMAIN_CONFIG_READ)
+    @RequirePermission(value = PermissionCodes.DOMAIN_CONFIG_READ, domainIdParam = "domainId")
     public DomainConfigService.DomainConfigView getDomainConfig(@PathVariable long domainId) {
         return domainConfigService.load(domainId);
     }
 
     @PutMapping
-    @RequirePermission(PermissionCodes.DOMAIN_CONFIG_UPDATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_CONFIG_UPDATE, domainIdParam = "domainId")
     public DomainConfigService.DomainConfigView updateDomainConfig(
             @PathVariable long domainId,
             @Valid @RequestBody DomainConfigService.DomainConfigUpdateCommand request) {

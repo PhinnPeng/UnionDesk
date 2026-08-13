@@ -51,7 +51,7 @@ public final class IntegrationAuthSupport {
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        return objectMapper.readTree(response).get("accessToken").asText();
+        return objectMapper.readTree(response).path("data").get("accessToken").asText();
     }
 
     public static String adminAccessToken(MockMvc mockMvc, ObjectMapper objectMapper) throws Exception {
@@ -137,9 +137,9 @@ public final class IntegrationAuthSupport {
                 .getResponse()
                 .getContentAsString();
         JsonNode json = objectMapper.readTree(response);
-        long accountId = json.get("accountId").asLong();
+        long accountId = json.path("data").get("accountId").asLong();
         grantCustomerDomainPermissions(jdbcTemplate, accountId, domainId);
-        return new RegisterCustomerResult(json.get("accessToken").asText(), accountId);
+        return new RegisterCustomerResult(json.path("data").get("accessToken").asText(), accountId);
     }
 
     public static void ensureDomainRegistrationAllowed(JdbcTemplate jdbcTemplate, long domainId) {
@@ -154,18 +154,20 @@ public final class IntegrationAuthSupport {
     }
 
     /**
-     * 为客户账号绑定 domain 级 customer 角色，使 ticket.create 等权限生效。
+     * 确保客户账号在域内存在 active 的 domain_customer 关系（注册流程已建，此方法用于兜底/幂等）。
      */
     public static void grantCustomerDomainPermissions(JdbcTemplate jdbcTemplate, long customerAccountId, long domainId) {
         jdbcTemplate.update("""
-                        INSERT INTO iam_role_binding (user_id, role_id, binding_scope, business_domain_id, status)
-                        SELECT ?, r.id, 'domain', ?, 1
-                        FROM role r
-                        WHERE r.code = 'customer'
+                        INSERT INTO domain_customer (
+                            customer_account_id, business_domain_id, status, source,
+                            activated_at, disabled_at, deleted_at, created_at, updated_at
+                        )
+                        VALUES (?, ?, 'active', 'self_register',
+                            CURRENT_TIMESTAMP(3), NULL, NULL, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
                         ON DUPLICATE KEY UPDATE
-                            binding_scope = VALUES(binding_scope),
-                            business_domain_id = VALUES(business_domain_id),
-                            status = VALUES(status)
+                            status = 'active',
+                            deleted_at = NULL,
+                            activated_at = COALESCE(activated_at, CURRENT_TIMESTAMP(3))
                         """,
                 customerAccountId,
                 domainId);

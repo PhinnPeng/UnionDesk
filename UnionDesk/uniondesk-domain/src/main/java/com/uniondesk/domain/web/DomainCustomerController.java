@@ -29,10 +29,10 @@ public class DomainCustomerController {
     }
 
     @GetMapping("/customers/{customerId}")
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ,
             PermissionCodes.DOMAIN_CUSTOMER_READ
-    })
+    }, domainIdParam = "domainId")
     public DomainCustomerDtos.DomainCustomerView getCustomer(
             @PathVariable long domainId,
             @PathVariable long customerId) {
@@ -40,10 +40,10 @@ public class DomainCustomerController {
     }
 
     @GetMapping("/customers")
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_READ,
             PermissionCodes.DOMAIN_CUSTOMER_READ
-    })
+    }, domainIdParam = "domainId")
     public PageResult<DomainCustomerDtos.DomainCustomerView> listCustomers(
             @PathVariable long domainId,
             @RequestParam(defaultValue = "1") int page,
@@ -55,10 +55,10 @@ public class DomainCustomerController {
 
     @PostMapping("/customers")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE,
             PermissionCodes.DOMAIN_CUSTOMER_CREATE
-    })
+    }, domainIdParam = "domainId")
     public DomainCustomerDtos.DomainCustomerView addCustomer(
             @PathVariable long domainId,
             @Valid @RequestBody DomainCustomerDtos.CreateDomainCustomerRequest request) {
@@ -67,10 +67,10 @@ public class DomainCustomerController {
 
     @PostMapping("/customers/manual")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE,
             PermissionCodes.DOMAIN_CUSTOMER_CREATE
-    })
+    }, domainIdParam = "domainId")
     public DomainCustomerDtos.DomainCustomerView addCustomerManual(
             @PathVariable long domainId,
             @Valid @RequestBody DomainCustomerDtos.CreateDomainCustomerManualRequest request) {
@@ -79,10 +79,10 @@ public class DomainCustomerController {
 
     @PostMapping("/customers/from-staff")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_CREATE,
             PermissionCodes.DOMAIN_CUSTOMER_CREATE
-    })
+    }, domainIdParam = "domainId")
     public DomainCustomerDtos.BatchCreateDomainCustomersResult addCustomersFromStaff(
             @PathVariable long domainId,
             @Valid @RequestBody DomainCustomerDtos.CreateDomainCustomersFromStaffRequest request) {
@@ -90,10 +90,10 @@ public class DomainCustomerController {
     }
 
     @RequestMapping(path = "/customers/{customerId}/status", method = {RequestMethod.PUT, RequestMethod.PATCH})
-    @RequirePermission({
+    @RequirePermission(value = {
             PermissionCodes.PLATFORM_DOMAIN_CONTROL_CUSTOMER_UPDATE_STATUS,
             PermissionCodes.DOMAIN_CUSTOMER_UPDATE_STATUS
-    })
+    }, domainIdParam = "domainId")
     public DomainCustomerDtos.DomainCustomerView updateCustomerStatus(
             @PathVariable long domainId,
             @PathVariable long customerId,
@@ -102,7 +102,7 @@ public class DomainCustomerController {
     }
 
     @PutMapping("/customers/{customerId}")
-    @RequirePermission(PermissionCodes.DOMAIN_CUSTOMER_UPDATE)
+    @RequirePermission(value = PermissionCodes.DOMAIN_CUSTOMER_UPDATE, domainIdParam = "domainId")
     public DomainCustomerDtos.DomainCustomerView updateCustomer(
             @PathVariable long domainId,
             @PathVariable long customerId,
@@ -111,7 +111,7 @@ public class DomainCustomerController {
     }
 
     @PutMapping("/customers/{customerId}/password")
-    @RequirePermission(PermissionCodes.DOMAIN_CUSTOMER_RESET_PASSWORD)
+    @RequirePermission(value = PermissionCodes.DOMAIN_CUSTOMER_RESET_PASSWORD, domainIdParam = "domainId")
     public DomainCustomerDtos.ResetCustomerPasswordResponse resetCustomerPassword(
             @PathVariable long domainId,
             @PathVariable long customerId) {
