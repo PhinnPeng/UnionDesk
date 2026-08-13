@@ -63,7 +63,9 @@
 
 ---
 
-## S4 · 任务 5：`ticket-dynamic-form`（P0，F1.1）
+## S4 · 任务 5：`ticket-dynamic-form`（P0，F1.1）—— **已取消（2026-08-13 用户决策）**
+
+> 决策：管理端事项配置已实现；客户端渲染不在当前范围。提单保持 title/description；F1.1 动态字段渲染待后续另行立项（缺口保留：CustomerWeb 无渲染代码、客户侧 DTO 无 form_schema）。
 
 **目标**：客户端提单按管理端 Formily schema 渲染动态字段 + 附件真实上传。
 
@@ -198,7 +200,9 @@
 
 ---
 
-## S8 · 任务 18：`prd-doc-fixes`（P1）
+## S8 · 任务 18：`prd-doc-fixes`（P1）—— **已取消（2026-08-13 用户决策）**
+
+> 决策：PRD 文档修正不再单独立项；§4.4 联动与 feature-list/backlog 状态同步并入各 Sprint 执行时顺手维护。
 
 **现状**：prd.md §4.4 自洽检验过度声明（宣称无残留，但 flyway 链仍有 fresh-install 问题——与 S3.5 任务 3 联动修正）；feature-list 权限码待确认 3 行（F4.2/F4.14/F4.20）+ F2.1 agent 绑定待联调
 **落点**：§4.4 勾选与 flyway-chain-consistency 结果联动；权限码升格落位；feature-list/backlog 状态同步（贯穿各 Sprint）
