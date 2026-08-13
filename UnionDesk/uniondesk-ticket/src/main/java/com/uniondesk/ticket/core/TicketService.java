@@ -445,7 +445,12 @@ public class TicketService {
             String priority,
             String keyword,
             boolean assignedToMe) {
-        Long effectiveAssignee = assignedToMe ? context.userId() : assigneeStaffAccountId;
+        Long effectiveAssignee;
+        if (assignedToMe) {
+            effectiveAssignee = context.userId();
+        } else {
+            effectiveAssignee = assigneeStaffAccountId;
+        }
         String normalizedStatus = StringUtils.hasText(status) ? status.trim() : null;
         String normalizedPriority = StringUtils.hasText(priority) ? priority.trim() : null;
         String normalizedKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null;
