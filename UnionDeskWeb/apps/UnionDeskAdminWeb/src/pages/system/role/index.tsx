@@ -13,11 +13,12 @@ import { useAuth } from "#src/hooks/use-auth";
 import { ConfirmPopover } from "#src/components/confirm-popover";
 import { DeleteOutlined, EditOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Tooltip } from "antd";
+import { Button, Tabs, Tooltip } from "antd";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Detail } from "./components/detail";
+import { TemplateTab } from "./components/template-tab";
 import { getConstantColumns } from "./constants";
 import { filterRolesByAppScope, getRoleMenuTreeScope, getVisibleRoleScope } from "./utils";
 
@@ -37,10 +38,6 @@ function menuTreeToFormTree(nodes: MenuItemType[]): FormTreeNode[] {
 export default function Role() {
 	const { t } = useTranslation();
 	const { routeScope } = useAuth();
-	const [isOpen, setIsOpen] = useState(false);
-	const [title, setTitle] = useState("");
-	const [detailData, setDetailData] = useState<Partial<RoleItemType> & { menuIds?: number[]; buttonIds?: number[] }>({});
-	const actionRef = useRef<ActionType>(null);
 	const permissionScope = routeScope === "platform" ? "platform" : "domain";
 	const createAuth = `${permissionScope}.role.create`;
 	const updateAuth = `${permissionScope}.role.update`;
@@ -53,6 +50,62 @@ export default function Role() {
 			return menuTreeToFormTree(treeData as MenuItemType[]);
 		},
 	});
+
+	const isPlatformScope = routeScope === "platform";
+
+	return (
+		<BasicContent className="h-full bg-colorBgLayout">
+			{isPlatformScope ? (
+				<Tabs
+					className="h-full"
+					items={[
+						{
+							key: "roles",
+							label: t("system.role.name"),
+							children: (
+								<RoleTable
+									routeScope={routeScope}
+									createAuth={createAuth}
+									updateAuth={updateAuth}
+									deleteAuth={deleteAuth}
+									menuTreeData={menuTreeData}
+								/>
+							),
+						},
+						{
+							key: "templates",
+							label: "角色模板",
+							children: <TemplateTab />,
+						},
+					]}
+				/>
+			) : (
+				<RoleTable
+					routeScope={routeScope}
+					createAuth={createAuth}
+					updateAuth={updateAuth}
+					deleteAuth={deleteAuth}
+					menuTreeData={menuTreeData}
+				/>
+			)}
+		</BasicContent>
+	);
+}
+
+interface RoleTableProps {
+	routeScope: string
+	createAuth: string
+	updateAuth: string
+	deleteAuth: string
+	menuTreeData: FormTreeNode[]
+}
+
+function RoleTable({ routeScope, createAuth, updateAuth, deleteAuth, menuTreeData }: RoleTableProps) {
+	const { t } = useTranslation();
+	const [isOpen, setIsOpen] = useState(false);
+	const [title, setTitle] = useState("");
+	const [detailData, setDetailData] = useState<Partial<RoleItemType> & { menuIds?: number[]; buttonIds?: number[] }>({});
+	const actionRef = useRef<ActionType>(null);
 
 	const handleDeleteRow = async (id: number, action?: ProCoreActionType<object>) => {
 		await fetchDeleteRole(id);
@@ -112,7 +165,7 @@ export default function Role() {
 	];
 
 	return (
-		<BasicContent className="h-full bg-colorBgLayout">
+		<>
 			<BasicTable<RoleItemType>
 				adaptive
 				columns={columns}
@@ -129,7 +182,7 @@ export default function Role() {
 				headerTitle={t("system.role.name")}
 				toolBarRender={() => [
 					<AuthGuarded key="add-role" auth={createAuth}>
-					<Button
+						<Button
 							icon={<PlusCircleOutlined />}
 							type="primary"
 							onClick={() => {
@@ -159,6 +212,6 @@ export default function Role() {
 				}}
 				treeData={menuTreeData}
 			/>
-		</BasicContent>
+		</>
 	);
 }

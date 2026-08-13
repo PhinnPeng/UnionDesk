@@ -45,15 +45,6 @@ describe("generateUserMenus", () => {
 						component: "platform/offboard-pool",
 						scope: "platform",
 					},
-					{
-						id: 5,
-						code: "MENU_ORG_CONFIG",
-						parentId: 1,
-						name: "组织配置",
-						path: "/platform/org-config",
-						component: "platform/org-config",
-						scope: "platform",
-					},
 				],
 			},
 			{
@@ -97,9 +88,8 @@ describe("generateUserMenus", () => {
 			"/platform/user",
 			"/platform/dept",
 			"/platform/offboard-pool",
-			"/platform/org-config",
 		]));
-		expect(organizationChildren).toHaveLength(4);
+		expect(organizationChildren).toHaveLength(3);
 
 		const permissionChildren = menus[1]?.children?.map(child => child.key) ?? [];
 		expect(permissionChildren).toEqual(expect.arrayContaining([

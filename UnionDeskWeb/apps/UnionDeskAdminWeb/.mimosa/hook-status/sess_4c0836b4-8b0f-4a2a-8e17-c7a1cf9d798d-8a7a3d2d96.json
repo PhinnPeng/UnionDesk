@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "mimosa-hook-status/v1",
+  "recordedAt": "2026-08-13T07:29:04.158Z",
+  "sessionId": "sess_4c0836b4-8b0f-4a2a-8e17-c7a1cf9d798d",
+  "event": "PostToolUse",
+  "toolName": "Edit",
+  "file": "C:/Users/Administrator/.zcode/cli/memories/projects/uniondesk-4529774f3c312136/memory/uniondesk-web-list-envelope-unwrap.md",
+  "outcome": "clear",
+  "coverage": "complete",
+  "findingCount": 0,
+  "durationMs": 5,
+  "hostState": "hook_complete",
+  "reportHint": ".mimosa/reports/"
+}

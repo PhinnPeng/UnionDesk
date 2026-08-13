@@ -1,20 +1,24 @@
-import type { IamUser } from "@uniondesk/shared";
+import type { LoginLogView, PageResult } from "#src/api/platform/audit";
 
 import { requestBackendJson } from "#src/api/backend";
-import type { LoginLogView, PageResult } from "#src/api/platform/audit";
 import { fetchLoginLogsPage } from "#src/api/platform/audit";
 
-import { fetchBusinessDomains } from "./domain";
-import { fetchPlatformOffboardPoolUsers, fetchPlatformUsers } from "./iam";
-
-export interface PlatformOverview {
+/** 后端 /api/v1/dashboard/overview 聚合返回的实时计数。 */
+interface OverviewCounts {
 	domainCount: number;
+	staffCount: number;
 	activeUserCount: number;
 	disabledUserCount: number;
 	offboardUserCount: number;
+	customerCount: number;
+	ticketCount: number;
+	consultationCount: number;
+	recentAuditCount: number;
+}
+
+export interface PlatformOverview extends OverviewCounts {
 	pendingImportTaskCount: number;
 	announcementCount: number;
-	recentAuditCount: number;
 	loginLogs: LoginLogView[];
 }
 
@@ -26,30 +30,16 @@ function fetchPlatformLoginLogs(limit = 5): Promise<LoginLogView[]> {
 	}).then((page: PageResult<LoginLogView>) => page.list);
 }
 
-function countActiveUsers(users: IamUser[]): number {
-	return users.filter(user => user.employmentStatus !== "offboarded").length;
-}
-
-function countDisabledUsers(users: IamUser[]): number {
-	return users.filter(user => user.employmentStatus !== "offboarded" && user.status !== 1).length;
-}
-
 export async function fetchPlatformOverview(): Promise<PlatformOverview> {
-	const [domains, users, offboardUsers, loginLogs] = await Promise.all([
-		fetchBusinessDomains(),
-		fetchPlatformUsers(),
-		fetchPlatformOffboardPoolUsers(),
+	const [counts, loginLogs] = await Promise.all([
+		requestBackendJson<OverviewCounts>("v1/dashboard/overview"),
 		fetchPlatformLoginLogs(),
 	]);
 
 	return {
-		domainCount: domains.length,
-		activeUserCount: countActiveUsers(users),
-		disabledUserCount: countDisabledUsers(users),
-		offboardUserCount: offboardUsers.length,
+		...counts,
 		pendingImportTaskCount: 0,
 		announcementCount: 0,
-		recentAuditCount: loginLogs.length,
 		loginLogs,
 	};
 }

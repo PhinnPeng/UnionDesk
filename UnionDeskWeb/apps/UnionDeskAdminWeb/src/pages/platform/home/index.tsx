@@ -27,6 +27,8 @@ export default function PlatformHome() {
 		activeUserCount: 0,
 		disabledUserCount: 0,
 		offboardUserCount: 0,
+		ticketCount: 0,
+		consultationCount: 0,
 		pendingImportTaskCount: 0,
 		announcementCount: 0,
 		recentAuditCount: 0,
@@ -80,7 +82,7 @@ export default function PlatformHome() {
 							平台管理面板
 						</Typography.Title>
 						<Typography.Paragraph type="secondary" className="!mb-0 max-w-3xl">
-							这里承接平台级治理摘要，只展示平台域、用户与审计等总览信息，不混入业务看板指标。
+							这里承接平台级治理摘要与业务总量概览，展示平台域、用户、审计与工单、咨询等总览信息。
 						</Typography.Paragraph>
 					</div>
 
@@ -104,6 +106,16 @@ export default function PlatformHome() {
 						<Col xs={24} md={12} xl={6}>
 							<Card loading={loading}>
 								<Statistic title="最近审计" value={overview.recentAuditCount} suffix="条" />
+							</Card>
+						</Col>
+						<Col xs={24} md={12} xl={6}>
+							<Card loading={loading}>
+								<Statistic title="工单数量" value={overview.ticketCount} />
+							</Card>
+						</Col>
+						<Col xs={24} md={12} xl={6}>
+							<Card loading={loading}>
+								<Statistic title="咨询会话数" value={overview.consultationCount} />
 							</Card>
 						</Col>
 					</Row>

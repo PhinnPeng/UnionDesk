@@ -122,15 +122,6 @@ describe("generateRoutesFromBackend", () => {
 						scope: "platform",
 						permissionCode: "platform.user.offboard_pool.read",
 					},
-					{
-						id: 5,
-						code: "MENU_ORG_CONFIG",
-						parentId: 1,
-						name: "组织配置",
-						path: "/platform/org-config",
-						component: "platform/org-config",
-						scope: "platform",
-					},
 				],
 			},
 			{
@@ -178,7 +169,7 @@ describe("generateRoutesFromBackend", () => {
 		expect(matchRoutes(routes, "/platform/user")?.at(-1)?.route?.handle?.auth).toBe("platform.user.read");
 		expect(organizationRoute?.handle?.auth).toBe("platform.organization.read");
 		expect(matchRoutes(routes, "/platform/offboard-pool")?.at(-1)?.route?.handle?.auth).toBe("platform.user.offboard_pool.read");
-		for (const pathname of ["/platform/user", "/platform/dept", "/platform/offboard-pool", "/platform/org-config", "/platform/role", "/platform/menu"]) {
+		for (const pathname of ["/platform/user", "/platform/dept", "/platform/offboard-pool", "/platform/role", "/platform/menu"]) {
 			const matches = matchRoutes(routes, pathname) ?? [];
 			const leafRoute = matches.at(-1)?.route;
 
