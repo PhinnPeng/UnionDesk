@@ -447,7 +447,10 @@ public final class AdminPermissionCatalog {
             new PermissionDefinition(PermissionCodes.ATTACHMENT_DOWNLOAD, "Attachment download", "shared", "GET", "/api/v1/attachments/*/download"),
             new PermissionDefinition(PermissionCodes.INBOX_READ, "View inbox", "shared", "GET", "/api/v1/inbox/**"),
             new PermissionDefinition(PermissionCodes.INBOX_MARK_READ, "Mark inbox read", "shared", "POST", "/api/v1/inbox/**"),
-            new PermissionDefinition(PermissionCodes.CONSULTATION_REPLY, "Reply consultation", "shared", "POST", "/api/v1/consultations/*/messages"));
+            new PermissionDefinition(PermissionCodes.CONSULTATION_REPLY, "Reply consultation", "shared", "POST", "/api/v1/consultations/*/messages"),
+            new PermissionDefinition(PermissionCodes.CONSULTATION_VIEW, "View consultation", "shared", "GET", "/api/v1/admin/domains/*/consultations"),
+            new PermissionDefinition(PermissionCodes.CONSULTATION_CONVERT, "Convert consultation to ticket", "shared", "POST", "/api/v1/admin/domains/*/consultations/*/ticket"),
+            new PermissionDefinition(PermissionCodes.CONSULTATION_CUSTOMER, "Customer consultation", "shared", "POST", "/api/v1/domains/*/consultations"));
 
     private static final Map<String, PermissionDefinition> BY_CODE = buildByCode();
 
