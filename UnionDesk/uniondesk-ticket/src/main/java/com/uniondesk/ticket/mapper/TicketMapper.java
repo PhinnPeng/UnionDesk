@@ -34,7 +34,7 @@ public interface TicketMapper extends BaseMapper<TicketPo> {
                                          @Param("limit") int limit,
                                          @Param("offset") long offset);
 
-    Long findIdByTicketNo(@Param("ticketNo") String ticketNo);
+    Long findIdByTicketNoAndDomain(@Param("ticketNo") String ticketNo, @Param("domainId") long domainId);
 
     int updateStatus(@Param("ticketId") long ticketId,
                      @Param("newStatus") String newStatus,
@@ -67,8 +67,6 @@ public interface TicketMapper extends BaseMapper<TicketPo> {
     int updateMerge(@Param("ticketId") long ticketId,
                     @Param("domainId") long domainId,
                     @Param("version") long version);
-
-    String findDomainCodeById(@Param("domainId") long domainId);
 
     Long findNextTicketSequence(@Param("domainId") long domainId, @Param("prefix") String prefix);
 

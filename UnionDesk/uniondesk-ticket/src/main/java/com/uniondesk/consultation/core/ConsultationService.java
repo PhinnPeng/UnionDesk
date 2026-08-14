@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,9 @@ public class ConsultationService {
     public static final String SENDER_ROLE_AGENT = "agent";
 
     private static final DateTimeFormatter SESSION_NO_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+    /** 会话编号生成并发冲突最大重试次数（MAX+1 撞唯一索引后重新取号） */
+    private static final int SESSION_NO_CREATE_RETRY_MAX = 3;
 
     public record ConsultationSessionRow(
             long id,
@@ -92,15 +96,13 @@ public class ConsultationService {
         requireCustomer(context);
         ensureCustomerInDomain(context.userId(), domainId);
         LocalDateTime now = LocalDateTime.now(clock);
-        String sessionNo = nextSessionNo(domainId);
 
         ConsultationSessionPo session = new ConsultationSessionPo();
-        session.setSessionNo(sessionNo);
         session.setBusinessDomainId(domainId);
         session.setCustomerId(context.userId());
         session.setSessionStatus(SESSION_STATUS_OPEN);
         session.setLastMessageAt(now);
-        consultationRepository.saveSession(session);
+        insertSessionWithRetry(domainId, session);
 
         ConsultationMessagePo message = new ConsultationMessagePo();
         message.setConsultationSessionId(session.getId());
@@ -112,7 +114,7 @@ public class ConsultationService {
         message.setContent(content);
         consultationRepository.saveMessage(message);
 
-        return toSessionRow(consultationRepository.findBySessionNoAndDomain(sessionNo, domainId));
+        return toSessionRow(consultationRepository.findBySessionNoAndDomain(session.getSessionNo(), domainId));
     }
 
     public List<ConsultationSessionRow> listMySessions(UserContext context, long domainId) {
@@ -170,7 +172,7 @@ public class ConsultationService {
         String linkedTicketNo = consultationRepository.findLinkedTicketNo(session.getId());
         if (linkedTicketNo != null) {
             return new ConsultationConvertResult(
-                    toSessionRow(session), ticketRepository.findIdByTicketNo(linkedTicketNo), linkedTicketNo);
+                    toSessionRow(session), ticketRepository.findIdByTicketNoAndDomain(linkedTicketNo, domainId), linkedTicketNo);
         }
 
         long ticketTypeId = request.ticketTypeId() != null
@@ -293,8 +295,29 @@ public class ConsultationService {
 
     private String nextSessionNo(long domainId) {
         String day = LocalDate.now(clock).format(SESSION_NO_DATE_FORMAT);
-        long sequence = consultationRepository.nextSessionSequence("CS" + day + "%");
-        return "CS" + String.format("%012d", Long.parseLong(day) * 10000 + sequence);
+        long sequence = consultationRepository.nextSessionSequence(domainId, "CS-" + day + "-%");
+        return "CS-" + day + "-" + String.format("%04d", sequence);
+    }
+
+    /**
+     * 生成会话编号并保存；并发建会话撞唯一索引（MAX+1 竞态）时重新取号重试。
+     */
+    private void insertSessionWithRetry(long domainId, ConsultationSessionPo session) {
+        int attempt = 0;
+        while (true) {
+            attempt++;
+            String sessionNo = nextSessionNo(domainId);
+            session.setSessionNo(sessionNo);
+            try {
+                consultationRepository.saveSession(session);
+                return;
+            }
+            catch (DuplicateKeyException ex) {
+                if (attempt >= SESSION_NO_CREATE_RETRY_MAX) {
+                    throw new IllegalStateException("会话编号生成冲突，请重试", ex);
+                }
+            }
+        }
     }
 
     private long resolveDefaultTicketTypeId(long domainId) {

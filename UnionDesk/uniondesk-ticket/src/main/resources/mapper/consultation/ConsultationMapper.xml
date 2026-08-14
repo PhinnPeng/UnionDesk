@@ -96,9 +96,9 @@
     </select>
 
     <select id="nextSessionSequence" resultType="long">
-        SELECT COALESCE(MAX(CAST(SUBSTRING(session_no, 3) AS UNSIGNED)), 0) + 1
+        SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(session_no, '-', -1) AS UNSIGNED)), 0) + 1
         FROM consultation_session
-        WHERE session_no LIKE #{prefix}
+        WHERE business_domain_id = #{domainId} AND session_no LIKE #{prefix}
     </select>
 
     <select id="selectMessagesBySession" resultMap="ConsultationMessagePo">

@@ -1,0 +1,31 @@
+{
+  "id": "08-14-ticket-no-list-fields",
+  "name": "08-14-ticket-no-list-fields",
+  "title": "工单编号规则改造 + 工单列表字段调整",
+  "description": "工单编号改为「事项类型短码-时序-固定顺序码」（如 FB-20260814-0001），咨询会话编号统一同规则；修复编号并发竞态（MAX+1+唯一索引+重试）。工单列表字段调整：受理人显示姓名、创建时间→更新时间、新增客户名称列。来源：@trellis-research 架构五问（2026-08-14）决策。",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "phinnpeng",
+  "assignee": "phinnpeng",
+  "createdAt": "2026-08-14",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "master",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketService.java",
+    "UnionDesk/uniondesk-ticket/src/main/resources/mapper/ticket/TicketMapper.xml",
+    "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/consultation/core/ConsultationService.java",
+    "UnionDeskWeb/apps/UnionDeskAdminWeb/src/pages/domain/ticket-queue/index.tsx"
+  ],
+  "notes": "",
+  "meta": {}
+}

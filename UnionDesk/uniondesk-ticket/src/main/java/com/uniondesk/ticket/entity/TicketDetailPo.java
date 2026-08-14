@@ -33,6 +33,8 @@ public class TicketDetailPo {
     private LocalDateTime updatedAt;
     private LocalDateTime lastReplyAt;
     private long replyCount;
+    private String assigneeName;
+    private String customerName;
 
     public long getId() {
         return id;
@@ -264,5 +266,21 @@ public class TicketDetailPo {
 
     public void setReplyCount(long replyCount) {
         this.replyCount = replyCount;
+    }
+
+    public String getAssigneeName() {
+        return assigneeName;
+    }
+
+    public void setAssigneeName(String assigneeName) {
+        this.assigneeName = assigneeName;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 }

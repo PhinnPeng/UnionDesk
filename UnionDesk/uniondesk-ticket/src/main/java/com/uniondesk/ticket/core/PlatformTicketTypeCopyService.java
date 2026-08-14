@@ -14,6 +14,7 @@ import com.uniondesk.ticket.web.TicketConfigDtos;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -73,6 +74,7 @@ public class PlatformTicketTypeCopyService {
         domainType.setScope(TicketTypePo.SCOPE_DOMAIN);
         domainType.setBusinessDomainId(domainId);
         domainType.setCode(resolveUniqueCode(domainId, platformType.getCode()));
+        domainType.setShortCode(resolveUniqueShortCode(domainId, platformType));
         domainType.setName(resolveUniqueName(domainId, platformType.getName()));
         domainType.setDescription(platformType.getDescription());
         domainType.setDescriptionTemplateMd(
@@ -295,6 +297,29 @@ public class PlatformTicketTypeCopyService {
             }
         }
         throw new IllegalArgumentException("无法生成唯一事项类型编码: " + code);
+    }
+
+    /**
+     * 解析并确保短码在目标域内唯一：优先平台短码，为空兜底 code 前 2 位大写；冲突时追加数字后缀。
+     */
+    private String resolveUniqueShortCode(long domainId, TicketTypePo platformType) {
+        String code = StringUtils.hasText(platformType.getCode()) ? platformType.getCode().trim() : "";
+        String base = StringUtils.hasText(platformType.getShortCode())
+                ? platformType.getShortCode().trim().toUpperCase(Locale.ROOT)
+                : (code.length() >= 2 ? code.substring(0, 2).toUpperCase(Locale.ROOT) : code.toUpperCase(Locale.ROOT));
+        if (!StringUtils.hasText(base)) {
+            base = "TK";
+        }
+        if (ticketTypeRepository.findByDomainIdAndShortCode(domainId, base) == null) {
+            return base;
+        }
+        for (int i = 1; i <= 50; i++) {
+            String candidate = base + i;
+            if (ticketTypeRepository.findByDomainIdAndShortCode(domainId, candidate) == null) {
+                return candidate;
+            }
+        }
+        throw new IllegalArgumentException("无法生成唯一事项类型短码: " + base);
     }
 
     private String resolveUniqueName(long domainId, String baseName) {

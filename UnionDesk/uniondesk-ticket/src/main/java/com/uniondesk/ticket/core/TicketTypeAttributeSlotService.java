@@ -724,6 +724,7 @@ public class TicketTypeAttributeSlotService {
                 String.valueOf(type.getId()),
                 String.valueOf(type.getBusinessDomainId()),
                 type.getCode(),
+                type.getShortCode(),
                 type.getName(),
                 type.getDescription(),
                 type.getDescriptionTemplateMd(),

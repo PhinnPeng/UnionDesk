@@ -19,6 +19,7 @@ public class TicketTypePo {
     private String scope;
     private Long businessDomainId;
     private String code;
+    private String shortCode;
     private String name;
     private String description;
     private String descriptionTemplateMd;
@@ -64,6 +65,14 @@ public class TicketTypePo {
 
     public void setCode(String code) {
         this.code = code;
+    }
+
+    public String getShortCode() {
+        return shortCode;
+    }
+
+    public void setShortCode(String shortCode) {
+        this.shortCode = shortCode;
     }
 
     public String getName() {

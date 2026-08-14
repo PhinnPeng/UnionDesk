@@ -33,6 +33,10 @@ public class TicketTypeRepository {
         return mapper.findByDomainIdAndName(domainId, name);
     }
 
+    public TicketTypePo findByDomainIdAndShortCode(long domainId, String shortCode) {
+        return mapper.findByDomainIdAndShortCode(domainId, shortCode);
+    }
+
     public TicketTypePo findByDomainIdAndSourceGlobalTypeId(long domainId, long sourceGlobalTypeId) {
         return mapper.findByDomainIdAndSourceGlobalTypeId(domainId, sourceGlobalTypeId);
     }
@@ -78,6 +82,10 @@ public class TicketTypeRepository {
         return mapper.findPlatformByName(name);
     }
 
+    public TicketTypePo findPlatformByShortCode(String shortCode) {
+        return mapper.findPlatformByShortCode(shortCode);
+    }
+
     public int nextSortOrderPlatform() {
         Integer max = mapper.findMaxSortOrderPlatform();
         return max == null ? 0 : max + 1;
@@ -98,8 +106,9 @@ public class TicketTypeRepository {
             String description,
             String descriptionTemplateMd,
             String icon,
-            String status) {
-        mapper.updateMetadata(id, domainId, name, description, descriptionTemplateMd, icon, status);
+            String status,
+            String shortCode) {
+        mapper.updateMetadata(id, domainId, name, description, descriptionTemplateMd, icon, status, shortCode);
     }
 
     public void updatePlatformMetadata(
@@ -108,8 +117,9 @@ public class TicketTypeRepository {
             String description,
             String descriptionTemplateMd,
             String icon,
-            String status) {
-        mapper.updatePlatformMetadata(id, name, description, descriptionTemplateMd, icon, status);
+            String status,
+            String shortCode) {
+        mapper.updatePlatformMetadata(id, name, description, descriptionTemplateMd, icon, status, shortCode);
     }
 
     public void updateSortOrder(long id, int sortOrder) {

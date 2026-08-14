@@ -35,8 +35,8 @@ public class ConsultationRepository {
         return mapper.selectByCustomerId(domainId, customerId);
     }
 
-    public long nextSessionSequence(String prefix) {
-        return mapper.nextSessionSequence(prefix);
+    public long nextSessionSequence(long domainId, String prefix) {
+        return mapper.nextSessionSequence(domainId, prefix);
     }
 
     public void saveSession(ConsultationSessionPo po) {

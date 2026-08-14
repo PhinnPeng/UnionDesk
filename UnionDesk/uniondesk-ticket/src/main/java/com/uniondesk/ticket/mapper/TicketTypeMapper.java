@@ -45,6 +45,14 @@ public interface TicketTypeMapper extends BaseMapper<TicketTypePo> {
                 .and(TicketTypePo::getName).eq(name));
     }
 
+    default TicketTypePo findByDomainIdAndShortCode(long domainId, String shortCode) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketTypePo.class)
+                .where(TicketTypePo::getScope).eq(TicketTypePo.SCOPE_DOMAIN)
+                .and(TicketTypePo::getBusinessDomainId).eq(domainId)
+                .and(TicketTypePo::getShortCode).eq(shortCode));
+    }
+
     default TicketTypePo findByDomainIdAndSourceGlobalTypeId(long domainId, long sourceGlobalTypeId) {
         return selectOneByQuery(QueryWrapper.create()
                 .from(TicketTypePo.class)
@@ -94,6 +102,13 @@ public interface TicketTypeMapper extends BaseMapper<TicketTypePo> {
                 .and(TicketTypePo::getName).eq(name));
     }
 
+    default TicketTypePo findPlatformByShortCode(String shortCode) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketTypePo.class)
+                .where(TicketTypePo::getScope).eq(TicketTypePo.SCOPE_PLATFORM)
+                .and(TicketTypePo::getShortCode).eq(shortCode));
+    }
+
     default Integer findMaxSortOrderPlatform() {
         return selectObjectByQueryAs(QueryWrapper.create()
                 .select(QueryMethods.max(TicketTypePo::getSortOrder))
@@ -111,13 +126,14 @@ public interface TicketTypeMapper extends BaseMapper<TicketTypePo> {
     }
 
     default void updateMetadata(long id, long domainId, String name, String description,
-            String descriptionTemplateMd, String icon, String status) {
+            String descriptionTemplateMd, String icon, String status, String shortCode) {
         TicketTypePo set = new TicketTypePo();
         set.setName(name);
         set.setDescription(description);
         set.setDescriptionTemplateMd(descriptionTemplateMd);
         set.setIcon(icon);
         set.setStatus(status);
+        set.setShortCode(shortCode);
         updateByQuery(set, QueryWrapper.create()
                 .from(TicketTypePo.class)
                 .where(TicketTypePo::getId).eq(id)
@@ -126,13 +142,14 @@ public interface TicketTypeMapper extends BaseMapper<TicketTypePo> {
     }
 
     default void updatePlatformMetadata(long id, String name, String description,
-            String descriptionTemplateMd, String icon, String status) {
+            String descriptionTemplateMd, String icon, String status, String shortCode) {
         TicketTypePo set = new TicketTypePo();
         set.setName(name);
         set.setDescription(description);
         set.setDescriptionTemplateMd(descriptionTemplateMd);
         set.setIcon(icon);
         set.setStatus(status);
+        set.setShortCode(shortCode);
         updateByQuery(set, QueryWrapper.create()
                 .from(TicketTypePo.class)
                 .where(TicketTypePo::getId).eq(id)

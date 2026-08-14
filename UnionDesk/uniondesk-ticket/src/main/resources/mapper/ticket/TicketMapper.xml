@@ -33,6 +33,8 @@
         <result property="updatedAt" column="updated_at"/>
         <result property="lastReplyAt" column="last_reply_at"/>
         <result property="replyCount" column="reply_count"/>
+        <result property="assigneeName" column="assignee_name"/>
+        <result property="customerName" column="customer_name"/>
     </resultMap>
 
     <select id="findByIdAndDomainId" resultMap="TicketDetailPo">
@@ -203,10 +205,14 @@
                 SELECT COUNT(*)
                 FROM ticket_reply r
                 WHERE r.ticket_id = t.id
-            ), 0) AS reply_count
+            ), 0) AS reply_count,
+            COALESCE(sa.nickname, sa.real_name) AS assignee_name,
+            COALESCE(ca.nickname, ca.real_name) AS customer_name
         FROM ticket t
         JOIN business_domain d ON d.id = t.business_domain_id
         JOIN ticket_type tt ON tt.id = t.ticket_type_id
+        LEFT JOIN staff_account sa ON sa.id = t.assignee_staff_account_id
+        LEFT JOIN customer_account ca ON ca.id = t.customer_id
         WHERE t.business_domain_id = #{domainId}
         <if test="customerId != null">
             AND t.customer_id = #{customerId}
@@ -227,10 +233,11 @@
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
-    <select id="findIdByTicketNo" resultType="java.lang.Long">
+    <select id="findIdByTicketNoAndDomain" resultType="java.lang.Long">
         SELECT id
         FROM ticket
-        WHERE ticket_no = #{ticketNo}
+        WHERE ticket_no = #{ticketNo} AND business_domain_id = #{domainId}
+        LIMIT 1
     </select>
 
     <update id="updateStatus">
@@ -317,13 +324,6 @@
             updated_at = CURRENT_TIMESTAMP(3)
         WHERE id = #{ticketId} AND business_domain_id = #{domainId} AND version = #{version}
     </update>
-
-    <select id="findDomainCodeById" resultType="java.lang.String">
-        SELECT code
-        FROM business_domain
-        WHERE id = #{domainId}
-        LIMIT 1
-    </select>
 
     <select id="findNextTicketSequence" resultType="java.lang.Long">
         SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(ticket_no, '-', -1) AS UNSIGNED)), 0) + 1

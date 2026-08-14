@@ -52,8 +52,8 @@ public class TicketRepository {
         return mapper.listTicketsPage(domainId, customerId, status, assignee, priority, keyword, limit, offset);
     }
 
-    public long findIdByTicketNo(String ticketNo) {
-        Long id = mapper.findIdByTicketNo(ticketNo);
+    public long findIdByTicketNoAndDomain(String ticketNo, long domainId) {
+        Long id = mapper.findIdByTicketNoAndDomain(ticketNo, domainId);
         if (id == null) {
             throw new IllegalArgumentException("ticket not found");
         }
@@ -82,10 +82,6 @@ public class TicketRepository {
 
     public int updateMerge(long ticketId, long domainId, long version) {
         return mapper.updateMerge(ticketId, domainId, version);
-    }
-
-    public String findDomainCodeById(long domainId) {
-        return mapper.findDomainCodeById(domainId);
     }
 
     public long findNextTicketSequence(long domainId, String prefix) {

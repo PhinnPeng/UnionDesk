@@ -23,7 +23,7 @@ public interface ConsultationMapper extends BaseMapper<ConsultationSessionPo> {
 
     List<ConsultationSessionPo> selectByCustomerId(@Param("domainId") long domainId, @Param("customerId") long customerId);
 
-    long nextSessionSequence(@Param("prefix") String prefix);
+    long nextSessionSequence(@Param("domainId") long domainId, @Param("prefix") String prefix);
 
     default void insertSession(ConsultationSessionPo po) {
         insert(po);

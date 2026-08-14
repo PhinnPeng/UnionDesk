@@ -39,6 +39,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -51,6 +52,9 @@ import org.springframework.web.server.ResponseStatusException;
 public class TicketService {
 
     private static final DateTimeFormatter TICKET_NO_DATE_FORMAT = DateTimeFormatter.BASIC_ISO_DATE;
+
+    /** 编号生成并发冲突最大重试次数（MAX+1 撞唯一索引后重新取号） */
+    private static final int TICKET_NO_CREATE_RETRY_MAX = 3;
 
     private final TicketRepository ticketRepository;
     private final TicketReplyRepository ticketReplyRepository;
@@ -125,8 +129,6 @@ public class TicketService {
     @Transactional
     public TicketSubmissionResult createTicketForCustomer(UserContext context, long businessDomainId, long customerUserId, CreateTicketCommand command) {
         ensureCustomerInDomain(customerUserId, businessDomainId);
-        DomainRow domain = loadDomain(businessDomainId);
-        String ticketNo = nextTicketNo(domain.id(), domain.code());
         PeeledFormValues peeled = peelSystemFormValues(command);
         String resolvedDescription = resolveDescriptionFromTypeTemplate(
                 businessDomainId,
@@ -150,7 +152,6 @@ public class TicketService {
         TicketContent content = mergeTemplate(peeledCommand, template, priority, customFieldsJson);
 
         TicketPo ticketPo = new TicketPo();
-        ticketPo.setTicketNo(ticketNo);
         ticketPo.setBusinessDomainId(businessDomainId);
         ticketPo.setCustomerId(customerUserId);
         ticketPo.setTicketTypeId(content.ticketTypeId());
@@ -165,9 +166,11 @@ public class TicketService {
             ticketPo.setAssignedTo(peeledCommand.assigneeStaffAccountId());
             ticketPo.setAssigneeStaffAccountId(peeledCommand.assigneeStaffAccountId());
         }
-        ticketRepository.save(ticketPo);
+        String ticketNo = insertTicketWithRetry(businessDomainId, content.ticketTypeId(), ticketPo);
 
-        long ticketId = ticketPo.getId() == 0 ? ticketRepository.findIdByTicketNo(ticketNo) : ticketPo.getId();
+        long ticketId = ticketPo.getId() == 0
+                ? ticketRepository.findIdByTicketNoAndDomain(ticketNo, businessDomainId)
+                : ticketPo.getId();
         recordHistory(ticketId, businessDomainId, "create", null, "open", context, Map.of(
                 "ticket_no", ticketNo,
                 "priority", content.priority(),
@@ -595,14 +598,6 @@ public class TicketService {
         }
     }
 
-    private DomainRow loadDomain(long businessDomainId) {
-        String code = ticketRepository.findDomainCodeById(businessDomainId);
-        if (code == null) {
-            throw new IllegalArgumentException("business domain not found");
-        }
-        return new DomainRow(businessDomainId, code, code);
-    }
-
     private TicketTemplateRow loadTicketTemplate(long businessDomainId, long templateId) {
         TicketTemplatePo po = ticketTemplateRepository.findByIdAndDomainId(templateId, businessDomainId);
         if (po == null) {
@@ -615,10 +610,52 @@ public class TicketService {
         return toTicketRow(ticketRepository.findRequiredByIdAndDomainId(ticketId, businessDomainId));
     }
 
-    private String nextTicketNo(long businessDomainId, String domainCode) {
+    private String nextTicketNo(long businessDomainId, Long ticketTypeId) {
         String day = LocalDate.now(clock).format(TICKET_NO_DATE_FORMAT);
-        long sequence = ticketRepository.findNextTicketSequence(businessDomainId, domainCode + "-" + day + "-%");
-        return domainCode + "-" + day + "-" + sequence;
+        String shortCode = resolveTicketTypeShortCode(businessDomainId, ticketTypeId);
+        long sequence = ticketRepository.findNextTicketSequence(businessDomainId, shortCode + "-" + day + "-%");
+        return shortCode + "-" + day + "-" + String.format("%04d", sequence);
+    }
+
+    /**
+     * 解析事项类型短码：优先 short_code；为空时兜底取 code 前 2 位大写；均不可用时用 TK。
+     */
+    private String resolveTicketTypeShortCode(long businessDomainId, Long ticketTypeId) {
+        if (ticketTypeId != null && ticketTypeId > 0L) {
+            TicketTypePo type = ticketTypeRepository.findByIdAndDomainId(ticketTypeId, businessDomainId);
+            if (type != null) {
+                String shortCode = type.getShortCode();
+                if (StringUtils.hasText(shortCode)) {
+                    return shortCode.trim().toUpperCase(Locale.ROOT);
+                }
+                if (StringUtils.hasText(type.getCode())) {
+                    String prefix = type.getCode().trim().toUpperCase(Locale.ROOT);
+                    return prefix.length() >= 2 ? prefix.substring(0, 2) : prefix;
+                }
+            }
+        }
+        return "TK";
+    }
+
+    /**
+     * 生成工单编号并保存；并发建单撞唯一索引（MAX+1 竞态）时重新取号重试。
+     */
+    private String insertTicketWithRetry(long businessDomainId, Long ticketTypeId, TicketPo ticketPo) {
+        int attempt = 0;
+        while (true) {
+            attempt++;
+            String ticketNo = nextTicketNo(businessDomainId, ticketTypeId);
+            ticketPo.setTicketNo(ticketNo);
+            try {
+                ticketRepository.save(ticketPo);
+                return ticketNo;
+            }
+            catch (DuplicateKeyException ex) {
+                if (attempt >= TICKET_NO_CREATE_RETRY_MAX) {
+                    throw new IllegalStateException("工单编号生成冲突，请重试", ex);
+                }
+            }
+        }
     }
 
     private String resolveDescriptionFromTypeTemplate(long domainId, Long ticketTypeId, String currentDescription) {
@@ -856,7 +893,9 @@ public class TicketService {
                 po.getCreatedAt(),
                 po.getUpdatedAt(),
                 po.getLastReplyAt(),
-                po.getReplyCount());
+                po.getReplyCount(),
+                po.getAssigneeName(),
+                po.getCustomerName());
     }
 
     private TicketReplyRow toTicketReplyRow(TicketReplyPo po) {
@@ -905,9 +944,6 @@ public class TicketService {
                 po.getContentJson(),
                 po.getStatus(),
                 po.getSortOrder());
-    }
-
-    private record DomainRow(long id, String code, String name) {
     }
 
     private record TicketTemplateRow(long id, long businessDomainId, long ticketTypeId, String scope, String name, String contentJson, String status, int sortOrder) {
@@ -1032,7 +1068,9 @@ public class TicketService {
             LocalDateTime createdAt,
             LocalDateTime updatedAt,
             LocalDateTime lastReplyAt,
-            long replyCount) {
+            long replyCount,
+            String assigneeName,
+            String customerName) {
     }
 
     record QuickReplyTemplateRow(

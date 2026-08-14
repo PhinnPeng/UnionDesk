@@ -13,6 +13,7 @@ public final class TicketConfigDtos {
             String id,
             String domain_id,
             String code,
+            String short_code,
             String name,
             String description,
             String description_template_md,
@@ -29,6 +30,7 @@ public final class TicketConfigDtos {
 
     public record CreateTicketTypeRequest(
             String code,
+            String short_code,
             @NotBlank String name,
             String description,
             String description_template_md,
@@ -47,6 +49,7 @@ public final class TicketConfigDtos {
             String description,
             String description_template_md,
             String icon,
+            String short_code,
             Object status_flow,
             String status,
             java.util.List<SaveTransitionRuleRequest> transition_rules) {
@@ -146,6 +149,7 @@ public final class TicketConfigDtos {
             String id,
             String scope,
             String code,
+            String short_code,
             String name,
             String description,
             String icon,
@@ -162,6 +166,7 @@ public final class TicketConfigDtos {
             String id,
             String scope,
             String code,
+            String short_code,
             String name,
             String description,
             String description_template_md,
@@ -188,6 +193,7 @@ public final class TicketConfigDtos {
 
     public record CreatePlatformTicketTypeRequest(
             String code,
+            String short_code,
             @NotBlank String name,
             String description,
             @NotBlank String icon,
@@ -200,6 +206,7 @@ public final class TicketConfigDtos {
             String description,
             String description_template_md,
             String icon,
+            String short_code,
             Object status_flow,
             String status,
             java.util.List<SaveTransitionRuleRequest> transition_rules) {

@@ -98,6 +98,8 @@ public class TicketConfigService {
         String code = resolveDomainCode(domainId, request.code(), request.template_key(), name);
         assertCodeUnique(domainId, code, null);
         assertNameUnique(domainId, name, null);
+        String shortCode = resolveShortCode(request.short_code(), code);
+        assertShortCodeUnique(domainId, shortCode, null);
         Object statusFlow = request.status_flow() == null
                 ? DefaultStatusFlowProvider.emptyFlow()
                 : request.status_flow();
@@ -108,6 +110,7 @@ public class TicketConfigService {
         po.setScope(TicketTypePo.SCOPE_DOMAIN);
         po.setBusinessDomainId(domainId);
         po.setCode(code);
+        po.setShortCode(shortCode);
         po.setName(name);
         po.setDescription(description);
         po.setDescriptionTemplateMd(trimToNull(request.description_template_md()));
@@ -162,8 +165,12 @@ public class TicketConfigService {
                 : trimToNull(request.description_template_md());
         String icon = request.icon() == null ? existing.getIcon() : trimToNull(request.icon());
         String status = StringUtils.hasText(request.status()) ? request.status().trim() : existing.getStatus();
+        String shortCode = request.short_code() == null
+                ? existing.getShortCode()
+                : resolveShortCode(request.short_code(), existing.getCode());
+        assertShortCodeUnique(domainId, shortCode, typeId);
         try {
-            ticketTypeRepository.updateMetadata(typeId, domainId, name, description, descriptionTemplateMd, icon, status);
+            ticketTypeRepository.updateMetadata(typeId, domainId, name, description, descriptionTemplateMd, icon, status, shortCode);
         } catch (DuplicateKeyException ex) {
             throw translateTicketTypeDuplicate(ex);
         }
@@ -178,6 +185,7 @@ public class TicketConfigService {
         existing.setDescriptionTemplateMd(descriptionTemplateMd);
         existing.setIcon(icon);
         existing.setStatus(status);
+        existing.setShortCode(shortCode);
         return toTicketTypeView(existing);
     }
 
@@ -433,6 +441,7 @@ public class TicketConfigService {
                 String.valueOf(po.getId()),
                 po.getBusinessDomainId() == null ? null : String.valueOf(po.getBusinessDomainId()),
                 po.getCode(),
+                po.getShortCode(),
                 po.getName(),
                 po.getDescription(),
                 po.getDescriptionTemplateMd(),
@@ -671,6 +680,34 @@ public class TicketConfigService {
         TicketTypePo existing = ticketTypeRepository.findByDomainIdAndName(domainId, name);
         if (existing != null && (excludeTypeId == null || existing.getId() != excludeTypeId)) {
             throw new IllegalArgumentException("该域下名称已存在");
+        }
+    }
+
+    /**
+     * 解析事项类型短码：显式传入时规范化为大写；为空时默认取 code 前 2 位大写，兜底 TK。
+     */
+    private String resolveShortCode(String requested, String code) {
+        String shortCode;
+        if (StringUtils.hasText(requested)) {
+            shortCode = requested.trim().toUpperCase(Locale.ROOT);
+            if (shortCode.length() > 16) {
+                throw new IllegalArgumentException("短码最长 16 个字符");
+            }
+        }
+        else if (StringUtils.hasText(code)) {
+            shortCode = code.trim().toUpperCase(Locale.ROOT);
+            shortCode = shortCode.length() >= 2 ? shortCode.substring(0, 2) : shortCode;
+        }
+        else {
+            shortCode = "TK";
+        }
+        return shortCode;
+    }
+
+    private void assertShortCodeUnique(long domainId, String shortCode, Long excludeTypeId) {
+        TicketTypePo existing = ticketTypeRepository.findByDomainIdAndShortCode(domainId, shortCode);
+        if (existing != null && (excludeTypeId == null || existing.getId() != excludeTypeId)) {
+            throw new IllegalArgumentException("该域下短码已存在");
         }
     }
 

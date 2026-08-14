@@ -86,11 +86,14 @@ public class TicketTypeService {
         String code = resolveCode(request.code(), request.template_key(), name);
         assertPlatformCodeUnique(code, null);
         assertPlatformNameUnique(name, null);
+        String shortCode = resolveShortCode(request.short_code(), code);
+        assertPlatformShortCodeUnique(shortCode, null);
         String formSchemaJson;
         TicketTypePo po = new TicketTypePo();
         po.setScope(TicketTypePo.SCOPE_PLATFORM);
         po.setBusinessDomainId(null);
         po.setCode(code);
+        po.setShortCode(shortCode);
         po.setName(name);
         po.setDescription(description);
         po.setIcon(icon.trim());
@@ -134,8 +137,12 @@ public class TicketTypeService {
                 : trimToNull(request.description_template_md());
         String icon = request.icon() == null ? existing.getIcon() : requiredText(request.icon(), "icon");
         String status = StringUtils.hasText(request.status()) ? request.status().trim() : existing.getStatus();
+        String shortCode = request.short_code() == null
+                ? existing.getShortCode()
+                : resolveShortCode(request.short_code(), existing.getCode());
+        assertPlatformShortCodeUnique(shortCode, typeId);
         try {
-            ticketTypeRepository.updatePlatformMetadata(typeId, name, description, descriptionTemplateMd, icon, status);
+            ticketTypeRepository.updatePlatformMetadata(typeId, name, description, descriptionTemplateMd, icon, status, shortCode);
         }
         catch (DuplicateKeyException ex) {
             throw translatePlatformDuplicate(ex);
@@ -151,6 +158,7 @@ public class TicketTypeService {
         existing.setDescriptionTemplateMd(descriptionTemplateMd);
         existing.setIcon(icon);
         existing.setStatus(status);
+        existing.setShortCode(shortCode);
         return toView(existing);
     }
 
@@ -186,6 +194,7 @@ public class TicketTypeService {
                 String.valueOf(po.getId()),
                 po.getScope(),
                 po.getCode(),
+                po.getShortCode(),
                 po.getName(),
                 po.getDescription(),
                 po.getIcon(),
@@ -209,6 +218,7 @@ public class TicketTypeService {
                 String.valueOf(po.getId()),
                 po.getScope(),
                 po.getCode(),
+                po.getShortCode(),
                 po.getName(),
                 po.getDescription(),
                 po.getDescriptionTemplateMd(),
@@ -297,6 +307,37 @@ public class TicketTypeService {
         TicketTypePo existing = ticketTypeRepository.findPlatformByName(name);
         if (existing != null && (excludeTypeId == null || existing.getId() != excludeTypeId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "名称已存在");
+        }
+    }
+
+    /**
+     * 解析事项类型短码：显式传入时规范化为大写；为空时默认取 code 前 2 位大写，兜底 TK。
+     */
+    private String resolveShortCode(String requested, String code) {
+        String shortCode;
+        if (StringUtils.hasText(requested)) {
+            shortCode = requested.trim().toUpperCase(Locale.ROOT);
+            if (shortCode.length() > 16) {
+                throw new IllegalArgumentException("短码最长 16 个字符");
+            }
+        }
+        else if (StringUtils.hasText(code)) {
+            shortCode = code.trim().toUpperCase(Locale.ROOT);
+            shortCode = shortCode.length() >= 2 ? shortCode.substring(0, 2) : shortCode;
+        }
+        else {
+            shortCode = "TK";
+        }
+        return shortCode;
+    }
+
+    private void assertPlatformShortCodeUnique(String shortCode, Long excludeTypeId) {
+        if (!StringUtils.hasText(shortCode)) {
+            return;
+        }
+        TicketTypePo existing = ticketTypeRepository.findPlatformByShortCode(shortCode);
+        if (existing != null && (excludeTypeId == null || existing.getId() != excludeTypeId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "短码已存在");
         }
     }
 
