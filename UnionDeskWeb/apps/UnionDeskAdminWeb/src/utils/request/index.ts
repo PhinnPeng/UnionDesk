@@ -29,7 +29,7 @@ const requestWhiteList = [
 
 const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 10000;
 
-const beforeRequestHook = ((request: Request, options: RequestOptions) => {
+const beforeRequestHook = (({ request, options }: { request: Request; options: RequestOptions }) => {
 	const requestOptions = options;
 	const clientCode = useAuthStore.getState().clientCode || "ud-admin-web";
 	const requestUrl = request.url ?? "";
@@ -63,7 +63,7 @@ const beforeRequestHook = ((request: Request, options: RequestOptions) => {
 	}
 }) as unknown as BeforeRequestHook;
 
-const afterResponseHook = (async (request: Request, options: RequestOptions, response: Response) => {
+const afterResponseHook = (async ({ request, options, response }: { request: Request; options: RequestOptions; response: Response }) => {
 	const requestUrl = request.url ?? "";
 	if (!options?.ignoreLoading) {
 		globalProgress.done();
