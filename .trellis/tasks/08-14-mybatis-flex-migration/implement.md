@@ -15,25 +15,25 @@
 - [x] 0.8 分页等价冒烟（AC2）：`BlockedWordRepositoryIntegrationTest` 真库通过（插入回填 + paginate count + 越界页）；commit `13fe061`
   - 注意：删除 XML 后必须 `clean`（target/classes 残留旧 XML 会导致 SqlSessionFactory 解析失败）
 
-## 阶段 1：按模块分批（每批：实体注解 + 接口转换 + Repository/Service 分页切 Page + 删 XML + 验证 + commit）
+## 阶段 1：按模块分批 ✅（四批并行子代理完成 + 主代理统一验证）
 
-- [ ] 1.1 `iam` 批次（auth/ + iam/）
-- [ ] 1.2 `support` 批次（blockedword 已完成试点；含 audit/attachment/notification/sla/dashboard/config/common）
-- [ ] 1.3 `domain` 批次
-- [ ] 1.4 `ticket` 批次
-- [ ] 每批验证：`./mvnw -B -ntp compile` + 对应模块单测；复杂联表/UNION（如 `selectEffectiveGrants`）保留 XML 或 `@Select`
-- [ ] 每批 commit 前自查：无超出本批范围的改动（AGENTS.md 精准修改约束）
+- [x] 1.1 `iam` 批次（auth/ + iam/）— commit `c64193c`（21 Mapper，3 全转+15 半转+3 保留；10 个 Mapper 冲突 statement 重命名 insertRow/updateRow/deleteRowById/selectAllRows）
+- [x] 1.2 `support` 批次 — commit `315f1c8`（6 全转 + 9 保留，NotificationTemplate/SlaCalendar 分页切 Page）
+- [x] 1.3 `domain` 批次 — commit `1355962`（12 全转 + 3 保留，DomainRepository/Service 分页切 Page）
+- [x] 1.4 `ticket` 批次 — commit `7d1fc3e`（20 全转 + 4 保留，7 Repository/4 Service 分页切 Page；修复 6 Mapper QueryWrapper 误用）
+- [x] 每批验证：`./mvnw -B -ntp compile` 全绿 + 对应单测；复杂联表/UNION 保留 XML 或 `@Select`
+- [x] 每批 commit 前自查：改动范围仅限本批模块（git status 逐批核对）
 
-## 阶段 2：主键生成器切换（R4，独立 commit 可回滚）
+## 阶段 2：主键生成器切换（R4，独立 commit 可回滚）⏳ 待用户清单
 
 - [ ] 2.1 用户指定「部分模型」清单 → 实体 `@Id` 改为 `@Id(keyType = KeyType.Generator, value = KeyGenerators.snowFlakeId)`
 - [ ] 2.2 验证：插入后 id 由生成器回填（19 位大数）、既有数据不受影响、外键引用正常（AC4）
 
-## 阶段 3：全量验证与收尾
+## 阶段 3：全量验证与收尾（AC3/AC5 已验证 ✅）
 
-- [ ] 3.1 停 dev 服务 → `./mvnw -B -ntp test` 全量 → 与 master 基线对照：**无新增失败**、Flex 绑定错误 = 0（AC3）
-- [ ] 3.2 红线自查：grep 无新增 `prepareAuth`/`DataScope`/分页拦截器；数据权限过滤均在 service 显式（AC5）
-- [ ] 3.3 汇总报告；`task.py` 收尾（归档/提交）
+- [x] 3.1 停 dev 服务 → 全量 346 用例：失败类集合与 master 基线**完全一致**（19 类），Flex 绑定错误=0、SQL 语法/列错误=0；3 个新增失败证实为 DB 污染（恢复种子 `staff_account_platform_role (2,1)` 后转绿）
+- [x] 3.2 红线自查：`prepareAuth`/`DataScope`/PageHelper/分页拦截器 = 0 命中（AC5）
+- [ ] 3.3 汇总报告；`task.py` 收尾（归档/提交）——待用户确认清单与归档
 
 ## 验证命令
 
