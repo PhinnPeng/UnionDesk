@@ -72,3 +72,20 @@ export function fetchDeleteRoleItem(id: number) {
 ## `request.ts` 介绍
 
 `request.ts` 是封装了 `[Ky](https://github.com/sindresorhus/ky)` 的请求库，代码实现请看 `[src/utils/request](https://github.com/condorheroblog/react-antd-admin/tree/main/src/utils/request)`。
+
+## 数据获取约定（2026-08-14 统一请求处理层）
+
+> 全仓 HTTP 请求统一经 `src/utils/request`（ky 单实例，相对 `/api` + vite proxy/反代）。历史 `src/api/backend.ts`（自实现 fetch）已并入并删除。
+
+### 请求出口
+
+- **统一函数**：`requestBackendJson(path, options)`（`#src/utils/request` 导出）——HTTP 错误抛 `HttpRequestError(status, message, code)`，成功响应自动信封解包（`data`/`result`）
+- **选项**：`{ method, json, headers, silentError }`——`silentError: true` 时不弹全局错误提示，由调用方展示友好文案（如轮询/静默刷新）
+- **自动行为**（ky 层）：token/client-code/lang 头注入、401 自动刷新重试、超时 10s、全局进度条
+- **禁止**：业务文件直接 `fetch(`/自建 ky/axios 实例；新 API 一律走 `requestBackendJson` 或 `request` 实例
+
+### 数据获取（React Query 约定层，不建封装）
+
+- 页面服务端数据获取统一 `useQuery(queryKey, apiFn)`；变更统一 `useMutation`（范本：`src/pages/system/role/index.tsx`）
+- API 函数保持「typed promise」形态（platform/*.ts 模式），页面层决定用 useQuery 或直接调用
+- `queryKey` 建议 `[模块, 参数]` 数组形式（如 `["domains", { page }]`）

@@ -10,9 +10,9 @@ vi.mock("#src/utils/static-antd", () => ({
 	},
 }));
 
-import { requestBackendJson } from "./backend";
+import { requestBackendJson } from "./request-json";
 
-describe("requestBackendJson", () => {
+describe("requestBackendJson（自 api/backend.ts 迁移）", () => {
 	beforeEach(() => {
 		mocks.messageError.mockReset();
 		vi.stubGlobal("fetch", vi.fn());

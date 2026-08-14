@@ -15,7 +15,7 @@ import type {
 
 import type { LoginInfo } from "#src/api/user/types";
 
-import { requestBackendJson } from "#src/api/backend";
+import { requestBackendJson } from "#src/utils/request";
 
 export type {
 	CaptchaChallengeResponse,

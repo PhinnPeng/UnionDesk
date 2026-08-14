@@ -1,4 +1,4 @@
-import { requestBackendJson } from "#src/api/backend";
+import { requestBackendJson } from "#src/utils/request";
 
 /** 角色模板视图 */
 export interface RoleTemplateItem {

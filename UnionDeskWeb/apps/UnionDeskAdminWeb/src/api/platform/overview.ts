@@ -1,6 +1,6 @@
 import type { LoginLogView, PageResult } from "#src/api/platform/audit";
 
-import { requestBackendJson } from "#src/api/backend";
+import { requestBackendJson } from "#src/utils/request";
 import { fetchLoginLogsPage } from "#src/api/platform/audit";
 
 /** 后端 /api/v1/dashboard/overview 聚合返回的实时计数。 */

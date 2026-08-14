@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
 	requestBackendJson: vi.fn(),
 }));
 
-vi.mock("#src/api/backend", () => ({
+vi.mock("#src/utils/request", () => ({
 	requestBackendJson: mocks.requestBackendJson,
 }));
 
@@ -20,11 +20,18 @@ describe("platform organization api", () => {
 		mocks.requestBackendJson.mockReset();
 	});
 
-	it("uses the organization list endpoint", async () => {
-		mocks.requestBackendJson.mockResolvedValue([]);
+	it("uses the organization list endpoint and unwraps items", async () => {
+		const items = [{ id: 1, name: "运营部" }, { id: 2, name: "技术部" }];
+		mocks.requestBackendJson.mockResolvedValue({ total: 2, items });
+
+		await expect(fetchPlatformOrganizations()).resolves.toEqual(items);
+		expect(mocks.requestBackendJson).toHaveBeenCalledWith("v1/iam/organizations");
+	});
+
+	it("returns an empty array when the list has no items", async () => {
+		mocks.requestBackendJson.mockResolvedValue({ total: 0, items: [] });
 
 		await expect(fetchPlatformOrganizations()).resolves.toEqual([]);
-		expect(mocks.requestBackendJson).toHaveBeenCalledWith("v1/iam/organizations");
 	});
 
 	it("uses the organization create endpoint", async () => {

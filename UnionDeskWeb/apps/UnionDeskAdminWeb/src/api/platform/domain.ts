@@ -1,6 +1,6 @@
 import type { BusinessDomainView } from "@uniondesk/shared";
 
-import { requestBackendJson } from "#src/api/backend";
+import { requestBackendJson } from "#src/utils/request";
 
 type BusinessDomainListResponse = BusinessDomainView[] | { list?: BusinessDomainView[] };
 

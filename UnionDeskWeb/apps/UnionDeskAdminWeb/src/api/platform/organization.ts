@@ -1,6 +1,6 @@
 import type { PlatformOrganizationView } from "@uniondesk/shared";
 
-import { requestBackendJson } from "#src/api/backend";
+import { requestBackendJson } from "#src/utils/request";
 
 export type PlatformOrganizationCreatePayload = {
 	code: string;
@@ -22,8 +22,14 @@ export type PlatformOrganizationUpdatePayload = {
 	remark?: string | null;
 };
 
-export function fetchPlatformOrganizations(): Promise<PlatformOrganizationView[]> {
-	return requestBackendJson<PlatformOrganizationView[]>("v1/iam/organizations");
+type OrganizationListResult = {
+	total: number;
+	items: PlatformOrganizationView[];
+};
+
+export async function fetchPlatformOrganizations(): Promise<PlatformOrganizationView[]> {
+	const result = await requestBackendJson<OrganizationListResult>("v1/iam/organizations");
+	return (result?.items ?? []).filter((item): item is PlatformOrganizationView => Boolean(item));
 }
 
 export function fetchCreatePlatformOrganization(data: PlatformOrganizationCreatePayload): Promise<PlatformOrganizationView> {

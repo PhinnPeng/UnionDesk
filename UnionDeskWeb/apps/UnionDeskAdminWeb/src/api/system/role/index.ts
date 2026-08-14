@@ -1,12 +1,13 @@
 import type { RoleItemType, RolePayload, RolePermissions } from "./types";
 
-import { requestBackendJson } from "#src/api/backend";
+import { requestBackendJson } from "#src/utils/request";
 
 export * from "./types";
 
 /* 获取角色列表 */
-export function fetchRoleList(): Promise<RoleItemType[]> {
-	return requestBackendJson<RoleItemType[]>("v1/iam/roles");
+export async function fetchRoleList(): Promise<RoleItemType[]> {
+	const result = await requestBackendJson<{ total: number; items: RoleItemType[] }>("v1/iam/roles");
+	return (result?.items ?? []).filter((item): item is RoleItemType => Boolean(item));
 }
 
 /* 新增角色 */

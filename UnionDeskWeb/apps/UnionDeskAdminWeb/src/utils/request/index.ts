@@ -13,6 +13,8 @@ import { refreshTokenAndRetry } from "./refresh";
 
 type RequestOptions = Options & {
 	ignoreLoading?: boolean
+	/** 为 true 时不弹出全局错误提示，由调用方自行展示友好文案（与 requestBackendJson 的 silentError 语义一致） */
+	silentError?: boolean
 };
 
 type Hooks = NonNullable<Options["hooks"]>;
@@ -74,11 +76,16 @@ const afterResponseHook = (async (request: Request, options: RequestOptions, res
 	const isWhiteRequest = requestWhiteList.some(url => requestUrl.endsWith(url));
 	if (!response.ok) {
 		if (isWhiteRequest) {
+			if (options?.silentError) {
+				return response;
+			}
 			return handleErrorResponse(response);
 		}
 		if (response.status === 401) {
 			if ([AUTH_REFRESH_PATH].some(url => requestUrl.endsWith(url))) {
-				goLogin();
+				if (!options?.silentError) {
+					goLogin();
+				}
 				return response;
 			}
 
@@ -87,13 +94,18 @@ const afterResponseHook = (async (request: Request, options: RequestOptions, res
 				if (location.pathname === loginPath) {
 					return response;
 				}
-				goLogin();
+				if (!options?.silentError) {
+					goLogin();
+				}
 				return response;
 			}
 
 			return refreshTokenAndRetry(request, options, refreshToken);
 		}
 
+		if (options?.silentError) {
+			return response;
+		}
 		return handleErrorResponse(response);
 	}
 
@@ -115,4 +127,5 @@ function createRequestClient(prefix: string) {
 }
 
 export const request = createRequestClient(import.meta.env.VITE_API_BASE_URL);
-export const backendRequest = createRequestClient("http://localhost:8080/api");
+export { requestBackendJson } from "./request-json";
+export type { BackendJsonRequestOptions } from "./request-json";

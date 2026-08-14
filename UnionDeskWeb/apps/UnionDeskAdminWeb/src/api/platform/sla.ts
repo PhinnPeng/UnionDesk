@@ -1,5 +1,5 @@
-import { requestBackendJson } from "#src/api/backend";
-import { backendRequest } from "#src/utils/request";
+import { requestBackendJson } from "#src/utils/request";
+import { request } from "#src/utils/request";
 
 import type { PageResult } from "./audit";
 
@@ -65,7 +65,7 @@ export function updateSlaRule(domainId: number, ruleId: number, payload: SlaRule
 }
 
 export function deleteSlaRule(domainId: number, ruleId: number): Promise<void> {
-	return backendRequest.delete(`v1/admin/domains/${domainId}/sla-rules/${ruleId}`).then(() => undefined);
+	return request.delete(`v1/admin/domains/${domainId}/sla-rules/${ruleId}`).then(() => undefined);
 }
 
 export function fetchSlaCalendars(domainId: number, params: { page?: number, page_size?: number } = {}): Promise<PageResult<SlaCalendarView>> {
@@ -90,5 +90,5 @@ export function updateSlaCalendar(domainId: number, calendarId: number, payload:
 }
 
 export function deleteSlaCalendar(domainId: number, calendarId: number): Promise<void> {
-	return backendRequest.delete(`v1/admin/domains/${domainId}/sla-calendars/${calendarId}`).then(() => undefined);
+	return request.delete(`v1/admin/domains/${domainId}/sla-calendars/${calendarId}`).then(() => undefined);
 }

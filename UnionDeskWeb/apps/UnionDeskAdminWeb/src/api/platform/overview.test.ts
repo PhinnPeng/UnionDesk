@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
 	requestBackendJson: vi.fn(),
 }));
 
-vi.mock("#src/api/backend", () => ({
+vi.mock("#src/utils/request", () => ({
 	requestBackendJson: mocks.requestBackendJson,
 }));
 

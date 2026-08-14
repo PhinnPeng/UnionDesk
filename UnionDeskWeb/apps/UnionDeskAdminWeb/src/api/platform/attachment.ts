@@ -1,5 +1,5 @@
-import { backendRequest } from "#src/utils/request";
-import { requestBackendJson } from "#src/api/backend";
+import { request } from "#src/utils/request";
+import { requestBackendJson } from "#src/utils/request";
 
 export interface AttachmentPresignRequest {
 	file_name: string
@@ -46,7 +46,7 @@ export async function uploadAttachment(
 	form.append("file", file);
 	form.append("domain_id", String(domainId));
 	form.append("target_type", targetType);
-	const response = await backendRequest.post("v1/attachments/upload", {
+	const response = await request.post("v1/attachments/upload", {
 		body: form,
 	});
 	return response.json<AttachmentUploadResponse>();

@@ -1,5 +1,5 @@
-import { requestBackendJson } from "#src/api/backend";
-import { backendRequest } from "#src/utils/request";
+import { requestBackendJson } from "#src/utils/request";
+import { request } from "#src/utils/request";
 
 export type ImportTaskStatus = "pending" | "processing" | "success" | "failed";
 
@@ -29,7 +29,7 @@ interface ImportTaskCreateResponse {
 export async function uploadStaffImport(file: File): Promise<ImportTaskView> {
 	const form = new FormData();
 	form.append("file", file);
-	const response = await backendRequest.post("v1/admin/import-export/staff/import", {
+	const response = await request.post("v1/admin/import-export/staff/import", {
 		body: form,
 	});
 	const created = await response.json<ImportTaskCreateResponse>();
@@ -45,7 +45,7 @@ export async function fetchImportTask(taskId: number): Promise<ImportTaskView> {
 
 /** 导出员工 CSV（浏览器直接下载） */
 export async function exportStaffCsv(): Promise<void> {
-	const blob = await backendRequest.get("v1/admin/import-export/staff/export").blob();
+	const blob = await request.get("v1/admin/import-export/staff/export").blob();
 	const url = URL.createObjectURL(blob);
 	const anchor = document.createElement("a");
 	anchor.href = url;

@@ -3,7 +3,7 @@ import type { PermissionSnapshot } from "#src/api/auth";
 import type { AppScope } from "#src/router/extra-info/app-scope-core";
 
 import { fetchPermissionSnapshot } from "#src/api/auth";
-import { requestBackendJson } from "#src/api/backend";
+import { requestBackendJson } from "#src/utils/request";
 import { removeDuplicateRoutes } from "#src/router/guard/utils";
 import { appScopes, getAppScopeByPath } from "#src/router/extra-info/app-scope-core";
 import { businessHomePath, platformHomePath } from "#src/router/extra-info/route-path";

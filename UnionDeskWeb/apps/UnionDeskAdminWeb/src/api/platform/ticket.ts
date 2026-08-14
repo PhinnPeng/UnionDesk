@@ -1,4 +1,4 @@
-import { requestBackendJson } from "#src/api/backend";
+import { requestBackendJson } from "#src/utils/request";
 
 import type { PageResult } from "./audit";
 
