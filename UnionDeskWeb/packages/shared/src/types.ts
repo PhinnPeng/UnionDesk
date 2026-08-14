@@ -726,6 +726,8 @@ export type DomainTicketType = {
 	id: string;
 	domain_id: string;
 	code: string;
+	/** 类型短码，用于工单编号（如 FE，工单编号显示为 FE-20260814-0001） */
+	shortCode?: string | null;
 	name: string;
 	description?: string | null;
 	description_template_md?: string | null;
@@ -1069,6 +1071,7 @@ export type DomainTicketTemplate = {
 
 export type CreateDomainTicketTypeBody = {
   code?: string;
+  shortCode?: string | null;
   name: string;
   description?: string | null;
   icon?: string | null;
@@ -1078,6 +1081,7 @@ export type CreateDomainTicketTypeBody = {
 
 export type UpdateDomainTicketTypeBody = {
 	name?: string;
+	shortCode?: string | null;
 	description?: string | null;
 	description_template_md?: string | null;
 	icon?: string | null;

@@ -23,7 +23,10 @@ export interface TicketRow {
 	ticketTypeId: number
 	ticketTypeName: string
 	customerId: number
+	customerName?: string | null
 	assignedTo?: number | null
+	/** 受理人姓名（员工账号），后端联查不到时为空，前端兜底「员工 #id」 */
+	assigneeName?: string | null
 	title: string
 	description?: string | null
 	status: string

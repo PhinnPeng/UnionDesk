@@ -12,6 +12,7 @@ interface TicketTypeFormValues {
 	name: string;
 	icon: string;
 	description?: string;
+	shortCode?: string;
 }
 
 interface TicketTypeFormModalProps {
@@ -20,6 +21,8 @@ interface TicketTypeFormModalProps {
 	editing: PlatformTicketType | null;
 	templateKey?: TicketTypeTemplateKey | null;
 	copyFrom?: PlatformTicketType | null;
+	/** 域级事项类型创建时展示「类型短码」输入（平台类型模板无短码概念） */
+	showShortCode?: boolean;
 	onCancel: () => void;
 	onSubmit: (values: TicketTypeFormValues) => Promise<void>;
 }
@@ -30,6 +33,7 @@ export function TicketTypeFormModal({
 	editing,
 	templateKey,
 	copyFrom,
+	showShortCode = false,
 	onCancel,
 	onSubmit,
 }: TicketTypeFormModalProps) {
@@ -107,6 +111,11 @@ export function TicketTypeFormModal({
 				<Form.Item name="description" label="描述">
 					<Input.TextArea placeholder="可选，描述该类型的用途" rows={3} maxLength={500} />
 				</Form.Item>
+				{showShortCode ? (
+					<Form.Item name="shortCode" label="类型短码">
+						<Input placeholder="如 FE，工单编号将显示为 FE-20260814-0001" maxLength={16} />
+					</Form.Item>
+				) : null}
 			</Form>
 		</Modal>
 	);

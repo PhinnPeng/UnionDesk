@@ -210,7 +210,7 @@ export function DomainTicketTypesPanel({ domainId }: DomainTicketTypesPanelProps
 	const [templateKey, setTemplateKey] = useState<TicketTypeTemplateKey | null>(null);
 	const [copyFrom, setCopyFrom] = useState<DomainTicketType | null>(null);
 	const [editOpen, setEditOpen] = useState(false);
-	const [editForm] = Form.useForm<{ name: string; description?: string; icon?: string; status: string }>();
+	const [editForm] = Form.useForm<{ name: string; description?: string; icon?: string; status: string; shortCode?: string }>();
 	const [editingType, setEditingType] = useState<DomainTicketType | null>(null);
 	const [editing, setEditing] = useState(false);
 
@@ -253,7 +253,7 @@ export function DomainTicketTypesPanel({ domainId }: DomainTicketTypesPanelProps
 		setCreateOpen(true);
 	};
 
-	const handleCreateType = async (values: { name: string; icon: string; description?: string }) => {
+	const handleCreateType = async (values: { name: string; icon: string; description?: string; shortCode?: string }) => {
 		const selectedTemplate = templateKey;
 		setCreating(true);
 		try {
@@ -261,6 +261,7 @@ export function DomainTicketTypesPanel({ domainId }: DomainTicketTypesPanelProps
 				name: values.name.trim(),
 				icon: values.icon.trim(),
 				description: values.description?.trim() || null,
+				shortCode: values.shortCode?.trim() || undefined,
 				template_key: copyFrom ? undefined : (selectedTemplate ?? undefined),
 			});
 			message.success("事项类型已创建");
@@ -330,6 +331,7 @@ export function DomainTicketTypesPanel({ domainId }: DomainTicketTypesPanelProps
 			description: ticketType.description ?? "",
 			icon: ticketType.icon ?? "",
 			status: ticketType.status === "disabled" ? "disabled" : "active",
+			shortCode: ticketType.shortCode ?? "",
 		});
 		setEditOpen(true);
 	};
@@ -346,6 +348,7 @@ export function DomainTicketTypesPanel({ domainId }: DomainTicketTypesPanelProps
 				description: values.description?.trim() || null,
 				icon: values.icon?.trim() || null,
 				status: values.status,
+				shortCode: values.shortCode?.trim() || null,
 			});
 			message.success("事项类型已更新");
 			setEditOpen(false);
@@ -496,6 +499,7 @@ export function DomainTicketTypesPanel({ domainId }: DomainTicketTypesPanelProps
 							linked_domain_count: 0,
 						}
 					: null}
+				showShortCode
 				onCancel={() => {
 					setCreateOpen(false);
 					setTemplateKey(null);
@@ -521,6 +525,9 @@ export function DomainTicketTypesPanel({ domainId }: DomainTicketTypesPanelProps
 				<Form form={editForm} layout="vertical">
 					<Form.Item label="类型编码">
 						<Input value={editingType?.code} disabled />
+					</Form.Item>
+					<Form.Item name="shortCode" label="类型短码">
+						<Input maxLength={16} placeholder="如 FE，工单编号将显示为 FE-20260814-0001" />
 					</Form.Item>
 					<Form.Item name="name" label="类型名称" rules={[{ required: true, message: "请输入类型名称" }]}>
 						<Input maxLength={64} />
