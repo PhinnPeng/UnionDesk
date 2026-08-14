@@ -1,10 +1,17 @@
 package com.uniondesk.notification.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
+import com.mybatisflex.core.keygen.KeyGenerators;
 import java.time.LocalDateTime;
 
+@Table("inbox_message")
 public class InboxMessagePo {
 
-    private long id;
+    @Id(keyType = KeyType.Generator, value = KeyGenerators.snowFlakeId)
+    private Long id;
     private Long notificationLogId;
     private long recipientSubjectId;
     private String portalType;
@@ -12,16 +19,22 @@ public class InboxMessagePo {
     private String title;
     private String content;
     private String jumpUrl;
+
+    @Column("is_read")
     private boolean read;
     private LocalDateTime readAt;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)", onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

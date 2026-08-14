@@ -1,10 +1,16 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
+import com.mybatisflex.core.keygen.KeyGenerators;
 import java.time.LocalDateTime;
 
+@Table("ticket_reply")
 public class TicketReplyPo {
 
-    private long id;
+    @Id(keyType = KeyType.Generator, value = KeyGenerators.snowFlakeId)
+    private Long id;
     private long ticketId;
     private long businessDomainId;
     private long senderUserId;
@@ -17,11 +23,11 @@ public class TicketReplyPo {
     private String attachmentUrls;
     private LocalDateTime createdAt;
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

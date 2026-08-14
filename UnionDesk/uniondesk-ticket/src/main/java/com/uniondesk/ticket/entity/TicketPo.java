@@ -1,39 +1,56 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
+import com.mybatisflex.core.keygen.KeyGenerators;
 import java.time.LocalDateTime;
 
+@Table("ticket")
 public class TicketPo {
 
-    private long id;
+    @Id(keyType = KeyType.Generator, value = KeyGenerators.snowFlakeId)
+    private Long id;
     private String ticketNo;
     private long businessDomainId;
     private long customerId;
     private long ticketTypeId;
     private String title;
     private String description;
+
+    @Column(onInsertValue = "'open'")
     private String status;
     private String priority;
     private String source;
     private Long assignedTo;
     private Long assigneeStaffAccountId;
     private String customFields;
+
+    @Column(onInsertValue = "1")
     private int version;
     private String result;
     private LocalDateTime slaFirstResponseDeadline;
     private LocalDateTime slaResolutionDeadline;
     private LocalDateTime slaFirstRespondedAt;
     private LocalDateTime slaResolvedAt;
+
+    @Column(onInsertValue = "'tracking'")
     private String slaStatus;
     private int slaPausedDuration;
     private LocalDateTime slaPauseStartedAt;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)", onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

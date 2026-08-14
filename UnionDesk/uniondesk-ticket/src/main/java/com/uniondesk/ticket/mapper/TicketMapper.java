@@ -1,5 +1,6 @@
 package com.uniondesk.ticket.mapper;
 
+import com.mybatisflex.core.BaseMapper;
 import com.uniondesk.ticket.entity.TicketDetailPo;
 import com.uniondesk.ticket.entity.TicketPo;
 import java.time.LocalDateTime;
@@ -8,9 +9,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface TicketMapper {
-
-    void insert(TicketPo po);
+public interface TicketMapper extends BaseMapper<TicketPo> {
 
     TicketDetailPo findByIdAndDomainId(@Param("ticketId") long ticketId, @Param("domainId") long domainId);
 

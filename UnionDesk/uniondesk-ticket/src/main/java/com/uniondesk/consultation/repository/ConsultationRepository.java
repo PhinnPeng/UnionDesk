@@ -3,6 +3,7 @@ package com.uniondesk.consultation.repository;
 import com.uniondesk.consultation.entity.ConsultationMessagePo;
 import com.uniondesk.consultation.entity.ConsultationSessionPo;
 import com.uniondesk.consultation.mapper.ConsultationMapper;
+import com.uniondesk.consultation.mapper.ConsultationMessageMapper;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.stereotype.Repository;
@@ -11,9 +12,11 @@ import org.springframework.stereotype.Repository;
 public class ConsultationRepository {
 
     private final ConsultationMapper mapper;
+    private final ConsultationMessageMapper messageMapper;
 
-    public ConsultationRepository(ConsultationMapper mapper) {
+    public ConsultationRepository(ConsultationMapper mapper, ConsultationMessageMapper messageMapper) {
         this.mapper = mapper;
+        this.messageMapper = messageMapper;
     }
 
     public ConsultationSessionPo findBySessionNoAndDomain(String sessionNo, long domainId) {
@@ -49,7 +52,7 @@ public class ConsultationRepository {
     }
 
     public void saveMessage(ConsultationMessagePo po) {
-        mapper.insertMessage(po);
+        messageMapper.insert(po);
     }
 
     public int updateLastMessageAt(long sessionId, LocalDateTime lastMessageAt) {

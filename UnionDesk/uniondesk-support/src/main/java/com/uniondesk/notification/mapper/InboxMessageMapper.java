@@ -1,14 +1,13 @@
 package com.uniondesk.notification.mapper;
 
+import com.mybatisflex.core.BaseMapper;
 import com.uniondesk.notification.entity.InboxMessagePo;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface InboxMessageMapper {
-
-    void insert(InboxMessagePo po);
+public interface InboxMessageMapper extends BaseMapper<InboxMessagePo> {
 
     Long countUnread(@Param("recipientSubjectId") long recipientSubjectId);
 

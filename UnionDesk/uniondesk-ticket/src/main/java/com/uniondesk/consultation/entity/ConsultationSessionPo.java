@@ -1,21 +1,38 @@
 package com.uniondesk.consultation.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
+import com.mybatisflex.core.keygen.KeyGenerators;
 import java.time.LocalDateTime;
 
+@Table("consultation_session")
 public class ConsultationSessionPo {
 
+    @Id(keyType = KeyType.Generator, value = KeyGenerators.snowFlakeId)
     private Long id;
     private String sessionNo;
     private Long businessDomainId;
+
+    @Column(ignore = true)
     private String businessDomainName;
     private Long customerId;
     private String sessionStatus;
     private Long assignedTo;
     private LocalDateTime lastMessageAt;
     private LocalDateTime closedAt;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)", onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
+
+    @Column(ignore = true)
     private Long messageCount;
+
+    @Column(ignore = true)
     private String linkedTicketNo;
 
     public Long getId() {

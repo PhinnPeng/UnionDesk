@@ -1,5 +1,6 @@
 package com.uniondesk.consultation.mapper;
 
+import com.mybatisflex.core.BaseMapper;
 import com.uniondesk.consultation.entity.ConsultationMessagePo;
 import com.uniondesk.consultation.entity.ConsultationSessionPo;
 import java.time.LocalDateTime;
@@ -8,7 +9,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface ConsultationMapper {
+public interface ConsultationMapper extends BaseMapper<ConsultationSessionPo> {
 
     ConsultationSessionPo selectBySessionNoAndDomain(@Param("sessionNo") String sessionNo, @Param("domainId") long domainId);
 
@@ -24,13 +25,13 @@ public interface ConsultationMapper {
 
     long nextSessionSequence(@Param("prefix") String prefix);
 
-    void insertSession(ConsultationSessionPo po);
+    default void insertSession(ConsultationSessionPo po) {
+        insert(po);
+    }
 
     List<ConsultationMessagePo> selectMessagesBySession(@Param("sessionId") long sessionId);
 
     int nextSeqNo(@Param("sessionId") long sessionId);
-
-    void insertMessage(ConsultationMessagePo po);
 
     int updateLastMessageAt(@Param("sessionId") long sessionId, @Param("lastMessageAt") LocalDateTime lastMessageAt);
 

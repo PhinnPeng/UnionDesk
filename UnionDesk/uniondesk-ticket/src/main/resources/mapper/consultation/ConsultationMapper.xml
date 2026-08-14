@@ -101,18 +101,6 @@
         WHERE session_no LIKE #{prefix}
     </select>
 
-    <insert id="insertSession" parameterType="com.uniondesk.consultation.entity.ConsultationSessionPo"
-            useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO consultation_session (
-            session_no, business_domain_id, customer_id, session_status,
-            assigned_to, last_message_at, closed_at
-        )
-        VALUES (
-            #{sessionNo}, #{businessDomainId}, #{customerId}, #{sessionStatus},
-            #{assignedTo}, #{lastMessageAt}, #{closedAt}
-        )
-    </insert>
-
     <select id="selectMessagesBySession" resultMap="ConsultationMessagePo">
         SELECT
             m.id,
@@ -137,18 +125,6 @@
         FROM consultation_message
         WHERE consultation_session_id = #{sessionId}
     </select>
-
-    <insert id="insertMessage" parameterType="com.uniondesk.consultation.entity.ConsultationMessagePo"
-            useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO consultation_message (
-            consultation_session_id, business_domain_id, seq_no, sender_user_id,
-            sender_role, message_type, content, payload
-        )
-        VALUES (
-            #{consultationSessionId}, #{businessDomainId}, #{seqNo}, #{senderUserId},
-            #{senderRole}, #{messageType}, #{content}, #{payloadJson}
-        )
-    </insert>
 
     <update id="updateLastMessageAt">
         UPDATE consultation_session

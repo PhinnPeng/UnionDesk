@@ -3,12 +3,13 @@ package com.uniondesk.attachment.entity;
 import com.mybatisflex.annotation.Id;
 import com.mybatisflex.annotation.KeyType;
 import com.mybatisflex.annotation.Table;
+import com.mybatisflex.core.keygen.KeyGenerators;
 import java.time.LocalDateTime;
 
 @Table("file_attachment")
 public class FileAttachmentPo {
 
-    @Id(keyType = KeyType.Auto)
+    @Id(keyType = KeyType.Generator, value = KeyGenerators.snowFlakeId)
     private Long id;
     private Long businessDomainId;
     private Long uploaderSubjectId;

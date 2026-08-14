@@ -33,7 +33,6 @@ import com.uniondesk.ticket.repository.TicketReplyRepository;
 import com.uniondesk.ticket.repository.TicketRepository;
 import com.uniondesk.ticket.repository.TicketTemplateRepository;
 import com.uniondesk.ticket.repository.TicketTypeRepository;
-import com.uniondesk.ticket.repository.UserAccountRepository;
 import com.uniondesk.common.event.UnionDeskEventPublisher;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,8 +69,6 @@ class TicketWorkflowTests {
     private AuditLogRepository auditLogRepository;
     @Mock
     private IdentitySubjectRepository identitySubjectRepository;
-    @Mock
-    private UserAccountRepository userAccountRepository;
     @Mock
     private CustomerAccountRepository customerAccountRepository;
     @Mock
@@ -112,7 +109,6 @@ class TicketWorkflowTests {
                 quickReplyTemplateRepository,
                 auditLogRepository,
                 identitySubjectRepository,
-                userAccountRepository,
                 customerAccountRepository,
                 staffAccountRepository,
                 domainCustomerRepository,

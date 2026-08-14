@@ -18,18 +18,6 @@
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
-    <insert id="insert" parameterType="com.uniondesk.ticket.entity.TicketReplyPo"
-            useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO ticket_reply (
-            ticket_id, business_domain_id, sender_user_id, sender_role, sender_type,
-            staff_account_id, customer_account_id, reply_type, content, attachment_urls, created_at
-        )
-        VALUES (
-            #{ticketId}, #{businessDomainId}, #{senderUserId}, #{senderRole}, #{senderType},
-            #{staffAccountId}, #{customerAccountId}, #{replyType}, #{content}, #{attachmentUrls}, #{createdAt}
-        )
-    </insert>
-
     <select id="findByTicketIdAndDomainId" resultMap="TicketReplyPo">
         SELECT
             id,
