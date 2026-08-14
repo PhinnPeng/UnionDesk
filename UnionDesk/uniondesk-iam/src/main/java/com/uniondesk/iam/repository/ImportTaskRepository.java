@@ -16,7 +16,7 @@ public class ImportTaskRepository {
     }
 
     public void insert(ImportTaskPo po) {
-        importTaskMapper.insert(po);
+        importTaskMapper.insertRow(po);
     }
 
     public Optional<ImportTaskPo> findById(long id) {

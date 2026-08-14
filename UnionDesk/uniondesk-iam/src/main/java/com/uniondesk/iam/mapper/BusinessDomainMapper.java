@@ -1,17 +1,30 @@
 package com.uniondesk.iam.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.iam.entity.BusinessDomainPo;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
-public interface BusinessDomainMapper {
+public interface BusinessDomainMapper extends BaseMapper<BusinessDomainPo> {
 
-    int countActiveById(@Param("id") long id);
+    default int countActiveById(long id) {
+        return (int) selectCountByQuery(QueryWrapper.create()
+                .from(BusinessDomainPo.class)
+                .where(BusinessDomainPo::getId).eq(id)
+                .and("deleted_at IS NULL"));
+    }
 
-    int countByIds(@Param("ids") List<Long> ids);
+    default int countByIds(List<Long> ids) {
+        return (int) selectCountByQuery(QueryWrapper.create()
+                .from(BusinessDomainPo.class)
+                .where(BusinessDomainPo::getId).in(ids));
+    }
 
-    List<BusinessDomainPo> selectAll();
+    default List<BusinessDomainPo> selectAll() {
+        return selectListByQuery(QueryWrapper.create()
+                .from(BusinessDomainPo.class)
+                .orderBy(BusinessDomainPo::getId, true));
+    }
 }

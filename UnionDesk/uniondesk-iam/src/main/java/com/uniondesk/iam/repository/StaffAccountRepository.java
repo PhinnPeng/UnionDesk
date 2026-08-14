@@ -38,7 +38,7 @@ public class StaffAccountRepository {
     }
 
     public void insert(StaffAccountPo po) {
-        staffAccountMapper.insert(po);
+        staffAccountMapper.insertRow(po);
     }
 
     public int updateSelective(long id, String username, String realName, String nickname,
@@ -91,7 +91,7 @@ public class StaffAccountRepository {
     }
 
     public void insertDomainMember(long staffAccountId, long domainId) {
-        domainMemberMapper.insert(staffAccountId, domainId);
+        domainMemberMapper.insertRow(staffAccountId, domainId);
     }
 
     public void deleteDomainMemberRoles(long domainMemberId) {

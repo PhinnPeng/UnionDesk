@@ -1,7 +1,13 @@
 package com.uniondesk.iam.entity;
 
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
+
+@Table("iam_resource")
 public class IamResourcePo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private String resourceType;
     private String resourceCode;

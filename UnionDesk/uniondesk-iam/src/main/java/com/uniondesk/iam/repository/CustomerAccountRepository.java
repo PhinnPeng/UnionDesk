@@ -23,7 +23,7 @@ public class CustomerAccountRepository {
     }
 
     public void insert(CustomerAccountPo po) {
-        mapper.insert(po);
+        mapper.insertRow(po);
     }
 
     public Optional<Long> findIdByUsernameOrPhone(String username, String phone) {

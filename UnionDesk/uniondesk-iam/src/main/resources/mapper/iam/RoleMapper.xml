@@ -3,14 +3,6 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.uniondesk.iam.mapper.RoleMapper">
 
-    <resultMap id="RolePo" type="com.uniondesk.iam.entity.RolePo">
-        <id property="id" column="id"/>
-        <result property="code" column="code"/>
-        <result property="name" column="name"/>
-        <result property="scope" column="scope"/>
-        <result property="isSystem" column="is_system"/>
-    </resultMap>
-
     <resultMap id="BusinessDomainSummary" type="com.uniondesk.iam.mapper.RoleMapper$BusinessDomainSummary">
         <constructor>
             <idArg column="id" javaType="java.lang.Long"/>
@@ -19,33 +11,17 @@
         </constructor>
     </resultMap>
 
-    <select id="selectAll" resultMap="RolePo">
-        SELECT id, code, name, scope, is_system FROM role ORDER BY is_system DESC, id
-    </select>
-
-    <select id="selectById" resultMap="RolePo">
-        SELECT id, code, name, scope, is_system FROM role WHERE id = #{id} LIMIT 1
-    </select>
-
-    <select id="selectByCode" resultMap="RolePo">
-        SELECT id, code, name, scope, is_system FROM role WHERE code = #{code} LIMIT 1
-    </select>
-
-    <insert id="insert" parameterType="com.uniondesk.iam.entity.RolePo" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertRow" parameterType="com.uniondesk.iam.entity.RolePo" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO role (code, name, scope, is_system) VALUES (#{code}, #{name}, #{scope}, #{isSystem})
     </insert>
 
-    <update id="update" parameterType="com.uniondesk.iam.entity.RolePo">
+    <update id="updateRow" parameterType="com.uniondesk.iam.entity.RolePo">
         UPDATE role SET code = #{code}, name = #{name}, scope = #{scope} WHERE id = #{id}
     </update>
 
-    <delete id="deleteById">
+    <delete id="deleteRowById">
         DELETE FROM role WHERE id = #{id}
     </delete>
-
-    <select id="countById" resultType="int">
-        SELECT COUNT(*) FROM role WHERE id = #{id}
-    </select>
 
     <select id="countUserGlobalRoleBindings" resultType="int">
         SELECT COUNT(*)
@@ -177,11 +153,6 @@
           AND (ir.client_scope = #{clientCode} OR ir.client_scope = 'all')
     </select>
 
-    <select id="selectByCodes" resultMap="RolePo">
-        SELECT id, code, scope FROM role WHERE code IN
-        <foreach collection="codes" item="code" open="(" separator="," close=")">#{code}</foreach>
-    </select>
-
     <select id="selectUserDomainIds" resultType="java.lang.Long">
         SELECT DISTINCT business_domain_id
         FROM domain_member
@@ -225,9 +196,5 @@
     <delete id="deleteRoleBindings">
         DELETE FROM iam_role_binding WHERE role_id = #{roleId}
     </delete>
-
-    <select id="selectScopeById" resultType="java.lang.String">
-        SELECT scope FROM role WHERE id = #{id}
-    </select>
 
 </mapper>

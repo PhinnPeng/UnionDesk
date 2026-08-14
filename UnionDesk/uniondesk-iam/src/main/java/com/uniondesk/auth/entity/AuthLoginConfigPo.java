@@ -1,5 +1,8 @@
 package com.uniondesk.auth.entity;
 
+import com.mybatisflex.annotation.Table;
+
+@Table("auth_login_config")
 public class AuthLoginConfigPo {
 
     private String configKey;

@@ -1,19 +1,39 @@
 package com.uniondesk.iam.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.iam.entity.CustomerAccountPo;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface CustomerAccountMapper {
+public interface CustomerAccountMapper extends BaseMapper<CustomerAccountPo> {
 
-    CustomerAccountPo selectById(@Param("id") long id);
+    default CustomerAccountPo selectById(long id) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(CustomerAccountPo.class)
+                .select(CustomerAccountPo::getId, CustomerAccountPo::getSubjectId,
+                        CustomerAccountPo::getUsername, CustomerAccountPo::getNickname,
+                        CustomerAccountPo::getPhone, CustomerAccountPo::getEmail,
+                        CustomerAccountPo::getRealName, CustomerAccountPo::getIdCardNo,
+                        CustomerAccountPo::getStatus)
+                .where(CustomerAccountPo::getId).eq(id));
+    }
 
-    int countByUsername(@Param("username") String username);
+    default int countByUsername(String username) {
+        return (int) selectCountByQuery(QueryWrapper.create()
+                .from(CustomerAccountPo.class)
+                .where(CustomerAccountPo::getUsername).eq(username));
+    }
 
-    void insert(CustomerAccountPo po);
+    int insertRow(CustomerAccountPo po);
 
-    Long selectIdByUsernameOrPhone(@Param("username") String username, @Param("phone") String phone);
+    default Long selectIdByUsernameOrPhone(String username, String phone) {
+        return selectObjectByQueryAs(QueryWrapper.create()
+                .from(CustomerAccountPo.class)
+                .select(CustomerAccountPo::getId)
+                .where(CustomerAccountPo::getUsername).eq(username)
+                .or(CustomerAccountPo::getPhone).eq(phone), Long.class);
+    }
 
     int updateProfile(CustomerAccountPo po);
 }

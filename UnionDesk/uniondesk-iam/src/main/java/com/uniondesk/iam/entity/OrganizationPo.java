@@ -1,19 +1,28 @@
 package com.uniondesk.iam.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("platform_organization")
 public class OrganizationPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private String code;
     private String name;
     private Long parentId;
+    @Column(ignore = true)
     private String parentName;
     private Long leaderUserId;
+    @Column(ignore = true)
     private String leaderName;
     private Integer orderNo;
     private Integer status;
     private String remark;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
 
     public Long getId() { return id; }

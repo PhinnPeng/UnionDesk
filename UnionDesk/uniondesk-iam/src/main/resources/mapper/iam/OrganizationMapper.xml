@@ -35,7 +35,7 @@
         LEFT JOIN staff_account leader ON leader.id = o.leader_user_id
     </sql>
 
-    <select id="selectAll" resultMap="OrganizationPo">
+    <select id="selectAllRows" resultMap="OrganizationPo">
         <include refid="organizationSelect"/>
         ORDER BY COALESCE(o.parent_id, 0), o.order_no, o.id
     </select>
@@ -52,7 +52,7 @@
         LIMIT 1
     </select>
 
-    <insert id="insert" parameterType="com.uniondesk.iam.entity.OrganizationPo" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertRow" parameterType="com.uniondesk.iam.entity.OrganizationPo" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO platform_organization (
             code, name, parent_id, leader_user_id, order_no, status, remark, created_at, updated_at
         )
@@ -60,7 +60,7 @@
                 CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
     </insert>
 
-    <update id="update" parameterType="com.uniondesk.iam.entity.OrganizationPo">
+    <update id="updateRow" parameterType="com.uniondesk.iam.entity.OrganizationPo">
         UPDATE platform_organization
         SET code = #{code},
             name = #{name},
@@ -73,25 +73,9 @@
         WHERE id = #{id}
     </update>
 
-    <delete id="deleteById">
+    <delete id="deleteRowById">
         DELETE FROM platform_organization WHERE id = #{id}
     </delete>
-
-    <select id="countById" resultType="int">
-        SELECT COUNT(*) FROM platform_organization WHERE id = #{id}
-    </select>
-
-    <select id="countByParentId" resultType="int">
-        SELECT COUNT(*) FROM platform_organization WHERE parent_id = #{parentId}
-    </select>
-
-    <select id="selectParentId" resultType="java.lang.Long">
-        SELECT parent_id FROM platform_organization WHERE id = #{id}
-    </select>
-
-    <select id="selectChildIds" resultType="java.lang.Long">
-        SELECT id FROM platform_organization WHERE parent_id = #{parentId}
-    </select>
 
     <select id="selectUserOrganizationIds" resultType="java.lang.Long">
         SELECT organization_id FROM staff_organization WHERE staff_account_id = #{userId} ORDER BY organization_id
@@ -105,9 +89,5 @@
         INSERT INTO staff_organization (staff_account_id, organization_id, created_at)
         VALUES (#{userId}, #{organizationId}, CURRENT_TIMESTAMP(3))
     </insert>
-
-    <select id="countUserAccountById" resultType="int">
-        SELECT COUNT(*) FROM staff_account WHERE id = #{id}
-    </select>
 
 </mapper>

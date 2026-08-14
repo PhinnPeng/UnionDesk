@@ -1,5 +1,8 @@
 package com.uniondesk.iam.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.If;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.iam.entity.AdminMenuPo;
 import com.uniondesk.iam.entity.ParentPermissionMappingPo;
 import com.uniondesk.iam.entity.RolePermissionRowPo;
@@ -9,23 +12,43 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface AdminMenuMapper {
+public interface AdminMenuMapper extends BaseMapper<AdminMenuPo> {
 
-    List<AdminMenuPo> selectAll(@Param("scope") String scope);
+    default List<AdminMenuPo> selectAll(String scope) {
+        return selectListByQuery(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .where(AdminMenuPo::getScope).eq(scope, If::hasText)
+                .orderBy(AdminMenuPo::getOrderNo, true)
+                .orderBy(AdminMenuPo::getId, true));
+    }
 
-    AdminMenuPo selectById(@Param("id") long id);
+    default AdminMenuPo selectById(long id) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .where(AdminMenuPo::getId).eq(id));
+    }
 
-    AdminMenuPo selectRequiredButton(@Param("parentMenuId") long parentMenuId);
+    default AdminMenuPo selectRequiredButton(long parentMenuId) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .where(AdminMenuPo::getParentId).eq(parentMenuId)
+                .and(AdminMenuPo::getNodeType).eq("button")
+                .and(AdminMenuPo::getRequired).eq(1));
+    }
 
-    void insert(AdminMenuPo po);
+    int insertRow(AdminMenuPo po);
 
-    int update(AdminMenuPo po);
+    int updateRow(AdminMenuPo po);
 
-    int deleteById(@Param("id") long id);
+    int deleteRowById(@Param("id") long id);
 
     int deleteRoleMenuRelations(@Param("menuId") long menuId);
 
-    int countByParentId(@Param("parentId") long parentId);
+    default int countByParentId(long parentId) {
+        return (int) selectCountByQuery(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .where(AdminMenuPo::getParentId).eq(parentId));
+    }
 
     List<AdminMenuPo> selectAuthorizedByRoleCodes(@Param("roleCodes") List<String> roleCodes);
 
@@ -45,31 +68,99 @@ public interface AdminMenuMapper {
 
     List<Long> selectParentIdsByMenuIds(@Param("menuIds") List<Long> menuIds);
 
-    List<Long> selectRequiredButtonIdsByParentIds(@Param("parentIds") List<Long> parentIds);
+    default List<Long> selectRequiredButtonIdsByParentIds(List<Long> parentIds) {
+        return selectObjectListByQueryAs(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .select(AdminMenuPo::getId)
+                .where(AdminMenuPo::getParentId).in(parentIds)
+                .and(AdminMenuPo::getNodeType).eq("button")
+                .and(AdminMenuPo::getRequired).eq(1), Long.class);
+    }
 
     String selectRoleScopeById(@Param("roleId") int roleId);
 
-    List<String> selectPermissionCodesByMenuIds(@Param("menuIds") List<Long> menuIds);
+    default List<String> selectPermissionCodesByMenuIds(List<Long> menuIds) {
+        return selectObjectListByQueryAs(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .select(AdminMenuPo::getPermissionCode)
+                .where(AdminMenuPo::getId).in(menuIds), String.class);
+    }
 
-    List<Long> selectRequiredMenuIds(@Param("scope") String scope);
+    default List<Long> selectRequiredMenuIds(String scope) {
+        return selectObjectListByQueryAs(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .select(AdminMenuPo::getId)
+                .where(AdminMenuPo::getNodeType).eq("menu")
+                .and(AdminMenuPo::getRequired).eq(1)
+                .and(AdminMenuPo::getScope).eq(scope)
+                .and(AdminMenuPo::getStatus).eq(1), Long.class);
+    }
 
-    List<Long> selectRequiredButtonIdsByMenuIds(@Param("menuIds") List<Long> menuIds);
+    default List<Long> selectRequiredButtonIdsByMenuIds(List<Long> menuIds) {
+        return selectObjectListByQueryAs(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .select(AdminMenuPo::getId)
+                .where(AdminMenuPo::getParentId).in(menuIds)
+                .and(AdminMenuPo::getNodeType).eq("button")
+                .and(AdminMenuPo::getRequired).eq(1)
+                .and(AdminMenuPo::getStatus).eq(1), Long.class);
+    }
 
     List<String> selectGrantedPermissionCodes(@Param("roleCode") String roleCode);
 
-    List<ParentPermissionMappingPo> selectRequiredPermissionMappings(@Param("scope") String scope);
+    default List<ParentPermissionMappingPo> selectRequiredPermissionMappings(String scope) {
+        return selectListByQueryAs(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .select(AdminMenuPo::getParentId, AdminMenuPo::getPermissionCode)
+                .where(AdminMenuPo::getNodeType).eq("button")
+                .and(AdminMenuPo::getRequired).eq(1)
+                .and(AdminMenuPo::getParentId).isNotNull()
+                .and(AdminMenuPo::getScope).eq(scope, If::notNull), ParentPermissionMappingPo.class);
+    }
 
-    void updateCode(@Param("id") long id, @Param("code") String code);
+    default int updateCode(long id, String code) {
+        AdminMenuPo update = new AdminMenuPo();
+        update.setCode(code);
+        return updateByQuery(update, true, QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .where(AdminMenuPo::getId).eq(id));
+    }
 
-    List<RoutePathRowPo> selectExistingRoutePaths(@Param("selfId") Long selfId);
+    default List<RoutePathRowPo> selectExistingRoutePaths(Long selfId) {
+        return selectListByQueryAs(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .select(AdminMenuPo::getRoutePath, AdminMenuPo::getScope)
+                .where(AdminMenuPo::getRoutePath).isNotNull()
+                .and(AdminMenuPo::getId).ne(selfId, If::notNull), RoutePathRowPo.class);
+    }
 
-    int countByRoutePath(@Param("routePath") String routePath, @Param("selfId") Long selfId);
+    default int countByRoutePath(String routePath, Long selfId) {
+        return (int) selectCountByQuery(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .where(AdminMenuPo::getRoutePath).eq(routePath)
+                .and(AdminMenuPo::getId).ne(selfId, If::notNull));
+    }
 
-    int countByPermissionCode(@Param("permissionCode") String permissionCode, @Param("selfId") Long selfId);
+    default int countByPermissionCode(String permissionCode, Long selfId) {
+        return (int) selectCountByQuery(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .where(AdminMenuPo::getPermissionCode).eq(permissionCode)
+                .and(AdminMenuPo::getId).ne(selfId, If::notNull));
+    }
 
-    int countByIdsAndNodeType(@Param("ids") List<Long> ids, @Param("nodeType") String nodeType);
+    default int countByIdsAndNodeType(List<Long> ids, String nodeType) {
+        return (int) selectCountByQuery(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .where(AdminMenuPo::getId).in(ids)
+                .and(AdminMenuPo::getNodeType).eq(nodeType));
+    }
 
-    int countByIdsAndNodeTypes(@Param("ids") List<Long> ids, @Param("nodeTypes") List<String> nodeTypes);
+    default int countByIdsAndNodeTypes(List<Long> ids, List<String> nodeTypes) {
+        return (int) selectCountByQuery(QueryWrapper.create()
+                .from(AdminMenuPo.class)
+                .where(AdminMenuPo::getId).in(ids)
+                .and(AdminMenuPo::getNodeType).in(nodeTypes));
+    }
 
     List<Long> selectRoleMenuIdsByNodeTypes(@Param("roleId") int roleId, @Param("nodeTypes") List<String> nodeTypes);
 }

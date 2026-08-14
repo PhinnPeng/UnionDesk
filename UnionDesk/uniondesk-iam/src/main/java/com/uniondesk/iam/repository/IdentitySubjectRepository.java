@@ -27,7 +27,7 @@ public class IdentitySubjectRepository {
     }
 
     public void insert(IdentitySubjectPo po) {
-        mapper.insert(po);
+        mapper.insertRow(po);
     }
 
     public void updatePhone(long id, String phone) {

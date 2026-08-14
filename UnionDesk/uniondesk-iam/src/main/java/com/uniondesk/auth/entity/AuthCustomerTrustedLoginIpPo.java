@@ -1,13 +1,20 @@
 package com.uniondesk.auth.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("auth_customer_trusted_login_ip")
 public class AuthCustomerTrustedLoginIpPo {
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private long userId;
     private String clientIp;
     private LocalDateTime lastUsedAt;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
 
     public long getId() {

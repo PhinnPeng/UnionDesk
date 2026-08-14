@@ -1,11 +1,16 @@
 package com.uniondesk.auth.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.auth.entity.AuthClientPo;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface AuthClientMapper {
+public interface AuthClientMapper extends BaseMapper<AuthClientPo> {
 
-    AuthClientPo selectByClientCode(@Param("clientCode") String clientCode);
+    default AuthClientPo selectByClientCode(String clientCode) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(AuthClientPo.class)
+                .where(AuthClientPo::getClientCode).eq(clientCode));
+    }
 }

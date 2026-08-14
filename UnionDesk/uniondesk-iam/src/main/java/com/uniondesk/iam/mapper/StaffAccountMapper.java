@@ -1,5 +1,7 @@
 package com.uniondesk.iam.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.iam.entity.StaffAccountPo;
 import com.uniondesk.iam.entity.StaffAccountPresentationPo;
 import java.time.LocalDateTime;
@@ -8,13 +10,37 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface StaffAccountMapper {
+public interface StaffAccountMapper extends BaseMapper<StaffAccountPo> {
 
-    List<StaffAccountPo> selectAll();
+    default List<StaffAccountPo> selectAll() {
+        return selectListByQuery(QueryWrapper.create()
+                .from(StaffAccountPo.class)
+                .select(StaffAccountPo::getId, StaffAccountPo::getSubjectId,
+                        StaffAccountPo::getUsername, StaffAccountPo::getRealName,
+                        StaffAccountPo::getNickname, StaffAccountPo::getAvatarUrl,
+                        StaffAccountPo::getPhone, StaffAccountPo::getEmail,
+                        StaffAccountPo::getStatus, StaffAccountPo::getEmploymentStatus,
+                        StaffAccountPo::getOffboardedAt, StaffAccountPo::getOffboardedBy,
+                        StaffAccountPo::getOffboardReason, StaffAccountPo::getSource,
+                        StaffAccountPo::getAuthVersion)
+                .orderBy(StaffAccountPo::getId, false));
+    }
 
-    StaffAccountPo selectById(@Param("id") long id);
+    default StaffAccountPo selectById(long id) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(StaffAccountPo.class)
+                .select(StaffAccountPo::getId, StaffAccountPo::getSubjectId,
+                        StaffAccountPo::getUsername, StaffAccountPo::getRealName,
+                        StaffAccountPo::getNickname, StaffAccountPo::getAvatarUrl,
+                        StaffAccountPo::getPhone, StaffAccountPo::getEmail,
+                        StaffAccountPo::getStatus, StaffAccountPo::getEmploymentStatus,
+                        StaffAccountPo::getOffboardedAt, StaffAccountPo::getOffboardedBy,
+                        StaffAccountPo::getOffboardReason, StaffAccountPo::getSource,
+                        StaffAccountPo::getAuthVersion)
+                .where(StaffAccountPo::getId).eq(id));
+    }
 
-    void insert(StaffAccountPo po);
+    int insertRow(StaffAccountPo po);
 
     int updateSelective(@Param("id") long id,
                         @Param("username") String username,
@@ -34,7 +60,14 @@ public interface StaffAccountMapper {
 
     int restoreEmployment(@Param("id") long id);
 
-    StaffAccountPresentationPo selectPresentationById(@Param("id") long id);
+    default StaffAccountPresentationPo selectPresentationById(long id) {
+        return selectOneByQueryAs(QueryWrapper.create()
+                .from(StaffAccountPo.class)
+                .select(StaffAccountPo::getUsername, StaffAccountPo::getRealName,
+                        StaffAccountPo::getNickname, StaffAccountPo::getAvatarUrl,
+                        StaffAccountPo::getPhone, StaffAccountPo::getEmail)
+                .where(StaffAccountPo::getId).eq(id), StaffAccountPresentationPo.class);
+    }
 
     int revokeActiveSessions(@Param("userId") long userId, @Param("revokedReason") String revokedReason);
 

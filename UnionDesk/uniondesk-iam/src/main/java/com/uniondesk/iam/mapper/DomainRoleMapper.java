@@ -1,10 +1,18 @@
 package com.uniondesk.iam.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
+import com.uniondesk.iam.entity.DomainRolePo;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface DomainRoleMapper {
+public interface DomainRoleMapper extends BaseMapper<DomainRolePo> {
 
-    Long selectIdByDomainAndCode(@Param("businessDomainId") long businessDomainId, @Param("code") String code);
+    default Long selectIdByDomainAndCode(long businessDomainId, String code) {
+        return selectObjectByQueryAs(QueryWrapper.create()
+                .from(DomainRolePo.class)
+                .select(DomainRolePo::getId)
+                .where(DomainRolePo::getBusinessDomainId).eq(businessDomainId)
+                .and(DomainRolePo::getCode).eq(code), Long.class);
+    }
 }

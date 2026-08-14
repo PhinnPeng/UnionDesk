@@ -27,39 +27,7 @@
         <result property="pathPattern" column="path_pattern"/>
     </resultMap>
 
-    <resultMap id="ParentPermissionMappingPo" type="com.uniondesk.iam.entity.ParentPermissionMappingPo">
-        <result property="parentId" column="parent_id"/>
-        <result property="permissionCode" column="permission_code"/>
-    </resultMap>
-
-    <resultMap id="RoutePathRowPo" type="com.uniondesk.iam.entity.RoutePathRowPo">
-        <result property="routePath" column="route_path"/>
-        <result property="scope" column="scope"/>
-    </resultMap>
-
-    <sql id="menuColumns">
-        id, code, node_type, scope, name, route_path, component_key, permission_code,
-        parent_id, order_no, icon, hidden, status, required
-    </sql>
-
-    <select id="selectAll" resultMap="AdminMenuPo">
-        SELECT <include refid="menuColumns"/> FROM iam_admin_menu
-        WHERE 1 = 1
-        <if test="scope != null">AND scope = #{scope}</if>
-        ORDER BY order_no, id
-    </select>
-
-    <select id="selectById" resultMap="AdminMenuPo">
-        SELECT <include refid="menuColumns"/> FROM iam_admin_menu WHERE id = #{id} LIMIT 1
-    </select>
-
-    <select id="selectRequiredButton" resultMap="AdminMenuPo">
-        SELECT <include refid="menuColumns"/> FROM iam_admin_menu
-        WHERE parent_id = #{parentMenuId} AND node_type = 'button' AND required = 1
-        LIMIT 1
-    </select>
-
-    <insert id="insert" parameterType="com.uniondesk.iam.entity.AdminMenuPo" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertRow" parameterType="com.uniondesk.iam.entity.AdminMenuPo" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO iam_admin_menu (
             code, node_type, scope, name, route_path, component_key, permission_code,
             parent_id, order_no, icon, hidden, status, required
@@ -68,7 +36,7 @@
                 #{parentId}, #{orderNo}, #{icon}, #{hidden}, #{status}, #{required})
     </insert>
 
-    <update id="update" parameterType="com.uniondesk.iam.entity.AdminMenuPo">
+    <update id="updateRow" parameterType="com.uniondesk.iam.entity.AdminMenuPo">
         UPDATE iam_admin_menu
         SET node_type = #{nodeType},
             scope = #{scope},
@@ -84,21 +52,13 @@
         WHERE id = #{id}
     </update>
 
-    <update id="updateCode">
-        UPDATE iam_admin_menu SET code = #{code} WHERE id = #{id}
-    </update>
-
-    <delete id="deleteById">
+    <delete id="deleteRowById">
         DELETE FROM iam_admin_menu WHERE id = #{id}
     </delete>
 
     <delete id="deleteRoleMenuRelations">
         DELETE FROM iam_admin_role_menu_relation WHERE menu_id = #{menuId}
     </delete>
-
-    <select id="countByParentId" resultType="int">
-        SELECT COUNT(*) FROM iam_admin_menu WHERE parent_id = #{parentId}
-    </select>
 
     <select id="selectAuthorizedByRoleCodes" resultMap="AdminMenuPo">
         SELECT DISTINCT
@@ -162,32 +122,8 @@
         <foreach collection="menuIds" item="id" open="(" separator="," close=")">#{id}</foreach>
     </select>
 
-    <select id="selectRequiredButtonIdsByParentIds" resultType="java.lang.Long">
-        SELECT id FROM iam_admin_menu
-        WHERE parent_id IN
-        <foreach collection="parentIds" item="id" open="(" separator="," close=")">#{id}</foreach>
-          AND node_type = 'button' AND required = 1
-    </select>
-
     <select id="selectRoleScopeById" resultType="java.lang.String">
         SELECT scope FROM role WHERE id = #{roleId}
-    </select>
-
-    <select id="selectPermissionCodesByMenuIds" resultType="java.lang.String">
-        SELECT permission_code FROM iam_admin_menu WHERE id IN
-        <foreach collection="menuIds" item="id" open="(" separator="," close=")">#{id}</foreach>
-    </select>
-
-    <select id="selectRequiredMenuIds" resultType="java.lang.Long">
-        SELECT id FROM iam_admin_menu
-        WHERE node_type = 'menu' AND required = 1 AND scope = #{scope} AND status = 1
-    </select>
-
-    <select id="selectRequiredButtonIdsByMenuIds" resultType="java.lang.Long">
-        SELECT id FROM iam_admin_menu
-        WHERE parent_id IN
-        <foreach collection="menuIds" item="id" open="(" separator="," close=")">#{id}</foreach>
-          AND node_type = 'button' AND required = 1 AND status = 1
     </select>
 
     <select id="selectGrantedPermissionCodes" resultType="java.lang.String">
@@ -199,41 +135,6 @@
           AND menu.node_type = 'button'
           AND menu.status = 1
           AND menu.permission_code IS NOT NULL
-    </select>
-
-    <select id="selectRequiredPermissionMappings" resultMap="ParentPermissionMappingPo">
-        SELECT parent_id, permission_code
-        FROM iam_admin_menu
-        WHERE node_type = 'button' AND required = 1 AND parent_id IS NOT NULL
-        <if test="scope != null">AND scope = #{scope}</if>
-    </select>
-
-    <select id="selectExistingRoutePaths" resultMap="RoutePathRowPo">
-        SELECT route_path, scope FROM iam_admin_menu WHERE route_path IS NOT NULL
-        <if test="selfId != null">AND id &lt;&gt; #{selfId}</if>
-    </select>
-
-    <select id="countByRoutePath" resultType="int">
-        SELECT COUNT(*) FROM iam_admin_menu WHERE route_path = #{routePath}
-        <if test="selfId != null">AND id &lt;&gt; #{selfId}</if>
-    </select>
-
-    <select id="countByPermissionCode" resultType="int">
-        SELECT COUNT(*) FROM iam_admin_menu WHERE permission_code = #{permissionCode}
-        <if test="selfId != null">AND id &lt;&gt; #{selfId}</if>
-    </select>
-
-    <select id="countByIdsAndNodeType" resultType="int">
-        SELECT COUNT(*) FROM iam_admin_menu WHERE id IN
-        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
-        AND node_type = #{nodeType}
-    </select>
-
-    <select id="countByIdsAndNodeTypes" resultType="int">
-        SELECT COUNT(*) FROM iam_admin_menu WHERE id IN
-        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
-        AND node_type IN
-        <foreach collection="nodeTypes" item="nodeType" open="(" separator="," close=")">#{nodeType}</foreach>
     </select>
 
     <select id="selectRoleMenuIdsByNodeTypes" resultType="java.lang.Long">

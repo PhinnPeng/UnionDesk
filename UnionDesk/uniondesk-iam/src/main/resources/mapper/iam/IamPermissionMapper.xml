@@ -3,25 +3,12 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.uniondesk.iam.mapper.IamPermissionMapper">
 
-    <resultMap id="RoutePermissionPo" type="com.uniondesk.iam.entity.RoutePermissionPo">
-        <result property="code" column="code"/>
-        <result property="pathPattern" column="path_pattern"/>
-    </resultMap>
-
     <resultMap id="EffectivePermissionGrantPo" type="com.uniondesk.iam.entity.EffectivePermissionGrantPo">
         <result property="roleLevel" column="role_level"/>
         <result property="bindingScope" column="binding_scope"/>
         <result property="businessDomainId" column="business_domain_id"/>
         <result property="permissionScope" column="permission_scope"/>
     </resultMap>
-
-    <select id="selectRoutePermissions" resultMap="RoutePermissionPo">
-        SELECT code, path_pattern
-        FROM iam_permission
-        WHERE status = 1
-          AND http_method = #{httpMethod}
-          AND path_pattern IS NOT NULL
-    </select>
 
     <select id="selectEffectiveGrants" resultMap="EffectivePermissionGrantPo">
         SELECT

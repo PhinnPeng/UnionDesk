@@ -1,5 +1,8 @@
 package com.uniondesk.auth.entity;
 
+import com.mybatisflex.annotation.Table;
+
+@Table("auth_client")
 public class AuthClientPo {
 
     private String clientCode;

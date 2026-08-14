@@ -47,11 +47,11 @@ public class AdminMenuRepository {
     }
 
     public void insert(AdminMenuPo po) {
-        adminMenuMapper.insert(po);
+        adminMenuMapper.insertRow(po);
     }
 
     public int update(AdminMenuPo po) {
-        return adminMenuMapper.update(po);
+        return adminMenuMapper.updateRow(po);
     }
 
     public void updateCode(long id, String code) {
@@ -59,7 +59,7 @@ public class AdminMenuRepository {
     }
 
     public int deleteById(long id) {
-        return adminMenuMapper.deleteById(id);
+        return adminMenuMapper.deleteRowById(id);
     }
 
     public void deleteRoleMenuRelations(long menuId) {

@@ -1,9 +1,15 @@
 package com.uniondesk.iam.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("import_task")
 public class ImportTaskPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private Long businessDomainId;
     private String taskType;
@@ -15,6 +21,7 @@ public class ImportTaskPo {
     private Integer failCount;
     private String errorSummary;
     private Long createdBy;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
     private LocalDateTime finishedAt;
 

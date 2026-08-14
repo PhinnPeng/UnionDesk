@@ -1,5 +1,7 @@
 package com.uniondesk.auth.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.auth.entity.LoginLogPo;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -7,11 +9,18 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface LoginLogMapper {
+public interface LoginLogMapper extends BaseMapper<LoginLogPo> {
 
-    void insert(LoginLogPo po);
+    int insertRow(LoginLogPo po);
 
-    List<LoginLogPo> selectRecentByEventType(@Param("eventType") String eventType, @Param("limit") int limit);
+    default List<LoginLogPo> selectRecentByEventType(String eventType, int limit) {
+        return selectListByQuery(QueryWrapper.create()
+                .from(LoginLogPo.class)
+                .where(LoginLogPo::getEventType).eq(eventType)
+                .orderBy(LoginLogPo::getCreatedAt, false)
+                .orderBy(LoginLogPo::getId, false)
+                .limit(limit));
+    }
 
     Long selectSubjectIdByCustomerAccountId(@Param("customerAccountId") long customerAccountId);
 

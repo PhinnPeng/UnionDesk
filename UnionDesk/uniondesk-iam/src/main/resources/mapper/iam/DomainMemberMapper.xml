@@ -3,22 +3,6 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.uniondesk.iam.mapper.DomainMemberMapper">
 
-    <resultMap id="DomainMemberPresentationPo" type="com.uniondesk.iam.entity.DomainMemberPresentationPo">
-        <result property="domainNickname" column="domain_nickname"/>
-        <result property="domainAvatarUrl" column="domain_avatar_url"/>
-        <result property="domainContactPhone" column="domain_contact_phone"/>
-        <result property="domainContactEmail" column="domain_contact_email"/>
-    </resultMap>
-
-    <select id="selectPresentation" resultMap="DomainMemberPresentationPo">
-        SELECT domain_nickname, domain_avatar_url, domain_contact_phone, domain_contact_email
-        FROM domain_member
-        WHERE staff_account_id = #{staffAccountId}
-          AND business_domain_id = #{domainId}
-          AND deleted_at IS NULL
-        LIMIT 1
-    </select>
-
     <select id="selectDistinctDomainIds" resultType="java.lang.Long">
         SELECT DISTINCT business_domain_id
         FROM domain_member
@@ -35,15 +19,7 @@
         ORDER BY dr.code
     </select>
 
-    <select id="selectId" resultType="java.lang.Long">
-        SELECT id FROM domain_member
-        WHERE business_domain_id = #{businessDomainId}
-          AND staff_account_id = #{staffAccountId}
-          AND deleted_at IS NULL
-        LIMIT 1
-    </select>
-
-    <insert id="insert">
+    <insert id="insertRow">
         INSERT INTO domain_member (
             staff_account_id, business_domain_id, status, source,
             activated_at, disabled_at, deleted_at, created_at, updated_at

@@ -1,9 +1,14 @@
 package com.uniondesk.auth.entity;
 
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("login_log")
 public class LoginLogPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private String sid;
     private Long subjectId;

@@ -1,7 +1,13 @@
 package com.uniondesk.iam.entity;
 
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
+
+@Table("role")
 public class RolePo {
 
+    @Id(keyType = KeyType.Auto)
     private Integer id;
     private String code;
     private String name;

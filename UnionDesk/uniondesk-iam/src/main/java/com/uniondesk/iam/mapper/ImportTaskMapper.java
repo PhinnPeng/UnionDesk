@@ -1,26 +1,43 @@
 package com.uniondesk.iam.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.iam.entity.ImportTaskPo;
 import java.time.LocalDateTime;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface ImportTaskMapper {
+public interface ImportTaskMapper extends BaseMapper<ImportTaskPo> {
 
-    void insert(ImportTaskPo po);
+    int insertRow(ImportTaskPo po);
 
-    ImportTaskPo selectById(@Param("id") long id);
+    default ImportTaskPo selectById(long id) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(ImportTaskPo.class)
+                .where(ImportTaskPo::getId).eq(id));
+    }
 
-    int updateStatus(@Param("id") long id,
-                     @Param("status") String status,
-                     @Param("finishedAt") LocalDateTime finishedAt);
+    default int updateStatus(long id, String status, LocalDateTime finishedAt) {
+        ImportTaskPo update = new ImportTaskPo();
+        update.setStatus(status);
+        update.setFinishedAt(finishedAt);
+        return updateByQuery(update, true, QueryWrapper.create()
+                .from(ImportTaskPo.class)
+                .where(ImportTaskPo::getId).eq(id));
+    }
 
-    int updateResult(@Param("id") long id,
-                     @Param("status") String status,
-                     @Param("totalCount") int totalCount,
-                     @Param("successCount") int successCount,
-                     @Param("failCount") int failCount,
-                     @Param("errorSummary") String errorSummary,
-                     @Param("finishedAt") LocalDateTime finishedAt);
+    default int updateResult(long id, String status, int totalCount, int successCount,
+                             int failCount, String errorSummary, LocalDateTime finishedAt) {
+        ImportTaskPo update = new ImportTaskPo();
+        update.setStatus(status);
+        update.setTotalCount(totalCount);
+        update.setSuccessCount(successCount);
+        update.setFailCount(failCount);
+        update.setErrorSummary(errorSummary);
+        update.setFinishedAt(finishedAt);
+        return updateByQuery(update, true, QueryWrapper.create()
+                .from(ImportTaskPo.class)
+                .where(ImportTaskPo::getId).eq(id));
+    }
 }

@@ -1,7 +1,13 @@
 package com.uniondesk.iam.entity;
 
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
+
+@Table("domain_member")
 public class DomainMemberPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private Long staffAccountId;
     private Long businessDomainId;

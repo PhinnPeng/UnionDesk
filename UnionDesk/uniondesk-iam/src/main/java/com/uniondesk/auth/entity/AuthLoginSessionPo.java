@@ -1,7 +1,9 @@
 package com.uniondesk.auth.entity;
 
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("auth_login_session")
 public class AuthLoginSessionPo {
 
     private String sid;

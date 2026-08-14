@@ -1,5 +1,7 @@
 package com.uniondesk.iam.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.iam.entity.EffectivePermissionGrantPo;
 import com.uniondesk.iam.entity.IamPermissionPo;
 import com.uniondesk.iam.entity.RoutePermissionPo;
@@ -8,9 +10,16 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface IamPermissionMapper {
+public interface IamPermissionMapper extends BaseMapper<IamPermissionPo> {
 
-    List<RoutePermissionPo> selectRoutePermissions(@Param("httpMethod") String httpMethod);
+    default List<RoutePermissionPo> selectRoutePermissions(String httpMethod) {
+        return selectListByQueryAs(QueryWrapper.create()
+                .from(IamPermissionPo.class)
+                .select(IamPermissionPo::getCode, IamPermissionPo::getPathPattern)
+                .where(IamPermissionPo::getStatus).eq(1)
+                .and(IamPermissionPo::getHttpMethod).eq(httpMethod)
+                .and(IamPermissionPo::getPathPattern).isNotNull(), RoutePermissionPo.class);
+    }
 
     List<EffectivePermissionGrantPo> selectEffectiveGrants(@Param("userId") long userId, @Param("codes") List<String> codes);
 

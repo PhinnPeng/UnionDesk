@@ -1,9 +1,14 @@
 package com.uniondesk.iam.entity;
 
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("staff_account")
 public class StaffAccountPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private Long subjectId;
     private String username;

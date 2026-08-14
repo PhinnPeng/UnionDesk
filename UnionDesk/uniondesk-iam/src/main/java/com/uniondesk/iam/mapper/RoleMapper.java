@@ -1,26 +1,45 @@
 package com.uniondesk.iam.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.iam.entity.RolePo;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface RoleMapper {
+public interface RoleMapper extends BaseMapper<RolePo> {
 
-    List<RolePo> selectAll();
+    default List<RolePo> selectAll() {
+        return selectListByQuery(QueryWrapper.create()
+                .from(RolePo.class)
+                .orderBy(RolePo::getIsSystem, false)
+                .orderBy(RolePo::getId, true));
+    }
 
-    RolePo selectById(@Param("id") int id);
+    default RolePo selectById(int id) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(RolePo.class)
+                .where(RolePo::getId).eq(id));
+    }
 
-    RolePo selectByCode(@Param("code") String code);
+    default RolePo selectByCode(String code) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(RolePo.class)
+                .where(RolePo::getCode).eq(code));
+    }
 
-    void insert(RolePo po);
+    int insertRow(RolePo po);
 
-    int update(RolePo po);
+    int updateRow(RolePo po);
 
-    int deleteById(@Param("id") int id);
+    int deleteRowById(@Param("id") int id);
 
-    int countById(@Param("id") int id);
+    default int countById(int id) {
+        return (int) selectCountByQuery(QueryWrapper.create()
+                .from(RolePo.class)
+                .where(RolePo::getId).eq(id));
+    }
 
     int countUserGlobalRoleBindings(@Param("roleId") int roleId);
 
@@ -46,7 +65,12 @@ public interface RoleMapper {
 
     List<String> selectUserRoleCodesByClientOther(@Param("userId") long userId, @Param("clientCode") String clientCode);
 
-    List<RolePo> selectByCodes(@Param("codes") List<String> codes);
+    default List<RolePo> selectByCodes(List<String> codes) {
+        return selectListByQuery(QueryWrapper.create()
+                .from(RolePo.class)
+                .select(RolePo::getId, RolePo::getCode, RolePo::getScope)
+                .where(RolePo::getCode).in(codes));
+    }
 
     List<Long> selectUserDomainIds(@Param("userId") long userId);
 
@@ -60,7 +84,12 @@ public interface RoleMapper {
 
     void deleteRoleBindings(@Param("roleId") int roleId);
 
-    String selectScopeById(@Param("id") int id);
+    default String selectScopeById(int id) {
+        return selectObjectByQueryAs(QueryWrapper.create()
+                .from(RolePo.class)
+                .select(RolePo::getScope)
+                .where(RolePo::getId).eq(id), String.class);
+    }
 
-    public record BusinessDomainSummary(Long id, String code, String name) {}
+    record BusinessDomainSummary(Long id, String code, String name) {}
 }

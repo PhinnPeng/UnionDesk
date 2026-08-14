@@ -16,7 +16,7 @@ public class LoginAuditRepository {
     }
 
     public void insert(LoginLogPo po) {
-        mapper.insert(po);
+        mapper.insertRow(po);
     }
 
     public List<LoginLogPo> findRecentByEventType(String eventType, int limit) {

@@ -1,15 +1,22 @@
 package com.uniondesk.auth.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("user_config")
 public class UserConfigPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private Long userId;
     private String configKey;
     private String configValue;
     private String valueType;
     private String description;
+    @Column(onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public Long getId() {

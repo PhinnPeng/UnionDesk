@@ -1,5 +1,7 @@
 package com.uniondesk.auth.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.auth.entity.AuthLoginSessionPo;
 import com.uniondesk.auth.entity.OnlineSessionPo;
 import java.time.LocalDateTime;
@@ -8,33 +10,91 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface AuthLoginSessionMapper {
+public interface AuthLoginSessionMapper extends BaseMapper<AuthLoginSessionPo> {
 
-    void insertSession(AuthLoginSessionPo po);
+    default int insertSession(AuthLoginSessionPo po) {
+        return insert(po);
+    }
 
-    AuthLoginSessionPo selectBySidAndType(@Param("sid") String sid, @Param("sessionType") String sessionType);
+    default AuthLoginSessionPo selectBySidAndType(String sid, String sessionType) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(AuthLoginSessionPo.class)
+                .where(AuthLoginSessionPo::getSid).eq(sid)
+                .and(AuthLoginSessionPo::getSessionType).eq(sessionType));
+    }
 
-    int updateLastSeen(@Param("sid") String sid, @Param("sessionType") String sessionType, @Param("lastSeenAt") LocalDateTime lastSeenAt);
+    default int updateLastSeen(String sid, String sessionType, LocalDateTime lastSeenAt) {
+        AuthLoginSessionPo update = new AuthLoginSessionPo();
+        update.setLastSeenAt(lastSeenAt);
+        return updateByQuery(update, true, activeSessionQuery(sid, sessionType));
+    }
 
-    int updateLastSeenAndExpires(@Param("sid") String sid, @Param("sessionType") String sessionType,
-                                 @Param("lastSeenAt") LocalDateTime lastSeenAt, @Param("expiresAt") LocalDateTime expiresAt);
+    default int updateLastSeenAndExpires(String sid, String sessionType,
+                                         LocalDateTime lastSeenAt, LocalDateTime expiresAt) {
+        AuthLoginSessionPo update = new AuthLoginSessionPo();
+        update.setLastSeenAt(lastSeenAt);
+        update.setExpiresAt(expiresAt);
+        return updateByQuery(update, true, activeSessionQuery(sid, sessionType));
+    }
 
-    int updateBusinessDomainAndRefreshToken(@Param("sid") String sid,
-                                            @Param("sessionType") String sessionType,
-                                            @Param("businessDomainId") long businessDomainId,
-                                            @Param("refreshTokenHash") String refreshTokenHash,
-                                            @Param("lastSeenAt") LocalDateTime lastSeenAt);
+    default int updateBusinessDomainAndRefreshToken(String sid,
+                                                    String sessionType,
+                                                    long businessDomainId,
+                                                    String refreshTokenHash,
+                                                    LocalDateTime lastSeenAt) {
+        AuthLoginSessionPo update = new AuthLoginSessionPo();
+        update.setBusinessDomainId(businessDomainId);
+        update.setRefreshTokenHash(refreshTokenHash);
+        update.setLastSeenAt(lastSeenAt);
+        return updateByQuery(update, true, activeSessionQuery(sid, sessionType));
+    }
 
-    int revokeBySid(@Param("sid") String sid, @Param("sessionType") String sessionType,
-                    @Param("revokedAt") LocalDateTime revokedAt, @Param("revokedReason") String revokedReason);
+    default int revokeBySid(String sid, String sessionType,
+                            LocalDateTime revokedAt, String revokedReason) {
+        AuthLoginSessionPo update = new AuthLoginSessionPo();
+        update.setSessionStatus("revoked");
+        update.setRevokedAt(revokedAt);
+        update.setRevokedReason(revokedReason);
+        return updateByQuery(update, true, activeSessionQuery(sid, sessionType));
+    }
 
-    int revokeByUserId(@Param("userId") long userId, @Param("sessionType") String sessionType,
-                       @Param("revokedAt") LocalDateTime revokedAt, @Param("revokedReason") String revokedReason);
+    default int revokeByUserId(long userId, String sessionType,
+                               LocalDateTime revokedAt, String revokedReason) {
+        AuthLoginSessionPo update = new AuthLoginSessionPo();
+        update.setSessionStatus("revoked");
+        update.setRevokedAt(revokedAt);
+        update.setRevokedReason(revokedReason);
+        return updateByQuery(update, true, QueryWrapper.create()
+                .from(AuthLoginSessionPo.class)
+                .where(AuthLoginSessionPo::getUserId).eq(userId)
+                .and(AuthLoginSessionPo::getSessionStatus).eq("active")
+                .and(AuthLoginSessionPo::getSessionType).eq(sessionType));
+    }
 
-    int expireBySid(@Param("sid") String sid, @Param("sessionType") String sessionType,
-                    @Param("revokedAt") LocalDateTime revokedAt);
+    default int expireBySid(String sid, String sessionType, LocalDateTime revokedAt) {
+        AuthLoginSessionPo update = new AuthLoginSessionPo();
+        update.setSessionStatus("expired");
+        update.setRevokedAt(revokedAt);
+        update.setRevokedReason("expired");
+        return updateByQuery(update, true, activeSessionQuery(sid, sessionType));
+    }
 
-    int revokeAllActiveByUserId(@Param("userId") long userId);
+    default int revokeAllActiveByUserId(long userId) {
+        AuthLoginSessionPo update = new AuthLoginSessionPo();
+        update.setSessionStatus("revoked");
+        return updateByQuery(update, true, QueryWrapper.create()
+                .from(AuthLoginSessionPo.class)
+                .where(AuthLoginSessionPo::getUserId).eq(userId)
+                .and(AuthLoginSessionPo::getSessionStatus).eq("active"));
+    }
 
     List<OnlineSessionPo> selectOnlineSessions(@Param("sessionType") String sessionType, @Param("limit") int limit);
+
+    private QueryWrapper activeSessionQuery(String sid, String sessionType) {
+        return QueryWrapper.create()
+                .from(AuthLoginSessionPo.class)
+                .where(AuthLoginSessionPo::getSid).eq(sid)
+                .and(AuthLoginSessionPo::getSessionType).eq(sessionType)
+                .and(AuthLoginSessionPo::getSessionStatus).eq("active");
+    }
 }

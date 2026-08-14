@@ -16,7 +16,7 @@ public class OrganizationRepository {
     }
 
     public List<OrganizationPo> findAll() {
-        return mapper.selectAll();
+        return mapper.selectAllRows();
     }
 
     public Optional<OrganizationPo> findById(long id) {
@@ -28,15 +28,15 @@ public class OrganizationRepository {
     }
 
     public void insert(OrganizationPo po) {
-        mapper.insert(po);
+        mapper.insertRow(po);
     }
 
     public int update(OrganizationPo po) {
-        return mapper.update(po);
+        return mapper.updateRow(po);
     }
 
     public int deleteById(long id) {
-        return mapper.deleteById(id);
+        return mapper.deleteRowById(id);
     }
 
     public int countById(long id) {

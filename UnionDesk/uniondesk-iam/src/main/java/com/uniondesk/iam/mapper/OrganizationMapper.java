@@ -1,32 +1,53 @@
 package com.uniondesk.iam.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.iam.entity.OrganizationPo;
+import com.uniondesk.iam.entity.StaffAccountPo;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface OrganizationMapper {
+public interface OrganizationMapper extends BaseMapper<OrganizationPo> {
 
-    List<OrganizationPo> selectAll();
+    List<OrganizationPo> selectAllRows();
 
     OrganizationPo selectById(@Param("id") long id);
 
     OrganizationPo selectByCode(@Param("code") String code);
 
-    void insert(OrganizationPo po);
+    int insertRow(OrganizationPo po);
 
-    int update(OrganizationPo po);
+    int updateRow(OrganizationPo po);
 
-    int deleteById(@Param("id") long id);
+    int deleteRowById(@Param("id") long id);
 
-    int countById(@Param("id") long id);
+    default int countById(long id) {
+        return (int) selectCountByQuery(QueryWrapper.create()
+                .from(OrganizationPo.class)
+                .where(OrganizationPo::getId).eq(id));
+    }
 
-    int countByParentId(@Param("parentId") long parentId);
+    default int countByParentId(long parentId) {
+        return (int) selectCountByQuery(QueryWrapper.create()
+                .from(OrganizationPo.class)
+                .where(OrganizationPo::getParentId).eq(parentId));
+    }
 
-    Long selectParentId(@Param("id") long id);
+    default Long selectParentId(long id) {
+        return selectObjectByQueryAs(QueryWrapper.create()
+                .from(OrganizationPo.class)
+                .select(OrganizationPo::getParentId)
+                .where(OrganizationPo::getId).eq(id), Long.class);
+    }
 
-    List<Long> selectChildIds(@Param("parentId") long parentId);
+    default List<Long> selectChildIds(long parentId) {
+        return selectObjectListByQueryAs(QueryWrapper.create()
+                .from(OrganizationPo.class)
+                .select(OrganizationPo::getId)
+                .where(OrganizationPo::getParentId).eq(parentId), Long.class);
+    }
 
     List<Long> selectUserOrganizationIds(@Param("userId") long userId);
 
@@ -34,5 +55,9 @@ public interface OrganizationMapper {
 
     void insertUserOrganization(@Param("userId") long userId, @Param("organizationId") long organizationId);
 
-    int countUserAccountById(@Param("id") long id);
+    default int countUserAccountById(long id) {
+        return (int) selectCountByQuery(QueryWrapper.create()
+                .from(StaffAccountPo.class)
+                .where(StaffAccountPo::getId).eq(id));
+    }
 }

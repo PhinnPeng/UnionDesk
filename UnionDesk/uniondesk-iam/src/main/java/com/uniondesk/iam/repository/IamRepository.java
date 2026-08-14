@@ -59,11 +59,11 @@ public class IamRepository {
     }
 
     public void insertResource(IamResourcePo po) {
-        iamResourceMapper.insert(po);
+        iamResourceMapper.insertRow(po);
     }
 
     public int updateResource(IamResourcePo po) {
-        return iamResourceMapper.update(po);
+        return iamResourceMapper.updateRow(po);
     }
 
     public List<IamResourcePo> findResourcesByRoleId(int roleId) {
@@ -91,7 +91,7 @@ public class IamRepository {
     }
 
     public int deleteResource(long id) {
-        return iamResourceMapper.deleteById(id);
+        return iamResourceMapper.deleteRowById(id);
     }
 
     public List<RolePo> findAllRoles() {
@@ -99,11 +99,11 @@ public class IamRepository {
     }
 
     public void insertRole(RolePo po) {
-        roleMapper.insert(po);
+        roleMapper.insertRow(po);
     }
 
     public int updateRole(RolePo po) {
-        return roleMapper.update(po);
+        return roleMapper.updateRow(po);
     }
 
     public int countUserGlobalRoleBindings(int roleId) {
@@ -123,7 +123,7 @@ public class IamRepository {
     }
 
     public int deleteRole(int roleId) {
-        return roleMapper.deleteById(roleId);
+        return roleMapper.deleteRowById(roleId);
     }
 
     public List<Long> findMenuResourceIdsByRole(int roleId) {
