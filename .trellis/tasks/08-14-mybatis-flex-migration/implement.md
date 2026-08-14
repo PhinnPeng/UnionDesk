@@ -24,10 +24,12 @@
 - [x] 每批验证：`./mvnw -B -ntp compile` 全绿 + 对应单测；复杂联表/UNION 保留 XML 或 `@Select`
 - [x] 每批 commit 前自查：改动范围仅限本批模块（git status 逐批核对）
 
-## 阶段 2：主键生成器切换（R4，独立 commit 可回滚）⏳ 待用户清单
+## 阶段 2：主键生成器切换（R4）✅ commit `6422855`
 
-- [ ] 2.1 用户指定「部分模型」清单 → 实体 `@Id` 改为 `@Id(keyType = KeyType.Generator, value = KeyGenerators.snowFlakeId)`
-- [ ] 2.2 验证：插入后 id 由生成器回填（19 位大数）、既有数据不受影响、外键引用正常（AC4）
+- [x] 2.1 用户拍板清单（ticket/ticket_reply/inbox_message/notification_log/consultation_session/consultation_message/file_attachment）→ 7 实体 `@Id(keyType=Generator, value=KeyGenerators.snowFlakeId)`
+  - 关键坑：**Flex 仅对 null 主键生成**——4 个原始 `long id` 必须改 `Long`（primitive 0 会跳过生成器 → 回退 DB 自增）；XML useGeneratedKeys insert 不认 @Id，须转 Flex（Ticket/TicketReply/InboxMessage/Consultation insert 已转，@Column onInsertValue 还原字面量默认值）
+  - ConsultationMapper 双实体拆分：新增 `ConsultationMessageMapper extends BaseMapper<ConsultationMessagePo>`，Repository 注入
+- [x] 2.2 AC4 验证：`SnowflakePrimaryKeyIntegrationTest` 通过——7 模型插入 id 回填 18 位雪花数、外键链路（ticket→reply）正常、finally 逆序清理
 
 ## 阶段 3：全量验证与收尾（AC3/AC5 已验证 ✅）
 
