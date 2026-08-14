@@ -1,29 +1,39 @@
 package com.uniondesk.sla.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.paginate.Page;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.sla.entity.SlaCalendarPo;
-import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface SlaCalendarMapper {
+public interface SlaCalendarMapper extends BaseMapper<SlaCalendarPo> {
 
-    List<SlaCalendarPo> selectByDomainId(
-            @Param("domainId") long domainId,
-            @Param("limit") int limit,
-            @Param("offset") long offset);
+    default Page<SlaCalendarPo> selectPageByDomainId(Page<SlaCalendarPo> page, long domainId) {
+        return paginate(page, QueryWrapper.create()
+                .from(SlaCalendarPo.class)
+                .where(SlaCalendarPo::getBusinessDomainId).eq(domainId)
+                .orderBy(SlaCalendarPo::getId, false));
+    }
 
-    long countByDomainId(@Param("domainId") long domainId);
+    default SlaCalendarPo selectByIdAndDomainId(long id, long domainId) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(SlaCalendarPo.class)
+                .where(SlaCalendarPo::getId).eq(id)
+                .and(SlaCalendarPo::getBusinessDomainId).eq(domainId));
+    }
 
-    SlaCalendarPo selectByIdAndDomainId(
-            @Param("id") long id,
-            @Param("domainId") long domainId);
+    default int updateByIdAndDomainId(SlaCalendarPo po) {
+        return updateByQuery(po, QueryWrapper.create()
+                .from(SlaCalendarPo.class)
+                .where(SlaCalendarPo::getId).eq(po.getId())
+                .and(SlaCalendarPo::getBusinessDomainId).eq(po.getBusinessDomainId()));
+    }
 
-    void insert(SlaCalendarPo po);
-
-    void updateByIdAndDomainId(SlaCalendarPo po);
-
-    int deleteByIdAndDomainId(
-            @Param("id") long id,
-            @Param("domainId") long domainId);
+    default int deleteByIdAndDomainId(long id, long domainId) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(SlaCalendarPo.class)
+                .where(SlaCalendarPo::getId).eq(id)
+                .and(SlaCalendarPo::getBusinessDomainId).eq(domainId));
+    }
 }

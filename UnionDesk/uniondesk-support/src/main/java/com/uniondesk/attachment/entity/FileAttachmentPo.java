@@ -1,9 +1,14 @@
 package com.uniondesk.attachment.entity;
 
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("file_attachment")
 public class FileAttachmentPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private Long businessDomainId;
     private Long uploaderSubjectId;

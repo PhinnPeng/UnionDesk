@@ -1,5 +1,8 @@
 package com.uniondesk.audit.entity;
 
+import com.mybatisflex.annotation.Table;
+
+@Table("audit_log")
 public class AuditLogWritePo {
 
     private long businessDomainId;

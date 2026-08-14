@@ -2,6 +2,7 @@ package com.uniondesk.sla.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.common.web.PageResult;
 import com.uniondesk.sla.entity.SlaCalendarPo;
 import com.uniondesk.sla.entity.SlaRulePo;
@@ -19,6 +20,8 @@ import org.springframework.util.StringUtils;
 
 @Service
 public class SlaService {
+
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final SlaRepository slaRepository;
     private final Clock clock;
@@ -84,12 +87,11 @@ public class SlaService {
 
     @Transactional(readOnly = true)
     public PageResult<SlaCalendarView> listSlaCalendars(long businessDomainId, int page, int pageSize) {
-        long total = slaRepository.countCalendarsByDomainId(businessDomainId);
-        List<SlaCalendarView> items = slaRepository.findCalendarsByDomainId(businessDomainId, page, pageSize)
-                .stream()
-                .map(this::toSlaCalendarView)
-                .toList();
-        return new PageResult<>(total, items);
+        int normalizedPage = Math.max(page, 1);
+        int normalizedPageSize = Math.max(1, Math.min(pageSize, MAX_PAGE_SIZE));
+        Page<SlaCalendarPo> result =
+                slaRepository.findPageByCalendars(Page.of(normalizedPage, normalizedPageSize), businessDomainId);
+        return new PageResult<>(result.getTotalRow(), result.getRecords().stream().map(this::toSlaCalendarView).toList());
     }
 
     @Transactional

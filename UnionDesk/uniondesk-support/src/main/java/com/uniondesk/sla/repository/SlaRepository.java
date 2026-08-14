@@ -1,5 +1,6 @@
 package com.uniondesk.sla.repository;
 
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.sla.entity.SlaCalendarPo;
 import com.uniondesk.sla.entity.SlaRulePo;
 import com.uniondesk.sla.entity.SlaTicketPo;
@@ -66,14 +67,8 @@ public class SlaRepository {
 
     // --- SLA Calendar ---
 
-    public List<SlaCalendarPo> findCalendarsByDomainId(long domainId, int page, int pageSize) {
-        int normalizedPageSize = normalizePageSize(pageSize);
-        long offset = (long) (Math.max(page, 1) - 1) * normalizedPageSize;
-        return slaCalendarMapper.selectByDomainId(domainId, normalizedPageSize, offset);
-    }
-
-    public long countCalendarsByDomainId(long domainId) {
-        return slaCalendarMapper.countByDomainId(domainId);
+    public Page<SlaCalendarPo> findPageByCalendars(Page<SlaCalendarPo> page, long domainId) {
+        return slaCalendarMapper.selectPageByDomainId(page, domainId);
     }
 
     public SlaCalendarPo findCalendarByIdAndDomainId(long calendarId, long domainId) {

@@ -1,5 +1,8 @@
 package com.uniondesk.attachment.entity;
 
+import com.mybatisflex.annotation.Table;
+
+@Table("attachment_policy")
 public class AttachmentPolicyPo {
 
     private String scopeType;

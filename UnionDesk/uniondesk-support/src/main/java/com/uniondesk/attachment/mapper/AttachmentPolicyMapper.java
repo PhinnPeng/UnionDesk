@@ -1,13 +1,24 @@
 package com.uniondesk.attachment.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.attachment.entity.AttachmentPolicyPo;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface AttachmentPolicyMapper {
+public interface AttachmentPolicyMapper extends BaseMapper<AttachmentPolicyPo> {
 
-    AttachmentPolicyPo selectDomainPolicy(@Param("scopeId") long scopeId);
+    default AttachmentPolicyPo selectDomainPolicy(long scopeId) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(AttachmentPolicyPo.class)
+                .where(AttachmentPolicyPo::getScopeType).eq("domain")
+                .and(AttachmentPolicyPo::getScopeId).eq(scopeId));
+    }
 
-    AttachmentPolicyPo selectPlatformPolicy();
+    default AttachmentPolicyPo selectPlatformPolicy() {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(AttachmentPolicyPo.class)
+                .where(AttachmentPolicyPo::getScopeType).eq("platform")
+                .and(AttachmentPolicyPo::getScopeId).eq(0L));
+    }
 }

@@ -1,9 +1,15 @@
 package com.uniondesk.notification.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("notification_template")
 public class NotificationTemplatePo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private String scopeType;
     private Long scopeId;
@@ -15,7 +21,9 @@ public class NotificationTemplatePo {
     private Boolean isSecurity;
     private Boolean isUnsubscribable;
     private String status;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)", onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public Long getId() {

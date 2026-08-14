@@ -1,16 +1,18 @@
 package com.uniondesk.notification.core;
 
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.common.web.PageResult;
 import com.uniondesk.notification.entity.NotificationTemplatePo;
 import com.uniondesk.notification.repository.NotificationTemplateRepository;
 import java.time.LocalDateTime;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 @Service
 public class NotificationTemplateService {
+
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final NotificationTemplateRepository notificationTemplateRepository;
 
@@ -20,9 +22,11 @@ public class NotificationTemplateService {
 
     @Transactional(readOnly = true)
     public PageResult<NotificationTemplateView> list(long domainId, int page, int pageSize) {
-        long total = notificationTemplateRepository.countByDomainId(domainId);
-        List<NotificationTemplatePo> rows = notificationTemplateRepository.findByDomainId(domainId, page, pageSize);
-        return new PageResult<>(total, rows.stream().map(this::toView).toList());
+        int normalizedPage = Math.max(page, 1);
+        int normalizedPageSize = Math.max(1, Math.min(pageSize, MAX_PAGE_SIZE));
+        Page<NotificationTemplatePo> result =
+                notificationTemplateRepository.findPageByDomainId(Page.of(normalizedPage, normalizedPageSize), domainId);
+        return new PageResult<>(result.getTotalRow(), result.getRecords().stream().map(this::toView).toList());
     }
 
     @Transactional

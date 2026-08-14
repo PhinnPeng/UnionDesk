@@ -1,9 +1,15 @@
 package com.uniondesk.notification.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("notification_log")
 public class NotificationLogPo {
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private long businessDomainId;
     private String sourceType;
@@ -18,6 +24,9 @@ public class NotificationLogPo {
     private String lastError;
     private LocalDateTime nextRetryAt;
     private LocalDateTime sentAt;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
+    private LocalDateTime createdAt;
 
     public long getId() {
         return id;
@@ -129,5 +138,13 @@ public class NotificationLogPo {
 
     public void setSentAt(LocalDateTime sentAt) {
         this.sentAt = sentAt;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

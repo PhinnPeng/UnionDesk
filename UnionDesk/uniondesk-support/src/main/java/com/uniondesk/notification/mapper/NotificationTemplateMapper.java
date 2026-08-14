@@ -1,33 +1,49 @@
 package com.uniondesk.notification.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.paginate.Page;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.notification.entity.NotificationTemplatePo;
-import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface NotificationTemplateMapper {
+public interface NotificationTemplateMapper extends BaseMapper<NotificationTemplatePo> {
 
-    List<NotificationTemplatePo> selectByDomainId(
-            @Param("scopeId") long scopeId,
-            @Param("limit") int limit,
-            @Param("offset") long offset);
+    default Page<NotificationTemplatePo> selectPageByDomainId(Page<NotificationTemplatePo> page, long scopeId) {
+        return paginate(page, QueryWrapper.create()
+                .from(NotificationTemplatePo.class)
+                .where(NotificationTemplatePo::getScopeType).eq("domain")
+                .and(NotificationTemplatePo::getScopeId).eq(scopeId)
+                .orderBy(NotificationTemplatePo::getId, false));
+    }
 
-    long countByDomainId(@Param("scopeId") long scopeId);
+    default NotificationTemplatePo selectByIdAndDomainId(long id, long scopeId) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(NotificationTemplatePo.class)
+                .where(NotificationTemplatePo::getId).eq(id)
+                .and(NotificationTemplatePo::getScopeType).eq("domain")
+                .and(NotificationTemplatePo::getScopeId).eq(scopeId));
+    }
 
-    NotificationTemplatePo selectByIdAndDomainId(
-            @Param("id") long id,
-            @Param("scopeId") long scopeId);
-
-    void updateByIdAndDomainId(
-            @Param("id") long id,
-            @Param("scopeId") long scopeId,
-            @Param("eventCategory") String eventCategory,
-            @Param("channel") String channel,
-            @Param("code") String code,
-            @Param("titleTemplate") String titleTemplate,
-            @Param("contentTemplate") String contentTemplate,
-            @Param("isSecurity") boolean isSecurity,
-            @Param("isUnsubscribable") boolean isUnsubscribable,
-            @Param("status") String status);
+    default int updateByIdAndDomainId(long id, long scopeId, String eventCategory, String channel, String code,
+                                      String titleTemplate, String contentTemplate, boolean isSecurity,
+                                      boolean isUnsubscribable, String status) {
+        NotificationTemplatePo po = new NotificationTemplatePo();
+        po.setId(id);
+        po.setScopeType("domain");
+        po.setScopeId(scopeId);
+        po.setEventCategory(eventCategory);
+        po.setChannel(channel);
+        po.setCode(code);
+        po.setTitleTemplate(titleTemplate);
+        po.setContentTemplate(contentTemplate);
+        po.setIsSecurity(isSecurity);
+        po.setIsUnsubscribable(isUnsubscribable);
+        po.setStatus(status);
+        return updateByQuery(po, QueryWrapper.create()
+                .from(NotificationTemplatePo.class)
+                .where(NotificationTemplatePo::getId).eq(id)
+                .and(NotificationTemplatePo::getScopeType).eq("domain")
+                .and(NotificationTemplatePo::getScopeId).eq(scopeId));
+    }
 }

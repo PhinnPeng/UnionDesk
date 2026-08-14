@@ -1,14 +1,22 @@
 package com.uniondesk.sla.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("sla_calendar")
 public class SlaCalendarPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private Long businessDomainId;
     private String name;
     private String config;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)", onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public Long getId() {
