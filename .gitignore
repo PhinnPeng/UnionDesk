@@ -41,3 +41,6 @@ UnionDesk/target/backup-classes/
 
 # Brainstorm companion / local AI session artifacts
 .superpowers/
+
+# Mimosa 扫描状态目录（不入库）
+**/.mimosa/
