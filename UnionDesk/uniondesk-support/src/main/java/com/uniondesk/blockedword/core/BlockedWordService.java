@@ -1,5 +1,6 @@
 package com.uniondesk.blockedword.core;
 
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.blockedword.entity.BlockedWordPo;
 import com.uniondesk.blockedword.repository.BlockedWordRepository;
 import com.uniondesk.blockedword.web.BlockedWordDtos;
@@ -83,19 +84,11 @@ public class BlockedWordService {
         String keywordLike = toKeywordLike(keyword);
         int normalizedPage = Math.max(page, 1);
         int normalizedPageSize = Math.max(pageSize, 1);
-        long offset = (long) (normalizedPage - 1) * normalizedPageSize;
 
-        long total;
-        List<BlockedWordPo> rows;
-        if (domainId == null) {
-            total = blockedWordRepository.countByGlobal(keywordLike);
-            rows = blockedWordRepository.findPageByGlobal(keywordLike, normalizedPageSize, offset);
-        }
-        else {
-            total = blockedWordRepository.countByDomain(domainId, keywordLike);
-            rows = blockedWordRepository.findPageByDomain(domainId, keywordLike, normalizedPageSize, offset);
-        }
-        return new PageResult<>(total, rows.stream().map(this::toView).toList());
+        Page<BlockedWordPo> result = domainId == null
+                ? blockedWordRepository.findPageByGlobal(Page.of(normalizedPage, normalizedPageSize), keywordLike)
+                : blockedWordRepository.findPageByDomain(domainId, Page.of(normalizedPage, normalizedPageSize), keywordLike);
+        return new PageResult<>(result.getTotalRow(), result.getRecords().stream().map(this::toView).toList());
     }
 
     private BlockedWordDtos.BatchCreateBlockedWordResult createBatch(Long domainId, List<String> words) {

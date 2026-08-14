@@ -9,6 +9,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.blockedword.entity.BlockedWordPo;
 import com.uniondesk.blockedword.repository.BlockedWordRepository;
 import com.uniondesk.blockedword.web.BlockedWordDtos;
@@ -44,8 +45,10 @@ class BlockedWordServiceTests {
         po.setId(11L);
         po.setWord("spam");
         po.setCreatedAt(LocalDateTime.of(2026, 5, 3, 12, 0));
-        when(blockedWordRepository.countByDomain(1L, null)).thenReturn(1L);
-        when(blockedWordRepository.findPageByDomain(eq(1L), isNull(), eq(20), eq(0L))).thenReturn(List.of(po));
+        Page<BlockedWordPo> resultPage = Page.of(1, 20);
+        resultPage.setRecords(List.of(po));
+        resultPage.setTotalRow(1);
+        when(blockedWordRepository.findPageByDomain(eq(1L), any(Page.class), isNull())).thenReturn(resultPage);
 
         PageResult<BlockedWordDtos.BlockedWordView> page = blockedWordService.listDomainPage(1L, 1, 20, null);
 

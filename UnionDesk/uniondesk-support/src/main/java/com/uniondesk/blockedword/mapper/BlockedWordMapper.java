@@ -1,39 +1,73 @@
 package com.uniondesk.blockedword.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.paginate.Page;
+import com.mybatisflex.core.query.If;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.blockedword.entity.BlockedWordPo;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface BlockedWordMapper {
+public interface BlockedWordMapper extends BaseMapper<BlockedWordPo> {
 
-    List<BlockedWordPo> selectByDomainId(@Param("domainId") long domainId);
+    default List<BlockedWordPo> selectByDomainId(long domainId) {
+        return selectListByQuery(QueryWrapper.create()
+                .from(BlockedWordPo.class)
+                .where(BlockedWordPo::getBusinessDomainId).eq(domainId)
+                .orderBy(BlockedWordPo::getCreatedAt, false)
+                .orderBy(BlockedWordPo::getId, false));
+    }
 
-    BlockedWordPo selectById(@Param("id") long id);
+    default BlockedWordPo selectById(long id) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(BlockedWordPo.class)
+                .where(BlockedWordPo::getId).eq(id));
+    }
 
-    List<BlockedWordPo> selectPageByGlobal(
-            @Param("keywordLike") String keywordLike,
-            @Param("limit") int limit,
-            @Param("offset") long offset);
+    default Page<BlockedWordPo> selectPageByGlobal(Page<BlockedWordPo> page, String keywordLike) {
+        return paginate(page, QueryWrapper.create()
+                .from(BlockedWordPo.class)
+                .where(BlockedWordPo::getBusinessDomainId).isNull()
+                .and(BlockedWordPo::getWord).like(keywordLike, If::hasText)
+                .orderBy(BlockedWordPo::getCreatedAt, false)
+                .orderBy(BlockedWordPo::getId, false));
+    }
 
-    long countByGlobal(@Param("keywordLike") String keywordLike);
+    default Page<BlockedWordPo> selectPageByDomain(long domainId, Page<BlockedWordPo> page, String keywordLike) {
+        return paginate(page, QueryWrapper.create()
+                .from(BlockedWordPo.class)
+                .where(BlockedWordPo::getBusinessDomainId).eq(domainId)
+                .and(BlockedWordPo::getWord).like(keywordLike, If::hasText)
+                .orderBy(BlockedWordPo::getCreatedAt, false)
+                .orderBy(BlockedWordPo::getId, false));
+    }
 
-    List<BlockedWordPo> selectPageByDomain(
-            @Param("domainId") long domainId,
-            @Param("keywordLike") String keywordLike,
-            @Param("limit") int limit,
-            @Param("offset") long offset);
+    default long countByGlobalAndWord(String word) {
+        return selectCountByQuery(QueryWrapper.create()
+                .from(BlockedWordPo.class)
+                .where(BlockedWordPo::getBusinessDomainId).isNull()
+                .and(BlockedWordPo::getWord).eq(word));
+    }
 
-    long countByDomain(@Param("domainId") long domainId, @Param("keywordLike") String keywordLike);
+    default long countByDomainAndWord(long domainId, String word) {
+        return selectCountByQuery(QueryWrapper.create()
+                .from(BlockedWordPo.class)
+                .where(BlockedWordPo::getBusinessDomainId).eq(domainId)
+                .and(BlockedWordPo::getWord).eq(word));
+    }
 
-    long countByGlobalAndWord(@Param("word") String word);
+    default int deleteByIdAndDomainId(long id, long domainId) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(BlockedWordPo.class)
+                .where(BlockedWordPo::getId).eq(id)
+                .and(BlockedWordPo::getBusinessDomainId).eq(domainId));
+    }
 
-    long countByDomainAndWord(@Param("domainId") long domainId, @Param("word") String word);
-
-    void insert(BlockedWordPo po);
-
-    int deleteByIdAndDomainId(@Param("id") long id, @Param("domainId") long domainId);
-
-    int deleteByIdGlobal(@Param("id") long id);
+    default int deleteByIdGlobal(long id) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(BlockedWordPo.class)
+                .where(BlockedWordPo::getId).eq(id)
+                .and(BlockedWordPo::getBusinessDomainId).isNull());
+    }
 }

@@ -1,5 +1,6 @@
 package com.uniondesk.blockedword.repository;
 
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.blockedword.entity.BlockedWordPo;
 import com.uniondesk.blockedword.mapper.BlockedWordMapper;
 import java.util.List;
@@ -18,20 +19,12 @@ public class BlockedWordRepository {
         return mapper.selectByDomainId(domainId);
     }
 
-    public List<BlockedWordPo> findPageByGlobal(String keywordLike, int limit, long offset) {
-        return mapper.selectPageByGlobal(keywordLike, limit, offset);
+    public Page<BlockedWordPo> findPageByGlobal(Page<BlockedWordPo> page, String keywordLike) {
+        return mapper.selectPageByGlobal(page, keywordLike);
     }
 
-    public long countByGlobal(String keywordLike) {
-        return mapper.countByGlobal(keywordLike);
-    }
-
-    public List<BlockedWordPo> findPageByDomain(long domainId, String keywordLike, int limit, long offset) {
-        return mapper.selectPageByDomain(domainId, keywordLike, limit, offset);
-    }
-
-    public long countByDomain(long domainId, String keywordLike) {
-        return mapper.countByDomain(domainId, keywordLike);
+    public Page<BlockedWordPo> findPageByDomain(long domainId, Page<BlockedWordPo> page, String keywordLike) {
+        return mapper.selectPageByDomain(domainId, page, keywordLike);
     }
 
     public boolean existsGlobal(String word) {
