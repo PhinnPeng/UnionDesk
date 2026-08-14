@@ -2,7 +2,7 @@ import { requestBackendJson } from "#src/utils/request";
 
 /** 角色模板视图 */
 export interface RoleTemplateItem {
-	id: number
+	id: string
 	code: string
 	name: string
 	description: string | null
@@ -34,7 +34,7 @@ export interface RoleTemplateDetail {
 
 /** 权限目录项（permission_item） */
 export interface RoleTemplatePermissionItem {
-	id: number
+	id: string
 	code: string
 	name: string
 	module: string
@@ -61,7 +61,7 @@ export interface CreateRoleTemplatePayload {
 	description?: string | null
 	locked_fields?: string[]
 	sync_strategy?: "immediate" | "manual" | "none"
-	permission_item_ids: number[]
+	permission_item_ids: string[]
 }
 
 /** 更新模板请求体 */
@@ -70,7 +70,7 @@ export interface UpdateRoleTemplatePayload {
 	description?: string | null
 	locked_fields?: string[]
 	sync_strategy?: "immediate" | "manual" | "none"
-	permission_item_ids?: number[]
+	permission_item_ids?: string[]
 }
 
 /* 获取模板列表 */
@@ -80,7 +80,7 @@ export async function fetchRoleTemplateList(): Promise<RoleTemplateItem[]> {
 }
 
 /* 获取模板详情（含已下发域） */
-export function fetchRoleTemplateDetail(templateId: number): Promise<RoleTemplateDetail> {
+export function fetchRoleTemplateDetail(templateId: string): Promise<RoleTemplateDetail> {
 	return requestBackendJson<RoleTemplateDetail>(`v1/iam/role-templates/${templateId}`);
 }
 
@@ -101,7 +101,7 @@ export function createRoleTemplate(data: CreateRoleTemplatePayload): Promise<Rol
 }
 
 /* 更新模板 */
-export function updateRoleTemplate(templateId: number, data: UpdateRoleTemplatePayload): Promise<RoleTemplateItem> {
+export function updateRoleTemplate(templateId: string, data: UpdateRoleTemplatePayload): Promise<RoleTemplateItem> {
 	return requestBackendJson<RoleTemplateItem>(`v1/iam/role-templates/${templateId}`, {
 		method: "PUT",
 		json: data,
@@ -109,7 +109,7 @@ export function updateRoleTemplate(templateId: number, data: UpdateRoleTemplateP
 }
 
 /* 删除模板 */
-export function deleteRoleTemplate(templateId: number): Promise<void> {
+export function deleteRoleTemplate(templateId: string): Promise<void> {
 	return requestBackendJson<void>(`v1/iam/role-templates/${templateId}`, {
 		method: "DELETE",
 	});
@@ -117,8 +117,8 @@ export function deleteRoleTemplate(templateId: number): Promise<void> {
 
 /* 下发模板到指定业务域 */
 export function applyRoleTemplate(
-	templateId: number,
-	data: { domain_ids: number[]; sync_mode?: string },
+	templateId: string,
+	data: { domain_ids: string[]; sync_mode?: string },
 ): Promise<RoleTemplateBatchResult> {
 	return requestBackendJson<RoleTemplateBatchResult>(`v1/iam/role-templates/${templateId}/apply`, {
 		method: "POST",
@@ -127,7 +127,7 @@ export function applyRoleTemplate(
 }
 
 /* 手动同步模板到已下发实例 */
-export function syncRoleTemplate(templateId: number, data?: { domain_ids?: number[] }): Promise<RoleTemplateBatchResult> {
+export function syncRoleTemplate(templateId: string, data?: { domain_ids?: string[] }): Promise<RoleTemplateBatchResult> {
 	return requestBackendJson<RoleTemplateBatchResult>(`v1/iam/role-templates/${templateId}/sync`, {
 		method: "POST",
 		json: data ?? {},
@@ -136,8 +136,8 @@ export function syncRoleTemplate(templateId: number, data?: { domain_ids?: numbe
 
 /* 解绑模板（实例转独立角色） */
 export function unapplyRoleTemplate(
-	templateId: number,
-	data: { domain_ids: number[] },
+	templateId: string,
+	data: { domain_ids: string[] },
 ): Promise<RoleTemplateBatchResult> {
 	return requestBackendJson<RoleTemplateBatchResult>(`v1/iam/role-templates/${templateId}/unapply`, {
 		method: "POST",
@@ -147,8 +147,8 @@ export function unapplyRoleTemplate(
 
 /* 绑定成员到模板实例角色 */
 export function bindMembersToRoleTemplate(
-	templateId: number,
-	data: { staff_ids: number[]; domain_ids: number[] },
+	templateId: string,
+	data: { staff_ids: number[]; domain_ids: string[] },
 ): Promise<RoleTemplateBatchResult> {
 	return requestBackendJson<RoleTemplateBatchResult>(`v1/iam/role-templates/${templateId}/bind-members`, {
 		method: "POST",

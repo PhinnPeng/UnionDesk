@@ -29,11 +29,11 @@ describe("platform iam api", () => {
 			password: "12345678",
 			accountType: "admin",
 			roleCodes: ["super_admin"],
-			businessDomainIds: [1, 2],
+			businessDomainIds: ["1", "2"],
 		};
-		mocks.requestBackendJson.mockResolvedValue({ id: 1, username: "alice", phone: "13800000000", status: 1, employmentStatus: "active" });
+		mocks.requestBackendJson.mockResolvedValue({ id: "1", username: "alice", phone: "13800000000", status: 1, employmentStatus: "active" });
 
-		await expect(fetchCreatePlatformUser(payload)).resolves.toMatchObject({ id: 1, mobile: "13800000000" });
+		await expect(fetchCreatePlatformUser(payload)).resolves.toMatchObject({ id: "1", mobile: "13800000000" });
 		expect(mocks.requestBackendJson).toHaveBeenCalledWith("v1/admin/staff", {
 			method: "POST",
 			json: {
@@ -43,7 +43,7 @@ describe("platform iam api", () => {
 				password: "12345678",
 				accountType: "admin",
 				roleCodes: ["super_admin"],
-				businessDomainIds: [1, 2],
+				businessDomainIds: ["1", "2"],
 				organizationIds: [],
 				real_name: undefined,
 			},
@@ -56,11 +56,11 @@ describe("platform iam api", () => {
 			mobile: "13800000000",
 			email: "alice@example.com",
 			roleCodes: ["super_admin"],
-			businessDomainIds: [1],
+			businessDomainIds: ["1"],
 		};
-		mocks.requestBackendJson.mockResolvedValue({ id: 9, username: "alice", phone: "13800000000", status: 1, employmentStatus: "active" });
+		mocks.requestBackendJson.mockResolvedValue({ id: "9", username: "alice", phone: "13800000000", status: 1, employmentStatus: "active" });
 
-		await expect(fetchUpdatePlatformUser(9, payload)).resolves.toMatchObject({ id: 9 });
+		await expect(fetchUpdatePlatformUser("9", payload)).resolves.toMatchObject({ id: "9" });
 		expect(mocks.requestBackendJson).toHaveBeenCalledWith("v1/admin/staff/9", {
 			method: "PUT",
 			json: {
@@ -70,7 +70,7 @@ describe("platform iam api", () => {
 				password: undefined,
 				accountType: undefined,
 				roleCodes: ["super_admin"],
-				businessDomainIds: [1],
+				businessDomainIds: ["1"],
 				organizationIds: undefined,
 				status: undefined,
 				real_name: undefined,
@@ -79,9 +79,9 @@ describe("platform iam api", () => {
 	});
 
 	it("uses the platform staff offboard endpoint", async () => {
-		mocks.requestBackendJson.mockResolvedValue({ id: 10, username: "bob", phone: "13900000000", status: 0, employmentStatus: "offboarded" });
+		mocks.requestBackendJson.mockResolvedValue({ id: "10", username: "bob", phone: "13900000000", status: 0, employmentStatus: "offboarded" });
 
-		await expect(fetchOffboardPlatformUser(10, "流程完成")).resolves.toMatchObject({ id: 10 });
+		await expect(fetchOffboardPlatformUser("10", "流程完成")).resolves.toMatchObject({ id: "10" });
 		expect(mocks.requestBackendJson).toHaveBeenCalledWith("v1/admin/staff/10/offboard", {
 			method: "POST",
 			json: {
@@ -91,9 +91,9 @@ describe("platform iam api", () => {
 	});
 
 	it("uses the platform staff restore endpoint", async () => {
-		mocks.requestBackendJson.mockResolvedValue({ id: 11, username: "bob", phone: "13900000000", status: 1, employmentStatus: "active" });
+		mocks.requestBackendJson.mockResolvedValue({ id: "11", username: "bob", phone: "13900000000", status: 1, employmentStatus: "active" });
 
-		await expect(fetchRestorePlatformUser(11)).resolves.toMatchObject({ id: 11 });
+		await expect(fetchRestorePlatformUser("11")).resolves.toMatchObject({ id: "11" });
 		expect(mocks.requestBackendJson).toHaveBeenCalledWith("v1/admin/staff/11/restore", {
 			method: "POST",
 		});

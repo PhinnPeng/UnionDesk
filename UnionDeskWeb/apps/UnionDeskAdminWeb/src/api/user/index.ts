@@ -43,7 +43,7 @@ function routeTreeHasPath(routes: readonly AppRouteRecordRaw[], targetPath: stri
 	return false;
 }
 
-function buildSnapshotCacheKey(menuScope: AppScope, domainId?: number) {
+function buildSnapshotCacheKey(menuScope: AppScope, domainId?: string) {
 	const { sid, token } = useAuthStore.getState();
 	return `${sid}:${token}:${menuScope}:${domainId ?? 0}`;
 }
@@ -64,7 +64,7 @@ function resolveMenuScopeForPath(): AppScope {
 	return businessDomainAccess ? appScopes.business : appScopes.platform;
 }
 
-async function fetchSnapshotForScope(menuScope: AppScope, domainId?: number): Promise<{
+async function fetchSnapshotForScope(menuScope: AppScope, domainId?: string): Promise<{
 	userInfo: UserInfoType
 	routes: AppRouteRecordRaw[]
 	snapshot: PermissionSnapshot
@@ -164,7 +164,7 @@ function mergeIdentityUserInfo(next: UserInfoType): UserInfoType {
  */
 export async function ensureScopeAccess(
 	scope: AppScope,
-	options?: { force?: boolean, domainId?: number },
+	options?: { force?: boolean, domainId?: string },
 ) {
 	const access = useAccessStore.getState();
 	const authState = useAuthStore.getState();

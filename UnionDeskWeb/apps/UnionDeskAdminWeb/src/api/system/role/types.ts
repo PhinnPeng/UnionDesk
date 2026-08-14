@@ -1,6 +1,6 @@
 /** 后端 RoleView 对应类型 */
 export interface RoleItemType {
-	id: number
+	id: string
 	code: string
 	name: string
 	scope: string
@@ -9,7 +9,7 @@ export interface RoleItemType {
 
 /** 角色权限（菜单+按钮 ID 列表） */
 export interface RolePermissions {
-	roleId: number
+	roleId: string
 	menuIds: number[]
 	buttonIds: number[]
 }

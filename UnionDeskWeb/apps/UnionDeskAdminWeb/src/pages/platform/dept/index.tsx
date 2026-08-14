@@ -44,8 +44,8 @@ export default function PlatformDept() {
 	const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
 	const [modalOpen, setModalOpen] = useState(false);
 	const [modalMode, setModalMode] = useState<"create" | "edit">("edit");
-	const [editingOrganizationId, setEditingOrganizationId] = useState<number | null>(null);
-	const [createParentId, setCreateParentId] = useState<number | null>(null);
+	const [editingOrganizationId, setEditingOrganizationId] = useState<string | null>(null);
+	const [createParentId, setCreateParentId] = useState<string | null>(null);
 
 	const reloadOrganizations = useCallback(async () => {
 		setLoading(true);
@@ -102,14 +102,14 @@ export default function PlatformDept() {
 		setCreateParentId(null);
 	}, []);
 
-	const openCreateModal = useCallback((parentId: number | null) => {
+	const openCreateModal = useCallback((parentId: string | null) => {
 		setModalMode("create");
 		setCreateParentId(parentId);
 		setEditingOrganizationId(null);
 		setModalOpen(true);
 	}, []);
 
-	const openEditModal = useCallback((organizationId: number) => {
+	const openEditModal = useCallback((organizationId: string) => {
 		setModalMode("edit");
 		setEditingOrganizationId(organizationId);
 		setCreateParentId(null);

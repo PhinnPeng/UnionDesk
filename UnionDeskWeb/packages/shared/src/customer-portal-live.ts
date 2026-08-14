@@ -60,7 +60,7 @@ function toIso(value: string | undefined | null): string {
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : String(value);
 }
 
-function mapTicketRow(row: CustomerTicketRow, accountId: number): CustomerPortalTicket {
+function mapTicketRow(row: CustomerTicketRow, accountId: string): CustomerPortalTicket {
   return {
     id: row.id,
     ticketNo: row.ticketNo,
@@ -98,19 +98,19 @@ export async function restoreCustomerPortalLive(): Promise<CustomerPortalSnapsho
     tokenType: "Bearer",
     expiresInSeconds: 3600,
     user: {
-      id: session.userId ?? 0,
+      id: session.userId ?? "",
       username: session.username ?? "customer",
       mobile: null,
       email: null,
       roles: ["customer"],
     },
     accessibleDomains: domains,
-    defaultBusinessDomainId: session.businessDomainId ?? domains[0]?.id ?? 0,
+    defaultBusinessDomainId: session.businessDomainId ?? domains[0]?.id ?? "",
     mustChangePassword: Boolean(session.mustChangePassword),
   };
   hydrateCustomerPortalFromLogin(response);
   const domainId = session.businessDomainId;
-  if (domainId && domainId > 0) {
+  if (domainId) {
     await refreshCustomerTicketsLive(domainId).catch(() => undefined);
     await refreshCustomerTicketTypesLive(domainId).catch(() => undefined);
   }
@@ -132,7 +132,7 @@ export async function loginCustomerLive(payload: CustomerLoginPayload): Promise<
   );
   hydrateCustomerPortalFromLogin(response);
   const domainId = response.defaultBusinessDomainId;
-  if (domainId && domainId > 0) {
+  if (domainId) {
     await refreshCustomerTicketsLive(domainId).catch(() => undefined);
     await refreshCustomerTicketTypesLive(domainId).catch(() => undefined);
   }
@@ -174,7 +174,7 @@ export async function registerCustomerLive(payload: CustomerRegisterPayload): Pr
       roles: ["customer"],
     },
     accessibleDomains: domains,
-    defaultBusinessDomainId: payload.domainId ?? 0,
+    defaultBusinessDomainId: payload.domainId ?? "",
     mustChangePassword: false,
   });
   if (payload.domainId) {
@@ -192,7 +192,7 @@ export async function logoutCustomerLive(): Promise<void> {
   }
 }
 
-export async function selectCustomerDomainLive(domainId: number): Promise<CustomerPortalSnapshot> {
+export async function selectCustomerDomainLive(domainId: string): Promise<CustomerPortalSnapshot> {
   await switchDomain({ domainId });
   syncCustomerPortalActiveDomain(domainId);
   await refreshCustomerTicketsLive(domainId);
@@ -200,7 +200,7 @@ export async function selectCustomerDomainLive(domainId: number): Promise<Custom
   return getCustomerPortalSnapshot();
 }
 
-export async function refreshCustomerTicketsLive(domainId?: number): Promise<CustomerPortalTicket[]> {
+export async function refreshCustomerTicketsLive(domainId?: string): Promise<CustomerPortalTicket[]> {
   const session = loadAuthSession();
   const resolvedDomainId = domainId ?? session?.businessDomainId ?? undefined;
   const accountId = session?.userId;
@@ -214,7 +214,7 @@ export async function refreshCustomerTicketsLive(domainId?: number): Promise<Cus
   return tickets;
 }
 
-export async function refreshCustomerTicketTypesLive(domainId?: number): Promise<CustomerPortalTypeOption[]> {
+export async function refreshCustomerTicketTypesLive(domainId?: string): Promise<CustomerPortalTypeOption[]> {
   const session = loadAuthSession();
   const resolvedDomainId = domainId ?? session?.businessDomainId ?? undefined;
   if (resolvedDomainId == null) {
@@ -234,14 +234,14 @@ export async function refreshCustomerTicketTypesLive(domainId?: number): Promise
 
 export async function createCustomerTicketLive(
   payload: CustomerTicketCreatePayload,
-): Promise<{ snapshot: CustomerPortalSnapshot; ticketId: number; ticketNo: string }> {
+): Promise<{ snapshot: CustomerPortalSnapshot; ticketId: string; ticketNo: string }> {
   const session = loadAuthSession();
   const domainId = session?.businessDomainId;
   if (domainId == null) {
     throw new Error("请先选择业务域");
   }
-  const typeId = Number(payload.typeId);
-  if (!Number.isFinite(typeId) || typeId <= 0) {
+  const typeId = payload.typeId;
+  if (!typeId || typeId.trim() === "") {
     throw new Error("请选择有效的工单类型");
   }
   const created = await createCustomerMyTicket(domainId, {
@@ -258,7 +258,7 @@ export async function createCustomerTicketLive(
   };
 }
 
-export async function getCustomerTicketLive(ticketId: number): Promise<{
+export async function getCustomerTicketLive(ticketId: string): Promise<{
   ticket: CustomerPortalTicket;
   version: number;
 } | null> {
@@ -281,7 +281,7 @@ export async function getCustomerTicketLive(ticketId: number): Promise<{
   return { ticket, version: detail.ticket.version };
 }
 
-export async function replyCustomerTicketLive(ticketId: number, content: string, version: number): Promise<void> {
+export async function replyCustomerTicketLive(ticketId: string, content: string, version: number): Promise<void> {
   const session = loadAuthSession();
   const domainId = session?.businessDomainId;
   if (domainId == null) {
@@ -291,7 +291,7 @@ export async function replyCustomerTicketLive(ticketId: number, content: string,
 }
 
 export async function withdrawCustomerTicketLive(
-  ticketId: number,
+  ticketId: string,
   version: number,
   reason = "客户撤回",
 ): Promise<void> {
@@ -304,14 +304,14 @@ export async function withdrawCustomerTicketLive(
   await refreshCustomerTicketsLive(domainId);
 }
 
-function mapInboxMessage(item: P0InboxMessage, accountId: number): CustomerPortalInboxMessage {
+function mapInboxMessage(item: P0InboxMessage, accountId: string): CustomerPortalInboxMessage {
   const title = item.title ?? "";
   const content = item.content ?? "";
   const isRisk = title.includes("登录环境") || content.includes("新环境登录") || content.includes("security.risk_login");
   return {
-    id: Number(item.id) || 0,
+    id: item.id,
     accountId,
-    domainId: 0,
+    domainId: "",
     ticketId: null,
     title,
     content,
@@ -327,7 +327,7 @@ export async function fetchCustomerInboxLive(): Promise<{
   unreadCount: number;
 }> {
   const session = loadAuthSession();
-  const accountId = session?.userId ?? 0;
+  const accountId = session?.userId ?? "";
   const [page, unreadCount] = await Promise.all([
     fetchP0InboxPage({ page: 1, page_size: 100 }),
     fetchP0InboxUnreadCount(),
@@ -339,12 +339,12 @@ export async function fetchCustomerInboxLive(): Promise<{
   };
 }
 
-export async function markCustomerInboxReadLive(messageId: number): Promise<void> {
-  await markP0InboxMessageRead(String(messageId));
+export async function markCustomerInboxReadLive(messageId: string): Promise<void> {
+  await markP0InboxMessageRead(messageId);
 }
 
 /** 查询当前域工单的满意度评价状态（未评价返回 null） */
-export async function fetchSatisfactionLive(ticketId: number): Promise<CustomerSatisfactionView | null> {
+export async function fetchSatisfactionLive(ticketId: string): Promise<CustomerSatisfactionView | null> {
   const session = loadAuthSession();
   const domainId = session?.businessDomainId;
   if (domainId == null) {
@@ -355,7 +355,7 @@ export async function fetchSatisfactionLive(ticketId: number): Promise<CustomerS
 
 /** 提交当前域工单的满意度评价（后端保证仅一次） */
 export async function submitSatisfactionLive(
-  ticketId: number,
+  ticketId: string,
   payload: { rating: number; comment?: string },
 ): Promise<CustomerSatisfactionView> {
   const session = loadAuthSession();

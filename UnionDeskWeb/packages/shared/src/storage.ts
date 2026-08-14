@@ -21,9 +21,9 @@ const PERMISSION_SNAPSHOT_KEY = "uniondesk.auth.permission-snapshot";
 
 const seedMeta: Record<string, TicketMeta> = {
   T202604190001: {
-    businessDomainId: 1,
-    customerId: 1,
-    ticketTypeId: 1,
+    businessDomainId: "1",
+    customerId: "1",
+    ticketTypeId: "1",
     priority: "normal",
     description: "Default seed ticket for the demo backend."
   }
@@ -164,7 +164,7 @@ function seedConsultationState(): DemoConsultationState {
     return {
       sessionNo,
       businessDomainId: domain.id,
-      customerId: 1,
+      customerId: "1",
       sessionStatus: "open",
       assignedTo: 2,
       lastMessageAt: createdAt,
@@ -180,7 +180,7 @@ function seedConsultationState(): DemoConsultationState {
           sessionNo: session.sessionNo,
           seqNo: 1,
           senderRole: "agent",
-          senderUserId: 2,
+          senderUserId: "2",
           content: `${DEMO_DOMAINS[index].name} support is online.`,
           createdAt: timestamp
         }
@@ -221,8 +221,8 @@ function persistTicketMetaStore(store: TicketMetaStore): void {
 function fallbackTicketMeta(ticketNo: string): TicketMeta {
   return loadTicketMetaStore()[ticketNo] ?? {
     businessDomainId: DEMO_DOMAINS[0].id,
-    customerId: 1,
-    ticketTypeId: 1,
+    customerId: "1",
+    ticketTypeId: "1",
     priority: "normal",
     description: ""
   };
@@ -246,7 +246,7 @@ export function loadCustomerProfile(): DemoProfile {
     return profile;
   }
   const fallback: DemoProfile = {
-    customerId: 1,
+    customerId: "1",
     nickname: "Demo Customer",
     phone: "13800000000",
     selectedDomainId: DEMO_DOMAINS[0].id
@@ -397,7 +397,7 @@ export function saveTicketMetas(entries: Record<string, TicketMeta>): Record<str
   return store;
 }
 
-export function mergeTicket(record: { id: number; ticketNo: string; title: string; status: string; createdAt: string }): DemoTicket {
+export function mergeTicket(record: { id: string; ticketNo: string; title: string; status: string; createdAt: string }): DemoTicket {
   const meta = loadTicketMeta(record.ticketNo);
   return {
     ...record,
@@ -407,12 +407,12 @@ export function mergeTicket(record: { id: number; ticketNo: string; title: strin
 }
 
 export function mergeTickets(
-  records: Array<{ id: number; ticketNo: string; title: string; status: string; createdAt: string }>
+  records: Array<{ id: string; ticketNo: string; title: string; status: string; createdAt: string }>
 ): DemoTicket[] {
   return records.map((record) => mergeTicket(record));
 }
 
-export function listSessions(domainId: number, customerId?: number): ConsultationSessionSummary[] {
+export function listSessions(domainId: string, customerId?: string): ConsultationSessionSummary[] {
   const state = loadConsultationState();
   const sessions = state.sessions.filter((session) => {
     const sameDomain = session.businessDomainId === domainId;
@@ -429,9 +429,9 @@ export function listMessages(sessionNo: string): ConsultationMessage[] {
 
 export function saveMessage(payload: {
   sessionNo?: string;
-  businessDomainId: number;
-  customerId: number;
-  senderUserId?: number;
+  businessDomainId: string;
+  customerId: string;
+  senderUserId?: string;
   senderRole: "customer" | "agent";
   content: string;
 }): ConsultationSessionSummary {
@@ -450,7 +450,7 @@ export function saveMessage(payload: {
       businessDomainId: payload.businessDomainId,
       customerId: payload.customerId,
       sessionStatus: "open",
-      assignedTo: payload.senderRole === "agent" ? payload.senderUserId ?? 2 : 2,
+      assignedTo: payload.senderRole === "agent" ? Number(payload.senderUserId ?? 2) : 2,
       lastMessageAt: timestamp,
       lastMessagePreview: payload.content.slice(0, 80)
     };
@@ -473,7 +473,7 @@ export function saveMessage(payload: {
       sessionNo: session.sessionNo,
       seqNo: nextSeq + 1,
       senderRole: "agent",
-      senderUserId: 2,
+      senderUserId: "2",
       content: "We have received your message and will follow up soon.",
       createdAt: new Date(Date.now() + 60_000).toISOString()
     });

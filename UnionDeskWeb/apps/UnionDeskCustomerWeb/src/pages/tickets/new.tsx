@@ -20,7 +20,7 @@ export default function TicketCreatePage() {
 	const [description, setDescription] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [createdNo, setCreatedNo] = useState<string | null>(null);
-	const [createdId, setCreatedId] = useState<number | null>(null);
+	const [createdId, setCreatedId] = useState<string | null>(null);
 
 	useEffect(() => {
 		void refreshCustomerTicketTypesLive().catch(() => undefined);

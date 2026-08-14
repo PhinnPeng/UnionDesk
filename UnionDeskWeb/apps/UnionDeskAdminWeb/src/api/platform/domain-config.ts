@@ -9,7 +9,7 @@ export interface ConfigItemView {
 }
 
 export interface DomainConfigView {
-	domainId: number
+	domainId: string
 	items: ConfigItemView[]
 }
 
@@ -22,11 +22,11 @@ export interface DomainConfigUpdateCommand {
 	}>
 }
 
-export function fetchDomainConfig(domainId: number): Promise<DomainConfigView> {
+export function fetchDomainConfig(domainId: string): Promise<DomainConfigView> {
 	return requestBackendJson<DomainConfigView>(`v1/admin/domains/${domainId}/config`);
 }
 
-export function updateDomainConfig(domainId: number, payload: DomainConfigUpdateCommand): Promise<DomainConfigView> {
+export function updateDomainConfig(domainId: string, payload: DomainConfigUpdateCommand): Promise<DomainConfigView> {
 	return requestBackendJson<DomainConfigView>(`v1/admin/domains/${domainId}/config`, {
 		method: "PUT",
 		json: payload,

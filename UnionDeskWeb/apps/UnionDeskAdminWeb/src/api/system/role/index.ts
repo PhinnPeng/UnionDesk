@@ -19,7 +19,7 @@ export function fetchAddRole(data: RolePayload): Promise<RoleItemType> {
 }
 
 /* 修改角色 */
-export function fetchUpdateRole(id: number, data: RolePayload): Promise<RoleItemType> {
+export function fetchUpdateRole(id: string, data: RolePayload): Promise<RoleItemType> {
 	return requestBackendJson<RoleItemType>(`v1/iam/roles/${id}`, {
 		method: "PUT",
 		json: data,
@@ -27,20 +27,20 @@ export function fetchUpdateRole(id: number, data: RolePayload): Promise<RoleItem
 }
 
 /* 删除角色 */
-export function fetchDeleteRole(id: number): Promise<void> {
+export function fetchDeleteRole(id: string): Promise<void> {
 	return requestBackendJson<void>(`v1/iam/roles/${id}`, {
 		method: "DELETE",
 	});
 }
 
 /* 获取角色权限（菜单+按钮 ID） */
-export function fetchRolePermissions(roleId: number): Promise<RolePermissions> {
+export function fetchRolePermissions(roleId: string): Promise<RolePermissions> {
 	return requestBackendJson<RolePermissions>(`v1/iam/roles/${roleId}/permissions`);
 }
 
 /* 更新角色权限 */
 export function fetchUpdateRolePermissions(
-	roleId: number,
+	roleId: string,
 	data: { menuIds: number[]; buttonIds: number[] },
 ): Promise<RolePermissions> {
 	return requestBackendJson<RolePermissions>(`v1/iam/roles/${roleId}/permissions`, {

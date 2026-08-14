@@ -71,12 +71,12 @@ function replaceUsers(currentUsers: IamUser[], nextUsers: IamUser[]): IamUser[] 
 	return merged;
 }
 
-function collectOrganizationDescendantIds(organizations: PlatformOrganizationView[], organizationId: number | null): Set<number> | null {
+function collectOrganizationDescendantIds(organizations: PlatformOrganizationView[], organizationId: string | null): Set<string> | null {
 	if (organizationId == null) {
 		return null;
 	}
 
-	const childrenByParent = new Map<number, number[]>();
+	const childrenByParent = new Map<string, string[]>();
 	for (const organization of organizations) {
 		if (organization.parentId == null) {
 			continue;
@@ -86,8 +86,8 @@ function collectOrganizationDescendantIds(organizations: PlatformOrganizationVie
 		childrenByParent.set(organization.parentId, children);
 	}
 
-	const descendantIds = new Set<number>();
-	const visit = (currentId: number) => {
+	const descendantIds = new Set<string>();
+	const visit = (currentId: string) => {
 		if (descendantIds.has(currentId)) {
 			return;
 		}
@@ -114,13 +114,13 @@ export default function PlatformUser() {
 	const [roles, setRoles] = useState<RoleItemType[]>([]);
 	const [searchValues, setSearchValues] = useState<PlatformUserSearchValues>({});
 	const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
-	const [selectedOrganizationId, setSelectedOrganizationId] = useState<number | null>(null);
+	const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [detailOpen, setDetailOpen] = useState(false);
 	const [detailMode, setDetailMode] = useState<"create" | "edit">("create");
-	const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-	const [resetPasswordUserId, setResetPasswordUserId] = useState<number | null>(null);
-	const [batchDisableUserId, setBatchDisableUserId] = useState<number | null>(null);
+	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+	const [resetPasswordUserId, setResetPasswordUserId] = useState<string | null>(null);
+	const [batchDisableUserId, setBatchDisableUserId] = useState<string | null>(null);
 
 	const reloadUsers = useCallback(async () => {
 		setLoading(true);
@@ -226,7 +226,7 @@ export default function PlatformUser() {
 		setDetailOpen(true);
 	};
 
-	const handleOpenEdit = (userId: number) => {
+	const handleOpenEdit = (userId: string) => {
 		setSelectedUserId(userId);
 		setDetailMode("edit");
 		setDetailOpen(true);
@@ -237,7 +237,7 @@ export default function PlatformUser() {
 		setSelectedUserId(null);
 	};
 
-	const handleOpenResetPassword = (userId: number) => {
+	const handleOpenResetPassword = (userId: string) => {
 		setResetPasswordUserId(userId);
 	};
 
@@ -245,7 +245,7 @@ export default function PlatformUser() {
 		setResetPasswordUserId(null);
 	};
 
-	const handleOpenBatchDisable = (userId: number) => {
+	const handleOpenBatchDisable = (userId: string) => {
 		setBatchDisableUserId(userId);
 	};
 
@@ -272,7 +272,7 @@ export default function PlatformUser() {
 		navigate("/platform/import-export");
 	};
 
-	const handleOffboardUsers = (targetIds: number[]) => {
+	const handleOffboardUsers = (targetIds: string[]) => {
 		const targets = targetIds
 			.map(id => userByIdMap.get(id))
 			.filter((user): user is IamUser => Boolean(user))
@@ -459,7 +459,7 @@ export default function PlatformUser() {
 										danger
 										icon={<DeleteOutlined />}
 										disabled={selectedRowKeys.length === 0}
-										onClick={() => handleOffboardUsers(selectedRowKeys.map(Number))}
+										onClick={() => handleOffboardUsers(selectedRowKeys.map(String))}
 									>
 										{PLATFORM_USER_TOOLBAR_ACTIONS[1].label}
 									</Button>

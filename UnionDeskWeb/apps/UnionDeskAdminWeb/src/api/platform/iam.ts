@@ -3,7 +3,7 @@ import type { CreateIamUserPayload, IamUser, UpdateIamUserPayload } from "@union
 import { requestBackendJson } from "#src/utils/request";
 
 type StaffAccountApi = {
-	id: number
+	id: string
 	username: string
 	real_name?: string | null
 	nickname?: string | null
@@ -14,11 +14,11 @@ type StaffAccountApi = {
 	employmentStatus: string
 	accountType?: string
 	roleCodes?: string[]
-	businessDomainIds?: number[]
-	organizationIds?: number[]
+	businessDomainIds?: string[]
+	organizationIds?: string[]
 	platformRoles?: string[]
 	offboardedAt?: string | null
-	offboardedBy?: number | null
+	offboardedBy?: string | null
 	offboardReason?: string | null
 };
 
@@ -76,7 +76,7 @@ function toUpdateStaffBody(data: UpdateIamUserPayload) {
 	};
 }
 
-export async function fetchPlatformUsers(organizationId?: number): Promise<IamUser[]> {
+export async function fetchPlatformUsers(organizationId?: string): Promise<IamUser[]> {
 	const params = new URLSearchParams({
 		page: "1",
 		page_size: "1000",
@@ -101,7 +101,7 @@ export async function fetchCreatePlatformUser(data: CreateIamUserPayload): Promi
 	return toIamUser(created);
 }
 
-export async function fetchUpdatePlatformUser(id: number, data: UpdateIamUserPayload): Promise<IamUser> {
+export async function fetchUpdatePlatformUser(id: string, data: UpdateIamUserPayload): Promise<IamUser> {
 	const updated = await requestBackendJson<StaffAccountApi>(`v1/admin/staff/${id}`, {
 		method: "PUT",
 		json: toUpdateStaffBody(data),
@@ -109,7 +109,7 @@ export async function fetchUpdatePlatformUser(id: number, data: UpdateIamUserPay
 	return toIamUser(updated);
 }
 
-export async function fetchOffboardPlatformUser(id: number, reason?: string): Promise<IamUser> {
+export async function fetchOffboardPlatformUser(id: string, reason?: string): Promise<IamUser> {
 	const updated = await requestBackendJson<StaffAccountApi>(`v1/admin/staff/${id}/offboard`, {
 		method: "POST",
 		json: {
@@ -119,7 +119,7 @@ export async function fetchOffboardPlatformUser(id: number, reason?: string): Pr
 	return toIamUser(updated);
 }
 
-export async function fetchRestorePlatformUser(id: number): Promise<IamUser> {
+export async function fetchRestorePlatformUser(id: string): Promise<IamUser> {
 	const updated = await requestBackendJson<StaffAccountApi>(`v1/admin/staff/${id}/restore`, {
 		method: "POST",
 	});
@@ -134,14 +134,14 @@ export interface DomainBatchFailure {
 
 /** 跨域批量停用结果 */
 export interface DomainBatchStatusResult {
-	success: number[]
+	success: string[]
 	failed: DomainBatchFailure[]
 }
 
 /** 跨域批量停用：`POST v1/admin/staff/{staffId}/domain-members/batch-status`（需 step-up 令牌） */
 export async function batchDisableDomainMembers(
-	staffId: number,
-	domainIds: number[],
+	staffId: string,
+	domainIds: string[],
 	stepUpToken: string,
 ): Promise<DomainBatchStatusResult> {
 	return requestBackendJson<DomainBatchStatusResult>(`v1/admin/staff/${staffId}/domain-members/batch-status`, {

@@ -16,8 +16,8 @@ interface BatchDisableModalProps {
 
 type ViewState = "select" | "submit" | "result";
 
-function domainLabel(domains: AdminDomain[], domainId: number): string {
-	const domain = domains.find(item => Number(item.id) === domainId);
+function domainLabel(domains: AdminDomain[], domainId: number | string): string {
+	const domain = domains.find(item => item.id === String(domainId));
 	return domain ? `${domain.name}（${domain.code}）` : `业务域 #${domainId}`;
 }
 
@@ -80,7 +80,7 @@ export function BatchDisableModal(props: BatchDisableModalProps) {
 		setView("submit");
 		setSubmitting(true);
 		try {
-			const res = await batchDisableDomainMembers(user.id, selectedDomainIds.map(Number), stepUpToken);
+			const res = await batchDisableDomainMembers(user.id, selectedDomainIds, stepUpToken);
 			setResult(res);
 			setView("result");
 		}

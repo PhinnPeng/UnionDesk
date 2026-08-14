@@ -9,7 +9,7 @@ export interface ImportTaskErrorRow {
 }
 
 export interface ImportTaskView {
-	id: number
+	id: string
 	task_type: string
 	file_name: string
 	status: ImportTaskStatus
@@ -22,7 +22,7 @@ export interface ImportTaskView {
 }
 
 interface ImportTaskCreateResponse {
-	taskId: number
+	taskId: string
 }
 
 /** 上传员工 Excel 并创建异步导入任务 */
@@ -37,7 +37,7 @@ export async function uploadStaffImport(file: File): Promise<ImportTaskView> {
 }
 
 /** 查询导入任务状态与统计（前端轮询用，失败时不弹全局错误） */
-export async function fetchImportTask(taskId: number): Promise<ImportTaskView> {
+export async function fetchImportTask(taskId: string): Promise<ImportTaskView> {
 	return requestBackendJson<ImportTaskView>(`v1/admin/import-export/tasks/${taskId}`, {
 		silentError: true,
 	});

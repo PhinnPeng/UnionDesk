@@ -21,14 +21,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 const { RangePicker } = DatePicker;
 
 function resolveBusinessDomainId(
-	defaultBusinessDomainId: number,
-	accessibleDomains: Array<{ id: number }>,
+	defaultBusinessDomainId: string,
+	accessibleDomains: Array<{ id: string }>,
 ): string {
-	if (defaultBusinessDomainId > 0) {
-		return String(defaultBusinessDomainId);
+	if (defaultBusinessDomainId) {
+		return defaultBusinessDomainId;
 	}
 	const first = accessibleDomains[0];
-	return first ? String(first.id) : "";
+	return first ? first.id : "";
 }
 
 function buildDateRange(values: [Dayjs | null, Dayjs | null] | null | undefined) {
@@ -52,8 +52,6 @@ export default function DomainAuditLogsPage() {
 		() => resolveBusinessDomainId(defaultBusinessDomainId, accessibleDomains ?? []),
 		[accessibleDomains, defaultBusinessDomainId],
 	);
-	const numericDomainId = domainId ? Number(domainId) : NaN;
-
 	const [loading, setLoading] = useState(false);
 	const [rows, setRows] = useState<PlatformAuditLogView[]>([]);
 	const [total, setTotal] = useState(0);
@@ -61,7 +59,7 @@ export default function DomainAuditLogsPage() {
 	const [pageSize, setPageSize] = useState(20);
 
 	const loadLogs = useCallback(async (nextPage = page, nextPageSize = pageSize) => {
-		if (!Number.isFinite(numericDomainId) || numericDomainId <= 0) {
+		if (!domainId) {
 			setRows([]);
 			setTotal(0);
 			return;
@@ -69,7 +67,7 @@ export default function DomainAuditLogsPage() {
 		setLoading(true);
 		try {
 			const values = form.getFieldsValue();
-			const result = await fetchDomainAuditLogs(numericDomainId, {
+			const result = await fetchDomainAuditLogs(domainId, {
 				page: nextPage,
 				page_size: nextPageSize,
 				operator: values.operator,
@@ -87,7 +85,7 @@ export default function DomainAuditLogsPage() {
 		finally {
 			setLoading(false);
 		}
-	}, [form, message, numericDomainId, page, pageSize]);
+	}, [domainId, form, message, page, pageSize]);
 
 	useEffect(() => {
 		void loadLogs(1, 20);

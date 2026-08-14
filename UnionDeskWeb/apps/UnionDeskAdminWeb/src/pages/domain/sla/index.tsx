@@ -45,14 +45,14 @@ import styles from "./index.module.less";
 type EditorKind = "rule" | "calendar" | null;
 
 function resolveBusinessDomainId(
-	defaultBusinessDomainId: number,
-	accessibleDomains: Array<{ id: number }>,
+	defaultBusinessDomainId: string,
+	accessibleDomains: Array<{ id: string }>,
 ): string {
-	if (defaultBusinessDomainId > 0) {
-		return String(defaultBusinessDomainId);
+	if (defaultBusinessDomainId) {
+		return defaultBusinessDomainId;
 	}
 	const first = accessibleDomains[0];
-	return first ? String(first.id) : "";
+	return first ? first.id : "";
 }
 
 function safeJson(value: string | null | undefined) {
@@ -80,7 +80,6 @@ export default function DomainSlaPage() {
 		() => resolveBusinessDomainId(defaultBusinessDomainId, accessibleDomains ?? []),
 		[accessibleDomains, defaultBusinessDomainId],
 	);
-	const numericDomainId = Number(domainId);
 
 	const [activeTab, setActiveTab] = useState<"rules" | "calendars">("rules");
 	const [ruleRows, setRuleRows] = useState<SlaRuleView[]>([]);
@@ -96,7 +95,7 @@ export default function DomainSlaPage() {
 	const [form] = Form.useForm();
 
 	const loadData = useCallback(async (nextPage = page, nextPageSize = pageSize) => {
-		if (!numericDomainId) {
+		if (!domainId) {
 			setRuleRows([]);
 			setRuleTotal(0);
 			setCalendarRows([]);
@@ -106,12 +105,12 @@ export default function DomainSlaPage() {
 		setLoading(true);
 		try {
 			if (activeTab === "rules") {
-				const result = await fetchSlaRules(numericDomainId, { page: nextPage, page_size: nextPageSize });
+				const result = await fetchSlaRules(domainId, { page: nextPage, page_size: nextPageSize });
 				setRuleRows(result.list);
 				setRuleTotal(result.total);
 			}
 			else {
-				const result = await fetchSlaCalendars(numericDomainId, { page: nextPage, page_size: nextPageSize });
+				const result = await fetchSlaCalendars(domainId, { page: nextPage, page_size: nextPageSize });
 				setCalendarRows(result.list);
 				setCalendarTotal(result.total);
 			}
@@ -124,7 +123,7 @@ export default function DomainSlaPage() {
 		finally {
 			setLoading(false);
 		}
-	}, [activeTab, numericDomainId, message, page, pageSize]);
+	}, [activeTab, domainId, message, page, pageSize]);
 
 	useEffect(() => {
 		void loadData(1, pageSize);
@@ -166,7 +165,7 @@ export default function DomainSlaPage() {
 	};
 
 	const submitEditor = async () => {
-		if (!numericDomainId || !editorKind) {
+		if (!domainId || !editorKind) {
 			return;
 		}
 		const values = await form.validateFields().catch(() => null);
@@ -185,12 +184,12 @@ export default function DomainSlaPage() {
 					isUrgentConfig: !!values.isUrgentConfig,
 					breachAction: safeJson(values.breachActionText),
 				};
-				if (editingRule) {
-					await updateSlaRule(numericDomainId, editingRule.id, payload);
+					if (editingRule) {
+						await updateSlaRule(domainId, editingRule.id, payload);
 					message.success("SLA 规则已更新");
 				}
-				else {
-					await createSlaRule(numericDomainId, payload);
+					else {
+						await createSlaRule(domainId, payload);
 					message.success("SLA 规则已创建");
 				}
 			}
@@ -200,11 +199,11 @@ export default function DomainSlaPage() {
 					config: safeJson(values.configText),
 				};
 				if (editingCalendar) {
-					await updateSlaCalendar(numericDomainId, editingCalendar.id, payload);
+					await updateSlaCalendar(domainId, editingCalendar.id, payload);
 					message.success("SLA 日历已更新");
 				}
 				else {
-					await createSlaCalendar(numericDomainId, payload);
+					await createSlaCalendar(domainId, payload);
 					message.success("SLA 日历已创建");
 				}
 			}
@@ -216,33 +215,33 @@ export default function DomainSlaPage() {
 		}
 	};
 
-	const handleDeleteRule = useCallback(async (ruleId: number) => {
-		if (!numericDomainId) {
+	const handleDeleteRule = useCallback(async (ruleId: string) => {
+		if (!domainId) {
 			return;
 		}
 		try {
-			await deleteSlaRule(numericDomainId, ruleId);
+			await deleteSlaRule(domainId, ruleId);
 			message.success("SLA 规则已删除");
 			await loadData(page, pageSize);
 		}
 		catch (error) {
 			message.error(error instanceof Error ? error.message : "删除失败");
 		}
-	}, [numericDomainId, loadData, message, page, pageSize]);
+	}, [domainId, loadData, message, page, pageSize]);
 
-	const handleDeleteCalendar = useCallback(async (calendarId: number) => {
-		if (!numericDomainId) {
+	const handleDeleteCalendar = useCallback(async (calendarId: string) => {
+		if (!domainId) {
 			return;
 		}
 		try {
-			await deleteSlaCalendar(numericDomainId, calendarId);
+			await deleteSlaCalendar(domainId, calendarId);
 			message.success("SLA 日历已删除");
 			await loadData(page, pageSize);
 		}
 		catch (error) {
 			message.error(error instanceof Error ? error.message : "删除失败");
 		}
-	}, [numericDomainId, loadData, message, page, pageSize]);
+	}, [domainId, loadData, message, page, pageSize]);
 
 	const ruleColumns: TableColumnsType<SlaRuleView> = [
 		{ title: "名称", dataIndex: "name", width: 180 },

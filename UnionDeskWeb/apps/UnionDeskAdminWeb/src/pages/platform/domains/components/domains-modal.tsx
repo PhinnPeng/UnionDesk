@@ -55,7 +55,7 @@ interface DomainLogoFieldProps {
 	name?: string;
 	label?: string;
 	previewName?: string;
-	uploadDomainId?: number | null;
+	uploadDomainId?: string | null;
 	required?: boolean;
 	/** wizard：虚线框上传样式（创建向导 Step2） */
 	variant?: "default" | "wizard";
@@ -85,7 +85,7 @@ interface BasicInfoStepProps {
 
 export interface DomainBasicInfoFieldsProps {
 	form: FormInstance;
-	uploadDomainId?: number | null;
+	uploadDomainId?: string | null;
 	previewName?: string;
 	mode: "create" | "detail";
 	onRandomCode?: () => void;
@@ -118,7 +118,7 @@ type DomainCreateFormValues = CreateAdminDomainPayload & {
 const DEFAULT_DOMAIN_LOGO = "/default-domain-logo.svg";
 const DOMAIN_LOGO_ACCEPT = "image/png,image/jpeg,image/webp";
 const DOMAIN_LOGO_MAX_BYTES = 2 * 1024 * 1024;
-const DOMAIN_LOGO_UPLOAD_FALLBACK_DOMAIN_ID = 1;
+const DOMAIN_LOGO_UPLOAD_FALLBACK_DOMAIN_ID = "1";
 
 const accessPolicyOptions: { value: P0AccessPolicy; label: string }[] = [
 	{ value: "allowed", label: "允许" },

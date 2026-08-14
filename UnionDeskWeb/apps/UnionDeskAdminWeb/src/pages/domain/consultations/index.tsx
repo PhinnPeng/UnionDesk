@@ -34,14 +34,14 @@ const STATUS_OPTIONS = [
 ];
 
 function resolveBusinessDomainId(
-	defaultBusinessDomainId: number,
-	accessibleDomains: Array<{ id: number }>,
-): number {
-	if (defaultBusinessDomainId > 0) {
+	defaultBusinessDomainId: string,
+	accessibleDomains: Array<{ id: string }>,
+): string {
+	if (defaultBusinessDomainId) {
 		return defaultBusinessDomainId;
 	}
 	const first = accessibleDomains[0];
-	return first ? Number(first.id) : 0;
+	return first ? first.id : "";
 }
 
 function formatTime(value?: string | null): string {
@@ -169,8 +169,8 @@ export default function DomainConsultationsPage() {
 		}
 		try {
 			const [types, priorities] = await Promise.all([
-				fetchDomainTicketTypes(String(domainId)),
-				fetchDomainPriorityLevels(String(domainId)),
+				fetchDomainTicketTypes(domainId),
+				fetchDomainPriorityLevels(domainId),
 			]);
 			setTicketTypes(types.filter(item => item.status === "active"));
 			setPriorityLevels(priorities.items);
@@ -191,7 +191,7 @@ export default function DomainConsultationsPage() {
 		setConvertSubmitting(true);
 		try {
 			const result = await convertConsultationToTicket(domainId, detailSession.sessionNo, {
-				ticketTypeId: values.ticketTypeId ? Number(values.ticketTypeId) : undefined,
+				ticketTypeId: values.ticketTypeId ? values.ticketTypeId : undefined,
 				priority: values.priority,
 				title: values.title,
 				description: values.description,

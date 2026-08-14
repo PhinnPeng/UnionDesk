@@ -7,12 +7,12 @@ import { buildOrganizationTree, collectTreeKeys, filterOrganizationTree, generat
 
 const rows: PlatformOrganizationView[] = [
 	{
-		id: 1,
+		id: "1",
 		code: "root",
 		name: "平台组织",
 		parentId: null,
 		parentName: null,
-		leaderUserId: 1,
+		leaderUserId: "1",
 		leaderName: "admin",
 		orderNo: 1,
 		status: 1,
@@ -20,12 +20,12 @@ const rows: PlatformOrganizationView[] = [
 		createdAt: "2026-05-03T08:00:00",
 	},
 	{
-		id: 2,
+		id: "2",
 		code: "ops",
 		name: "运营部",
-		parentId: 1,
+		parentId: "1",
 		parentName: "平台组织",
-		leaderUserId: 2,
+		leaderUserId: "2",
 		leaderName: "ops",
 		orderNo: 2,
 		status: 1,
@@ -33,12 +33,12 @@ const rows: PlatformOrganizationView[] = [
 		createdAt: "2026-05-04T08:00:00",
 	},
 	{
-		id: 3,
+		id: "3",
 		code: "audit",
 		name: "审计部",
-		parentId: 1,
+		parentId: "1",
 		parentName: "平台组织",
-		leaderUserId: 3,
+		leaderUserId: "3",
 		leaderName: "audit",
 		orderNo: 3,
 		status: 1,
@@ -66,9 +66,9 @@ describe("organization utils", () => {
 			createdRange: null,
 		});
 		expect(filtered).toHaveLength(1);
-		expect(filtered[0].id).toBe(1);
+		expect(filtered[0].id).toBe("1");
 		expect(filtered[0].children).toHaveLength(1);
-		expect(filtered[0].children[0].id).toBe(2);
+		expect(filtered[0].children[0].id).toBe("2");
 	});
 
 	it("filters by code keyword", () => {
@@ -90,6 +90,6 @@ describe("organization utils", () => {
 		});
 		expect(filtered).toHaveLength(1);
 		expect(filtered[0].children).toHaveLength(1);
-		expect(filtered[0].children[0].id).toBe(2);
+		expect(filtered[0].children[0].id).toBe("2");
 	});
 });

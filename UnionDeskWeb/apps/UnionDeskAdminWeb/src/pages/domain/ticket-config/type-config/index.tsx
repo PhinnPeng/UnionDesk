@@ -46,14 +46,14 @@ function parseTabKey(raw: string | null): TabKey {
 }
 
 function resolveBusinessDomainId(
-	defaultBusinessDomainId: number,
-	accessibleDomains: Array<{ id: number }>,
+	defaultBusinessDomainId: string,
+	accessibleDomains: Array<{ id: string }>,
 ): string {
-	if (defaultBusinessDomainId > 0) {
-		return String(defaultBusinessDomainId);
+	if (defaultBusinessDomainId) {
+		return defaultBusinessDomainId;
 	}
 	const first = accessibleDomains[0];
-	return first ? String(first.id) : "";
+	return first ? first.id : "";
 }
 
 export default function DomainTicketTypeConfigPage() {
@@ -167,7 +167,7 @@ export default function DomainTicketTypeConfigPage() {
 		}
 	}, [domainId, loadData, message, typeId]);
 
-	const handleReorder = useCallback(async (orders: { id: number; sort_order: number }[]) => {
+	const handleReorder = useCallback(async (orders: { id: string; sort_order: number }[]) => {
 		try {
 			await reorderTicketAttributeSlots(domainId, typeId, orders);
 		}

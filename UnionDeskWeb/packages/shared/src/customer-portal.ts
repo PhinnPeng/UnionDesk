@@ -9,21 +9,21 @@ type CustomerPortalDomain = DemoDomain & {
 };
 
 export type CustomerPortalAccount = {
-  id: number;
+  id: string;
   loginName: string;
   password: string;
   displayName: string;
   phone: string;
   email?: string | null;
-  domainIds: number[];
+  domainIds: string[];
   createdAt: string;
   updatedAt: string;
 };
 
 export type CustomerPortalAttachment = {
-  id: number;
-  ownerAccountId: number;
-  domainId: number;
+  id: string;
+  ownerAccountId: string;
+  domainId: string;
   fileName: string;
   mimeType: string;
   size: number;
@@ -32,27 +32,27 @@ export type CustomerPortalAttachment = {
 };
 
 export type CustomerPortalReply = {
-  id: number;
+  id: string;
   authorType: "customer" | "agent" | "system";
   authorName: string;
   content: string;
-  attachmentIds: number[];
+  attachmentIds: string[];
   createdAt: string;
 };
 
 export type CustomerPortalTicketStatus = "open" | "processing" | "waiting_customer" | "resolved" | "closed" | "withdrawn";
 
 export type CustomerPortalTicket = {
-  id: number;
+  id: string;
   ticketNo: string;
-  accountId: number;
-  domainId: number;
+  accountId: string;
+  domainId: string;
   typeId: string;
   typeName: string;
   title: string;
   description: string;
   status: CustomerPortalTicketStatus;
-  attachments: number[];
+  attachments: string[];
   replies: CustomerPortalReply[];
   createdAt: string;
   updatedAt: string;
@@ -60,10 +60,10 @@ export type CustomerPortalTicket = {
 };
 
 export type CustomerPortalInboxMessage = {
-  id: number;
-  accountId: number;
-  domainId: number;
-  ticketId?: number | null;
+  id: string;
+  accountId: string;
+  domainId: string;
+  ticketId?: string | null;
   title: string;
   content: string;
   jumpUrl: string;
@@ -92,8 +92,8 @@ type CustomerPortalState = {
   tickets: CustomerPortalTicket[];
   inbox: CustomerPortalInboxMessage[];
   attachments: CustomerPortalAttachment[];
-  activeAccountId: number | null;
-  activeDomainId: number | null;
+  activeAccountId: string | null;
+  activeDomainId: string | null;
 };
 
 export type CustomerPortalDomainView = CustomerPortalDomain & {
@@ -127,7 +127,7 @@ export type CustomerRegisterPayload = {
   displayName: string;
   phone: string;
   email?: string;
-  domainId?: number | null;
+  domainId?: string | null;
   invitationCode?: string;
 };
 
@@ -139,7 +139,7 @@ export type CustomerTicketCreatePayload = {
   typeId: string;
   title: string;
   description: string;
-  attachmentIds?: number[];
+  attachmentIds?: string[];
 };
 
 type CustomerPortalAttachmentUploadInput = {
@@ -246,19 +246,19 @@ function seedDomains(): CustomerPortalDomain[] {
 
 function seedState(): CustomerPortalState {
   const domains = seedDomains();
-  const accountId = 1;
+  const accountId = "1";
   const createdAt = nowIso();
-  const ticketId = 1;
-  const attachmentId = 1;
-  const replyId = 1;
-  const inboxId = 1;
+  const ticketId = "1";
+  const attachmentId = "1";
+  const replyId = "1";
+  const inboxId = "1";
   return {
     nextIds: {
       account: 2,
-      ticket: ticketId + 1,
-      reply: replyId + 1,
-      attachment: attachmentId + 1,
-      inbox: inboxId + 1
+      ticket: 2,
+      reply: 2,
+      attachment: 2,
+      inbox: 2
     },
     accounts: [
       {
@@ -268,7 +268,7 @@ function seedState(): CustomerPortalState {
         displayName: "演示客户",
         phone: "13800000000",
         email: "customer@uniondesk.com",
-        domainIds: [domains[0]?.id ?? 1],
+        domainIds: [domains[0]?.id ?? "1"],
         createdAt,
         updatedAt: createdAt
       }
@@ -279,7 +279,7 @@ function seedState(): CustomerPortalState {
         id: ticketId,
         ticketNo: "UDC-20260503-0001",
         accountId,
-        domainId: domains[0]?.id ?? 1,
+        domainId: domains[0]?.id ?? "1",
         typeId: "technical",
         typeName: "技术支持",
         title: "演示工单：登录后无法切换业务域",
@@ -304,7 +304,7 @@ function seedState(): CustomerPortalState {
       {
         id: inboxId,
         accountId,
-        domainId: domains[0]?.id ?? 1,
+        domainId: domains[0]?.id ?? "1",
         ticketId,
         title: "工单已创建",
         content: "你的示例工单已创建成功，当前状态为处理中。",
@@ -316,7 +316,7 @@ function seedState(): CustomerPortalState {
     ],
     attachments: [],
     activeAccountId: accountId,
-    activeDomainId: domains[0]?.id ?? 1
+    activeDomainId: domains[0]?.id ?? "1"
   };
 }
 
@@ -356,7 +356,7 @@ function resolveActiveDomain(state: CustomerPortalState, account: CustomerPortal
   return state.domains.find((domain) => domain.id === preferredId) ?? null;
 }
 
-function selectDomainForAccount(state: CustomerPortalState, account: CustomerPortalAccount | null, domainId?: number | null): CustomerPortalState {
+function selectDomainForAccount(state: CustomerPortalState, account: CustomerPortalAccount | null, domainId?: string | null): CustomerPortalState {
   if (!account) {
     return state;
   }
@@ -368,7 +368,7 @@ function selectDomainForAccount(state: CustomerPortalState, account: CustomerPor
   };
 }
 
-function createSession(account: CustomerPortalAccount, domainId?: number | null): AuthSessionState {
+function createSession(account: CustomerPortalAccount, domainId?: string | null): AuthSessionState {
   return {
     username: account.loginName,
     accessToken: createIdPrefix("cust-at"),
@@ -484,18 +484,18 @@ export function hydrateCustomerPortalFromLogin(response: LoginResponse): Custome
       ...state,
       nextIds: {
         ...state.nextIds,
-        account: Math.max(state.nextIds.account, accountId + 1)
+        account: Math.max(state.nextIds.account, Number(accountId) + 1)
       },
       accounts: [...otherAccounts, account],
       domains: [...retainedDomains, ...mappedDomains],
       activeAccountId: accountId,
-      activeDomainId: response.defaultBusinessDomainId > 0 ? response.defaultBusinessDomainId : domainIds[0] ?? null
+      activeDomainId: response.defaultBusinessDomainId ? response.defaultBusinessDomainId : domainIds[0] ?? null
     };
   });
   return buildPortalSnapshot(nextState);
 }
 
-export function syncCustomerPortalActiveDomain(domainId: number): CustomerPortalSnapshot {
+export function syncCustomerPortalActiveDomain(domainId: string): CustomerPortalSnapshot {
   const nextState = updateState((state) => {
     const account = ensureActiveAccount(state);
     const domainIds = account.domainIds.includes(domainId) ? account.domainIds : [...account.domainIds, domainId];
@@ -526,7 +526,7 @@ export function replaceCustomerPortalTicketsForActiveDomain(tickets: CustomerPor
       tickets: [...retained, ...tickets],
       nextIds: {
         ...state.nextIds,
-        ticket: Math.max(state.nextIds.ticket, ...tickets.map((item) => item.id + 1), state.nextIds.ticket)
+        ticket: Math.max(state.nextIds.ticket, ...tickets.map((item) => Number(item.id) + 1), state.nextIds.ticket)
       }
     };
   });
@@ -562,14 +562,14 @@ export function useCustomerPortal(): CustomerPortalSnapshot & {
   login: (payload: CustomerLoginPayload) => CustomerPortalSnapshot;
   register: (payload: CustomerRegisterPayload) => CustomerPortalSnapshot;
   logout: () => void;
-  selectDomain: (domainId: number) => CustomerPortalSnapshot;
+  selectDomain: (domainId: string) => CustomerPortalSnapshot;
   joinDomainByInvitation: (payload: CustomerJoinDomainPayload) => CustomerPortalSnapshot;
   createTicket: (payload: CustomerTicketCreatePayload) => CustomerPortalSnapshot;
-  withdrawTicket: (ticketId: number) => CustomerPortalSnapshot;
-  markInboxRead: (messageId: number) => CustomerPortalSnapshot;
-  uploadAttachment: (file: File, domainId?: number) => Promise<CustomerPortalSnapshot>;
-  getTicketById: (ticketId: number) => CustomerPortalTicket | null;
-  getAttachmentById: (attachmentId: number) => CustomerPortalAttachment | null;
+  withdrawTicket: (ticketId: string) => CustomerPortalSnapshot;
+  markInboxRead: (messageId: string) => CustomerPortalSnapshot;
+  uploadAttachment: (file: File, domainId?: string) => Promise<CustomerPortalSnapshot>;
+  getTicketById: (ticketId: string) => CustomerPortalTicket | null;
+  getAttachmentById: (attachmentId: string) => CustomerPortalAttachment | null;
 } {
   const state = useSyncExternalStore(subscribeCustomerPortal, getCustomerPortalState, getCustomerPortalState);
   const snapshot = buildPortalSnapshot(state);
@@ -636,7 +636,7 @@ export function registerCustomer(payload: CustomerRegisterPayload): CustomerPort
     if (domain?.registrationPolicy === "admin_only" && !domainFromInvitation) {
       throw new Error("该业务域不允许自助注册");
     }
-    const accountId = state.nextIds.account;
+    const accountId = String(state.nextIds.account);
     const domainIds = domain ? [domain.id] : [];
     const createdAt = nowIso();
     const account: CustomerPortalAccount = {
@@ -652,13 +652,13 @@ export function registerCustomer(payload: CustomerRegisterPayload): CustomerPort
     };
     const updatedState: CustomerPortalState = {
       ...state,
-      nextIds: { ...state.nextIds, account: accountId + 1, inbox: state.nextIds.inbox + 1 },
+      nextIds: { ...state.nextIds, account: state.nextIds.account + 1, inbox: state.nextIds.inbox + 1 },
       accounts: [...state.accounts, account]
     };
     if (domain) {
       updatedState.inbox = [
         {
-          id: state.nextIds.inbox,
+          id: String(state.nextIds.inbox),
           accountId,
           domainId: domain.id,
           ticketId: null,
@@ -690,7 +690,7 @@ export function logoutCustomer(): void {
   }));
 }
 
-export function selectCustomerDomain(domainId: number): CustomerPortalSnapshot {
+export function selectCustomerDomain(domainId: string): CustomerPortalSnapshot {
   const nextState = updateState((state) => {
     const account = ensureActiveAccount(state);
     if (!account.domainIds.includes(domainId)) {
@@ -734,7 +734,7 @@ export function joinCustomerDomainByInvitation(payload: CustomerJoinDomainPayloa
       accounts: state.accounts.map((item) => (item.id === account.id ? updatedAccount : item)),
       inbox: [
         {
-          id: inboxId,
+          id: String(inboxId),
           accountId: account.id,
           domainId: domain.id,
           ticketId: null,
@@ -761,11 +761,11 @@ export function createCustomerTicket(payload: CustomerTicketCreatePayload): Cust
     const account = ensureActiveAccount(state);
     const domain = ensureActiveDomain(state, account);
     const type = ticketTypes.find((item) => item.id === payload.typeId) ?? ticketTypes[0];
-    const ticketId = state.nextIds.ticket;
+    const ticketId = String(state.nextIds.ticket);
     const replyId = state.nextIds.reply;
     const inboxId = state.nextIds.inbox;
     const now = nowIso();
-    const ticketNo = `UDC-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${String(ticketId).padStart(4, "0")}`;
+    const ticketNo = `UDC-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${String(state.nextIds.ticket).padStart(4, "0")}`;
     const ticket: CustomerPortalTicket = {
       id: ticketId,
       ticketNo,
@@ -779,7 +779,7 @@ export function createCustomerTicket(payload: CustomerTicketCreatePayload): Cust
       attachments: payload.attachmentIds ?? [],
       replies: [
         {
-          id: replyId,
+          id: String(replyId),
           authorType: "system",
           authorName: "系统",
           content: "工单已提交，客服稍后会跟进处理。",
@@ -787,7 +787,7 @@ export function createCustomerTicket(payload: CustomerTicketCreatePayload): Cust
           createdAt: now
         },
         {
-          id: replyId + 1,
+          id: String(replyId + 1),
           authorType: "agent",
           authorName: "在线客服",
           content: "我们已收到你的工单，会在稍后回复你。",
@@ -802,14 +802,14 @@ export function createCustomerTicket(payload: CustomerTicketCreatePayload): Cust
       ...state,
       nextIds: {
         ...state.nextIds,
-        ticket: ticketId + 1,
+        ticket: Number(ticketId) + 1,
         reply: replyId + 2,
         inbox: inboxId + 1
       },
       tickets: [ticket, ...state.tickets],
       inbox: [
         {
-          id: inboxId,
+          id: String(inboxId),
           accountId: account.id,
           domainId: domain.id,
           ticketId,
@@ -830,7 +830,7 @@ export function createCustomerTicket(payload: CustomerTicketCreatePayload): Cust
   return buildPortalSnapshot(nextState);
 }
 
-export function withdrawCustomerTicket(ticketId: number): CustomerPortalSnapshot {
+export function withdrawCustomerTicket(ticketId: string): CustomerPortalSnapshot {
   const nextState = updateState((state) => {
     const account = ensureActiveAccount(state);
     const ticket = state.tickets.find((item) => item.id === ticketId && item.accountId === account.id);
@@ -849,7 +849,7 @@ export function withdrawCustomerTicket(ticketId: number): CustomerPortalSnapshot
       replies: [
         ...ticket.replies,
         {
-          id: state.nextIds.reply,
+          id: String(state.nextIds.reply),
           authorType: "system",
           authorName: "系统",
           content: "工单已撤回。",
@@ -865,7 +865,7 @@ export function withdrawCustomerTicket(ticketId: number): CustomerPortalSnapshot
       tickets: state.tickets.map((item) => (item.id === ticketId ? updatedTicket : item)),
       inbox: [
         {
-          id: inboxId,
+          id: String(inboxId),
           accountId: account.id,
           domainId: ticket.domainId,
           ticketId,
@@ -883,7 +883,7 @@ export function withdrawCustomerTicket(ticketId: number): CustomerPortalSnapshot
   return buildPortalSnapshot(nextState);
 }
 
-export function markCustomerInboxRead(messageId: number): CustomerPortalSnapshot {
+export function markCustomerInboxRead(messageId: string): CustomerPortalSnapshot {
   const nextState = updateState((state) => {
     const account = ensureActiveAccount(state);
     return {
@@ -894,7 +894,7 @@ export function markCustomerInboxRead(messageId: number): CustomerPortalSnapshot
   return buildPortalSnapshot(nextState);
 }
 
-export function getCustomerTicket(ticketId: number): CustomerPortalTicket | null {
+export function getCustomerTicket(ticketId: string): CustomerPortalTicket | null {
   const state = readState();
   const account = resolveActiveAccount(state);
   if (!account) {
@@ -903,7 +903,7 @@ export function getCustomerTicket(ticketId: number): CustomerPortalTicket | null
   return state.tickets.find((ticket) => ticket.id === ticketId && ticket.accountId === account.id) ?? null;
 }
 
-export function getCustomerAttachment(attachmentId: number): CustomerPortalAttachment | null {
+export function getCustomerAttachment(attachmentId: string): CustomerPortalAttachment | null {
   const state = readState();
   const account = resolveActiveAccount(state);
   if (!account) {
@@ -912,7 +912,7 @@ export function getCustomerAttachment(attachmentId: number): CustomerPortalAttac
   return state.attachments.find((attachment) => attachment.id === attachmentId && attachment.ownerAccountId === account.id) ?? null;
 }
 
-export function uploadCustomerAttachment(file: File, domainId?: number): Promise<CustomerPortalSnapshot> {
+export function uploadCustomerAttachment(file: File, domainId?: string): Promise<CustomerPortalSnapshot> {
   return new Promise<CustomerPortalSnapshot>((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error("附件读取失败"));
@@ -926,7 +926,7 @@ export function uploadCustomerAttachment(file: File, domainId?: number): Promise
           if (!domain) {
             throw new Error("请先选择业务域");
           }
-          const attachmentId = state.nextIds.attachment;
+          const attachmentId = String(state.nextIds.attachment);
           const attachment: CustomerPortalAttachment = {
             id: attachmentId,
             ownerAccountId: account.id,
@@ -939,7 +939,7 @@ export function uploadCustomerAttachment(file: File, domainId?: number): Promise
           };
           return {
             ...state,
-            nextIds: { ...state.nextIds, attachment: attachmentId + 1 },
+            nextIds: { ...state.nextIds, attachment: state.nextIds.attachment + 1 },
             attachments: [attachment, ...state.attachments]
           };
         });

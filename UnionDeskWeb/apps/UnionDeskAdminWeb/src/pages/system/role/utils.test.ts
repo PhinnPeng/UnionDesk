@@ -12,9 +12,9 @@ import type { RoleItemType } from "#src/api/system/role";
 import { filterAssignablePlatformRoles, filterRolesByAppScope } from "./utils";
 
 const roles: RoleItemType[] = [
-	{ id: 1, code: "platform_admin", name: "平台管理员", scope: "global", system: true },
-	{ id: 2, code: "super_admin", name: "超级管理员", scope: "global", system: true },
-	{ id: 3, code: "domain_admin", name: "业务域管理员", scope: "domain", system: true },
+	{ id: "1", code: "platform_admin", name: "平台管理员", scope: "global", system: true },
+	{ id: "2", code: "super_admin", name: "超级管理员", scope: "global", system: true },
+	{ id: "3", code: "domain_admin", name: "业务域管理员", scope: "domain", system: true },
 ];
 
 describe("filterAssignablePlatformRoles", () => {

@@ -56,7 +56,7 @@ export default function TicketDetailPage() {
 	const toast = useToast();
 	const navigate = useNavigate();
 	const params = useParams();
-	const ticketId = Number(params.ticketId);
+	const ticketId = params.ticketId ?? "";
 	const [ticket, setTicket] = useState<CustomerPortalTicket | null>(null);
 	const [version, setVersion] = useState(0);
 	const [loading, setLoading] = useState(true);
@@ -83,7 +83,7 @@ export default function TicketDetailPage() {
 	};
 
 	const reload = async () => {
-		if (!Number.isFinite(ticketId)) {
+		if (!ticketId) {
 			setTicket(null);
 			setLoading(false);
 			return;

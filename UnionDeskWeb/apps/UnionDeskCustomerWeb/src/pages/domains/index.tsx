@@ -8,12 +8,12 @@ export default function DomainsPage() {
 	const portal = useCustomerPortal();
 	const toast = useToast();
 	const navigate = useNavigate();
-	const [switchingId, setSwitchingId] = useState<number | null>(null);
+	const [switchingId, setSwitchingId] = useState<string | null>(null);
 
 	const joined = portal.domains.filter(item => item.joined);
 	const locked = portal.domains.filter(item => !item.joined && !item.canJoin);
 
-	const enterDomain = async (domainId: number) => {
+	const enterDomain = async (domainId: string) => {
 		setSwitchingId(domainId);
 		try {
 			await selectCustomerDomainLive(domainId);

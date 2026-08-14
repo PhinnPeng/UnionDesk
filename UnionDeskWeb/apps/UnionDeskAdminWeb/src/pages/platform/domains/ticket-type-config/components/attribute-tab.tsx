@@ -31,7 +31,7 @@ interface AttributeTabProps {
 	onRefresh?: () => void;
 	onInsert: (attributeId: string, required: boolean) => void | Promise<void>;
 	onRemove: (slotId: string) => void | Promise<void>;
-	onReorder: (orders: { id: number; sort_order: number }[]) => void | Promise<void>;
+	onReorder: (orders: { id: string; sort_order: number }[]) => void | Promise<void>;
 	onConfigChange: (slotId: string, patch: Partial<TicketAttributeSlotConfig>) => void | Promise<void>;
 	onSaveDraft?: (draftSlots: SlotRow[]) => void | Promise<void>;
 	onPublish?: (draftSlots: SlotRow[]) => void | Promise<void>;
@@ -65,11 +65,11 @@ function slotsEqual(a: SlotRow[], b: SlotRow[]): boolean {
 	});
 }
 
-export function buildReorderPayload(slots: SlotRow[], options?: FixedSystemSlotOptions): { id: number; sort_order: number }[] {
+export function buildReorderPayload(slots: SlotRow[], options?: FixedSystemSlotOptions): { id: string; sort_order: number }[] {
 	return slots
 		.filter(item => !isFixedSystemSlot(item, options))
 		.map((item, index) => ({
-			id: Number(item.id),
+			id: item.id,
 			sort_order: index,
 		}));
 }

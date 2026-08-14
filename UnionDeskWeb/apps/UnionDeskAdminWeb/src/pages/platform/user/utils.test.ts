@@ -17,7 +17,7 @@ import {
 
 const users: IamUser[] = [
 	{
-		id: 1,
+		id: "1",
 		username: "alice",
 		mobile: "13800000000",
 		email: "alice@example.com",
@@ -25,11 +25,11 @@ const users: IamUser[] = [
 		status: 1,
 		employmentStatus: "active",
 		roleCodes: ["super_admin"],
-		businessDomainIds: [1],
-		organizationIds: [10],
+		businessDomainIds: ["1"],
+		organizationIds: ["10"],
 	},
 	{
-		id: 2,
+		id: "2",
 		username: "bob",
 		mobile: "13900000000",
 		email: "bob@example.com",
@@ -52,11 +52,11 @@ describe("platform user utils", () => {
 
 	it("maps user rows with department and role labels", () => {
 		const departments: PlatformOrganizationView[] = [
-			{ id: 10, code: "sales", name: "销售", parentId: null, parentName: null, leaderUserId: null, leaderName: null, orderNo: 1, status: 1, remark: null, createdAt: "2026-05-01T00:00:00" },
-			{ id: 11, code: "ops", name: "运营", parentId: 10, parentName: "销售", leaderUserId: null, leaderName: null, orderNo: 2, status: 1, remark: null, createdAt: "2026-05-02T00:00:00" },
+			{ id: "10", code: "sales", name: "销售", parentId: null, parentName: null, leaderUserId: null, leaderName: null, orderNo: 1, status: 1, remark: null, createdAt: "2026-05-01T00:00:00" },
+			{ id: "11", code: "ops", name: "运营", parentId: "10", parentName: "销售", leaderUserId: null, leaderName: null, orderNo: 2, status: 1, remark: null, createdAt: "2026-05-02T00:00:00" },
 		];
 		const roles = [
-			{ id: 7, code: "super_admin", name: "超级管理员", scope: "global", system: true },
+			{ id: "7", code: "super_admin", name: "超级管理员", scope: "global", system: true },
 		];
 
 		const row = toPlatformUserRow(
@@ -81,9 +81,9 @@ describe("platform user utils", () => {
 	});
 
 	it("filters users by username, account, mobile and email", () => {
-		expect(filterPlatformUsers(users, { keyword: "ali" }).map(user => user.id)).toEqual([1]);
-		expect(filterPlatformUsers(users, { keyword: "139" }).map(user => user.id)).toEqual([2]);
-		expect(filterPlatformUsers(users, { keyword: "example.com" }).map(user => user.id)).toEqual([1, 2]);
+		expect(filterPlatformUsers(users, { keyword: "ali" }).map(user => user.id)).toEqual(["1"]);
+		expect(filterPlatformUsers(users, { keyword: "139" }).map(user => user.id)).toEqual(["2"]);
+		expect(filterPlatformUsers(users, { keyword: "example.com" }).map(user => user.id)).toEqual(["1", "2"]);
 		expect(filterPlatformUsers(users, { keyword: "" })).toEqual(users);
 	});
 
@@ -94,7 +94,7 @@ describe("platform user utils", () => {
 			email: " alice@example.com ",
 			password: " 12345678 ",
 			roleCodes: ["super_admin"],
-			organizationId: 1,
+			organizationId: "1",
 			remark: " 新用户备注 ",
 		})).toEqual({
 			username: "alice",
@@ -105,7 +105,7 @@ describe("platform user utils", () => {
 			accountType: "admin",
 			roleCodes: ["super_admin"],
 			businessDomainIds: [],
-			organizationIds: [1],
+			organizationIds: ["1"],
 		});
 
 		expect(buildUpdatePlatformUserPayload({
@@ -114,7 +114,7 @@ describe("platform user utils", () => {
 			email: " alice@example.com ",
 			password: "   ",
 			roleCodes: ["super_admin"],
-			organizationId: 1,
+			organizationId: "1",
 			remark: " 备注 ",
 		}, "customer")).toEqual({
 			username: "alice",
@@ -124,7 +124,7 @@ describe("platform user utils", () => {
 			accountType: "customer",
 			roleCodes: ["super_admin"],
 			businessDomainIds: [],
-			organizationIds: [1],
+			organizationIds: ["1"],
 		});
 	});
 

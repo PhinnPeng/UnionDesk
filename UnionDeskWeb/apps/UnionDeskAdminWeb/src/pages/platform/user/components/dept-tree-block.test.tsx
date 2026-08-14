@@ -81,7 +81,7 @@ function getNodeText(node: React.ReactNode): string {
 
 const organizations: PlatformOrganizationView[] = [
 	{
-		id: 10,
+		id: "10",
 		code: "root",
 		name: "平台组织",
 		parentId: null,
@@ -94,10 +94,10 @@ const organizations: PlatformOrganizationView[] = [
 		createdAt: "2026-05-01T00:00:00",
 	},
 	{
-		id: 11,
+		id: "11",
 		code: "ops",
 		name: "运营中心",
-		parentId: 10,
+		parentId: "10",
 		parentName: "平台组织",
 		leaderUserId: null,
 		leaderName: null,
@@ -107,7 +107,7 @@ const organizations: PlatformOrganizationView[] = [
 		createdAt: "2026-05-02T00:00:00",
 	},
 	{
-		id: 12,
+		id: "12",
 		code: "support",
 		name: "客户支持",
 		parentId: null,

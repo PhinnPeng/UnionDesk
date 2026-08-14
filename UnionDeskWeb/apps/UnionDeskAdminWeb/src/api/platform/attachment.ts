@@ -38,7 +38,7 @@ export function confirmAttachment(attachmentId: number): Promise<void> {
 
 /** 默认上传：multipart 经后端代理写入 MinIO */
 export async function uploadAttachment(
-	domainId: number,
+	domainId: string,
 	file: File,
 	targetType: string,
 ): Promise<AttachmentUploadResponse> {

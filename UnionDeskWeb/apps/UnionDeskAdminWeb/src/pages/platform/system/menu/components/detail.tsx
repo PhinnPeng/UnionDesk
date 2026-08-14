@@ -29,7 +29,7 @@ import { IconPicker } from "#src/components/icon-picker";
 import { PERMISSION_CODE_LABELS } from "./permission-code-labels";
 
 type MenuFormValues = Partial<MenuItemType> & {
-	parentId?: number[] | number | null
+	parentId?: string[] | string | null
 	componentKey?: string | string[] | null
 	hidden?: boolean
 	implementationType?: "component" | "external" | "iframe"
@@ -69,16 +69,16 @@ function groupPermissionOptions(items: AdminPermissionCodeView[], translate: (ke
 	}));
 }
 
-function getParentPath(flatParentMenus: MenuItemType[], parentId?: number | null) {
-	if (typeof parentId !== "number") {
+function getParentPath(flatParentMenus: MenuItemType[], parentId?: string | null) {
+	if (!parentId) {
 		return [];
 	}
 	const menuMap = new Map(flatParentMenus.map(item => [item.id, item]));
-	const path: number[] = [];
-	const visited = new Set<number>();
-	let currentId: number | null = parentId;
+	const path: string[] = [];
+	const visited = new Set<string>();
+	let currentId: string | null = parentId;
 
-	while (typeof currentId === "number" && !visited.has(currentId)) {
+	while (currentId && !visited.has(currentId)) {
 		visited.add(currentId);
 		const currentNode = menuMap.get(currentId);
 		if (!currentNode) {
@@ -92,14 +92,14 @@ function getParentPath(flatParentMenus: MenuItemType[], parentId?: number | null
 	return path;
 }
 
-function normalizeParentId(parentId?: number[] | number | null) {
+function normalizeParentId(parentId?: string[] | string | null) {
 	if (Array.isArray(parentId)) {
 		if (!parentId.length) {
 			return null;
 		}
 		return parentId[parentId.length - 1] ?? null;
 	}
-	if (typeof parentId === "number") {
+	if (typeof parentId === "string") {
 		return parentId;
 	}
 	return null;
@@ -128,7 +128,7 @@ export function Detail({
 	const nodeType = Form.useWatch("nodeType", form);
 	const normalizedComponentKey = normalizeComponentKey(componentKey);
 
-	const resolveScopeValue = (parentId?: number | null, scope?: string) => {
+	const resolveScopeValue = (parentId?: string | null, scope?: string) => {
 		if (scope) {
 			return scope;
 		}
@@ -171,8 +171,8 @@ export function Detail({
 			form.setFieldsValue({
 				...detailData,
 				nodeType: detailData.nodeType ?? "menu",
-				parentId: getParentPath(flatParentMenus, detailData.parentId as number | null | undefined),
-				scope: resolveScopeValue(detailData.parentId as number | null | undefined, detailData.scope),
+				parentId: getParentPath(flatParentMenus, detailData.parentId ?? undefined),
+				scope: resolveScopeValue(detailData.parentId ?? undefined, detailData.scope),
 				componentKey: componentKeyToCascaderValue(normalizeComponentKey(detailData.componentKey)),
 				hidden: detailData.hidden ?? false,
 				status: detailData.status ?? 1,

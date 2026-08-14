@@ -45,7 +45,7 @@ const initialState: AuthType = {
 
 	expiresInSeconds: 0,
 
-	defaultBusinessDomainId: 0,
+	defaultBusinessDomainId: "",
 
 	preferredDefaultDomainId: null,
 
@@ -59,8 +59,8 @@ const initialState: AuthType = {
 
 async function refreshPermissionSnapshotForUser(
 	userInfo: UserInfoType | null,
-	defaultBusinessDomainId: number,
-	accessibleDomains: Array<{ id: number }>,
+	defaultBusinessDomainId: string,
+	accessibleDomains: Array<{ id: string }>,
 ): Promise<void> {
 	if (!userInfo) {
 		return;
@@ -96,12 +96,12 @@ interface AuthAction {
 
 	reset: () => void
 
-	switchDomain: (domainId: number) => Promise<void>
+	switchDomain: (domainId: string) => Promise<void>
 
-	setDefaultDomain: (domainId: number) => Promise<void>
+	setDefaultDomain: (domainId: string) => Promise<void>
 
 	/** 更新侧栏业务域列表中某一项的展示字段（如改名后） */
-	patchAccessibleDomain: (patch: { id: number, name?: string, code?: string, status?: number | null }) => void
+	patchAccessibleDomain: (patch: { id: string, name?: string, code?: string, status?: number | null }) => void
 
 };
 
@@ -316,7 +316,7 @@ export const useAuthStore = create<AuthType & AuthAction>()(
 		},
 
 		patchAccessibleDomain: (patch) => {
-			if (!Number.isSafeInteger(patch.id) || patch.id <= 0) {
+			if (!patch.id) {
 				return;
 			}
 			set((state) => {

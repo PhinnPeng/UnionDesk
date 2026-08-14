@@ -597,7 +597,7 @@ export async function revokeOnlineSession(sid: string): Promise<void> {
   }
 }
 
-export async function revokeUserSessions(userId: number): Promise<void> {
+export async function revokeUserSessions(userId: string): Promise<void> {
   try {
     await api.post(`/auth/users/${userId}/revoke-sessions`);
   } catch (error) {
@@ -640,7 +640,7 @@ export async function createTicket(payload: CreateTicketRequest): Promise<DemoTi
   }
 }
 
-export async function markTicketProcessing(ticketId: number): Promise<TicketActionResponse> {
+export async function markTicketProcessing(ticketId: string): Promise<TicketActionResponse> {
   try {
     const response = await api.post<TicketActionResponse>(`/tickets/${ticketId}/processing`);
     return unwrapApiResponse(response.data);
@@ -649,7 +649,7 @@ export async function markTicketProcessing(ticketId: number): Promise<TicketActi
   }
 }
 
-export async function markTicketResolved(ticketId: number): Promise<TicketActionResponse> {
+export async function markTicketResolved(ticketId: string): Promise<TicketActionResponse> {
   try {
     const response = await api.post<TicketActionResponse>(`/tickets/${ticketId}/resolved`);
     return unwrapApiResponse(response.data);
@@ -690,7 +690,7 @@ export async function createIamResource(payload: UpsertIamResourcePayload): Prom
   }
 }
 
-export async function updateIamResource(id: number, payload: UpsertIamResourcePayload): Promise<IamResource> {
+export async function updateIamResource(id: string, payload: UpsertIamResourcePayload): Promise<IamResource> {
   try {
     const response = await api.put<IamResource>(`/iam/resources/${id}`, payload);
     return unwrapApiResponse(response.data);
@@ -699,7 +699,7 @@ export async function updateIamResource(id: number, payload: UpsertIamResourcePa
   }
 }
 
-export async function fetchRoleResources(roleId: number): Promise<IamResource[]> {
+export async function fetchRoleResources(roleId: string): Promise<IamResource[]> {
   try {
     const response = await api.get<{ total: number; items: IamResource[] }>(`/iam/roles/${roleId}/resources`);
     const result = unwrapApiResponse(response.data);
@@ -709,7 +709,7 @@ export async function fetchRoleResources(roleId: number): Promise<IamResource[]>
   }
 }
 
-export async function replaceRoleResources(roleId: number, resourceIds: number[]): Promise<IamResource[]> {
+export async function replaceRoleResources(roleId: string, resourceIds: Array<number | string>): Promise<IamResource[]> {
   try {
     const response = await api.put<{ total: number; items: IamResource[] }>(`/iam/roles/${roleId}/resources`, { resourceIds });
     const result = unwrapApiResponse(response.data);
@@ -768,7 +768,7 @@ export async function createMenu(payload: CreateMenuPayload): Promise<IamResourc
   }
 }
 
-export async function updateMenu(id: number, payload: UpdateMenuPayload): Promise<IamResource> {
+export async function updateMenu(id: string, payload: UpdateMenuPayload): Promise<IamResource> {
   try {
     const response = await api.put<IamResource>(`/iam/menus/${id}`, payload);
     return unwrapApiResponse(response.data);
@@ -777,7 +777,7 @@ export async function updateMenu(id: number, payload: UpdateMenuPayload): Promis
   }
 }
 
-export async function deleteMenu(id: number): Promise<void> {
+export async function deleteMenu(id: string): Promise<void> {
   try {
     await api.delete(`/iam/menus/${id}`);
   } catch (error) {
@@ -804,7 +804,7 @@ export async function createRole(payload: CreateRolePayload): Promise<IamRole> {
   }
 }
 
-export async function updateRole(roleId: number, payload: UpdateRolePayload): Promise<IamRole> {
+export async function updateRole(roleId: string, payload: UpdateRolePayload): Promise<IamRole> {
   try {
     const response = await api.put<IamRole>(`/iam/roles/${roleId}`, payload);
     return unwrapApiResponse(response.data);
@@ -813,7 +813,7 @@ export async function updateRole(roleId: number, payload: UpdateRolePayload): Pr
   }
 }
 
-export async function deleteRole(roleId: number): Promise<void> {
+export async function deleteRole(roleId: string): Promise<void> {
   try {
     await api.delete(`/iam/roles/${roleId}`);
   } catch (error) {
@@ -821,7 +821,7 @@ export async function deleteRole(roleId: number): Promise<void> {
   }
 }
 
-export async function fetchRolePermissions(roleId: number): Promise<RolePermissions> {
+export async function fetchRolePermissions(roleId: string): Promise<RolePermissions> {
   try {
     const response = await api.get<RolePermissions>(`/iam/roles/${roleId}/permissions`);
     return unwrapApiResponse(response.data);
@@ -830,7 +830,7 @@ export async function fetchRolePermissions(roleId: number): Promise<RolePermissi
   }
 }
 
-export async function updateRolePermissions(roleId: number, payload: UpdateRolePermissionsPayload): Promise<RolePermissions> {
+export async function updateRolePermissions(roleId: string, payload: UpdateRolePermissionsPayload): Promise<RolePermissions> {
   try {
     const response = await api.put<RolePermissions>(`/iam/roles/${roleId}/permissions`, payload);
     return unwrapApiResponse(response.data);
@@ -870,7 +870,7 @@ export async function createUser(payload: CreateIamUserPayload): Promise<IamUser
   }
 }
 
-export async function updateUser(userId: number, payload: UpdateIamUserPayload): Promise<IamUser> {
+export async function updateUser(userId: string, payload: UpdateIamUserPayload): Promise<IamUser> {
   try {
     const response = await api.put<IamUser>(`/admin/staff/${userId}`, {
       username: payload.username,
@@ -890,7 +890,7 @@ export async function updateUser(userId: number, payload: UpdateIamUserPayload):
   }
 }
 
-export async function offboardUser(userId: number, reason?: string): Promise<IamUser> {
+export async function offboardUser(userId: string, reason?: string): Promise<IamUser> {
   try {
     const response = await api.post<IamUser>(`/admin/staff/${userId}/offboard`, { reason });
     return unwrapApiResponse(response.data);
@@ -899,7 +899,7 @@ export async function offboardUser(userId: number, reason?: string): Promise<Iam
   }
 }
 
-export async function restoreUser(userId: number): Promise<IamUser> {
+export async function restoreUser(userId: string): Promise<IamUser> {
   try {
     const response = await api.post<IamUser>(`/admin/staff/${userId}/restore`);
     return unwrapApiResponse(response.data);
@@ -920,7 +920,7 @@ export async function fetchOffboardPoolUsers(): Promise<IamUser[]> {
   }
 }
 
-export async function deleteUser(userId: number): Promise<void> {
+export async function deleteUser(userId: string): Promise<void> {
   try {
     await api.delete(`/admin/staff/${userId}`);
   } catch (error) {
@@ -2518,7 +2518,7 @@ export function getCachedPermissionSnapshot(): PermissionSnapshot | null {
   return loadPermissionSnapshot();
 }
 
-export function loadConsultationSessions(domainId: number, customerId?: number): ConsultationSessionSummary[] {
+export function loadConsultationSessions(domainId: string, customerId?: string): ConsultationSessionSummary[] {
   return listSessions(domainId, customerId);
 }
 
@@ -2536,11 +2536,11 @@ export { clearAuthSession, saveTicketMeta };
 // --- 在线咨询（生产端点，后端 uniondesk-ticket ConsultationRuntimeController）---
 
 export type ConsultationSessionRow = {
-  id: number;
+  id: string;
   sessionNo: string;
-  businessDomainId: number;
+  businessDomainId: string;
   businessDomainName: string;
-  customerId: number;
+  customerId: string;
   sessionStatus: string;
   assignedTo?: number | null;
   linkedTicketNo?: string | null;
@@ -2551,10 +2551,10 @@ export type ConsultationSessionRow = {
 };
 
 export type ConsultationMessageRow = {
-  id: number;
+  id: string;
   sessionNo: string;
   seqNo: number;
-  businessDomainId: number;
+  businessDomainId: string;
   senderRole: string;
   messageType: string;
   content: string;
@@ -2564,12 +2564,12 @@ export type ConsultationMessageRow = {
 
 export type ConsultationConvertResult = {
   session: ConsultationSessionRow;
-  ticketId: number;
+  ticketId: string;
   ticketNo: string;
 };
 
 /** 客户发起咨询：`POST /api/v1/domains/{domain_id}/consultations` */
-export async function createCustomerConsultation(domainId: number, content: string): Promise<ConsultationSessionRow> {
+export async function createCustomerConsultation(domainId: string, content: string): Promise<ConsultationSessionRow> {
   try {
     const response = await api.post<ConsultationSessionRow>(`/domains/${domainId}/consultations`, { content });
     return unwrapApiResponse(response.data);
@@ -2579,7 +2579,7 @@ export async function createCustomerConsultation(domainId: number, content: stri
 }
 
 /** 客户我的咨询会话列表：`GET /api/v1/domains/{domain_id}/consultations/my` */
-export async function listCustomerMyConsultations(domainId: number): Promise<ConsultationSessionRow[]> {
+export async function listCustomerMyConsultations(domainId: string): Promise<ConsultationSessionRow[]> {
   try {
     const response = await api.get<ConsultationSessionRow[]>(`/domains/${domainId}/consultations/my`);
     return unwrapApiResponse(response.data);
@@ -2589,7 +2589,7 @@ export async function listCustomerMyConsultations(domainId: number): Promise<Con
 }
 
 /** 客户查看我的会话消息：`GET /api/v1/domains/{domain_id}/consultations/my/{session_no}/messages` */
-export async function getMyConsultationMessages(domainId: number, sessionNo: string): Promise<ConsultationMessageRow[]> {
+export async function getMyConsultationMessages(domainId: string, sessionNo: string): Promise<ConsultationMessageRow[]> {
   try {
     const response = await api.get<ConsultationMessageRow[]>(
       `/domains/${domainId}/consultations/my/${encodeURIComponent(sessionNo)}/messages`,
@@ -2601,7 +2601,7 @@ export async function getMyConsultationMessages(domainId: number, sessionNo: str
 }
 
 /** 客户在我的会话中发送消息：`POST /api/v1/domains/{domain_id}/consultations/my/{session_no}/messages` */
-export async function replyCustomerConsultation(domainId: number, sessionNo: string, content: string): Promise<ConsultationMessageRow> {
+export async function replyCustomerConsultation(domainId: string, sessionNo: string, content: string): Promise<ConsultationMessageRow> {
   try {
     const response = await api.post<ConsultationMessageRow>(
       `/domains/${domainId}/consultations/my/${encodeURIComponent(sessionNo)}/messages`,
@@ -2615,7 +2615,7 @@ export async function replyCustomerConsultation(domainId: number, sessionNo: str
 
 /** 客服会话列表：`GET /api/v1/admin/domains/{domain_id}/consultations` */
 export async function listAdminConsultations(
-  domainId: number,
+  domainId: string,
   options?: { page?: number; pageSize?: number; status?: string },
 ): Promise<P0PageResult<ConsultationSessionRow>> {
   try {
@@ -2630,7 +2630,7 @@ export async function listAdminConsultations(
 }
 
 /** 客服查看会话消息：`GET /api/v1/admin/domains/{domain_id}/consultations/{session_no}/messages` */
-export async function getAdminConsultationMessages(domainId: number, sessionNo: string): Promise<ConsultationMessageRow[]> {
+export async function getAdminConsultationMessages(domainId: string, sessionNo: string): Promise<ConsultationMessageRow[]> {
   try {
     const response = await api.get<ConsultationMessageRow[]>(
       `/admin/domains/${domainId}/consultations/${encodeURIComponent(sessionNo)}/messages`,
@@ -2642,7 +2642,7 @@ export async function getAdminConsultationMessages(domainId: number, sessionNo: 
 }
 
 /** 客服回复会话：`POST /api/v1/admin/domains/{domain_id}/consultations/{session_no}/messages` */
-export async function replyAdminConsultation(domainId: number, sessionNo: string, content: string): Promise<ConsultationMessageRow> {
+export async function replyAdminConsultation(domainId: string, sessionNo: string, content: string): Promise<ConsultationMessageRow> {
   try {
     const response = await api.post<ConsultationMessageRow>(
       `/admin/domains/${domainId}/consultations/${encodeURIComponent(sessionNo)}/messages`,
@@ -2656,9 +2656,9 @@ export async function replyAdminConsultation(domainId: number, sessionNo: string
 
 /** 客服转工单：`POST /api/v1/admin/domains/{domain_id}/consultations/{session_no}/ticket` */
 export async function convertConsultationToTicket(
-  domainId: number,
+  domainId: string,
   sessionNo: string,
-  payload?: { ticketTypeId?: number; title?: string; description?: string; priority?: string },
+  payload?: { ticketTypeId?: string; title?: string; description?: string; priority?: string },
 ): Promise<ConsultationConvertResult> {
   try {
     const response = await api.post<ConsultationConvertResult>(
@@ -2674,12 +2674,12 @@ export async function convertConsultationToTicket(
 // --- Customer portal (live) ticket APIs ---
 
 export type CustomerTicketRow = {
-  id: number;
+  id: string;
   ticketNo: string;
-  businessDomainId: number;
-  ticketTypeId: number;
+  businessDomainId: string;
+  ticketTypeId: string;
   ticketTypeName: string;
-  customerId: number;
+  customerId: string;
   title: string;
   description: string;
   status: string;
@@ -2690,7 +2690,7 @@ export type CustomerTicketRow = {
 };
 
 export type CustomerTicketReplyRow = {
-  id: number;
+  id: string;
   senderType: string;
   content: string;
   createdAt: string;
@@ -2702,13 +2702,13 @@ export type CustomerTicketDetail = {
 };
 
 export type CustomerTicketTypeBrief = {
-  id: number;
+  id: string;
   name: string;
   description?: string | null;
 };
 
 export async function listCustomerMyTickets(
-  domainId: number,
+  domainId: string,
   options?: { status?: string; limit?: number },
 ): Promise<CustomerTicketRow[]> {
   try {
@@ -2724,8 +2724,8 @@ export async function listCustomerMyTickets(
 }
 
 export async function getCustomerMyTicketDetail(
-  domainId: number,
-  ticketId: number,
+  domainId: string,
+  ticketId: string,
 ): Promise<CustomerTicketDetail> {
   try {
     const response = await api.get<CustomerTicketDetail>(
@@ -2738,16 +2738,16 @@ export async function getCustomerMyTicketDetail(
 }
 
 export async function createCustomerMyTicket(
-  domainId: number,
+  domainId: string,
   payload: {
-    ticketTypeId: number;
+    ticketTypeId: string;
     title: string;
     description: string;
-    attachmentIds?: number[];
+    attachmentIds?: string[];
   },
-): Promise<{ id: number; ticketNo: string }> {
+): Promise<{ id: string; ticketNo: string }> {
   try {
-    const response = await api.post<{ id: number; ticketNo: string }>(
+    const response = await api.post<{ id: string; ticketNo: string }>(
       `/domains/${domainId}/tickets`,
       {
         ticketTypeId: payload.ticketTypeId,
@@ -2765,12 +2765,12 @@ export async function createCustomerMyTicket(
 }
 
 export async function replyCustomerMyTicket(
-  domainId: number,
-  ticketId: number,
-  payload: { version: number; content: string; attachmentIds?: number[] },
-): Promise<{ id: number }> {
+  domainId: string,
+  ticketId: string,
+  payload: { version: number; content: string; attachmentIds?: string[] },
+): Promise<{ id: string }> {
   try {
-    const response = await api.post<{ id: number }>(
+    const response = await api.post<{ id: string }>(
       `/domains/${domainId}/tickets/my/${ticketId}/replies`,
       {
         version: payload.version,
@@ -2785,12 +2785,12 @@ export async function replyCustomerMyTicket(
 }
 
 export async function withdrawCustomerMyTicket(
-  domainId: number,
-  ticketId: number,
+  domainId: string,
+  ticketId: string,
   payload: { version: number; reason: string },
-): Promise<{ id: number }> {
+): Promise<{ id: string }> {
   try {
-    const response = await api.post<{ id: number }>(
+    const response = await api.post<{ id: string }>(
       `/domains/${domainId}/tickets/my/${ticketId}/withdraw`,
       payload,
     );
@@ -2802,8 +2802,8 @@ export async function withdrawCustomerMyTicket(
 
 /** `GET /domains/{domain_id}/tickets/my/{ticket_id}/satisfaction` — 未评价时返回 null */
 export async function fetchSatisfactionStatus(
-  domainId: number,
-  ticketId: number,
+  domainId: string,
+  ticketId: string,
 ): Promise<CustomerSatisfactionView | null> {
   try {
     const response = await api.get<CustomerSatisfactionView | null>(
@@ -2817,8 +2817,8 @@ export async function fetchSatisfactionStatus(
 
 /** `POST /domains/{domain_id}/tickets/my/{ticket_id}/satisfaction` — 提交满意度评价（仅一次） */
 export async function submitSatisfaction(
-  domainId: number,
-  ticketId: number,
+  domainId: string,
+  ticketId: string,
   payload: { rating: number; comment?: string },
 ): Promise<CustomerSatisfactionView> {
   try {
@@ -2833,7 +2833,7 @@ export async function submitSatisfaction(
 }
 
 export async function listCustomerDomainTicketTypes(
-  domainId: number,
+  domainId: string,
 ): Promise<CustomerTicketTypeBrief[]> {
   try {
     const response = await api.get<{ total: number; items: CustomerTicketTypeBrief[] }>(

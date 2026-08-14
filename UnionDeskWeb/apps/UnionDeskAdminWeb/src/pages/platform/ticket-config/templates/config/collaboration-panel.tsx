@@ -69,7 +69,7 @@ export function CollaborationPanel({ template, onUpdated }: CollaborationPanelPr
 		try {
 			const existing = toItemBodies(template.items ?? []);
 			const appended = types.map((type, index) => ({
-				ticket_type_id: Number(type.id),
+				ticket_type_id: type.id,
 				sort_order: existing.length + index,
 				include_form_schema: true,
 				include_workflow: true,

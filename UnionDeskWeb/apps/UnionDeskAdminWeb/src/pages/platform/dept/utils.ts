@@ -18,7 +18,7 @@ export function generateDepartmentCode(): string {
 }
 
 export function buildOrganizationTree(rows: PlatformOrganizationView[]): OrganizationTreeNode[] {
-	const nodeMap = new Map<number, OrganizationTreeNode>();
+	const nodeMap = new Map<string, OrganizationTreeNode>();
 	const roots: OrganizationTreeNode[] = [];
 
 	for (const row of rows) {
@@ -46,7 +46,7 @@ export function buildOrganizationTree(rows: PlatformOrganizationView[]): Organiz
 	}
 
 	const sortNodes = (nodes: OrganizationTreeNode[]) => {
-		nodes.sort((left, right) => left.orderNo - right.orderNo || left.id - right.id);
+		nodes.sort((left, right) => left.orderNo - right.orderNo || (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
 		for (const node of nodes) {
 			if (node.children.length > 0) {
 				sortNodes(node.children);

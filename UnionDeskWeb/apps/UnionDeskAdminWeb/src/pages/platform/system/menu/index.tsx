@@ -93,7 +93,7 @@ export default function Menu() {
 	const defaultScope = scopeFilter;
 	const canExpandRow = (record: MenuItemType) => record.nodeType !== "button" && Array.isArray(record.children) && record.children.length > 0;
 
-	const handleDeleteRow = async (id: number, action?: ProCoreActionType<object>) => {
+	const handleDeleteRow = async (id: string, action?: ProCoreActionType<object>) => {
 		try {
 			await fetchDeleteMenu(id);
 			await action?.reload?.();

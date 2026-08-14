@@ -38,7 +38,7 @@ describe("generateRoutesFromBackend", () => {
 	it("registers platform role and menu pages returned under the permission catalog", async () => {
 		const snapshotMenus: PermissionSnapshotMenu[] = [
 			{
-				id: 1,
+				id: "1",
 				code: "CAT_PERMISSION",
 				parentId: null,
 				name: "权限管理",
@@ -47,18 +47,18 @@ describe("generateRoutesFromBackend", () => {
 				scope: "platform",
 				children: [
 					{
-						id: 2,
+						id: "2",
 						code: "MENU_ROLE",
-						parentId: 1,
+						parentId: "1",
 						name: "角色管理",
 						path: "/platform/role",
 						component: "./system/role",
 						scope: "platform",
 					},
 					{
-						id: 3,
+						id: "3",
 						code: "MENU_MENU",
-						parentId: 1,
+						parentId: "1",
 						name: "菜单管理",
 						path: "/platform/menu",
 						component: "./platform/system/menu",
@@ -84,7 +84,7 @@ describe("generateRoutesFromBackend", () => {
 	it("keeps the organization catalog and its child routes aligned with the platform permission tree", async () => {
 		const snapshotMenus: PermissionSnapshotMenu[] = [
 			{
-				id: 1,
+				id: "1",
 				code: "CAT_ORG",
 				parentId: null,
 				name: "组织管理",
@@ -93,9 +93,9 @@ describe("generateRoutesFromBackend", () => {
 				scope: "platform",
 				children: [
 					{
-						id: 2,
+						id: "2",
 						code: "MENU_USER",
-						parentId: 1,
+						parentId: "1",
 						name: "用户管理",
 						path: "/platform/user",
 						component: "platform/user",
@@ -103,9 +103,9 @@ describe("generateRoutesFromBackend", () => {
 						permissionCode: "platform.user.read",
 					},
 					{
-						id: 3,
+						id: "3",
 						code: "MENU_DEPT",
-						parentId: 1,
+						parentId: "1",
 						name: "组织架构",
 						path: "/platform/dept",
 						component: "platform/dept",
@@ -113,9 +113,9 @@ describe("generateRoutesFromBackend", () => {
 						permissionCode: "platform.organization.read",
 					},
 					{
-						id: 4,
+						id: "4",
 						code: "MENU_OFFBOARD_POOL",
-						parentId: 1,
+						parentId: "1",
 						name: "离职池",
 						path: "/platform/offboard-pool",
 						component: "platform/offboard-pool",
@@ -125,7 +125,7 @@ describe("generateRoutesFromBackend", () => {
 				],
 			},
 			{
-				id: 6,
+				id: "6",
 				code: "CAT_PERMISSION",
 				parentId: null,
 				name: "权限管理",
@@ -134,18 +134,18 @@ describe("generateRoutesFromBackend", () => {
 				scope: "platform",
 				children: [
 					{
-						id: 7,
+						id: "7",
 						code: "MENU_ROLE",
-						parentId: 6,
+						parentId: "6",
 						name: "角色管理",
 						path: "/platform/role",
 						component: "./system/role",
 						scope: "platform",
 					},
 					{
-						id: 8,
+						id: "8",
 						code: "MENU_MENU",
-						parentId: 6,
+						parentId: "6",
 						name: "菜单管理",
 						path: "/platform/menu",
 						component: "./platform/system/menu",
@@ -181,7 +181,7 @@ describe("generateRoutesFromBackend", () => {
 	it("registers backend permission catalog with absolute child routes without route nesting errors", async () => {
 		const snapshotMenus: PermissionSnapshotMenu[] = [
 			{
-				id: 48,
+				id: "48",
 				code: "ADM0000000048",
 				parentId: null,
 				name: "权限管理",
@@ -190,18 +190,18 @@ describe("generateRoutesFromBackend", () => {
 				scope: "platform",
 				children: [
 					{
-						id: 7,
+						id: "7",
 						code: "MENU_ROLE",
-						parentId: 48,
+						parentId: "48",
 						name: "角色管理",
 						path: "/platform/role",
 						component: "./system/role",
 						scope: "platform",
 					},
 					{
-						id: 8,
+						id: "8",
 						code: "MENU_MENU",
-						parentId: 48,
+						parentId: "48",
 						name: "菜单管理",
 						path: "/platform/menu",
 						component: "./platform/system/menu",

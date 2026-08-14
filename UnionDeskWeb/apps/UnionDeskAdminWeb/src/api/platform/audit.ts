@@ -6,9 +6,9 @@ export interface PageResult<T> {
 }
 
 export interface PlatformAuditLogView {
-	id: number
-	businessDomainId?: number | null
-	operatorSubjectId?: number | null
+	id: string
+	businessDomainId?: string | null
+	operatorSubjectId?: string | null
 	operatorName?: string | null
 	operatorActorType?: string | null
 	target?: string | null
@@ -22,10 +22,10 @@ export interface PlatformAuditLogView {
 }
 
 export interface LoginLogView {
-	id: number
-	subjectId?: number | null
+	id: string
+	subjectId?: string | null
 	operatorName?: string | null
-	businessDomainId?: number | null
+	businessDomainId?: string | null
 	domainName?: string | null
 	loginName?: string | null
 	loginIdentifierType?: string | null
@@ -93,7 +93,7 @@ export function fetchLoginLogsPage(params: LoginLogQuery): Promise<PageResult<Lo
 }
 
 export function fetchDomainAuditLogs(
-	domainId: number,
+	domainId: string,
 	params: PlatformAuditLogQuery,
 ): Promise<PageResult<PlatformAuditLogView>> {
 	const query = buildQuery(params as Record<string, unknown>);
@@ -103,7 +103,7 @@ export function fetchDomainAuditLogs(
 }
 
 export function fetchDomainLoginLogs(
-	domainId: number,
+	domainId: string,
 	params: LoginLogQuery,
 ): Promise<PageResult<LoginLogView>> {
 	const query = buildQuery(params as Record<string, unknown>);

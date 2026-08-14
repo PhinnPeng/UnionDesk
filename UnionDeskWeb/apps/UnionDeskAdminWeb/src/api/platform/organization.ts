@@ -5,8 +5,8 @@ import { requestBackendJson } from "#src/utils/request";
 export type PlatformOrganizationCreatePayload = {
 	code: string;
 	name: string;
-	parentId?: number | null;
-	leaderUserId?: number | null;
+	parentId?: string | null;
+	leaderUserId?: string | null;
 	orderNo?: number;
 	status?: number;
 	remark?: string | null;
@@ -15,8 +15,8 @@ export type PlatformOrganizationCreatePayload = {
 export type PlatformOrganizationUpdatePayload = {
 	code?: string;
 	name?: string;
-	parentId?: number | null;
-	leaderUserId?: number | null;
+	parentId?: string | null;
+	leaderUserId?: string | null;
 	orderNo?: number;
 	status?: number;
 	remark?: string | null;
@@ -39,14 +39,14 @@ export function fetchCreatePlatformOrganization(data: PlatformOrganizationCreate
 	});
 }
 
-export function fetchUpdatePlatformOrganization(id: number, data: PlatformOrganizationUpdatePayload): Promise<PlatformOrganizationView> {
+export function fetchUpdatePlatformOrganization(id: string, data: PlatformOrganizationUpdatePayload): Promise<PlatformOrganizationView> {
 	return requestBackendJson<PlatformOrganizationView>(`v1/iam/organizations/${id}`, {
 		method: "PUT",
 		json: data,
 	});
 }
 
-export function fetchDeletePlatformOrganization(id: number): Promise<void> {
+export function fetchDeletePlatformOrganization(id: string): Promise<void> {
 	return requestBackendJson<void>(`v1/iam/organizations/${id}`, {
 		method: "DELETE",
 	});

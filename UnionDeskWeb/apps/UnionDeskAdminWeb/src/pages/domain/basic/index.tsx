@@ -27,23 +27,14 @@ type BasicInfoFormValues = {
 };
 
 function resolveBusinessDomainId(
-	defaultBusinessDomainId: number,
-	accessibleDomains: Array<{ id: number }>,
+	defaultBusinessDomainId: string,
+	accessibleDomains: Array<{ id: string }>,
 ): string {
-	if (defaultBusinessDomainId > 0) {
-		return String(defaultBusinessDomainId);
+	if (defaultBusinessDomainId) {
+		return defaultBusinessDomainId;
 	}
 	const first = accessibleDomains[0];
-	return first ? String(first.id) : "";
-}
-
-function resolveNumericDomainId(domainId: string): number | null {
-	const trimmed = domainId.trim();
-	if (!trimmed || !/^\d+$/.test(trimmed)) {
-		return null;
-	}
-	const numeric = Number(trimmed);
-	return Number.isSafeInteger(numeric) ? numeric : null;
+	return first ? first.id : "";
 }
 
 function derivePortalHost(code: string): string {
@@ -93,14 +84,11 @@ export default function DomainBasicPage() {
 					setDomain(data);
 					form.setFieldsValue(buildFormValues(data));
 					// 表单读实时域详情，侧栏读登录快照；进入本页时对齐侧栏展示名，避免改名后仍显示旧名
-					const numericId = resolveNumericDomainId(data.id);
-					if (numericId != null) {
-						useAuthStore.getState().patchAccessibleDomain({
-							id: numericId,
-							name: data.name,
-							code: data.code,
-						});
-					}
+					useAuthStore.getState().patchAccessibleDomain({
+						id: data.id,
+						name: data.name,
+						code: data.code,
+					});
 				}
 			}
 			catch (error) {
@@ -136,17 +124,14 @@ export default function DomainBasicPage() {
 				logo,
 				description: values.description?.trim() || undefined,
 			});
-			message.success("已更新业务信息");
-			setDomain(updated);
-			form.setFieldsValue(buildFormValues(updated));
-			const numericId = resolveNumericDomainId(updated.id);
-			if (numericId != null) {
+				message.success("已更新业务信息");
+				setDomain(updated);
+				form.setFieldsValue(buildFormValues(updated));
 				useAuthStore.getState().patchAccessibleDomain({
-					id: numericId,
+					id: updated.id,
 					name: updated.name,
 					code: updated.code,
 				});
-			}
 		}
 		catch (error) {
 			message.error(toErrorMessage(error));
@@ -228,7 +213,7 @@ export default function DomainBasicPage() {
 											form={form}
 											label="业务域标识 LOGO"
 											previewName={domain.name}
-											uploadDomainId={resolveNumericDomainId(domain.id)}
+											uploadDomainId={domain.id}
 											variant="wizard"
 										/>
 									</div>

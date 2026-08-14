@@ -11,8 +11,8 @@ import { buildOrganizationTree, generateDepartmentCode, type OrganizationTreeNod
 export type OrganizationFormValues = {
 	code: string;
 	name: string;
-	parentId: number | null;
-	leaderUserId?: number | null;
+	parentId: string | null;
+	leaderUserId?: string | null;
 	orderNo?: number;
 	status?: number;
 	remark?: string | null;
@@ -24,7 +24,7 @@ interface DetailProps {
 	organization: PlatformOrganizationView | null;
 	parentOrganization: PlatformOrganizationView | null;
 	organizations: PlatformOrganizationView[];
-	leaderOptions: Array<{ label: string; value: number }>;
+	leaderOptions: Array<{ label: string; value: string }>;
 	saving: boolean;
 	onSubmit: (values: OrganizationFormValues) => Promise<void>;
 	onClose: () => void;
@@ -33,7 +33,7 @@ interface DetailProps {
 
 type DepartmentTreeSelectNode = {
 	title: string;
-	value: number;
+	value: string;
 	disabled: boolean;
 	children: DepartmentTreeSelectNode[];
 };

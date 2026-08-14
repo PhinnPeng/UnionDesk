@@ -77,14 +77,14 @@ const EMPTY_MEMBER_SEARCH: MemberSearchValues = {
 };
 
 function resolveBusinessDomainId(
-	defaultBusinessDomainId: number,
-	accessibleDomains: Array<{ id: number }>,
+	defaultBusinessDomainId: string,
+	accessibleDomains: Array<{ id: string }>,
 ): string {
-	if (defaultBusinessDomainId > 0) {
-		return String(defaultBusinessDomainId);
+	if (defaultBusinessDomainId) {
+		return defaultBusinessDomainId;
 	}
 	const first = accessibleDomains[0];
-	return first ? String(first.id) : "";
+	return first ? first.id : "";
 }
 
 function toSearchDayjs(value: Dayjs | string | Date | null | undefined): Dayjs | null {

@@ -9,7 +9,7 @@ import { Alert, Button, Card, Col, Row, Space, Table, Tag, Tooltip, Typography }
 import { useEffect, useState } from "react";
 
 interface OffboardRow {
-	id: number;
+	id: string;
 	username: string;
 	mobile: string;
 	scopeNames: string[];

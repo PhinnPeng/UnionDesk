@@ -43,7 +43,7 @@ interface TemplateFormValues {
 	description?: string
 	sync_strategy: "immediate" | "manual" | "none"
 	locked_fields: string[]
-	permission_ids: number[]
+	permission_ids: string[]
 }
 
 interface TemplateEditState {
@@ -93,7 +93,7 @@ export function TemplateTab() {
 	const [loading, setLoading] = useState(false);
 	const [templates, setTemplates] = useState<RoleTemplateItem[]>([]);
 	const [permissionItems, setPermissionItems] = useState<RoleTemplatePermissionItem[]>([]);
-	const [domains, setDomains] = useState<Array<{ id: number; name: string }>>([]);
+	const [domains, setDomains] = useState<Array<{ id: string; name: string }>>([]);
 
 	const [editOpen, setEditOpen] = useState(false);
 	const [editSubmitting, setEditSubmitting] = useState(false);
@@ -103,7 +103,7 @@ export function TemplateTab() {
 	const [applyOpen, setApplyOpen] = useState(false);
 	const [applySubmitting, setApplySubmitting] = useState(false);
 	const [applyState, setApplyState] = useState<ApplyModalState | null>(null);
-	const [selectedDomainIds, setSelectedDomainIds] = useState<number[]>([]);
+	const [selectedDomainIds, setSelectedDomainIds] = useState<string[]>([]);
 
 	const loadTemplates = useCallback(async () => {
 		setLoading(true);
@@ -283,7 +283,7 @@ export function TemplateTab() {
 		});
 	};
 
-	const handleUnapply = async (templateId: number, applied: RoleTemplateAppliedDomain) => {
+	const handleUnapply = async (templateId: string, applied: RoleTemplateAppliedDomain) => {
 		modal.confirm({
 			title: "确认解绑该域？",
 			content: `解绑后域 ${applied.domain_id} 的角色实例将转为独立角色，不再随模板同步。`,
@@ -291,7 +291,7 @@ export function TemplateTab() {
 			cancelText: "取消",
 			onOk: async () => {
 				try {
-					const result = await unapplyRoleTemplate(templateId, { domain_ids: [applied.domain_id] });
+					const result = await unapplyRoleTemplate(templateId, { domain_ids: [String(applied.domain_id)] });
 					modal.info({
 						title: "解绑完成",
 						content: <pre style={{ whiteSpace: "pre-wrap" }}>{formatBatchResult(result)}</pre>,

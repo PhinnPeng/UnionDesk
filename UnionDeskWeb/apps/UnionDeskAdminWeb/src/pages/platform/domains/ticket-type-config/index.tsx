@@ -156,7 +156,7 @@ export default function TicketTypeConfigPage() {
 		}
 	}, [domainId, loadData, message, typeId]);
 
-	const handleReorder = useCallback(async (orders: { id: number; sort_order: number }[]) => {
+	const handleReorder = useCallback(async (orders: { id: string; sort_order: number }[]) => {
 		try {
 			await reorderTicketAttributeSlots(domainId, typeId, orders);
 		}

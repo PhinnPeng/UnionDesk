@@ -9,7 +9,7 @@ describe("buildBackendRoutesFromSnapshot", () => {
 	it("uses backend menu identity instead of route path as data router id", () => {
 		const snapshotMenus: PermissionSnapshotMenu[] = [
 			{
-				id: 1,
+				id: "1",
 				code: "CAT_PERMISSION",
 				parentId: null,
 				name: "权限管理",
@@ -18,9 +18,9 @@ describe("buildBackendRoutesFromSnapshot", () => {
 				scope: "platform",
 				children: [
 					{
-						id: 38,
+						id: "38",
 						code: "MENU_ROLE",
-						parentId: 1,
+						parentId: "1",
 						name: "角色管理",
 						path: "/platform/role",
 						component: "./system/role",
@@ -29,7 +29,7 @@ describe("buildBackendRoutesFromSnapshot", () => {
 				],
 			},
 			{
-				id: 39,
+				id: "39",
 				code: "MENU_ROLE_ALIAS",
 				parentId: null,
 				name: "角色管理别名",
@@ -57,7 +57,7 @@ describe("buildBackendRoutesFromSnapshot", () => {
 	it("preserves separate platform catalog roots aligned with admin menu tree", () => {
 		const snapshotMenus: PermissionSnapshotMenu[] = [
 			{
-				id: 1,
+				id: "1",
 				code: "CAT_ORG",
 				parentId: null,
 				name: "组织管理",
@@ -66,9 +66,9 @@ describe("buildBackendRoutesFromSnapshot", () => {
 				scope: "platform",
 				children: [
 					{
-						id: 2,
+						id: "2",
 						code: "MENU_USER",
-						parentId: 1,
+						parentId: "1",
 						name: "用户管理",
 						path: "/platform/user",
 						component: "platform/user",
@@ -77,7 +77,7 @@ describe("buildBackendRoutesFromSnapshot", () => {
 				],
 			},
 			{
-				id: 3,
+				id: "3",
 				code: "CAT_PERMISSION",
 				parentId: null,
 				name: "权限管理",
@@ -86,9 +86,9 @@ describe("buildBackendRoutesFromSnapshot", () => {
 				scope: "platform",
 				children: [
 					{
-						id: 4,
+						id: "4",
 						code: "MENU_ROLE",
-						parentId: 3,
+						parentId: "3",
 						name: "角色管理",
 						path: "/platform/role",
 						component: "./system/role",

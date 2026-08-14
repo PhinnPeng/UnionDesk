@@ -34,7 +34,7 @@ function buildDateRange(values: [Dayjs | null, Dayjs | null] | null | undefined)
 	};
 }
 
-function DetailLoginLogsContent({ numericDomainId }: { numericDomainId: number }) {
+function DetailLoginLogsContent({ domainId }: { domainId: string }) {
 	const { message } = App.useApp();
 	const [form] = Form.useForm();
 	const [loading, setLoading] = useState(false);
@@ -47,7 +47,7 @@ function DetailLoginLogsContent({ numericDomainId }: { numericDomainId: number }
 		setLoading(true);
 		try {
 			const values = form.getFieldsValue();
-			const result = await fetchDomainLoginLogs(numericDomainId, {
+			const result = await fetchDomainLoginLogs(domainId, {
 				page: nextPage,
 				page_size: nextPageSize,
 				portal_type: values.portalType,
@@ -63,7 +63,7 @@ function DetailLoginLogsContent({ numericDomainId }: { numericDomainId: number }
 		finally {
 			setLoading(false);
 		}
-	}, [form, message, numericDomainId, page, pageSize]);
+	}, [domainId, form, message, page, pageSize]);
 
 	useEffect(() => {
 		void loadLogs(page, pageSize);
@@ -170,15 +170,13 @@ function DetailLoginLogsContent({ numericDomainId }: { numericDomainId: number }
 }
 
 export function DetailLoginLogs({ domainId }: DetailLoginLogsProps) {
-	const numericDomainId = resolveNumericDomainId(domainId);
-
-	if (numericDomainId === null) {
+	if (!domainId) {
 		return <Empty description="无效的业务域 ID" />;
 	}
 
 	return (
 		<AuthGuarded auth={PLATFORM_DOMAIN_CONTROL_LOGIN_LOG_READ} fallback={<Empty description="无权限查看登录日志" />}>
-			<DetailLoginLogsContent numericDomainId={numericDomainId} />
+			<DetailLoginLogsContent domainId={domainId} />
 		</AuthGuarded>
 	);
 }

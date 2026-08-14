@@ -36,7 +36,7 @@ const replyPresets: ReplyPreset[] = [
 	{ label: "问题已关闭", value: "问题已处理完成，工单将进行关闭。" },
 ];
 
-async function uploadTicketAttachment(domainId: number, file: File) {
+async function uploadTicketAttachment(domainId: string, file: File) {
 	return uploadAttachment(domainId, file, "ticket");
 }
 
@@ -65,16 +65,15 @@ export default function DomainTicketQueueDetailPage() {
 	const accessibleDomains = useAuthStore(state => state.accessibleDomains);
 
 	const domainId = useMemo(() => {
-		if (defaultBusinessDomainId > 0) {
+		if (defaultBusinessDomainId) {
 			return defaultBusinessDomainId;
 		}
 		const first = accessibleDomains?.[0];
-		return first ? Number(first.id) : 0;
+		return first ? first.id : "";
 	}, [accessibleDomains, defaultBusinessDomainId]);
 
 	const ticketId = useMemo(() => {
-		const parsed = Number(params.ticketId);
-		return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+		return params.ticketId ?? "";
 	}, [params.ticketId]);
 
 	const [detail, setDetail] = useState<TicketDetailResult | null>(null);
@@ -123,8 +122,8 @@ export default function DomainTicketQueueDetailPage() {
 		}
 		try {
 			const [statusResult, priorityResult] = await Promise.all([
-				fetchDomainTicketStatuses(String(domainId), { page: 1, page_size: 200 }),
-				fetchDomainPriorityLevels(String(domainId)),
+				fetchDomainTicketStatuses(domainId, { page: 1, page_size: 200 }),
+				fetchDomainPriorityLevels(domainId),
 			]);
 			setStatuses(statusResult.items ?? []);
 			setPriorityLevels(priorityResult.items ?? []);
@@ -215,7 +214,7 @@ export default function DomainTicketQueueDetailPage() {
 		try {
 			await assignAdminTicket(domainId, ticketId, {
 				version: detail.ticket.version,
-				assigneeStaffAccountId: values.assigneeStaffAccountId,
+				assigneeStaffAccountId: String(values.assigneeStaffAccountId),
 			});
 			message.success("工单已指派");
 			setAssignOpen(false);
@@ -236,7 +235,7 @@ export default function DomainTicketQueueDetailPage() {
 		}
 		try {
 			await replaceAdminTicketWatchers(domainId, ticketId, {
-				watcherStaffAccountIds: values.watcherStaffAccountIds ?? [],
+				watcherStaffAccountIds: (values.watcherStaffAccountIds ?? []).map((id: number) => Number(id)),
 			});
 			message.success("关注人已更新");
 			setWatchersOpen(false);
@@ -281,7 +280,7 @@ export default function DomainTicketQueueDetailPage() {
 		try {
 			await mergeAdminTicket(domainId, ticketId, {
 				version: detail.ticket.version,
-				targetTicketId: values.targetTicketId,
+				targetTicketId: String(values.targetTicketId),
 				note: values.note,
 			});
 			message.success("工单已合并");

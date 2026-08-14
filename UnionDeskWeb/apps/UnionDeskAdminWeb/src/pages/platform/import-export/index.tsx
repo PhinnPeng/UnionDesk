@@ -90,8 +90,8 @@ const columns: TableProps<ImportTaskView>["columns"] = [
 export default function PlatformImportExport() {
 	const { message } = App.useApp();
 	const [tasks, setTasks] = useState<ImportTaskView[]>([]);
-	const [pollingTaskId, setPollingTaskId] = useState<number | null>(null);
-	const [resultTaskId, setResultTaskId] = useState<number | null>(null);
+	const [pollingTaskId, setPollingTaskId] = useState<string | null>(null);
+	const [resultTaskId, setResultTaskId] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (pollingTaskId == null) {

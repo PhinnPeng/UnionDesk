@@ -45,9 +45,9 @@ export type LoginResponse = {
   user: LoginUserView;
   accessibleDomains: BusinessDomainView[];
   /** 本次会话落点域（兼容字段名） */
-  defaultBusinessDomainId: number;
+  defaultBusinessDomainId: string;
   /** 用户默认业务域偏好；未设置时为 null/undefined */
-  preferredDefaultDomainId?: number | null;
+  preferredDefaultDomainId?: string | null;
   /** 本次登录是否因新 IP 写入了站内风险提醒 */
   riskLoginNotified?: boolean;
   /** 是否需强制修改密码（管理员重置密码后为 true，首次登录强制改密） */
@@ -60,7 +60,7 @@ export type RegisterRequest = {
   displayName?: string;
   phone: string;
   email?: string;
-  domainId?: number | null;
+  domainId?: string | null;
   invitationCode?: string;
   captchaToken?: string;
 };
@@ -68,19 +68,19 @@ export type RegisterRequest = {
 export type RegisterResponse = {
   accessToken: string;
   refreshToken: string;
-  accountId: number;
+  accountId: string;
 };
 
 export type SetDefaultDomainRequest = {
-  domainId: number;
+  domainId: string;
 };
 
 export type SetDefaultDomainResponse = {
-  preferredDefaultDomainId: number;
+  preferredDefaultDomainId: string;
 };
 
 export type SwitchDomainRequest = {
-  domainId: number;
+  domainId: string;
 };
 
 export type SwitchDomainResponse = {
@@ -88,7 +88,7 @@ export type SwitchDomainResponse = {
   refreshToken: string;
   tokenType: string;
   expiresInSeconds: number;
-  businessDomainId: number;
+  businessDomainId: string;
   accessibleDomains?: BusinessDomainView[];
 };
 
@@ -120,8 +120,8 @@ export type AuthSessionStatus = {
   role?: string | null;
   clientCode?: ClientCode | null;
   sid?: string | null;
-  userId?: number | null;
-  businessDomainId?: number | null;
+  userId?: string | null;
+  businessDomainId?: string | null;
   expiresAt?: string | null;
 };
 
@@ -136,15 +136,15 @@ export type AuthSessionState = {
   authenticatedAt: string;
   persistMode?: AuthPersistMode;
   sid?: string | null;
-  userId?: number | null;
-  businessDomainId?: number | null;
+  userId?: string | null;
+  businessDomainId?: string | null;
   expiresAt?: string | null;
   /** 是否需强制修改密码（管理员重置密码后为 true，首次登录强制改密） */
   mustChangePassword?: boolean;
 };
 
 export type LoginUserView = {
-  id: number;
+  id: string;
   username: string;
   mobile?: string | null;
   email?: string | null;
@@ -152,7 +152,7 @@ export type LoginUserView = {
 };
 
 export type BusinessDomainView = {
-  id: number;
+  id: string;
   code: string;
   name: string;
   visibilityPolicy?: string | null;
@@ -180,22 +180,22 @@ export type UpdateLoginConfigRequest = {
 };
 
 export type SessionView = {
-  userId: number;
+  userId: string;
   role: string;
-  businessDomainId?: number | null;
+  businessDomainId?: string | null;
   sid: string;
   clientCode: ClientCode;
 };
 
 export type OnlineSessionView = {
   sid: string;
-  userId: number;
+  userId: string;
   clientCode: ClientCode;
   username: string;
   mobile?: string | null;
   email?: string | null;
   role: string;
-  businessDomainId?: number | null;
+  businessDomainId?: string | null;
   loginIdentifierMasked: string;
   sessionStatus: string;
   issuedAt: string;
@@ -206,9 +206,9 @@ export type OnlineSessionView = {
 };
 
 export type LoginLogView = {
-  id: number;
+  id: string;
   sid?: string | null;
-  userId?: number | null;
+  userId?: string | null;
   username?: string | null;
   loginIdentifierMasked: string;
   loginIdentifierType: string;
@@ -221,12 +221,12 @@ export type LoginLogView = {
 };
 
 export type PlatformOrganizationView = {
-  id: number;
+  id: string;
   code: string;
   name: string;
-  parentId?: number | null;
+  parentId?: string | null;
   parentName?: string | null;
-  leaderUserId?: number | null;
+  leaderUserId?: string | null;
   leaderName?: string | null;
   orderNo: number;
   status: number;
@@ -235,14 +235,14 @@ export type PlatformOrganizationView = {
 };
 
 export type IamResource = {
-  id: number;
+  id: string;
   resourceType: "menu" | "action" | "api" | string;
   resourceCode: string;
   resourceName: string;
   clientScope: ClientCode | "all" | string;
   httpMethod?: string | null;
   pathPattern?: string | null;
-  parentId?: number | null;
+  parentId?: string | null;
   orderNo?: number;
   icon?: string | null;
   component?: string | null;
@@ -251,24 +251,24 @@ export type IamResource = {
 };
 
 export type PermissionSnapshotUser = {
-  id: number;
+  id: string;
   username: string;
   mobile?: string | null;
   email?: string | null;
 };
 
 export type PermissionSnapshotDomain = {
-  id: number;
+  id: string;
   code: string;
   name: string;
 };
 
 export type PermissionSnapshotMenu = {
-  id?: number;
+  id?: string;
   code: string;
   name: string;
   path: string | null;
-  parentId?: number | null;
+  parentId?: string | null;
   orderNo?: number;
   icon?: string | null;
   component?: string | null;
@@ -296,7 +296,7 @@ export type PermissionSnapshot = {
 };
 
 export type MenuTreeNode = {
-  id: number;
+  id: string;
   code: string;
   nodeType: "catalog" | "menu" | "button" | string;
   scope?: "platform" | "business" | string;
@@ -304,7 +304,7 @@ export type MenuTreeNode = {
   routePath?: string | null;
   componentKey?: string | null;
   permissionCode?: string | null;
-  parentId?: number | null;
+  parentId?: string | null;
   orderNo: number;
   icon?: string | null;
   hidden: boolean;
@@ -328,7 +328,7 @@ export type CreateMenuPayload = {
   componentKey?: string | null;
   permissionCode?: string | null;
   scope?: "platform" | "business" | string;
-  parentId?: number | null;
+  parentId?: string | null;
   orderNo?: number;
   icon?: string | null;
   hidden?: boolean;
@@ -338,7 +338,7 @@ export type CreateMenuPayload = {
 export type UpdateMenuPayload = Partial<CreateMenuPayload>;
 
 export type IamRole = {
-  id: number;
+  id: string;
   code: string;
   name: string;
   scope: "global" | "domain" | string;
@@ -354,7 +354,7 @@ export type CreateRolePayload = {
 export type UpdateRolePayload = Partial<CreateRolePayload>;
 
 export type RolePermissions = {
-  roleId: number;
+  roleId: string;
   menuIds: number[];
   buttonIds: number[];
 };
@@ -365,7 +365,7 @@ export type UpdateRolePermissionsPayload = {
 };
 
 export type IamUser = {
-  id: number;
+  id: string;
   username: string;
   mobile: string;
   email?: string | null;
@@ -374,10 +374,10 @@ export type IamUser = {
   status: number;
   employmentStatus: "active" | "offboarded" | string;
   roleCodes: string[];
-  businessDomainIds: number[];
-  organizationIds: number[];
+  businessDomainIds: string[];
+  organizationIds: string[];
   offboardedAt?: string | null;
-  offboardedBy?: number | null;
+  offboardedBy?: string | null;
   offboardReason?: string | null;
 };
 
@@ -389,8 +389,8 @@ export type CreateIamUserPayload = {
   password: string;
   accountType: "admin" | "customer" | string;
   roleCodes: string[];
-  businessDomainIds: number[];
-  organizationIds?: number[];
+  businessDomainIds: string[];
+  organizationIds?: string[];
 };
 
 export type UpdateIamUserPayload = {
@@ -401,9 +401,9 @@ export type UpdateIamUserPayload = {
   password?: string;
   accountType?: "admin" | "customer" | string;
   roleCodes?: string[];
-  businessDomainIds?: number[];
+  businessDomainIds?: string[];
   status?: number;
-  organizationIds?: number[];
+  organizationIds?: string[];
 };
 
 export type TicketStatus = "open" | "processing" | "waiting_customer" | "resolved" | "closed" | string;
@@ -411,7 +411,7 @@ export type TicketStatus = "open" | "processing" | "waiting_customer" | "resolve
 export type TicketPriority = "low" | "normal" | "high" | "urgent";
 
 export type TicketRecord = {
-  id: number;
+  id: string;
   ticketNo: string;
   title: string;
   status: TicketStatus;
@@ -421,7 +421,7 @@ export type TicketRecord = {
 export type CreateTicketRequest = {
   title: string;
   description: string;
-  ticketTypeId: number;
+  ticketTypeId: string;
 };
 
 export type TicketActionResponse = {
@@ -430,7 +430,7 @@ export type TicketActionResponse = {
 };
 
 export type DemoDomain = {
-  id: number;
+  id: string;
   code: string;
   name: string;
   description: string;
@@ -439,21 +439,21 @@ export type DemoDomain = {
 };
 
 export type DemoProfile = {
-  customerId: number;
+  customerId: string;
   nickname: string;
   phone: string;
-  selectedDomainId: number;
+  selectedDomainId: string;
 };
 
 export type AdminProfile = {
   username: string;
-  selectedDomainId: number;
+  selectedDomainId: string;
 };
 
 export type TicketMeta = {
-  businessDomainId: number;
-  customerId: number;
-  ticketTypeId: number;
+  businessDomainId: string;
+  customerId: string;
+  ticketTypeId: string;
   priority: TicketPriority;
   description: string;
 };
@@ -475,8 +475,8 @@ export type DashboardStats = {
 
 export type ConsultationSessionSummary = {
   sessionNo: string;
-  businessDomainId: number;
-  customerId: number;
+  businessDomainId: string;
+  customerId: string;
   sessionStatus: "open" | "processing" | "closed" | string;
   assignedTo?: number | null;
   lastMessageAt?: string | null;
@@ -487,15 +487,15 @@ export type ConsultationMessage = {
   sessionNo: string;
   seqNo: number;
   senderRole: "customer" | "agent" | "system" | string;
-  senderUserId?: number | null;
+  senderUserId?: string | null;
   content: string;
   createdAt: string;
 };
 
 export type SendConsultationMessagePayload = {
-  businessDomainId: number;
-  customerId: number;
-  senderUserId?: number;
+  businessDomainId: string;
+  customerId: string;
+  senderUserId?: string;
   sessionNo?: string;
   senderRole: "customer" | "agent";
   content: string;
@@ -591,7 +591,7 @@ export type P0InboxPageResponse = {
 };
 
 export type CustomerSatisfactionView = {
-  id: number;
+  id: string;
   rating: number;
   comment: string | null;
   status: string;
@@ -979,7 +979,7 @@ export type UpdateTicketAttributeBody = {
 };
 
 export type TicketAttributeSortOrderItem = {
-  id: number;
+  id: string;
   sort_order: number;
 };
 
@@ -1054,7 +1054,7 @@ export type UpdatePlatformTicketTypeBody = {
 };
 
 export type PlatformTicketTypeSortOrderItem = {
-  id: number;
+  id: string;
   sort_order: number;
 };
 
@@ -1169,7 +1169,7 @@ export type P0AttachmentLocalUploadResponse = {
 
 export const DEMO_DOMAINS: DemoDomain[] = [
   {
-    id: 1,
+    id: "1",
     code: "default",
     name: "默认业务域",
     description: "后端当前默认接入的演示业务域，适合展示工单创建和流转。",
@@ -1177,7 +1177,7 @@ export const DEMO_DOMAINS: DemoDomain[] = [
     supportLine: "07x-1000-1000"
   },
   {
-    id: 2,
+    id: "2",
     code: "online-service",
     name: "在线客服域",
     description: "适合咨询接待、消息回访和快速工单创建。",
@@ -1185,7 +1185,7 @@ export const DEMO_DOMAINS: DemoDomain[] = [
     supportLine: "07x-2000-2000"
   },
   {
-    id: 3,
+    id: "3",
     code: "after-sales",
     name: "售后支持域",
     description: "适合演示售后处理、状态更新和复杂工单流转。",

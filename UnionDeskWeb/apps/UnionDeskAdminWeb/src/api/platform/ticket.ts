@@ -7,7 +7,7 @@ export type AdminTicketListQuery = {
 	page_size: number
 	status?: string
 	/** 按受理人（员工账号 ID）筛选 */
-	assignee?: number
+	assignee?: string
 	priority?: string
 	keyword?: string
 	/** 只看分配给我的待办 */
@@ -15,14 +15,14 @@ export type AdminTicketListQuery = {
 }
 
 export interface TicketRow {
-	id: number
+	id: string
 	ticketNo: string
-	businessDomainId: number
+	businessDomainId: string
 	businessDomainCode: string
 	businessDomainName: string
-	ticketTypeId: number
+	ticketTypeId: string
 	ticketTypeName: string
-	customerId: number
+	customerId: string
 	customerName?: string | null
 	assignedTo?: number | null
 	/** 受理人姓名（员工账号），后端联查不到时为空，前端兜底「员工 #id」 */
@@ -50,22 +50,22 @@ export interface TicketRow {
 }
 
 export interface TicketReplyRow {
-	id: number
+	id: string
 	senderType?: string | null
 	senderRole?: string | null
-	staffAccountId?: number | null
-	customerAccountId?: number | null
+	staffAccountId?: string | null
+	customerAccountId?: string | null
 	replyType?: string | null
 	content?: string | null
 	createdAt?: string | null
 }
 
 export interface TicketHistoryRow {
-	id: number
+	id: string
 	action?: string | null
 	fromValue?: string | null
 	toValue?: string | null
-	operatorSubjectId?: number | null
+	operatorSubjectId?: string | null
 	operatorActorType?: string | null
 	payloadJson?: string | null
 	createdAt?: string | null
@@ -81,7 +81,7 @@ export interface TicketDetailResult {
 export interface ReplyTicketCommand {
 	version: number
 	content: string
-	quickReplyTemplateId?: number | null
+	quickReplyTemplateId?: string | null
 	attachmentIds?: number[]
 }
 
@@ -91,7 +91,7 @@ export interface ClaimTicketCommand {
 
 export interface AssignTicketCommand {
 	version: number
-	assigneeStaffAccountId: number
+	assigneeStaffAccountId: string
 }
 
 export interface ReplaceWatchersCommand {
@@ -101,17 +101,17 @@ export interface ReplaceWatchersCommand {
 export interface ChangeTicketStatusCommand {
 	status: string
 	version: number
-	quickReplyTemplateId?: number | null
+	quickReplyTemplateId?: string | null
 	content?: string | null
 }
 
 export interface MergeTicketCommand {
 	version: number
-	targetTicketId: number
+	targetTicketId: string
 	note?: string | null
 }
 
-function withDomainPath(domainId: number, ticketId: number, suffix = "") {
+function withDomainPath(domainId: string, ticketId: string, suffix = "") {
 	return `v1/admin/domains/${domainId}/tickets/${ticketId}${suffix}`;
 }
 
@@ -127,58 +127,58 @@ function buildQuery(params: Record<string, unknown>) {
 }
 
 export function fetchAdminDomainTicketsPage(
-	domainId: number,
+	domainId: string,
 	params: AdminTicketListQuery,
 ): Promise<PageResult<TicketRow>> {
 	const query = buildQuery(params as Record<string, unknown>);
 	return requestBackendJson<PageResult<TicketRow>>(`v1/admin/domains/${domainId}/tickets${query ? `?${query}` : ""}`);
 }
 
-export function fetchTicketDetail(domainId: number, ticketId: number): Promise<TicketDetailResult> {
+export function fetchTicketDetail(domainId: string, ticketId: string): Promise<TicketDetailResult> {
 	return requestBackendJson<TicketDetailResult>(withDomainPath(domainId, ticketId));
 }
 
-export function replyAdminTicket(domainId: number, ticketId: number, payload: ReplyTicketCommand): Promise<{ id: number }> {
-	return requestBackendJson<{ id: number }>(withDomainPath(domainId, ticketId, "/replies"), {
+export function replyAdminTicket(domainId: string, ticketId: string, payload: ReplyTicketCommand): Promise<{ id: string }> {
+	return requestBackendJson<{ id: string }>(withDomainPath(domainId, ticketId, "/replies"), {
 		method: "POST",
 		json: payload,
 	});
 }
 
-export function claimAdminTicket(domainId: number, ticketId: number, payload: ClaimTicketCommand): Promise<{ id: number }> {
-	return requestBackendJson<{ id: number }>(withDomainPath(domainId, ticketId, "/claim"), {
+export function claimAdminTicket(domainId: string, ticketId: string, payload: ClaimTicketCommand): Promise<{ id: string }> {
+	return requestBackendJson<{ id: string }>(withDomainPath(domainId, ticketId, "/claim"), {
 		method: "POST",
 		json: payload,
 	});
 }
 
-export function assignAdminTicket(domainId: number, ticketId: number, payload: AssignTicketCommand): Promise<{ id: number }> {
-	return requestBackendJson<{ id: number }>(withDomainPath(domainId, ticketId, "/assign"), {
+export function assignAdminTicket(domainId: string, ticketId: string, payload: AssignTicketCommand): Promise<{ id: string }> {
+	return requestBackendJson<{ id: string }>(withDomainPath(domainId, ticketId, "/assign"), {
 		method: "POST",
 		json: payload,
 	});
 }
 
 export function replaceAdminTicketWatchers(
-	domainId: number,
-	ticketId: number,
+	domainId: string,
+	ticketId: string,
 	payload: ReplaceWatchersCommand,
-): Promise<{ id: number }> {
-	return requestBackendJson<{ id: number }>(withDomainPath(domainId, ticketId, "/watchers"), {
+): Promise<{ id: string }> {
+	return requestBackendJson<{ id: string }>(withDomainPath(domainId, ticketId, "/watchers"), {
 		method: "POST",
 		json: payload,
 	});
 }
 
-export function updateAdminTicketStatus(domainId: number, ticketId: number, payload: ChangeTicketStatusCommand): Promise<{ id: number }> {
-	return requestBackendJson<{ id: number }>(withDomainPath(domainId, ticketId, "/status"), {
+export function updateAdminTicketStatus(domainId: string, ticketId: string, payload: ChangeTicketStatusCommand): Promise<{ id: string }> {
+	return requestBackendJson<{ id: string }>(withDomainPath(domainId, ticketId, "/status"), {
 		method: "PATCH",
 		json: payload,
 	});
 }
 
-export function mergeAdminTicket(domainId: number, ticketId: number, payload: MergeTicketCommand): Promise<{ id: number }> {
-	return requestBackendJson<{ id: number }>(withDomainPath(domainId, ticketId, "/merge"), {
+export function mergeAdminTicket(domainId: string, ticketId: string, payload: MergeTicketCommand): Promise<{ id: string }> {
+	return requestBackendJson<{ id: string }>(withDomainPath(domainId, ticketId, "/merge"), {
 		method: "POST",
 		json: payload,
 	});

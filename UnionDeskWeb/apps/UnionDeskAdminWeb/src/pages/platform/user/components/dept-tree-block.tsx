@@ -10,8 +10,8 @@ import { useMemo, useState } from "react";
 
 interface DeptTreeBlockProps {
 	organizations: PlatformOrganizationView[];
-	selectedDepartmentId?: number | null;
-	onSelect?: (departmentId: number | null) => void;
+	selectedDepartmentId?: string | null;
+	onSelect?: (departmentId: string | null) => void;
 }
 
 export const ALL_DEPARTMENTS_TREE_KEY = "__all_departments__";
@@ -162,16 +162,16 @@ export function DeptTreeBlock({ organizations, selectedDepartmentId = null, onSe
 								setExpandedKeys(keys);
 								setAutoExpandParent(false);
 							}}
-							onSelect={(keys) => {
-								const key = keys.length > 0 ? keys[0] : null;
-								if (key == null || key === ALL_DEPARTMENTS_TREE_KEY) {
-									onSelect?.(null);
-									return;
-								}
+						onSelect={(keys) => {
+							const key = keys.length > 0 ? keys[0] : null;
+							if (key == null || key === ALL_DEPARTMENTS_TREE_KEY) {
+								onSelect?.(null);
+								return;
+							}
 
-								const id = Number(key);
-								onSelect?.(id != null && id === selectedDepartmentId ? null : id);
-							}}
+							const id = String(key);
+							onSelect?.(id === selectedDepartmentId ? null : id);
+						}}
 							className="bg-transparent"
 						/>
 					) : (

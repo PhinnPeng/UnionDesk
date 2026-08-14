@@ -20,14 +20,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 const { RangePicker } = DatePicker;
 
 function resolveBusinessDomainId(
-	defaultBusinessDomainId: number,
-	accessibleDomains: Array<{ id: number }>,
+	defaultBusinessDomainId: string,
+	accessibleDomains: Array<{ id: string }>,
 ): string {
-	if (defaultBusinessDomainId > 0) {
-		return String(defaultBusinessDomainId);
+	if (defaultBusinessDomainId) {
+		return defaultBusinessDomainId;
 	}
 	const first = accessibleDomains[0];
-	return first ? String(first.id) : "";
+	return first ? first.id : "";
 }
 
 function buildDateRange(values: [Dayjs | null, Dayjs | null] | null | undefined) {
@@ -51,8 +51,6 @@ export default function DomainLoginLogsPage() {
 		() => resolveBusinessDomainId(defaultBusinessDomainId, accessibleDomains ?? []),
 		[accessibleDomains, defaultBusinessDomainId],
 	);
-	const numericDomainId = domainId ? Number(domainId) : NaN;
-
 	const [loading, setLoading] = useState(false);
 	const [rows, setRows] = useState<LoginLogView[]>([]);
 	const [total, setTotal] = useState(0);
@@ -60,7 +58,7 @@ export default function DomainLoginLogsPage() {
 	const [pageSize, setPageSize] = useState(20);
 
 	const loadLogs = useCallback(async (nextPage = page, nextPageSize = pageSize) => {
-		if (!Number.isFinite(numericDomainId) || numericDomainId <= 0) {
+		if (!domainId) {
 			setRows([]);
 			setTotal(0);
 			return;
@@ -68,7 +66,7 @@ export default function DomainLoginLogsPage() {
 		setLoading(true);
 		try {
 			const values = form.getFieldsValue();
-			const result = await fetchDomainLoginLogs(numericDomainId, {
+			const result = await fetchDomainLoginLogs(domainId, {
 				page: nextPage,
 				page_size: nextPageSize,
 				portal_type: values.portalType,
@@ -86,7 +84,7 @@ export default function DomainLoginLogsPage() {
 		finally {
 			setLoading(false);
 		}
-	}, [form, message, numericDomainId, page, pageSize]);
+	}, [domainId, form, message, page, pageSize]);
 
 	useEffect(() => {
 		void loadLogs(1, 20);

@@ -21,7 +21,7 @@ describe("platform organization api", () => {
 	});
 
 	it("uses the organization list endpoint and unwraps items", async () => {
-		const items = [{ id: 1, name: "运营部" }, { id: 2, name: "技术部" }];
+		const items = [{ id: "1", name: "运营部" }, { id: "2", name: "技术部" }];
 		mocks.requestBackendJson.mockResolvedValue({ total: 2, items });
 
 		await expect(fetchPlatformOrganizations()).resolves.toEqual(items);
@@ -38,15 +38,15 @@ describe("platform organization api", () => {
 		const payload = {
 			code: "ops",
 			name: "运营部",
-			parentId: 1,
-			leaderUserId: 2,
+			parentId: "1",
+			leaderUserId: "2",
 			orderNo: 10,
 			status: 1,
 			remark: "平台组织",
 		};
-		mocks.requestBackendJson.mockResolvedValue({ id: 9 });
+		mocks.requestBackendJson.mockResolvedValue({ id: "9" });
 
-		await expect(fetchCreatePlatformOrganization(payload)).resolves.toEqual({ id: 9 });
+		await expect(fetchCreatePlatformOrganization(payload)).resolves.toEqual({ id: "9" });
 		expect(mocks.requestBackendJson).toHaveBeenCalledWith("v1/iam/organizations", {
 			method: "POST",
 			json: payload,
@@ -57,14 +57,14 @@ describe("platform organization api", () => {
 		const payload = {
 			code: "ops",
 			name: "运营中心",
-			leaderUserId: 2,
+			leaderUserId: "2",
 			orderNo: 12,
 			status: 1,
 			remark: "更新备注",
 		};
-		mocks.requestBackendJson.mockResolvedValue({ id: 10 });
+		mocks.requestBackendJson.mockResolvedValue({ id: "10" });
 
-		await expect(fetchUpdatePlatformOrganization(10, payload)).resolves.toEqual({ id: 10 });
+		await expect(fetchUpdatePlatformOrganization("10", payload)).resolves.toEqual({ id: "10" });
 		expect(mocks.requestBackendJson).toHaveBeenCalledWith("v1/iam/organizations/10", {
 			method: "PUT",
 			json: payload,
@@ -74,7 +74,7 @@ describe("platform organization api", () => {
 	it("uses the organization delete endpoint", async () => {
 		mocks.requestBackendJson.mockResolvedValue(undefined);
 
-		await expect(fetchDeletePlatformOrganization(11)).resolves.toBeUndefined();
+		await expect(fetchDeletePlatformOrganization("11")).resolves.toBeUndefined();
 		expect(mocks.requestBackendJson).toHaveBeenCalledWith("v1/iam/organizations/11", {
 			method: "DELETE",
 		});

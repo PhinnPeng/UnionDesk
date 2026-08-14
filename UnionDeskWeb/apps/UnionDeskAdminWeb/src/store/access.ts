@@ -20,7 +20,7 @@ export interface ScopeAccessBucket {
 	dynamicRoutes: AppRouteRecordRaw[]
 	actions: string[]
 	/** 仅 business：生成该包时的业务域 ID */
-	domainId?: number | null
+	domainId?: string | null
 	loadedAt: number
 }
 
@@ -141,7 +141,7 @@ interface CommitBucketInput {
 	userRoutes: AppRouteRecordRaw[]
 	dynamicRoutes: AppRouteRecordRaw[]
 	actions: string[]
-	domainId?: number | null
+	domainId?: string | null
 }
 
 interface AccessAction {
@@ -149,15 +149,15 @@ interface AccessAction {
 	 * 写入某一端 bucket，并激活该端（重置动态路由后 patch）。
 	 * 兼容旧调用：未传 scope 时按当前 path / 已有 activeScope 推断。
 	 */
-	setAccessStore: (
-		userRoutes: AppRouteRecordRaw[],
-		allRoutes: AppRouteRecordRaw[],
-		options?: {
-			scope?: AppScope
-			actions?: string[]
-			domainId?: number | null
-		},
-	) => AccessState
+		setAccessStore: (
+			userRoutes: AppRouteRecordRaw[],
+			allRoutes: AppRouteRecordRaw[],
+			options?: {
+				scope?: AppScope
+				actions?: string[]
+				domainId?: string | null
+			},
+		) => AccessState
 	commitScopeBucket: (scope: AppScope, input: CommitBucketInput) => AccessState
 	activateScope: (scope: AppScope) => AccessState | null
 	invalidateBusinessBucket: () => void

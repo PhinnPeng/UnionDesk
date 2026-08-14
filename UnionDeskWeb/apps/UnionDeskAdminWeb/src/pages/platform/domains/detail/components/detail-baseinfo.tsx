@@ -24,7 +24,6 @@ import {
 import {
 	DEFAULT_DOMAIN_LOGO,
 	isDomainEnabled,
-	resolveNumericDomainId,
 } from "./detail-shared";
 
 import styles from "./detail-baseinfo.module.less";
@@ -121,14 +120,11 @@ export function DetailBaseinfo({ domain, onSaved, onDeleted }: DetailBaseinfoPro
 				description: values.description?.trim() || undefined,
 			});
 			message.success("已更新业务信息");
-			const numericId = resolveNumericDomainId(updated.id);
-			if (numericId != null) {
-				useAuthStore.getState().patchAccessibleDomain({
-					id: numericId,
-					name: updated.name,
-					code: updated.code,
-				});
-			}
+			useAuthStore.getState().patchAccessibleDomain({
+				id: updated.id,
+				name: updated.name,
+				code: updated.code,
+			});
 			onSaved(updated);
 		}
 		catch (error) {
@@ -242,7 +238,7 @@ export function DetailBaseinfo({ domain, onSaved, onDeleted }: DetailBaseinfoPro
 						form={form}
 						mode="detail"
 						previewName={domain.name}
-						uploadDomainId={resolveNumericDomainId(domain.id)}
+						uploadDomainId={domain.id}
 					/>
 					<div className={styles.formFooterActions}>
 						<Tooltip title={canUpdate ? undefined : "无编辑权限"}>

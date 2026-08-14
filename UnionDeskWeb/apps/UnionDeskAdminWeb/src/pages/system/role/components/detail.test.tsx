@@ -87,7 +87,7 @@ describe("Role Detail", () => {
 
 	it("shows success and reloads list after updating a role", async () => {
 		mocks.fetchUpdateRole.mockResolvedValue({ id: 9 });
-		mocks.fetchUpdateRolePermissions.mockResolvedValue({ roleId: 9, menuIds: [1], buttonIds: [2] });
+		mocks.fetchUpdateRolePermissions.mockResolvedValue({ roleId: "9", menuIds: [1], buttonIds: [2] });
 		mocks.refreshTable.mockResolvedValue(undefined);
 
 		render(
@@ -95,7 +95,7 @@ describe("Role Detail", () => {
 				title="编辑角色"
 				open
 				lockedScope="domain"
-				detailData={{ id: 9, name: "旧角色", code: "custom_test", scope: "domain", system: false }}
+				detailData={{ id: "9", name: "旧角色", code: "custom_test", scope: "domain", system: false }}
 				treeData={[
 					{ id: "1", title: "菜单", nodeType: "menu", children: [] },
 					{ id: "2", title: "按钮", nodeType: "button", children: [] },

@@ -5,7 +5,7 @@ import type { RoleItemType } from "#src/api/system/role";
 export type PlatformUserStatus = "active" | "disabled" | "offboard";
 
 export interface PlatformUserRow {
-	id: number;
+	id: string;
 	username: string;
 	mobile: string;
 	email: string;
@@ -20,7 +20,7 @@ export type PlatformUserFormValues = {
 	mobile: string;
 	email?: string | null;
 	password?: string;
-	organizationId?: number | null;
+	organizationId?: string | null;
 	roleCodes?: string[];
 	remark?: string | null;
 };
@@ -77,7 +77,7 @@ export function resolvePlatformUserStatus(user: IamUser): PlatformUserStatus {
 	return user.status === 1 ? "active" : "disabled";
 }
 
-export function buildDepartmentNameMap(departments: PlatformOrganizationView[]): Map<number, string> {
+export function buildDepartmentNameMap(departments: PlatformOrganizationView[]): Map<string, string> {
 	return new Map(departments.map(department => [department.id, department.name]));
 }
 
@@ -87,7 +87,7 @@ export function buildRoleNameMap(roles: RoleItemType[]): Map<string, string> {
 
 export function toPlatformUserRow(
 	user: IamUser,
-	departmentNameMap: Map<number, string>,
+	departmentNameMap: Map<string, string>,
 	roleNameMap: Map<string, string>,
 ): PlatformUserRow {
 	const organizationIds = user.organizationIds ?? [];

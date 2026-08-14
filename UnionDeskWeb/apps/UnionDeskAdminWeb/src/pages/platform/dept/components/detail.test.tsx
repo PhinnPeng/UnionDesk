@@ -81,12 +81,12 @@ vi.mock("antd", () => ({
 import { Detail } from "./detail";
 
 const rootOrganization: PlatformOrganizationView = {
-	id: 1,
+	id: "1",
 	code: "root",
 	name: "平台组织",
 	parentId: null,
 	parentName: null,
-	leaderUserId: 1,
+	leaderUserId: "1",
 	leaderName: "admin",
 	orderNo: 1,
 	status: 1,
@@ -95,12 +95,12 @@ const rootOrganization: PlatformOrganizationView = {
 };
 
 const opsOrganization: PlatformOrganizationView = {
-	id: 2,
+	id: "2",
 	code: "ops",
 	name: "运营部",
-	parentId: 1,
+	parentId: "1",
 	parentName: "平台组织",
-	leaderUserId: 2,
+	leaderUserId: "2",
 	leaderName: "ops",
 	orderNo: 10,
 	status: 1,
@@ -128,8 +128,8 @@ describe("organization detail modal", () => {
 				parentOrganization={rootOrganization}
 				organizations={organizations}
 				leaderOptions={[
-					{ label: "admin", value: 1 },
-					{ label: "ops", value: 2 },
+					{ label: "admin", value: "1" },
+					{ label: "ops", value: "2" },
 				]}
 				saving={false}
 				onSubmit={mocks.onSubmit}
@@ -140,7 +140,7 @@ describe("organization detail modal", () => {
 
 		const initialValues = mocks.form.setFieldsValue.mock.calls[0]?.[0];
 		expect(initialValues.code).toMatch(/^dept-[a-z0-9]{8}$/);
-		expect(initialValues.parentId).toBe(1);
+		expect(initialValues.parentId).toBe("1");
 		expect(screen.queryByText("创建时间")).not.toBeInTheDocument();
 		expect(screen.queryByText("无上级部门")).not.toBeInTheDocument();
 		expect(screen.getByTestId("parent-tree-select")).toHaveAttribute("data-placeholder", "请选择上级部门，留空表示顶级部门");
@@ -156,7 +156,7 @@ describe("organization detail modal", () => {
 			code: " dept-abc12345 ",
 			name: " 运营部 ",
 			parentId: null,
-			leaderUserId: 2,
+			leaderUserId: "2",
 			orderNo: 10,
 			status: 1,
 			remark: " 备注 ",
@@ -170,8 +170,8 @@ describe("organization detail modal", () => {
 				parentOrganization={null}
 				organizations={organizations}
 				leaderOptions={[
-					{ label: "admin", value: 1 },
-					{ label: "ops", value: 2 },
+					{ label: "admin", value: "1" },
+					{ label: "ops", value: "2" },
 				]}
 				saving={false}
 				onSubmit={mocks.onSubmit}
@@ -187,7 +187,7 @@ describe("organization detail modal", () => {
 				code: "dept-abc12345",
 				name: "运营部",
 				parentId: null,
-				leaderUserId: 2,
+				leaderUserId: "2",
 				orderNo: 10,
 				status: 1,
 				remark: "备注",
@@ -206,8 +206,8 @@ describe("organization detail modal", () => {
 				parentOrganization={rootOrganization}
 				organizations={organizations}
 				leaderOptions={[
-					{ label: "admin", value: 1 },
-					{ label: "ops", value: 2 },
+					{ label: "admin", value: "1" },
+					{ label: "ops", value: "2" },
 				]}
 				saving={false}
 				onSubmit={mocks.onSubmit}
@@ -218,7 +218,7 @@ describe("organization detail modal", () => {
 
 		const initialValues = mocks.form.setFieldsValue.mock.calls[0]?.[0];
 		expect(initialValues.code).toBe("ops");
-		expect(initialValues.parentId).toBe(1);
+		expect(initialValues.parentId).toBe("1");
 
 		await userEvent.click(screen.getByRole("button", { name: "删除部门" }));
 		expect(mocks.onDelete).toHaveBeenCalledTimes(1);

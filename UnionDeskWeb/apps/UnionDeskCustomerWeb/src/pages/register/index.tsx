@@ -46,7 +46,7 @@ export default function RegisterPage() {
 				domainId: domainCode
 					? dedicatedDomain?.id ?? null
 					: form.domainId
-						? Number(form.domainId)
+						? form.domainId
 						: null,
 				invitationCode: form.invitationCode.trim() || undefined,
 			});

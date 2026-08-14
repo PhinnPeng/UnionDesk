@@ -56,7 +56,7 @@ export default function PlatformAttachments() {
 								return Upload.LIST_IGNORE;
 							}
 							try {
-								const res = await uploadAttachment(Number(domainId), file, "ticket");
+								const res = await uploadAttachment(domainId, file, "ticket");
 								message.success(`上传成功，attachment_id=${res.attachment_id}`);
 							} catch (e) {
 								message.error(toErrorMessage(e));

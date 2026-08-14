@@ -52,7 +52,7 @@ export default function PlatformLoginLogs() {
 	const [total, setTotal] = useState(0);
 	const [current, setCurrent] = useState(1);
 	const [pageSize, setPageSize] = useState(20);
-	const [domainOptions, setDomainOptions] = useState<{ label: string; value: number }[]>([]);
+	const [domainOptions, setDomainOptions] = useState<{ label: string; value: string }[]>([]);
 
 	const loadData = async (page = 1, size = pageSize) => {
 		setLoading(true);
@@ -90,13 +90,12 @@ export default function PlatformLoginLogs() {
 			.then((result) => {
 				setDomainOptions(result.list
 					.map((item) => {
-						const id = Number(item.id);
-						if (!Number.isFinite(id)) {
+						if (!item.id) {
 							return null;
 						}
-						return { label: item.name, value: id };
+						return { label: item.name, value: item.id };
 					})
-					.filter((item): item is { label: string; value: number } => item != null));
+					.filter((item): item is { label: string; value: string } => item != null));
 			})
 			.catch((error) => {
 				message.error(toErrorMessage(error) || "加载业务域列表失败");

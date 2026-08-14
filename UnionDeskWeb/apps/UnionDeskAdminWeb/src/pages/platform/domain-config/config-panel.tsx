@@ -3,15 +3,6 @@ import { fetchDomainConfig, updateDomainConfig } from "#src/api/platform/domain-
 import { App, Button, Card, Col, Form, Input, Row, Select, Space } from "antd";
 import { useEffect, useState } from "react";
 
-function resolveNumericDomainId(domainId: string): number | null {
-	const trimmed = domainId.trim();
-	if (!trimmed || !/^\d+$/.test(trimmed)) {
-		return null;
-	}
-	const numeric = Number(trimmed);
-	return Number.isSafeInteger(numeric) ? numeric : null;
-}
-
 interface DomainConfigPanelProps {
 	domainId: string;
 	/** 为 false 时只读（隐藏增删与保存）；默认 true，平台详情 Tab 行为不变 */
@@ -21,13 +12,12 @@ interface DomainConfigPanelProps {
 /** 域配置 KV 表单（可嵌入详情 Tab） */
 export function DomainConfigPanel({ domainId, canUpdate = true }: DomainConfigPanelProps) {
 	const { message } = App.useApp();
-	const numericDomainId = resolveNumericDomainId(domainId);
 	const [loading, setLoading] = useState(false);
 	const [form] = Form.useForm();
 	const formDisabled = loading || !canUpdate;
 
 	useEffect(() => {
-		if (!numericDomainId) {
+		if (!domainId) {
 			form.resetFields();
 			return;
 		}
@@ -35,7 +25,7 @@ export function DomainConfigPanel({ domainId, canUpdate = true }: DomainConfigPa
 		void (async () => {
 			setLoading(true);
 			try {
-				const data = await fetchDomainConfig(numericDomainId);
+				const data = await fetchDomainConfig(domainId);
 				if (ignore) {
 					return;
 				}
@@ -60,10 +50,10 @@ export function DomainConfigPanel({ domainId, canUpdate = true }: DomainConfigPa
 		return () => {
 			ignore = true;
 		};
-	}, [form, message, numericDomainId]);
+	}, [domainId, form, message]);
 
 	const onSave = async () => {
-		if (!numericDomainId) {
+		if (!domainId) {
 			message.warning("当前业务域 ID 无法加载域配置");
 			return;
 		}
@@ -72,7 +62,7 @@ export function DomainConfigPanel({ domainId, canUpdate = true }: DomainConfigPa
 			return;
 		}
 		try {
-			await updateDomainConfig(numericDomainId, {
+			await updateDomainConfig(domainId, {
 				items: (values.items ?? []).map((item: Record<string, string>) => ({
 					key: item.key,
 					value: item.value,
@@ -87,7 +77,7 @@ export function DomainConfigPanel({ domainId, canUpdate = true }: DomainConfigPa
 		}
 	};
 
-	if (!numericDomainId) {
+	if (!domainId) {
 		return (
 			<Card size="small" type="inner">
 				当前业务域暂不支持域配置 KV（需数字型业务域 ID）。

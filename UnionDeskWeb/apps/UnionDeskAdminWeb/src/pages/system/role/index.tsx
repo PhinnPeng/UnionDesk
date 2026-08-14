@@ -107,7 +107,7 @@ function RoleTable({ routeScope, createAuth, updateAuth, deleteAuth, menuTreeDat
 	const [detailData, setDetailData] = useState<Partial<RoleItemType> & { menuIds?: number[]; buttonIds?: number[] }>({});
 	const actionRef = useRef<ActionType>(null);
 
-	const handleDeleteRow = async (id: number, action?: ProCoreActionType<object>) => {
+	const handleDeleteRow = async (id: string, action?: ProCoreActionType<object>) => {
 		await fetchDeleteRole(id);
 		await action?.reload?.();
 		window.$message?.success(t("common.deleteSuccess"));

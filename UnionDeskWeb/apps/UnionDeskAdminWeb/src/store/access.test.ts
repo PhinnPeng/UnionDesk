@@ -68,7 +68,7 @@ describe("access store dual bucket", () => {
 			userRoutes: [{ path: "/home", handle: { scope: "business", title: "概览" } }],
 			dynamicRoutes: [{ path: "/home", handle: { scope: "business", title: "概览" } }],
 			actions: ["domain.home.read"],
-			domainId: 1,
+			domainId: "1",
 		});
 
 		expect(routerMocks._internalSetRoutes).toHaveBeenCalled();
@@ -99,12 +99,12 @@ describe("access store dual bucket", () => {
 			userRoutes: businessMenus,
 			dynamicRoutes: businessMenus,
 			actions: ["domain.home.read"],
-			domainId: 9,
+			domainId: "9",
 		});
 
 		const state = useAccessStore.getState();
 		expect(state.platformBucket?.actions).toEqual(["platform.home.read"]);
-		expect(state.businessBucket?.domainId).toBe(9);
+		expect(state.businessBucket?.domainId).toBe("9");
 		expect(state.activeScope).toBe(appScopes.business);
 		expect(state.platformMenus.some(item => item.key === "/platform/home")).toBe(true);
 		expect(state.userMenus.some(item => item.key === "/home")).toBe(true);
@@ -115,7 +115,7 @@ describe("access store dual bucket", () => {
 			userRoutes: [{ path: "/home", handle: { scope: "business", title: "概览" } }],
 			dynamicRoutes: [{ path: "/home", handle: { scope: "business", title: "概览" } }],
 			actions: ["domain.home.read"],
-			domainId: 1,
+			domainId: "1",
 		});
 		useAccessStore.getState().commitScopeBucket(appScopes.platform, {
 			userRoutes: [{ path: "/platform/domains", handle: { scope: "platform", title: "业务域列表" } }],
@@ -139,7 +139,7 @@ describe("access store dual bucket", () => {
 			userRoutes: [{ path: "/home", handle: { scope: "business", title: "概览" } }],
 			dynamicRoutes: [{ path: "/home", handle: { scope: "business", title: "概览" } }],
 			actions: ["domain.home.read"],
-			domainId: 3,
+			domainId: "3",
 		});
 
 		useAccessStore.getState().invalidateBusinessBucket();

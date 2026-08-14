@@ -36,14 +36,14 @@ const STATUS_OPTIONS = [
 ];
 
 function resolveBusinessDomainId(
-	defaultBusinessDomainId: number,
-	accessibleDomains: Array<{ id: number }>,
+	defaultBusinessDomainId: string,
+	accessibleDomains: Array<{ id: string }>,
 ): string {
-	if (defaultBusinessDomainId > 0) {
-		return String(defaultBusinessDomainId);
+	if (defaultBusinessDomainId) {
+		return defaultBusinessDomainId;
 	}
 	const first = accessibleDomains[0];
-	return first ? String(first.id) : "";
+	return first ? first.id : "";
 }
 
 function resolveStatusLabel(status: string) {
@@ -59,8 +59,6 @@ export default function DomainNotificationsPage() {
 		() => resolveBusinessDomainId(defaultBusinessDomainId, accessibleDomains ?? []),
 		[accessibleDomains, defaultBusinessDomainId],
 	);
-	const numericDomainId = Number(domainId);
-
 	const [rows, setRows] = useState<NotificationTemplateView[]>([]);
 	const [total, setTotal] = useState(0);
 	const [page, setPage] = useState(1);
@@ -71,14 +69,14 @@ export default function DomainNotificationsPage() {
 	const [form] = Form.useForm();
 
 	const loadTemplates = useCallback(async (nextPage = page, nextPageSize = pageSize) => {
-		if (!numericDomainId) {
+		if (!domainId) {
 			setRows([]);
 			setTotal(0);
 			return;
 		}
 		setLoading(true);
 		try {
-			const result = await fetchNotificationTemplates(numericDomainId, { page: nextPage, page_size: nextPageSize });
+			const result = await fetchNotificationTemplates(domainId, { page: nextPage, page_size: nextPageSize });
 			setRows(result.list);
 			setTotal(result.total);
 			setPage(nextPage);
@@ -90,7 +88,7 @@ export default function DomainNotificationsPage() {
 		finally {
 			setLoading(false);
 		}
-	}, [numericDomainId, message, page, pageSize]);
+	}, [domainId, message, page, pageSize]);
 
 	useEffect(() => {
 		void loadTemplates(1, pageSize);
@@ -116,7 +114,7 @@ export default function DomainNotificationsPage() {
 	};
 
 	const submitEditor = async () => {
-		if (!numericDomainId || !editing) {
+		if (!domainId || !editing) {
 			return;
 		}
 		const values = await form.validateFields().catch(() => null);
@@ -125,7 +123,7 @@ export default function DomainNotificationsPage() {
 		}
 		setSubmitting(true);
 		try {
-			await updateNotificationTemplate(numericDomainId, editing.id, {
+			await updateNotificationTemplate(domainId, editing.id, {
 				eventCategory: values.eventCategory,
 				channel: values.channel,
 				code: values.code,

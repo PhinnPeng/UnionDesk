@@ -71,7 +71,7 @@ function SidebarPopupTheme({
 
 function sortDomains(
 	domains: BusinessDomainView[],
-	preferredDefaultDomainId: number | null,
+	preferredDefaultDomainId: string | null,
 ): BusinessDomainView[] {
 	if (!preferredDefaultDomainId) {
 		return domains;
@@ -97,7 +97,7 @@ function DomainFooterItem({
 	const { pathname } = useLocation();
 	const [open, setOpen] = useState(false);
 	const [switching, setSwitching] = useState(false);
-	const [starringId, setStarringId] = useState<number | null>(null);
+	const [starringId, setStarringId] = useState<string | null>(null);
 
 	const currentDomainId = useAuthStore(state => state.defaultBusinessDomainId);
 	const preferredDefaultDomainId = useAuthStore(state => state.preferredDefaultDomainId);
@@ -128,7 +128,7 @@ function DomainFooterItem({
 		return null;
 	}
 
-	const handleSwitch = async (domainId: number) => {
+	const handleSwitch = async (domainId: string) => {
 		if (domainId === currentDomainId || switching) {
 			return;
 		}
@@ -151,7 +151,7 @@ function DomainFooterItem({
 		}
 	};
 
-	const handleSetDefault = async (domainId: number, event: MouseEvent) => {
+	const handleSetDefault = async (domainId: string, event: MouseEvent) => {
 		event.stopPropagation();
 		if (starringId != null || preferredDefaultDomainId === domainId) {
 			return;

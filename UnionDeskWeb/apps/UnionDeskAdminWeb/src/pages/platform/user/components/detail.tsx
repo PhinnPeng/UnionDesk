@@ -26,7 +26,7 @@ interface DetailProps {
 
 type DepartmentTreeSelectNode = {
 	title: string;
-	value: number;
+	value: string;
 	children: DepartmentTreeSelectNode[];
 };
 

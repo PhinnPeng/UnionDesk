@@ -101,10 +101,10 @@ describe("platform user detail", () => {
 			email: " alice@example.com ",
 			password: " 12345678 ",
 			roleCodes: ["super_admin"],
-			organizationId: 1,
+			organizationId: "1",
 			remark: " 新用户备注 ",
 		});
-		const savedUser = { id: 1, username: "alice" };
+		const savedUser = { id: "1", username: "alice" };
 		mocks.fetchCreatePlatformUser.mockResolvedValue(savedUser);
 
 		render(
@@ -113,7 +113,7 @@ describe("platform user detail", () => {
 				mode="create"
 				user={null}
 				roles={[
-					{ id: 7, code: "super_admin", name: "超级管理员", scope: "global", system: true },
+					{ id: "7", code: "super_admin", name: "超级管理员", scope: "global", system: true },
 				]}
 				onClose={mocks.onClose}
 				onSuccess={mocks.onSuccess}
@@ -133,7 +133,7 @@ describe("platform user detail", () => {
 				accountType: "admin",
 				roleCodes: ["super_admin"],
 				businessDomainIds: [],
-				organizationIds: [1],
+				organizationIds: ["1"],
 			});
 		});
 		expect(mocks.onSuccess).toHaveBeenCalledWith(savedUser);
@@ -146,10 +146,10 @@ describe("platform user detail", () => {
 			mobile: " 13800000000 ",
 			email: " alice@example.com ",
 			roleCodes: ["super_admin"],
-			organizationId: 1,
+			organizationId: "1",
 			remark: "",
 		});
-		const savedUser = { id: 9, username: "alice" };
+		const savedUser = { id: "9", username: "alice" };
 		mocks.fetchUpdatePlatformUser.mockResolvedValue(savedUser);
 
 		render(
@@ -157,7 +157,7 @@ describe("platform user detail", () => {
 				open
 				mode="edit"
 				user={{
-					id: 9,
+					id: "9",
 					username: "alice",
 					mobile: "13800000000",
 					email: "alice@example.com",
@@ -166,11 +166,11 @@ describe("platform user detail", () => {
 					status: 1,
 					employmentStatus: "active",
 					roleCodes: ["super_admin"],
-					businessDomainIds: [1],
-					organizationIds: [1, 2],
+					businessDomainIds: ["1"],
+					organizationIds: ["1", "2"],
 				}}
 				roles={[
-					{ id: 7, code: "super_admin", name: "超级管理员", scope: "global", system: true },
+					{ id: "7", code: "super_admin", name: "超级管理员", scope: "global", system: true },
 				]}
 				onClose={mocks.onClose}
 				onSuccess={mocks.onSuccess}
@@ -183,7 +183,7 @@ describe("platform user detail", () => {
 		await userEvent.click(screen.getByRole("button", { name: "保存" }));
 
 		await waitFor(() => {
-			expect(mocks.fetchUpdatePlatformUser).toHaveBeenCalledWith(9, {
+			expect(mocks.fetchUpdatePlatformUser).toHaveBeenCalledWith("9", {
 				username: "alice",
 				mobile: "13800000000",
 				email: "alice@example.com",
@@ -191,7 +191,7 @@ describe("platform user detail", () => {
 				accountType: "customer",
 				roleCodes: ["super_admin"],
 				businessDomainIds: [],
-				organizationIds: [1],
+				organizationIds: ["1"],
 			});
 		});
 
@@ -218,7 +218,7 @@ describe("platform user detail", () => {
 				mode="create"
 				user={null}
 				roles={[
-					{ id: 7, code: "super_admin", name: "超级管理员", scope: "global", system: true },
+					{ id: "7", code: "super_admin", name: "超级管理员", scope: "global", system: true },
 				]}
 				onClose={mocks.onClose}
 				onSuccess={mocks.onSuccess}

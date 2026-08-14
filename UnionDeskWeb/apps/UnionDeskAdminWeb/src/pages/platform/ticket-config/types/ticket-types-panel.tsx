@@ -111,7 +111,7 @@ export function TicketTypesPanel({ onAttributeEdit, onWorkflowEdit }: TicketType
 		setRows(nextRows);
 		try {
 			const orders = nextRows.map((item, index) => ({
-				id: Number(item.id),
+				id: item.id,
 				sort_order: index,
 			}));
 			await reorderPlatformTicketTypes(orders);

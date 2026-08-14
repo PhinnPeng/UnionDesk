@@ -40,7 +40,7 @@ function prettyJson(value: Record<string, unknown> | undefined) {
 export default function PlatformSlaManagement() {
 	const { message } = App.useApp();
 	const [domains, setDomains] = useState<BusinessDomainView[]>([]);
-	const [domainId, setDomainId] = useState<number>();
+	const [domainId, setDomainId] = useState<string>();
 	const [activeTab, setActiveTab] = useState<"rules" | "calendars">("rules");
 	const [ruleRows, setRuleRows] = useState<SlaRuleView[]>([]);
 	const [calendarRows, setCalendarRows] = useState<SlaCalendarView[]>([]);

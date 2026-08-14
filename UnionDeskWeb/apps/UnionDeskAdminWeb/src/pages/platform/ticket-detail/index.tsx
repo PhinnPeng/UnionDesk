@@ -32,7 +32,7 @@ const replyPresets: ReplyPreset[] = [
 	{ label: "问题已关闭", value: "问题已处理完成，工单将进行关闭。" },
 ];
 
-async function uploadTicketAttachment(domainId: number, file: File) {
+async function uploadTicketAttachment(domainId: string, file: File) {
 	return uploadAttachment(domainId, file, "ticket");
 }
 
@@ -56,8 +56,8 @@ function formatTime(value?: string | null) {
 export default function PlatformTicketDetail() {
 	const { message } = App.useApp();
 	const [domains, setDomains] = useState<BusinessDomainView[]>([]);
-	const [domainId, setDomainId] = useState<number>();
-	const [ticketId, setTicketId] = useState<number>();
+	const [domainId, setDomainId] = useState<string>();
+	const [ticketId, setTicketId] = useState<string>();
 	const [detail, setDetail] = useState<TicketDetailResult | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [replyLoading, setReplyLoading] = useState(false);
@@ -181,7 +181,7 @@ export default function PlatformTicketDetail() {
 		try {
 			await assignAdminTicket(domainId, ticketId, {
 				version: detail.ticket.version,
-				assigneeStaffAccountId: values.assigneeStaffAccountId,
+				assigneeStaffAccountId: String(values.assigneeStaffAccountId),
 			});
 			message.success("工单已指派");
 			setAssignOpen(false);
@@ -202,7 +202,7 @@ export default function PlatformTicketDetail() {
 		}
 		try {
 			await replaceAdminTicketWatchers(domainId, ticketId, {
-				watcherStaffAccountIds: values.watcherStaffAccountIds ?? [],
+				watcherStaffAccountIds: (values.watcherStaffAccountIds ?? []).map((id: number) => Number(id)),
 			});
 			message.success("关注人已更新");
 			setWatchersOpen(false);
@@ -247,7 +247,7 @@ export default function PlatformTicketDetail() {
 		try {
 			await mergeAdminTicket(domainId, ticketId, {
 				version: detail.ticket.version,
-				targetTicketId: values.targetTicketId,
+				targetTicketId: String(values.targetTicketId),
 				note: values.note,
 			});
 			message.success("工单已合并");
@@ -290,11 +290,11 @@ export default function PlatformTicketDetail() {
 					<div className="flex flex-wrap items-center gap-3">
 						<Typography.Text className="text-slate-600">业务域</Typography.Text>
 						<Select className="min-w-72" value={domainId} options={domainOptions} onChange={setDomainId} />
-						<InputNumber
-							className="w-40"
+						<Input
+							className="w-72"
 							placeholder="工单 ID"
 							value={ticketId}
-							onChange={value => setTicketId(typeof value === "number" ? value : undefined)}
+							onChange={event => setTicketId(event.target.value)}
 						/>
 						<Button type="primary" onClick={() => void loadDetail()} loading={loading}>
 							加载工单

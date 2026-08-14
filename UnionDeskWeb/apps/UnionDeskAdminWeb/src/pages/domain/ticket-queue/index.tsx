@@ -40,14 +40,14 @@ const EMPTY_QUEUE_SEARCH: QueueSearchValues = {
 };
 
 function resolveBusinessDomainId(
-	defaultBusinessDomainId: number,
-	accessibleDomains: Array<{ id: number }>,
-): number {
-	if (defaultBusinessDomainId > 0) {
+	defaultBusinessDomainId: string,
+	accessibleDomains: Array<{ id: string }>,
+): string {
+	if (defaultBusinessDomainId) {
 		return defaultBusinessDomainId;
 	}
 	const first = accessibleDomains[0];
-	return first ? Number(first.id) : 0;
+	return first ? first.id : "";
 }
 
 function statusOptionMap(statuses: TicketStatusDefinition[]) {
@@ -208,7 +208,7 @@ export default function DomainTicketQueuePage() {
 		try {
 			await assignAdminTicket(domainId, assignTarget.id, {
 				version: assignTarget.version,
-				assigneeStaffAccountId: values.assigneeStaffAccountId,
+				assigneeStaffAccountId: String(values.assigneeStaffAccountId),
 			});
 			message.success("工单已指派");
 			setAssignOpen(false);

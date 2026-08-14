@@ -206,7 +206,7 @@ export default function TicketTypeAttributesPage() {
 			await reorderTicketAttributeSlots(
 				domainId,
 				typeId,
-				nextCustom.map((item, index) => ({ id: Number(item.id), sort_order: index })),
+				nextCustom.map((item, index) => ({ id: item.id, sort_order: index })),
 			);
 		}
 		catch (error) {

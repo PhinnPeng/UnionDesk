@@ -52,14 +52,14 @@ export function fetchCreateMenu(data: CreateMenuPayload): Promise<unknown> {
 	});
 }
 
-export function fetchUpdateMenu(id: number, data: UpdateMenuPayload): Promise<unknown> {
+export function fetchUpdateMenu(id: string, data: UpdateMenuPayload): Promise<unknown> {
 	return requestBackendJson(`v1/iam/menus/${id}`, {
 		method: "PUT",
 		json: data,
 	});
 }
 
-export function fetchDeleteMenu(id: number): Promise<unknown> {
+export function fetchDeleteMenu(id: string): Promise<unknown> {
 	return requestBackendJson(`v1/iam/menus/${id}`, {
 		method: "DELETE",
 	});
@@ -73,17 +73,17 @@ export function fetchAddMenuItem(data: CreateMenuPayload) {
 	return fetchCreateMenu(data);
 }
 
-export function fetchUpdateMenuItem(idOrData: number | (UpdateMenuPayload & { id?: number }), data?: UpdateMenuPayload) {
-	if (typeof idOrData === "number") {
+export function fetchUpdateMenuItem(idOrData: string | (UpdateMenuPayload & { id?: string }), data?: UpdateMenuPayload) {
+	if (typeof idOrData === "string") {
 		return fetchUpdateMenu(idOrData, data ?? {});
 	}
-	if (typeof idOrData.id !== "number") {
+	if (typeof idOrData.id !== "string") {
 		throw new Error("menu id is required");
 	}
 	const { id, ...payload } = idOrData;
 	return fetchUpdateMenu(id, payload);
 }
 
-export function fetchDeleteMenuItem(id: number) {
+export function fetchDeleteMenuItem(id: string) {
 	return fetchDeleteMenu(id);
 }

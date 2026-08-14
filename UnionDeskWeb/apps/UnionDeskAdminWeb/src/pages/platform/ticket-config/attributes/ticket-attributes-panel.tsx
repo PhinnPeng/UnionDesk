@@ -196,7 +196,7 @@ export function TicketAttributesPanel({ scope, domainId, permissions }: TicketAt
 		setRows(nextRows);
 		try {
 			const orders = nextRows.map((item, index) => ({
-				id: Number(item.id),
+				id: item.id,
 				sort_order: index,
 			}));
 			if (scope === "platform") {
