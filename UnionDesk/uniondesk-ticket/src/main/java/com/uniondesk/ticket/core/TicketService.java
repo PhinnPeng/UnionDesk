@@ -21,7 +21,6 @@ import com.uniondesk.ticket.entity.TicketRelationPo;
 import com.uniondesk.ticket.entity.TicketReplyPo;
 import com.uniondesk.ticket.entity.TicketTemplatePo;
 import com.uniondesk.ticket.entity.TicketTypePo;
-import com.uniondesk.ticket.entity.UserAccountPo;
 import com.uniondesk.ticket.repository.AuditLogRepository;
 import com.uniondesk.ticket.repository.CustomerAccountRepository;
 import com.uniondesk.ticket.repository.IdentitySubjectRepository;
@@ -33,7 +32,6 @@ import com.uniondesk.ticket.repository.TicketReplyRepository;
 import com.uniondesk.ticket.repository.TicketRepository;
 import com.uniondesk.ticket.repository.TicketTemplateRepository;
 import com.uniondesk.ticket.repository.TicketTypeRepository;
-import com.uniondesk.ticket.repository.UserAccountRepository;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -62,7 +60,6 @@ public class TicketService {
     private final QuickReplyTemplateRepository quickReplyTemplateRepository;
     private final AuditLogRepository auditLogRepository;
     private final IdentitySubjectRepository identitySubjectRepository;
-    private final UserAccountRepository userAccountRepository;
     private final CustomerAccountRepository customerAccountRepository;
     private final StaffAccountRepository staffAccountRepository;
     private final DomainCustomerRepository domainCustomerRepository;
@@ -85,7 +82,6 @@ public class TicketService {
             QuickReplyTemplateRepository quickReplyTemplateRepository,
             AuditLogRepository auditLogRepository,
             IdentitySubjectRepository identitySubjectRepository,
-            UserAccountRepository userAccountRepository,
             CustomerAccountRepository customerAccountRepository,
             StaffAccountRepository staffAccountRepository,
             DomainCustomerRepository domainCustomerRepository,
@@ -106,7 +102,6 @@ public class TicketService {
         this.quickReplyTemplateRepository = quickReplyTemplateRepository;
         this.auditLogRepository = auditLogRepository;
         this.identitySubjectRepository = identitySubjectRepository;
-        this.userAccountRepository = userAccountRepository;
         this.customerAccountRepository = customerAccountRepository;
         this.staffAccountRepository = staffAccountRepository;
         this.domainCustomerRepository = domainCustomerRepository;
@@ -722,10 +717,7 @@ public class TicketService {
         if (identitySubjectRepository.findById(userId) != null) {
             return userId;
         }
-        UserAccountPo user = userAccountRepository.findById(userId);
-        String phone = user != null && StringUtils.hasText(user.getMobile())
-                ? user.getMobile()
-                : "user-" + userId;
+        String phone = "user-" + userId;
         IdentitySubjectPo subjectPo = new IdentitySubjectPo();
         subjectPo.setId(userId);
         subjectPo.setSubjectType("person");

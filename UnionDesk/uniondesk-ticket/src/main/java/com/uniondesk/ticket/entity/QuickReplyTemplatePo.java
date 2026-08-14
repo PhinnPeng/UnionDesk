@@ -1,9 +1,15 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("quick_reply_template")
 public class QuickReplyTemplatePo {
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private long businessDomainId;
     private String scopeType;
@@ -13,7 +19,9 @@ public class QuickReplyTemplatePo {
     private String status;
     private int sortOrder;
     private Long createdBy;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+    @Column(onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public long getId() {

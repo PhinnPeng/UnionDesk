@@ -1,9 +1,15 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("ticket_type_flow_status")
 public class TicketTypeFlowStatusPo {
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private long domainId;
     private long ticketTypeId;
@@ -11,11 +17,15 @@ public class TicketTypeFlowStatusPo {
     private String name;
     private String stateType;
     private boolean allowCustomerWithdraw;
+    @Column("is_resolved")
     private boolean resolved;
+    @Column("is_initial")
     private boolean initial;
     private int sortOrder;
     private Long sourceStatusId;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+    @Column(onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public long getId() {

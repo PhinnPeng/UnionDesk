@@ -1,7 +1,12 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("ticket_attribute")
 public class TicketAttributePo {
 
     public static final String SCOPE_PLATFORM = "platform";
@@ -9,6 +14,7 @@ public class TicketAttributePo {
     public static final String STATUS_ACTIVE = "active";
     public static final String STATUS_DISABLED = "disabled";
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private String scope;
     private Long businessDomainId;
@@ -18,12 +24,15 @@ public class TicketAttributePo {
     private String typeConfig;
     private String status;
     private int sortOrder;
+    @Column("is_system")
     private boolean system;
     private String systemKey;
     private Long sourceAttributeId;
     private Long createdBy;
     private Long updatedBy;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+    @Column(onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public long getId() {

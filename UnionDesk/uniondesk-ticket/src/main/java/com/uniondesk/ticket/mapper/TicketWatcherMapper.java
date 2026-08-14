@@ -1,16 +1,26 @@
 package com.uniondesk.ticket.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.ticket.entity.TicketWatcherPo;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface TicketWatcherMapper {
+public interface TicketWatcherMapper extends BaseMapper<TicketWatcherPo> {
 
-    List<Long> findStaffIdsByTicketId(@Param("ticketId") long ticketId);
+    default List<Long> findStaffIdsByTicketId(long ticketId) {
+        return selectListByQuery(QueryWrapper.create()
+                .from(TicketWatcherPo.class)
+                .where(TicketWatcherPo::getTicketId).eq(ticketId)
+                .orderBy(TicketWatcherPo::getId, true)).stream()
+                .map(TicketWatcherPo::getStaffAccountId)
+                .toList();
+    }
 
-    void deleteByTicketId(@Param("ticketId") long ticketId);
-
-    void insert(TicketWatcherPo po);
+    default int deleteByTicketId(long ticketId) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(TicketWatcherPo.class)
+                .where(TicketWatcherPo::getTicketId).eq(ticketId));
+    }
 }

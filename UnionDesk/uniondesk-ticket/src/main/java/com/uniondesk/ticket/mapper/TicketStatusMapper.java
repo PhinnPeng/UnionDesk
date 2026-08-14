@@ -1,63 +1,158 @@
 package com.uniondesk.ticket.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.paginate.Page;
+import com.mybatisflex.core.query.If;
+import com.mybatisflex.core.query.QueryMethods;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.ticket.entity.TicketStatusPo;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface TicketStatusMapper {
+public interface TicketStatusMapper extends BaseMapper<TicketStatusPo> {
 
-    List<TicketStatusPo> findByPlatform(@Param("keywordLike") String keywordLike);
+    default List<TicketStatusPo> findByPlatform(String keywordLike) {
+        return selectListByQuery(platformScopeQuery(keywordLike)
+                .orderBy(TicketStatusPo::getSortOrder, true)
+                .orderBy(TicketStatusPo::getId, true));
+    }
 
-    long countByPlatform(@Param("keywordLike") String keywordLike);
+    default Page<TicketStatusPo> selectPageByPlatform(Page<TicketStatusPo> page, String keywordLike) {
+        return paginate(page, platformScopeQuery(keywordLike)
+                .orderBy(TicketStatusPo::getSortOrder, true)
+                .orderBy(TicketStatusPo::getId, true));
+    }
 
-    List<TicketStatusPo> findPageByPlatform(
-            @Param("keywordLike") String keywordLike,
-            @Param("limit") int limit,
-            @Param("offset") long offset);
+    default TicketStatusPo findById(long id) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketStatusPo.class)
+                .where(TicketStatusPo::getId).eq(id));
+    }
 
-    TicketStatusPo findById(@Param("id") long id);
+    default TicketStatusPo findPlatformByCode(String code) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketStatusPo.class)
+                .where(TicketStatusPo::getScope).eq(TicketStatusPo.SCOPE_PLATFORM)
+                .and(TicketStatusPo::getCode).eq(code));
+    }
 
-    TicketStatusPo findPlatformByCode(@Param("code") String code);
+    default TicketStatusPo findPlatformByName(String name) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketStatusPo.class)
+                .where(TicketStatusPo::getScope).eq(TicketStatusPo.SCOPE_PLATFORM)
+                .and(TicketStatusPo::getName).eq(name));
+    }
 
-    TicketStatusPo findPlatformByName(@Param("name") String name);
+    default Integer findMaxSortOrderPlatform() {
+        return selectObjectByQueryAs(QueryWrapper.create()
+                .select(QueryMethods.max(TicketStatusPo::getSortOrder))
+                .from(TicketStatusPo.class)
+                .where(TicketStatusPo::getScope).eq(TicketStatusPo.SCOPE_PLATFORM), Integer.class);
+    }
 
-    Integer findMaxSortOrderPlatform();
+    default List<TicketStatusPo> findByDomain(long domainId, String keywordLike) {
+        return selectListByQuery(domainScopeQuery(domainId, keywordLike)
+                .orderBy(TicketStatusPo::getSortOrder, true)
+                .orderBy(TicketStatusPo::getId, true));
+    }
 
-    List<TicketStatusPo> findByDomain(
-            @Param("domainId") long domainId,
-            @Param("keywordLike") String keywordLike);
+    default Page<TicketStatusPo> selectPageByDomain(long domainId, Page<TicketStatusPo> page, String keywordLike) {
+        return paginate(page, domainScopeQuery(domainId, keywordLike)
+                .orderBy(TicketStatusPo::getSortOrder, true)
+                .orderBy(TicketStatusPo::getId, true));
+    }
 
-    long countByDomain(
-            @Param("domainId") long domainId,
-            @Param("keywordLike") String keywordLike);
+    default TicketStatusPo findDomainByCode(long domainId, String code) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketStatusPo.class)
+                .where(TicketStatusPo::getScope).eq(TicketStatusPo.SCOPE_DOMAIN)
+                .and(TicketStatusPo::getBusinessDomainId).eq(domainId)
+                .and(TicketStatusPo::getCode).eq(code));
+    }
 
-    List<TicketStatusPo> findPageByDomain(
-            @Param("domainId") long domainId,
-            @Param("keywordLike") String keywordLike,
-            @Param("limit") int limit,
-            @Param("offset") long offset);
+    default TicketStatusPo findDomainByName(long domainId, String name) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketStatusPo.class)
+                .where(TicketStatusPo::getScope).eq(TicketStatusPo.SCOPE_DOMAIN)
+                .and(TicketStatusPo::getBusinessDomainId).eq(domainId)
+                .and(TicketStatusPo::getName).eq(name));
+    }
 
-    TicketStatusPo findDomainByCode(
-            @Param("domainId") long domainId,
-            @Param("code") String code);
+    default TicketStatusPo findDomainBySourceStatusId(long domainId, long sourceStatusId) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketStatusPo.class)
+                .where(TicketStatusPo::getScope).eq(TicketStatusPo.SCOPE_DOMAIN)
+                .and(TicketStatusPo::getBusinessDomainId).eq(domainId)
+                .and(TicketStatusPo::getSourceStatusId).eq(sourceStatusId));
+    }
 
-    TicketStatusPo findDomainByName(
-            @Param("domainId") long domainId,
-            @Param("name") String name);
+    default Integer findMaxSortOrderDomain(long domainId) {
+        return selectObjectByQueryAs(QueryWrapper.create()
+                .select(QueryMethods.max(TicketStatusPo::getSortOrder))
+                .from(TicketStatusPo.class)
+                .where(TicketStatusPo::getScope).eq(TicketStatusPo.SCOPE_DOMAIN)
+                .and(TicketStatusPo::getBusinessDomainId).eq(domainId), Integer.class);
+    }
 
-    TicketStatusPo findDomainBySourceStatusId(
-            @Param("domainId") long domainId,
-            @Param("sourceStatusId") long sourceStatusId);
+    @Override
+    default int update(TicketStatusPo po) {
+        TicketStatusPo set = new TicketStatusPo();
+        set.setName(po.getName());
+        set.setDescription(po.getDescription());
+        set.setCategory(po.getCategory());
+        set.setStateType(po.getStateType());
+        set.setConfigJson(po.getConfigJson());
+        set.setStatus(po.getStatus());
+        set.setUpdatedBy(po.getUpdatedBy());
+        return updateByQuery(set, QueryWrapper.create()
+                .from(TicketStatusPo.class)
+                .where(TicketStatusPo::getId).eq(po.getId()));
+    }
 
-    Integer findMaxSortOrderDomain(@Param("domainId") long domainId);
+    default int deleteByIdPlatform(long id) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(TicketStatusPo.class)
+                .where(TicketStatusPo::getId).eq(id)
+                .and(TicketStatusPo::getScope).eq(TicketStatusPo.SCOPE_PLATFORM)
+                .and(TicketStatusPo::isSystem).eq(false));
+    }
 
-    void insert(TicketStatusPo po);
+    default int deleteByIdDomain(long domainId, long id) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(TicketStatusPo.class)
+                .where(TicketStatusPo::getId).eq(id)
+                .and(TicketStatusPo::getScope).eq(TicketStatusPo.SCOPE_DOMAIN)
+                .and(TicketStatusPo::getBusinessDomainId).eq(domainId)
+                .and(TicketStatusPo::isSystem).eq(false));
+    }
 
-    int update(TicketStatusPo po);
+    private static QueryWrapper platformScopeQuery(String keywordLike) {
+        QueryWrapper qw = QueryWrapper.create()
+                .from(TicketStatusPo.class)
+                .where(TicketStatusPo::getScope).eq(TicketStatusPo.SCOPE_PLATFORM);
+        if (If.hasText(keywordLike)) {
+            qw.and(qw2 -> {
+                qw2.where(TicketStatusPo::getName).like(keywordLike)
+                        .or(TicketStatusPo::getDescription).like(keywordLike)
+                        .or(TicketStatusPo::getCode).like(keywordLike);
+            });
+        }
+        return qw;
+    }
 
-    int deleteByIdPlatform(@Param("id") long id);
-
-    int deleteByIdDomain(@Param("domainId") long domainId, @Param("id") long id);
+    private static QueryWrapper domainScopeQuery(long domainId, String keywordLike) {
+        QueryWrapper qw = QueryWrapper.create()
+                .from(TicketStatusPo.class)
+                .where(TicketStatusPo::getScope).eq(TicketStatusPo.SCOPE_DOMAIN)
+                .and(TicketStatusPo::getBusinessDomainId).eq(domainId);
+        if (If.hasText(keywordLike)) {
+            qw.and(qw2 -> {
+                qw2.where(TicketStatusPo::getName).like(keywordLike)
+                        .or(TicketStatusPo::getDescription).like(keywordLike)
+                        .or(TicketStatusPo::getCode).like(keywordLike);
+            });
+        }
+        return qw;
+    }
 }

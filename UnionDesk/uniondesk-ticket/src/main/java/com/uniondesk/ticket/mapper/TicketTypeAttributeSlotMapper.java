@@ -1,38 +1,76 @@
 package com.uniondesk.ticket.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryMethods;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.ticket.entity.TicketTypeAttributeSlotPo;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface TicketTypeAttributeSlotMapper {
+public interface TicketTypeAttributeSlotMapper extends BaseMapper<TicketTypeAttributeSlotPo> {
 
-    List<TicketTypeAttributeSlotPo> findByTicketTypeId(@Param("ticketTypeId") long ticketTypeId);
+    default List<TicketTypeAttributeSlotPo> findByTicketTypeId(long ticketTypeId) {
+        return selectListByQuery(QueryWrapper.create()
+                .from(TicketTypeAttributeSlotPo.class)
+                .where(TicketTypeAttributeSlotPo::getTicketTypeId).eq(ticketTypeId)
+                .orderBy(TicketTypeAttributeSlotPo::getSortOrder, true)
+                .orderBy(TicketTypeAttributeSlotPo::getId, true));
+    }
 
-    TicketTypeAttributeSlotPo findById(@Param("id") long id);
+    default TicketTypeAttributeSlotPo findById(long id) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketTypeAttributeSlotPo.class)
+                .where(TicketTypeAttributeSlotPo::getId).eq(id));
+    }
 
-    TicketTypeAttributeSlotPo findByTypeAndAttribute(
-            @Param("ticketTypeId") long ticketTypeId,
-            @Param("attributeId") long attributeId);
+    default TicketTypeAttributeSlotPo findByTypeAndAttribute(long ticketTypeId, long attributeId) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketTypeAttributeSlotPo.class)
+                .where(TicketTypeAttributeSlotPo::getTicketTypeId).eq(ticketTypeId)
+                .and(TicketTypeAttributeSlotPo::getAttributeId).eq(attributeId));
+    }
 
-    Integer findMaxSortOrder(@Param("ticketTypeId") long ticketTypeId);
+    default Integer findMaxSortOrder(long ticketTypeId) {
+        return selectObjectByQueryAs(QueryWrapper.create()
+                .select(QueryMethods.max(TicketTypeAttributeSlotPo::getSortOrder))
+                .from(TicketTypeAttributeSlotPo.class)
+                .where(TicketTypeAttributeSlotPo::getTicketTypeId).eq(ticketTypeId), Integer.class);
+    }
 
-    void insert(TicketTypeAttributeSlotPo po);
+    default int updateSlotConfig(long id, String slotConfig, Long updatedBy) {
+        TicketTypeAttributeSlotPo set = new TicketTypeAttributeSlotPo();
+        set.setSlotConfig(slotConfig);
+        set.setUpdatedBy(updatedBy);
+        return updateByQuery(set, QueryWrapper.create()
+                .from(TicketTypeAttributeSlotPo.class)
+                .where(TicketTypeAttributeSlotPo::getId).eq(id));
+    }
 
-    int updateSlotConfig(
-            @Param("id") long id,
-            @Param("slotConfig") String slotConfig,
-            @Param("updatedBy") Long updatedBy);
+    default int updateSortOrder(long id, int sortOrder, Long updatedBy) {
+        TicketTypeAttributeSlotPo set = new TicketTypeAttributeSlotPo();
+        set.setSortOrder(sortOrder);
+        set.setUpdatedBy(updatedBy);
+        return updateByQuery(set, QueryWrapper.create()
+                .from(TicketTypeAttributeSlotPo.class)
+                .where(TicketTypeAttributeSlotPo::getId).eq(id));
+    }
 
-    int updateSortOrder(
-            @Param("id") long id,
-            @Param("sortOrder") int sortOrder,
-            @Param("updatedBy") Long updatedBy);
+    default int deleteById(long id) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(TicketTypeAttributeSlotPo.class)
+                .where(TicketTypeAttributeSlotPo::getId).eq(id));
+    }
 
-    int deleteById(@Param("id") long id);
+    default int deleteByTicketTypeId(long ticketTypeId) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(TicketTypeAttributeSlotPo.class)
+                .where(TicketTypeAttributeSlotPo::getTicketTypeId).eq(ticketTypeId));
+    }
 
-    int deleteByTicketTypeId(@Param("ticketTypeId") long ticketTypeId);
-
-    int countByAttributeId(@Param("attributeId") long attributeId);
+    default int countByAttributeId(long attributeId) {
+        return (int) selectCountByQuery(QueryWrapper.create()
+                .from(TicketTypeAttributeSlotPo.class)
+                .where(TicketTypeAttributeSlotPo::getAttributeId).eq(attributeId));
+    }
 }

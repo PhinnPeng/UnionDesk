@@ -1,5 +1,6 @@
 package com.uniondesk.ticket.core;
 
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.ticket.entity.TicketStatusPo;
 import com.uniondesk.ticket.repository.TicketStatusRepository;
 import com.uniondesk.ticket.web.TicketStatusDtos;
@@ -29,19 +30,25 @@ public class TicketStatusService {
 
     public TicketStatusDtos.TicketStatusListView listPlatform(String keyword, Integer page, Integer pageSize) {
         String keywordLike = toKeywordLike(keyword);
-        long total = ticketStatusRepository.countPlatform(keywordLike);
+        if (page == null || pageSize == null) {
+            List<TicketStatusPo> all = ticketStatusRepository.findAllPlatform(keywordLike);
+            return new TicketStatusDtos.TicketStatusListView(
+                    all.size(),
+                    all.stream().map(this::toView).toList());
+        }
+        int normalizedPage = Math.max(page, 1);
+        int normalizedPageSize = Math.max(pageSize, 1);
+        Page<TicketStatusPo> result = ticketStatusRepository.findPagePlatform(
+                Page.of(normalizedPage, normalizedPageSize), keywordLike);
         List<TicketStatusPo> rows;
-        if (total <= TicketStatusRepository.NO_PAGINATION_THRESHOLD || page == null || pageSize == null) {
+        if (result.getTotalRow() <= TicketStatusRepository.NO_PAGINATION_THRESHOLD) {
             rows = ticketStatusRepository.findAllPlatform(keywordLike);
         }
         else {
-            int normalizedPage = Math.max(page, 1);
-            int normalizedPageSize = Math.max(pageSize, 1);
-            long offset = (long) (normalizedPage - 1) * normalizedPageSize;
-            rows = ticketStatusRepository.findPagePlatform(keywordLike, normalizedPageSize, offset);
+            rows = result.getRecords();
         }
         return new TicketStatusDtos.TicketStatusListView(
-                total,
+                result.getTotalRow(),
                 rows.stream().map(this::toView).toList());
     }
 
@@ -137,19 +144,25 @@ public class TicketStatusService {
             Integer page,
             Integer pageSize) {
         String keywordLike = toKeywordLike(keyword);
-        long total = ticketStatusRepository.countDomain(domainId, keywordLike);
+        if (page == null || pageSize == null) {
+            List<TicketStatusPo> all = ticketStatusRepository.findAllDomain(domainId, keywordLike);
+            return new TicketStatusDtos.TicketStatusListView(
+                    all.size(),
+                    all.stream().map(this::toView).toList());
+        }
+        int normalizedPage = Math.max(page, 1);
+        int normalizedPageSize = Math.max(pageSize, 1);
+        Page<TicketStatusPo> result = ticketStatusRepository.findPageDomain(
+                domainId, Page.of(normalizedPage, normalizedPageSize), keywordLike);
         List<TicketStatusPo> rows;
-        if (total <= TicketStatusRepository.NO_PAGINATION_THRESHOLD || page == null || pageSize == null) {
+        if (result.getTotalRow() <= TicketStatusRepository.NO_PAGINATION_THRESHOLD) {
             rows = ticketStatusRepository.findAllDomain(domainId, keywordLike);
         }
         else {
-            int normalizedPage = Math.max(page, 1);
-            int normalizedPageSize = Math.max(pageSize, 1);
-            long offset = (long) (normalizedPage - 1) * normalizedPageSize;
-            rows = ticketStatusRepository.findPageDomain(domainId, keywordLike, normalizedPageSize, offset);
+            rows = result.getRecords();
         }
         return new TicketStatusDtos.TicketStatusListView(
-                total,
+                result.getTotalRow(),
                 rows.stream().map(this::toView).toList());
     }
 

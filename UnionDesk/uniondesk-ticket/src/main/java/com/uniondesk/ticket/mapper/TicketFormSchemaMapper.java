@@ -1,45 +1,97 @@
 package com.uniondesk.ticket.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryMethods;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.ticket.entity.TicketFormSchemaPo;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface TicketFormSchemaMapper {
+public interface TicketFormSchemaMapper extends BaseMapper<TicketFormSchemaPo> {
 
-    TicketFormSchemaPo findDraftByTicketTypeId(@Param("ticketTypeId") long ticketTypeId,
-            @Param("domainId") long domainId);
+    default TicketFormSchemaPo findDraftByTicketTypeId(long ticketTypeId, long domainId) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketFormSchemaPo.class)
+                .where(TicketFormSchemaPo::getTicketTypeId).eq(ticketTypeId)
+                .and(TicketFormSchemaPo::getBusinessDomainId).eq(domainId)
+                .and(TicketFormSchemaPo::getRecordType).eq(TicketFormSchemaPo.RECORD_DRAFT)
+                .and(TicketFormSchemaPo::getVersionNo).eq(0));
+    }
 
-    TicketFormSchemaPo findLatestPublishedByTicketTypeId(@Param("ticketTypeId") long ticketTypeId,
-            @Param("domainId") long domainId);
+    default TicketFormSchemaPo findLatestPublishedByTicketTypeId(long ticketTypeId, long domainId) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketFormSchemaPo.class)
+                .where(TicketFormSchemaPo::getTicketTypeId).eq(ticketTypeId)
+                .and(TicketFormSchemaPo::getBusinessDomainId).eq(domainId)
+                .and(TicketFormSchemaPo::getRecordType).eq(TicketFormSchemaPo.RECORD_PUBLISHED)
+                .orderBy(TicketFormSchemaPo::getVersionNo, false));
+    }
 
-    TicketFormSchemaPo findPublishedByVersionNo(@Param("ticketTypeId") long ticketTypeId,
-            @Param("domainId") long domainId,
-            @Param("versionNo") int versionNo);
+    default TicketFormSchemaPo findPublishedByVersionNo(long ticketTypeId, long domainId, int versionNo) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketFormSchemaPo.class)
+                .where(TicketFormSchemaPo::getTicketTypeId).eq(ticketTypeId)
+                .and(TicketFormSchemaPo::getBusinessDomainId).eq(domainId)
+                .and(TicketFormSchemaPo::getRecordType).eq(TicketFormSchemaPo.RECORD_PUBLISHED)
+                .and(TicketFormSchemaPo::getVersionNo).eq(versionNo));
+    }
 
-    List<TicketFormSchemaPo> listPublishedByTicketTypeId(@Param("ticketTypeId") long ticketTypeId,
-            @Param("domainId") long domainId,
-            @Param("limit") int limit);
+    default List<TicketFormSchemaPo> listPublishedByTicketTypeId(long ticketTypeId, long domainId, int limit) {
+        return selectListByQuery(QueryWrapper.create()
+                .from(TicketFormSchemaPo.class)
+                .where(TicketFormSchemaPo::getTicketTypeId).eq(ticketTypeId)
+                .and(TicketFormSchemaPo::getBusinessDomainId).eq(domainId)
+                .and(TicketFormSchemaPo::getRecordType).eq(TicketFormSchemaPo.RECORD_PUBLISHED)
+                .orderBy(TicketFormSchemaPo::getVersionNo, false)
+                .limit(limit));
+    }
 
-    Integer findMaxPublishedVersionNo(@Param("ticketTypeId") long ticketTypeId,
-            @Param("domainId") long domainId);
+    default Integer findMaxPublishedVersionNo(long ticketTypeId, long domainId) {
+        return selectObjectByQueryAs(QueryWrapper.create()
+                .select(QueryMethods.max(TicketFormSchemaPo::getVersionNo))
+                .from(TicketFormSchemaPo.class)
+                .where(TicketFormSchemaPo::getTicketTypeId).eq(ticketTypeId)
+                .and(TicketFormSchemaPo::getBusinessDomainId).eq(domainId)
+                .and(TicketFormSchemaPo::getRecordType).eq(TicketFormSchemaPo.RECORD_PUBLISHED), Integer.class);
+    }
 
-    void insert(TicketFormSchemaPo po);
+    default void updateDraftSchema(long ticketTypeId, long domainId, String formSchema) {
+        TicketFormSchemaPo set = new TicketFormSchemaPo();
+        set.setFormSchema(formSchema);
+        updateByQuery(set, QueryWrapper.create()
+                .from(TicketFormSchemaPo.class)
+                .where(TicketFormSchemaPo::getTicketTypeId).eq(ticketTypeId)
+                .and(TicketFormSchemaPo::getBusinessDomainId).eq(domainId)
+                .and(TicketFormSchemaPo::getRecordType).eq(TicketFormSchemaPo.RECORD_DRAFT)
+                .and(TicketFormSchemaPo::getVersionNo).eq(0));
+    }
 
-    void updateDraftSchema(@Param("ticketTypeId") long ticketTypeId,
-            @Param("domainId") long domainId,
-            @Param("formSchema") String formSchema);
+    default void updateDraftMaterialized(long ticketTypeId, long domainId, String formSchema, String pluginRevision) {
+        TicketFormSchemaPo set = new TicketFormSchemaPo();
+        set.setFormSchema(formSchema);
+        set.setPluginRevision(pluginRevision);
+        updateByQuery(set, QueryWrapper.create()
+                .from(TicketFormSchemaPo.class)
+                .where(TicketFormSchemaPo::getTicketTypeId).eq(ticketTypeId)
+                .and(TicketFormSchemaPo::getBusinessDomainId).eq(domainId)
+                .and(TicketFormSchemaPo::getRecordType).eq(TicketFormSchemaPo.RECORD_DRAFT)
+                .and(TicketFormSchemaPo::getVersionNo).eq(0));
+    }
 
-    void updateDraftMaterialized(@Param("ticketTypeId") long ticketTypeId,
-            @Param("domainId") long domainId,
-            @Param("formSchema") String formSchema,
-            @Param("pluginRevision") String pluginRevision);
+    default int deleteByTicketTypeId(long ticketTypeId, long domainId) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(TicketFormSchemaPo.class)
+                .where(TicketFormSchemaPo::getTicketTypeId).eq(ticketTypeId)
+                .and(TicketFormSchemaPo::getBusinessDomainId).eq(domainId));
+    }
 
-    int deleteByTicketTypeId(@Param("ticketTypeId") long ticketTypeId,
-            @Param("domainId") long domainId);
-
-    int deletePublishedByVersionNo(@Param("ticketTypeId") long ticketTypeId,
-            @Param("domainId") long domainId,
-            @Param("versionNo") int versionNo);
+    default int deletePublishedByVersionNo(long ticketTypeId, long domainId, int versionNo) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(TicketFormSchemaPo.class)
+                .where(TicketFormSchemaPo::getTicketTypeId).eq(ticketTypeId)
+                .and(TicketFormSchemaPo::getBusinessDomainId).eq(domainId)
+                .and(TicketFormSchemaPo::getRecordType).eq(TicketFormSchemaPo.RECORD_PUBLISHED)
+                .and(TicketFormSchemaPo::getVersionNo).eq(versionNo));
+    }
 }

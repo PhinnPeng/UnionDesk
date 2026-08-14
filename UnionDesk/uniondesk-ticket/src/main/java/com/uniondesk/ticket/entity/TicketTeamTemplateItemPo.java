@@ -1,9 +1,15 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("ticket_team_template_item")
 public class TicketTeamTemplateItemPo {
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private long teamTemplateId;
     private long ticketTypeId;
@@ -11,11 +17,15 @@ public class TicketTeamTemplateItemPo {
     private boolean includeFormSchema;
     private boolean includeWorkflow;
     private boolean includeDescriptionTemplate;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+    @Column(onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     /** 联表展示用，非持久化必填 */
+    @Column(ignore = true)
     private String ticketTypeCode;
+    @Column(ignore = true)
     private String ticketTypeName;
 
     public long getId() {

@@ -1,7 +1,12 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("ticket_type_flow_transition")
 public class TicketTypeFlowTransitionPo {
 
     public static final String PERMISSION_MODE_NONE = "none";
@@ -9,6 +14,7 @@ public class TicketTypeFlowTransitionPo {
     public static final String PERMISSION_MODE_ROLES = "roles";
     public static final String ANY_STATE_CODE = "*";
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private long domainId;
     private long ticketTypeId;
@@ -16,13 +22,20 @@ public class TicketTypeFlowTransitionPo {
     private String toStateCode;
     private String stepName;
     private String permissionMode;
+    @Column("member_ids")
     private String memberIdsJson;
+    @Column("role_ids")
     private String roleIdsJson;
+    @Column("required_slot_ids")
     private String requiredSlotIdsJson;
+    @Column("attribute_updates")
     private String attributeUpdatesJson;
+    @Column("additional_attributes")
     private String additionalAttributesJson;
     private int sortOrder;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+    @Column(onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public long getId() {

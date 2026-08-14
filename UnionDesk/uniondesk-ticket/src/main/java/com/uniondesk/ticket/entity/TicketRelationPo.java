@@ -1,7 +1,13 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
+
+@Table("ticket_relation")
 public class TicketRelationPo {
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private long sourceTicketId;
     private long targetTicketId;

@@ -1,7 +1,13 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
+
+@Table("customer_account")
 public class CustomerAccountPo {
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private Long subjectId;
 

@@ -23,12 +23,12 @@ public class IdentitySubjectRepository {
     }
 
     public void insert(IdentitySubjectPo po) {
-        mapper.insert(po);
+        mapper.insertWithPk(po);
     }
 
     public void insertOrIgnore(IdentitySubjectPo po) {
         try {
-            mapper.insert(po);
+            mapper.insertWithPk(po);
         } catch (DuplicateKeyException ignored) {
             // already exists
         }

@@ -1,27 +1,53 @@
 package com.uniondesk.ticket.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.ticket.entity.QuickReplyTemplatePo;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface QuickReplyTemplateMapper {
+public interface QuickReplyTemplateMapper extends BaseMapper<QuickReplyTemplatePo> {
 
-    List<QuickReplyTemplatePo> findByDomainId(@Param("domainId") long domainId);
+    default List<QuickReplyTemplatePo> findByDomainId(long domainId) {
+        return selectListByQuery(QueryWrapper.create()
+                .from(QuickReplyTemplatePo.class)
+                .where(QuickReplyTemplatePo::getBusinessDomainId).eq(domainId)
+                .orderBy(QuickReplyTemplatePo::getSortOrder, true)
+                .orderBy(QuickReplyTemplatePo::getId, true));
+    }
 
-    QuickReplyTemplatePo findByIdAndDomainId(@Param("id") long id, @Param("domainId") long domainId);
+    default QuickReplyTemplatePo findByIdAndDomainId(long id, long domainId) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(QuickReplyTemplatePo.class)
+                .where(QuickReplyTemplatePo::getId).eq(id)
+                .and(QuickReplyTemplatePo::getBusinessDomainId).eq(domainId));
+    }
 
-    QuickReplyTemplatePo findActiveByIdAndDomainId(@Param("id") long id, @Param("domainId") long domainId);
+    default QuickReplyTemplatePo findActiveByIdAndDomainId(long id, long domainId) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(QuickReplyTemplatePo.class)
+                .where(QuickReplyTemplatePo::getId).eq(id)
+                .and(QuickReplyTemplatePo::getBusinessDomainId).eq(domainId)
+                .and(QuickReplyTemplatePo::getStatus).eq("active"));
+    }
 
-    void insert(QuickReplyTemplatePo po);
+    default int update(long id, long domainId, String scopeType, String title, String content, int sortOrder) {
+        QuickReplyTemplatePo set = new QuickReplyTemplatePo();
+        set.setScopeType(scopeType);
+        set.setTitle(title);
+        set.setContent(content);
+        set.setSortOrder(sortOrder);
+        return updateByQuery(set, QueryWrapper.create()
+                .from(QuickReplyTemplatePo.class)
+                .where(QuickReplyTemplatePo::getId).eq(id)
+                .and(QuickReplyTemplatePo::getBusinessDomainId).eq(domainId));
+    }
 
-    void update(@Param("id") long id,
-                @Param("domainId") long domainId,
-                @Param("scopeType") String scopeType,
-                @Param("title") String title,
-                @Param("content") String content,
-                @Param("sortOrder") int sortOrder);
-
-    int deleteByIdAndDomainId(@Param("id") long id, @Param("domainId") long domainId);
+    default int deleteByIdAndDomainId(long id, long domainId) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(QuickReplyTemplatePo.class)
+                .where(QuickReplyTemplatePo::getId).eq(id)
+                .and(QuickReplyTemplatePo::getBusinessDomainId).eq(domainId));
+    }
 }

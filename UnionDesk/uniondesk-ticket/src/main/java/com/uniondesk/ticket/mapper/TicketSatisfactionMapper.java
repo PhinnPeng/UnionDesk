@@ -1,13 +1,17 @@
 package com.uniondesk.ticket.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.ticket.entity.TicketSatisfactionPo;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface TicketSatisfactionMapper {
+public interface TicketSatisfactionMapper extends BaseMapper<TicketSatisfactionPo> {
 
-    void insert(TicketSatisfactionPo po);
-
-    TicketSatisfactionPo findByTicketIdAndDomainId(@Param("ticketId") long ticketId, @Param("domainId") long domainId);
+    default TicketSatisfactionPo findByTicketIdAndDomainId(long ticketId, long domainId) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketSatisfactionPo.class)
+                .where(TicketSatisfactionPo::getTicketId).eq(ticketId)
+                .and(TicketSatisfactionPo::getBusinessDomainId).eq(domainId));
+    }
 }

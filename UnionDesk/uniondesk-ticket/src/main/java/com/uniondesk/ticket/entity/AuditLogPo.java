@@ -1,9 +1,15 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("audit_log")
 public class AuditLogPo {
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private long businessDomainId;
     private Long operatorSubjectId;
@@ -13,6 +19,8 @@ public class AuditLogPo {
     private String detail;
     private String result;
     private String requestId;
+    /** 审计表时间列为 occurred_at（无 created_at 列），由数据库默认值处理 */
+    @Column(ignore = true)
     private LocalDateTime createdAt;
 
     public long getId() {

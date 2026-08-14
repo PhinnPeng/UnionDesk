@@ -1,10 +1,17 @@
 package com.uniondesk.ticket.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
+import com.uniondesk.ticket.entity.StaffAccountPo;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface StaffAccountMapper {
+public interface StaffAccountMapper extends BaseMapper<StaffAccountPo> {
 
-    Long findSubjectIdById(@Param("id") long id);
+    default Long findSubjectIdById(long id) {
+        StaffAccountPo po = selectOneByQuery(QueryWrapper.create()
+                .from(StaffAccountPo.class)
+                .where(StaffAccountPo::getId).eq(id));
+        return po == null ? null : po.getSubjectId();
+    }
 }

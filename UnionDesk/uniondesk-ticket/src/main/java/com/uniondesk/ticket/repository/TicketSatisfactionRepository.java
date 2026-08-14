@@ -14,7 +14,7 @@ public class TicketSatisfactionRepository {
     }
 
     public void save(TicketSatisfactionPo po) {
-        mapper.insert(po);
+        mapper.insertSelective(po);
     }
 
     public TicketSatisfactionPo findByTicketIdAndDomainId(long ticketId, long domainId) {

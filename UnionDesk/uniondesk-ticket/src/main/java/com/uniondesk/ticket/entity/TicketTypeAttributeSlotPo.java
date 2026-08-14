@@ -1,12 +1,18 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("ticket_type_attribute")
 public class TicketTypeAttributeSlotPo {
 
     public static final String STATUS_ENABLED = "enabled";
     public static final String STATUS_DISABLED = "disabled";
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private long ticketTypeId;
     private long attributeId;
@@ -15,7 +21,9 @@ public class TicketTypeAttributeSlotPo {
     private String status;
     private Long createdBy;
     private Long updatedBy;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+    @Column(onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public long getId() {

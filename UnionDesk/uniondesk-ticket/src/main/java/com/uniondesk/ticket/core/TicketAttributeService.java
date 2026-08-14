@@ -3,6 +3,7 @@ package com.uniondesk.ticket.core;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.ticket.entity.TicketAttributePo;
 import com.uniondesk.ticket.repository.TicketAttributeRepository;
 import com.uniondesk.ticket.repository.TicketTypeAttributeSlotRepository;
@@ -187,25 +188,30 @@ public class TicketAttributeService {
 
     private TicketAttributeDtos.TicketAttributeListView list(Long domainId, String keyword, Integer page, Integer pageSize) {
         String keywordLike = toKeywordLike(keyword);
-        long total = domainId == null
-                ? ticketAttributeRepository.countPlatform(keywordLike)
-                : ticketAttributeRepository.countDomain(domainId, keywordLike);
+        if (page == null || pageSize == null) {
+            List<TicketAttributePo> all = domainId == null
+                    ? ticketAttributeRepository.findAllPlatform(keywordLike)
+                    : ticketAttributeRepository.findAllDomain(domainId, keywordLike);
+            return new TicketAttributeDtos.TicketAttributeListView(
+                    all.size(),
+                    all.stream().map(this::toView).toList());
+        }
+        int normalizedPage = Math.max(page, 1);
+        int normalizedPageSize = Math.max(pageSize, 1);
+        Page<TicketAttributePo> result = domainId == null
+                ? ticketAttributeRepository.findPagePlatform(Page.of(normalizedPage, normalizedPageSize), keywordLike)
+                : ticketAttributeRepository.findPageDomain(domainId, Page.of(normalizedPage, normalizedPageSize), keywordLike);
         List<TicketAttributePo> rows;
-        if (total <= TicketAttributeRepository.NO_PAGINATION_THRESHOLD || page == null || pageSize == null) {
+        if (result.getTotalRow() <= TicketAttributeRepository.NO_PAGINATION_THRESHOLD) {
             rows = domainId == null
                     ? ticketAttributeRepository.findAllPlatform(keywordLike)
                     : ticketAttributeRepository.findAllDomain(domainId, keywordLike);
         }
         else {
-            int normalizedPage = Math.max(page, 1);
-            int normalizedPageSize = Math.max(pageSize, 1);
-            long offset = (long) (normalizedPage - 1) * normalizedPageSize;
-            rows = domainId == null
-                    ? ticketAttributeRepository.findPagePlatform(keywordLike, normalizedPageSize, offset)
-                    : ticketAttributeRepository.findPageDomain(domainId, keywordLike, normalizedPageSize, offset);
+            rows = result.getRecords();
         }
         return new TicketAttributeDtos.TicketAttributeListView(
-                total,
+                result.getTotalRow(),
                 rows.stream().map(this::toView).toList());
     }
 

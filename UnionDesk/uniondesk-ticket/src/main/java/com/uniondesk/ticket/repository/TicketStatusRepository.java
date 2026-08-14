@@ -1,5 +1,6 @@
 package com.uniondesk.ticket.repository;
 
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.ticket.entity.TicketStatusPo;
 import com.uniondesk.ticket.mapper.TicketStatusMapper;
 import java.util.List;
@@ -20,12 +21,8 @@ public class TicketStatusRepository {
         return mapper.findByPlatform(keywordLike);
     }
 
-    public long countPlatform(String keywordLike) {
-        return mapper.countByPlatform(keywordLike);
-    }
-
-    public List<TicketStatusPo> findPagePlatform(String keywordLike, int limit, long offset) {
-        return mapper.findPageByPlatform(keywordLike, limit, offset);
+    public Page<TicketStatusPo> findPagePlatform(Page<TicketStatusPo> page, String keywordLike) {
+        return mapper.selectPageByPlatform(page, keywordLike);
     }
 
     public TicketStatusPo findById(long id) {
@@ -57,12 +54,8 @@ public class TicketStatusRepository {
         return mapper.findByDomain(domainId, keywordLike);
     }
 
-    public long countDomain(long domainId, String keywordLike) {
-        return mapper.countByDomain(domainId, keywordLike);
-    }
-
-    public List<TicketStatusPo> findPageDomain(long domainId, String keywordLike, int limit, long offset) {
-        return mapper.findPageByDomain(domainId, keywordLike, limit, offset);
+    public Page<TicketStatusPo> findPageDomain(long domainId, Page<TicketStatusPo> page, String keywordLike) {
+        return mapper.selectPageByDomain(domainId, page, keywordLike);
     }
 
     public TicketStatusPo findDomainByCode(long domainId, String code) {

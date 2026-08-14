@@ -1,35 +1,94 @@
 package com.uniondesk.ticket.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.paginate.Page;
+import com.mybatisflex.core.query.If;
+import com.mybatisflex.core.query.QueryMethods;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.ticket.entity.TicketTeamTemplatePo;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface TicketTeamTemplateMapper {
+public interface TicketTeamTemplateMapper extends BaseMapper<TicketTeamTemplatePo> {
 
-    List<TicketTeamTemplatePo> findAll(@Param("keywordLike") String keywordLike);
+    default List<TicketTeamTemplatePo> findAll(String keywordLike) {
+        return selectListByQuery(keywordQuery(keywordLike)
+                .orderBy(TicketTeamTemplatePo::getSortOrder, true)
+                .orderBy(TicketTeamTemplatePo::getId, true));
+    }
 
-    long countAll(@Param("keywordLike") String keywordLike);
+    default Page<TicketTeamTemplatePo> selectPage(Page<TicketTeamTemplatePo> page, String keywordLike) {
+        return paginate(page, keywordQuery(keywordLike)
+                .orderBy(TicketTeamTemplatePo::getSortOrder, true)
+                .orderBy(TicketTeamTemplatePo::getId, true));
+    }
 
-    List<TicketTeamTemplatePo> findPage(
-            @Param("keywordLike") String keywordLike,
-            @Param("limit") int limit,
-            @Param("offset") long offset);
+    default List<TicketTeamTemplatePo> findActiveOptions() {
+        return selectListByQuery(QueryWrapper.create()
+                .from(TicketTeamTemplatePo.class)
+                .where(TicketTeamTemplatePo::getStatus).eq(TicketTeamTemplatePo.STATUS_ACTIVE)
+                .orderBy(TicketTeamTemplatePo::getSortOrder, true)
+                .orderBy(TicketTeamTemplatePo::getId, true));
+    }
 
-    List<TicketTeamTemplatePo> findActiveOptions();
+    default TicketTeamTemplatePo findById(long id) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketTeamTemplatePo.class)
+                .where(TicketTeamTemplatePo::getId).eq(id));
+    }
 
-    TicketTeamTemplatePo findById(@Param("id") long id);
+    default TicketTeamTemplatePo findByCode(String code) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketTeamTemplatePo.class)
+                .where(TicketTeamTemplatePo::getCode).eq(code));
+    }
 
-    TicketTeamTemplatePo findByCode(@Param("code") String code);
+    default Integer findMaxSortOrder() {
+        return selectObjectByQueryAs(QueryWrapper.create()
+                .select(QueryMethods.max(TicketTeamTemplatePo::getSortOrder))
+                .from(TicketTeamTemplatePo.class), Integer.class);
+    }
 
-    Integer findMaxSortOrder();
+    @Override
+    default int update(TicketTeamTemplatePo po) {
+        TicketTeamTemplatePo set = new TicketTeamTemplatePo();
+        set.setName(po.getName());
+        set.setDescription(po.getDescription());
+        set.setIcon(po.getIcon());
+        set.setStatus(po.getStatus());
+        set.setVersion(po.getVersion());
+        set.setUpdatedBy(po.getUpdatedBy());
+        return updateByQuery(set, QueryWrapper.create()
+                .from(TicketTeamTemplatePo.class)
+                .where(TicketTeamTemplatePo::getId).eq(po.getId()));
+    }
 
-    void insert(TicketTeamTemplatePo po);
+    default int updateSortOrder(long id, int sortOrder, Long updatedBy) {
+        TicketTeamTemplatePo set = new TicketTeamTemplatePo();
+        set.setSortOrder(sortOrder);
+        set.setUpdatedBy(updatedBy);
+        return updateByQuery(set, QueryWrapper.create()
+                .from(TicketTeamTemplatePo.class)
+                .where(TicketTeamTemplatePo::getId).eq(id));
+    }
 
-    int update(TicketTeamTemplatePo po);
+    default int deleteById(long id) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(TicketTeamTemplatePo.class)
+                .where(TicketTeamTemplatePo::getId).eq(id)
+                .and(TicketTeamTemplatePo::isSystem).eq(false));
+    }
 
-    int updateSortOrder(@Param("id") long id, @Param("sortOrder") int sortOrder, @Param("updatedBy") Long updatedBy);
-
-    int deleteById(@Param("id") long id);
+    private static QueryWrapper keywordQuery(String keywordLike) {
+        QueryWrapper qw = QueryWrapper.create().from(TicketTeamTemplatePo.class);
+        if (If.hasText(keywordLike)) {
+            qw.where(qw2 -> {
+                qw2.where(TicketTeamTemplatePo::getName).like(keywordLike)
+                        .or(TicketTeamTemplatePo::getDescription).like(keywordLike)
+                        .or(TicketTeamTemplatePo::getCode).like(keywordLike);
+            });
+        }
+        return qw;
+    }
 }

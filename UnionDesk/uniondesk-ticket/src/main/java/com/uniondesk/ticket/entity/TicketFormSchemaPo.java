@@ -1,12 +1,18 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("ticket_form_schema")
 public class TicketFormSchemaPo {
 
     public static final String RECORD_DRAFT = "draft";
     public static final String RECORD_PUBLISHED = "published";
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private long businessDomainId;
     private long ticketTypeId;
@@ -16,7 +22,9 @@ public class TicketFormSchemaPo {
     private String pluginRevision;
     private Long publishedBy;
     private LocalDateTime publishedAt;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+    @Column(onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public long getId() {

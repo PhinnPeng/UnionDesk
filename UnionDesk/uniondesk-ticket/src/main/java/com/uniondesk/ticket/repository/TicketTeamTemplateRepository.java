@@ -1,5 +1,6 @@
 package com.uniondesk.ticket.repository;
 
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.ticket.entity.TicketTeamTemplateItemPo;
 import com.uniondesk.ticket.entity.TicketTeamTemplatePo;
 import com.uniondesk.ticket.mapper.TicketTeamTemplateItemMapper;
@@ -27,12 +28,8 @@ public class TicketTeamTemplateRepository {
         return templateMapper.findAll(keywordLike);
     }
 
-    public long countAll(String keywordLike) {
-        return templateMapper.countAll(keywordLike);
-    }
-
-    public List<TicketTeamTemplatePo> findPage(String keywordLike, int limit, long offset) {
-        return templateMapper.findPage(keywordLike, limit, offset);
+    public Page<TicketTeamTemplatePo> findPage(Page<TicketTeamTemplatePo> page, String keywordLike) {
+        return templateMapper.selectPage(page, keywordLike);
     }
 
     public List<TicketTeamTemplatePo> findActiveOptions() {

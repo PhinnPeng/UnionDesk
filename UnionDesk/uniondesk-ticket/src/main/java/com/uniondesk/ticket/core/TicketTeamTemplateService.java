@@ -1,5 +1,6 @@
 package com.uniondesk.ticket.core;
 
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.ticket.entity.TicketTeamTemplateItemPo;
 import com.uniondesk.ticket.entity.TicketTeamTemplatePo;
 import com.uniondesk.ticket.entity.TicketTypePo;
@@ -36,16 +37,21 @@ public class TicketTeamTemplateService {
 
     public TicketTeamTemplateDtos.TeamTemplateListView list(String keyword, Integer page, Integer pageSize) {
         String keywordLike = toKeywordLike(keyword);
-        long total = templateRepository.countAll(keywordLike);
         List<TicketTeamTemplatePo> rows;
-        if (total <= TicketTeamTemplateRepository.NO_PAGINATION_THRESHOLD || page == null || pageSize == null) {
+        long total;
+        if (page == null || pageSize == null) {
             rows = templateRepository.findAll(keywordLike);
+            total = rows.size();
         }
         else {
             int normalizedPage = Math.max(page, 1);
             int normalizedPageSize = Math.max(pageSize, 1);
-            long offset = (long) (normalizedPage - 1) * normalizedPageSize;
-            rows = templateRepository.findPage(keywordLike, normalizedPageSize, offset);
+            Page<TicketTeamTemplatePo> result = templateRepository.findPage(
+                    Page.of(normalizedPage, normalizedPageSize), keywordLike);
+            total = result.getTotalRow();
+            rows = total <= TicketTeamTemplateRepository.NO_PAGINATION_THRESHOLD
+                    ? templateRepository.findAll(keywordLike)
+                    : result.getRecords();
         }
         Map<Long, List<TicketTeamTemplateItemPo>> itemsByTemplate = loadItemsGrouped(rows);
         return new TicketTeamTemplateDtos.TeamTemplateListView(

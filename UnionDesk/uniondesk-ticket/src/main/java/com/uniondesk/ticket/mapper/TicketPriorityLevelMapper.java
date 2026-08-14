@@ -1,31 +1,64 @@
 package com.uniondesk.ticket.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.ticket.entity.TicketPriorityLevelPo;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface TicketPriorityLevelMapper {
+public interface TicketPriorityLevelMapper extends BaseMapper<TicketPriorityLevelPo> {
 
-    List<TicketPriorityLevelPo> findByDomainId(@Param("domainId") long domainId);
+    default List<TicketPriorityLevelPo> findByDomainId(long domainId) {
+        return selectListByQuery(QueryWrapper.create()
+                .from(TicketPriorityLevelPo.class)
+                .where(TicketPriorityLevelPo::getBusinessDomainId).eq(domainId)
+                .orderBy(TicketPriorityLevelPo::getSortOrder, true)
+                .orderBy(TicketPriorityLevelPo::getId, true));
+    }
 
-    TicketPriorityLevelPo findByIdAndDomainId(@Param("id") long id, @Param("domainId") long domainId);
+    default TicketPriorityLevelPo findByIdAndDomainId(long id, long domainId) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketPriorityLevelPo.class)
+                .where(TicketPriorityLevelPo::getId).eq(id)
+                .and(TicketPriorityLevelPo::getBusinessDomainId).eq(domainId));
+    }
 
-    void insert(TicketPriorityLevelPo po);
+    default int update(long id, long domainId, String code, String name, String color, String icon, int sortOrder, int isDefault) {
+        TicketPriorityLevelPo set = new TicketPriorityLevelPo();
+        set.setCode(code);
+        set.setName(name);
+        set.setColor(color);
+        set.setIcon(icon);
+        set.setSortOrder(sortOrder);
+        set.setIsDefault(isDefault == 1);
+        return updateByQuery(set, QueryWrapper.create()
+                .from(TicketPriorityLevelPo.class)
+                .where(TicketPriorityLevelPo::getId).eq(id)
+                .and(TicketPriorityLevelPo::getBusinessDomainId).eq(domainId));
+    }
 
-    void update(@Param("id") long id,
-                @Param("domainId") long domainId,
-                @Param("code") String code,
-                @Param("name") String name,
-                @Param("color") String color,
-                @Param("icon") String icon,
-                @Param("sortOrder") int sortOrder,
-                @Param("isDefault") int isDefault);
+    default int deleteByIdAndDomainId(long id, long domainId) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(TicketPriorityLevelPo.class)
+                .where(TicketPriorityLevelPo::getId).eq(id)
+                .and(TicketPriorityLevelPo::getBusinessDomainId).eq(domainId));
+    }
 
-    int deleteByIdAndDomainId(@Param("id") long id, @Param("domainId") long domainId);
+    default void clearDefaults(long domainId) {
+        TicketPriorityLevelPo set = new TicketPriorityLevelPo();
+        set.setIsDefault(false);
+        updateByQuery(set, QueryWrapper.create()
+                .from(TicketPriorityLevelPo.class)
+                .where(TicketPriorityLevelPo::getBusinessDomainId).eq(domainId));
+    }
 
-    void clearDefaults(@Param("domainId") long domainId);
-
-    void clearDefaultsExcept(@Param("domainId") long domainId, @Param("keepId") long keepId);
+    default void clearDefaultsExcept(long domainId, long keepId) {
+        TicketPriorityLevelPo set = new TicketPriorityLevelPo();
+        set.setIsDefault(false);
+        updateByQuery(set, QueryWrapper.create()
+                .from(TicketPriorityLevelPo.class)
+                .where(TicketPriorityLevelPo::getBusinessDomainId).eq(domainId)
+                .and(TicketPriorityLevelPo::getId).ne(keepId));
+    }
 }

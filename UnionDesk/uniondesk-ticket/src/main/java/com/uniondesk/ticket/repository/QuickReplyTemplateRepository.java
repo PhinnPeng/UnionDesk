@@ -39,7 +39,7 @@ public class QuickReplyTemplateRepository {
     }
 
     public void save(QuickReplyTemplatePo po) {
-        mapper.insert(po);
+        mapper.insertSelective(po);
     }
 
     public void update(long id, long domainId, String scopeType, String title, String content, int sortOrder) {

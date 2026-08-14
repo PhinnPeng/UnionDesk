@@ -1,12 +1,19 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("ticket_watcher")
 public class TicketWatcherPo {
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private long ticketId;
     private long staffAccountId;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
 
     public long getId() {

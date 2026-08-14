@@ -1,9 +1,15 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("ticket_satisfaction")
 public class TicketSatisfactionPo {
 
+    @Id(keyType = KeyType.Auto)
     private long id;
     private long businessDomainId;
     private long ticketId;
@@ -11,7 +17,9 @@ public class TicketSatisfactionPo {
     private int rating;
     private String comment;
     private String status;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+    @Column(onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public long getId() {

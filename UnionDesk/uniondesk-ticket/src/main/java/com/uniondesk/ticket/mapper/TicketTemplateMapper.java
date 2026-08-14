@@ -1,26 +1,46 @@
 package com.uniondesk.ticket.mapper;
 
+import com.mybatisflex.core.BaseMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.uniondesk.ticket.entity.TicketTemplatePo;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
-public interface TicketTemplateMapper {
+public interface TicketTemplateMapper extends BaseMapper<TicketTemplatePo> {
 
-    List<TicketTemplatePo> findByDomainId(@Param("domainId") long domainId);
+    default List<TicketTemplatePo> findByDomainId(long domainId) {
+        return selectListByQuery(QueryWrapper.create()
+                .from(TicketTemplatePo.class)
+                .where(TicketTemplatePo::getBusinessDomainId).eq(domainId)
+                .orderBy(TicketTemplatePo::getSortOrder, true)
+                .orderBy(TicketTemplatePo::getId, true));
+    }
 
-    TicketTemplatePo findByIdAndDomainId(@Param("id") long id, @Param("domainId") long domainId);
+    default TicketTemplatePo findByIdAndDomainId(long id, long domainId) {
+        return selectOneByQuery(QueryWrapper.create()
+                .from(TicketTemplatePo.class)
+                .where(TicketTemplatePo::getId).eq(id)
+                .and(TicketTemplatePo::getBusinessDomainId).eq(domainId));
+    }
 
-    void insert(TicketTemplatePo po);
+    default int update(long id, long domainId, Long ticketTypeId, String scope, String name, String contentJson, int sortOrder) {
+        TicketTemplatePo set = new TicketTemplatePo();
+        set.setTicketTypeId(ticketTypeId);
+        set.setScope(scope);
+        set.setName(name);
+        set.setContentJson(contentJson);
+        set.setSortOrder(sortOrder);
+        return updateByQuery(set, QueryWrapper.create()
+                .from(TicketTemplatePo.class)
+                .where(TicketTemplatePo::getId).eq(id)
+                .and(TicketTemplatePo::getBusinessDomainId).eq(domainId));
+    }
 
-    void update(@Param("id") long id,
-                @Param("domainId") long domainId,
-                @Param("ticketTypeId") Long ticketTypeId,
-                @Param("scope") String scope,
-                @Param("name") String name,
-                @Param("contentJson") String contentJson,
-                @Param("sortOrder") int sortOrder);
-
-    int deleteByIdAndDomainId(@Param("id") long id, @Param("domainId") long domainId);
+    default int deleteByIdAndDomainId(long id, long domainId) {
+        return deleteByQuery(QueryWrapper.create()
+                .from(TicketTemplatePo.class)
+                .where(TicketTemplatePo::getId).eq(id)
+                .and(TicketTemplatePo::getBusinessDomainId).eq(domainId));
+    }
 }

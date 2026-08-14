@@ -2,6 +2,7 @@ package com.uniondesk.ticket.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.ticket.entity.TicketTypePo;
 import com.uniondesk.ticket.repository.TicketFormSchemaRepository;
 import com.uniondesk.ticket.repository.TicketTypeAttributeSlotRepository;
@@ -51,19 +52,25 @@ public class TicketTypeService {
 
     public TicketConfigDtos.PlatformTicketTypeListView listPlatform(String keyword, Integer page, Integer pageSize) {
         String keywordLike = toKeywordLike(keyword);
-        long total = ticketTypeRepository.countPlatform(keywordLike);
+        if (page == null || pageSize == null) {
+            List<TicketTypePo> all = ticketTypeRepository.findAllPlatform(keywordLike);
+            return new TicketConfigDtos.PlatformTicketTypeListView(
+                    all.size(),
+                    all.stream().map(this::toView).toList());
+        }
+        int normalizedPage = Math.max(page, 1);
+        int normalizedPageSize = Math.max(pageSize, 1);
+        Page<TicketTypePo> result = ticketTypeRepository.findPagePlatform(
+                Page.of(normalizedPage, normalizedPageSize), keywordLike);
         List<TicketTypePo> rows;
-        if (total <= TicketTypeRepository.NO_PAGINATION_THRESHOLD || page == null || pageSize == null) {
+        if (result.getTotalRow() <= TicketTypeRepository.NO_PAGINATION_THRESHOLD) {
             rows = ticketTypeRepository.findAllPlatform(keywordLike);
         }
         else {
-            int normalizedPage = Math.max(page, 1);
-            int normalizedPageSize = Math.max(pageSize, 1);
-            long offset = (long) (normalizedPage - 1) * normalizedPageSize;
-            rows = ticketTypeRepository.findPagePlatform(keywordLike, normalizedPageSize, offset);
+            rows = result.getRecords();
         }
         return new TicketConfigDtos.PlatformTicketTypeListView(
-                total,
+                result.getTotalRow(),
                 rows.stream().map(this::toView).toList());
     }
 
