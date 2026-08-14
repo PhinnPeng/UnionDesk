@@ -3,6 +3,7 @@ package com.uniondesk.domain.core;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.auth.core.UserContext;
 import com.uniondesk.auth.core.UserContextHolder;
 import com.uniondesk.audit.semantics.AuditLogWriter;
@@ -65,23 +66,21 @@ public class DomainService {
         String keywordLike = StringUtils.hasText(keyword) ? "%" + keyword.trim() + "%" : null;
         int normalizedPage = Math.max(page, 1);
         int normalizedPageSize = Math.max(pageSize, 1);
-        long offset = (normalizedPage - 1L) * normalizedPageSize;
 
-        long total = domainRepository.countAdminDomains(resolvedStatus, false, keywordLike, createdFrom, createdTo);
-        List<BusinessDomainPo> pos = domainRepository.findAdminDomains(
-                resolvedStatus, false, keywordLike, createdFrom, createdTo, normalizedPageSize, offset);
-        return new PageResult<>(total, pos.stream().map(this::toDomainView).toList());
+        Page<BusinessDomainPo> result = domainRepository.findAdminDomains(
+                Page.of(normalizedPage, normalizedPageSize),
+                resolvedStatus, false, keywordLike, createdFrom, createdTo);
+        return new PageResult<>(result.getTotalRow(), result.getRecords().stream().map(this::toDomainView).toList());
     }
 
     public PageResult<DomainDtos.DomainBriefView> listCustomerDomains(int page, int pageSize, String keyword) {
         String keywordLike = StringUtils.hasText(keyword) ? "%" + keyword.trim() + "%" : null;
         int normalizedPage = Math.max(page, 1);
         int normalizedPageSize = Math.max(pageSize, 1);
-        long offset = (normalizedPage - 1L) * normalizedPageSize;
 
-        long total = domainRepository.countBriefDomains(keywordLike);
-        List<BusinessDomainPo> pos = domainRepository.findBriefDomains(keywordLike, normalizedPageSize, offset);
-        return new PageResult<>(total, pos.stream().map(po -> new DomainDtos.DomainBriefView(
+        Page<BusinessDomainPo> result = domainRepository.findBriefDomains(
+                Page.of(normalizedPage, normalizedPageSize), keywordLike);
+        return new PageResult<>(result.getTotalRow(), result.getRecords().stream().map(po -> new DomainDtos.DomainBriefView(
                 po.getId(), po.getCode(), po.getName(), po.getLogo())).toList());
     }
 

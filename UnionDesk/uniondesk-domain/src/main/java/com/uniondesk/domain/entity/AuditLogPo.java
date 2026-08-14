@@ -1,9 +1,15 @@
 package com.uniondesk.domain.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("audit_log")
 public class AuditLogPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private Long businessDomainId;
     private Long operatorSubjectId;
@@ -13,6 +19,8 @@ public class AuditLogPo {
     private String detail;
     private String result;
     private String requestId;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
 
     public Long getId() {

@@ -1,18 +1,28 @@
 package com.uniondesk.domain.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
 /**
  * 角色模板下发域记录（模板 → 业务域 → domain_role 实例）。
  */
+@Table("role_template_domain")
 public class RoleTemplateDomainPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private Long templateId;
     private Long businessDomainId;
     private Long instanceDomainRoleId;
     private String syncMode;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime appliedAt;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)", onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public Long getId() {

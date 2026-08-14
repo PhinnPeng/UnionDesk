@@ -1,15 +1,23 @@
 package com.uniondesk.domain.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("domain_config")
 public class DomainConfigPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private Long businessDomainId;
     private String configKey;
     private String configValue;
     private String valueType;
     private String description;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)", onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public Long getId() {

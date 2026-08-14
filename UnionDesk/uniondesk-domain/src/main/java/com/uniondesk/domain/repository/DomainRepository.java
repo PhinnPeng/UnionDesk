@@ -1,12 +1,12 @@
 package com.uniondesk.domain.repository;
 
+import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.domain.entity.AuditLogPo;
 import com.uniondesk.domain.entity.BusinessDomainPo;
 import com.uniondesk.domain.mapper.AuditLogMapper;
 import com.uniondesk.domain.mapper.BusinessDomainMapper;
 import com.uniondesk.domain.mapper.IdentitySubjectMapper;
 import java.time.LocalDateTime;
-import java.util.List;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
@@ -27,24 +27,15 @@ public class DomainRepository {
         this.identitySubjectMapper = identitySubjectMapper;
     }
 
-    public List<BusinessDomainPo> findAdminDomains(
-            Integer status, boolean includeDeleted, String keyword,
-            LocalDateTime createdFrom, LocalDateTime createdTo, int limit, long offset) {
-        return businessDomainMapper.selectAdminDomains(status, includeDeleted, keyword, createdFrom, createdTo, limit, offset);
-    }
-
-    public long countAdminDomains(
+    public Page<BusinessDomainPo> findAdminDomains(
+            Page<BusinessDomainPo> page,
             Integer status, boolean includeDeleted, String keyword,
             LocalDateTime createdFrom, LocalDateTime createdTo) {
-        return businessDomainMapper.countAdminDomains(status, includeDeleted, keyword, createdFrom, createdTo);
+        return businessDomainMapper.selectPageByAdmin(page, status, includeDeleted, keyword, createdFrom, createdTo);
     }
 
-    public List<BusinessDomainPo> findBriefDomains(String keyword, int limit, long offset) {
-        return businessDomainMapper.selectBriefDomains(keyword, limit, offset);
-    }
-
-    public long countBriefDomains(String keyword) {
-        return businessDomainMapper.countBriefDomains(keyword);
+    public Page<BusinessDomainPo> findBriefDomains(Page<BusinessDomainPo> page, String keyword) {
+        return businessDomainMapper.selectPageByBrief(page, keyword);
     }
 
     public BusinessDomainPo findById(long id) {

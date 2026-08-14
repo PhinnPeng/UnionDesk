@@ -1,7 +1,13 @@
 package com.uniondesk.domain.entity;
 
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
+
+@Table("permission_item")
 public class PermissionItemPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private String code;
     private String name;

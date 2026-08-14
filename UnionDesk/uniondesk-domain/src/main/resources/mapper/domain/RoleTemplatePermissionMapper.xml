@@ -17,7 +17,7 @@
         ORDER BY id ASC
     </select>
 
-    <select id="selectPermissionItemsByTemplateId" resultMap="com.uniondesk.domain.mapper.PermissionItemMapper.PermissionItemPo">
+    <select id="selectPermissionItemsByTemplateId" resultType="com.uniondesk.domain.entity.PermissionItemPo">
         SELECT pi.id, pi.code, pi.name, pi.module, pi.type
         FROM role_template_permission rtp
         JOIN permission_item pi ON pi.id = rtp.permission_item_id

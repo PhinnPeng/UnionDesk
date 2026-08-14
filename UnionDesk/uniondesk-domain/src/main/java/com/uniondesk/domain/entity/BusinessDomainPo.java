@@ -1,9 +1,15 @@
 package com.uniondesk.domain.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("business_domain")
 public class BusinessDomainPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private String code;
     private String name;
@@ -13,13 +19,24 @@ public class BusinessDomainPo {
     private String visibilityPolicyCodes;
     private String registrationEnabled;
     private String invitationEnabled;
+
+    @Column(onInsertValue = "1")
     private Integer status;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)", onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
+
     private LocalDateTime deletedAt;
     private Long createdBy;
     private Long updatedBy;
+
+    @Column(ignore = true)
     private String creatorName;
+
+    @Column(ignore = true)
     private String updaterName;
 
     public Long getId() {

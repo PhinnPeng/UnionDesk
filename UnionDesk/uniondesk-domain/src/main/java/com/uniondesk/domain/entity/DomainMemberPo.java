@@ -1,22 +1,41 @@
 package com.uniondesk.domain.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("domain_member")
 public class DomainMemberPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private Long staffAccountId;
     private Long businessDomainId;
     private String status;
     private String source;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime activatedAt;
+
     private LocalDateTime disabledAt;
     private LocalDateTime deletedAt;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)", onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
+
     // 来自 staff_account JOIN 的字段
+    @Column(ignore = true)
     private String username;
+
+    @Column(ignore = true)
     private String phone;
+
+    @Column(ignore = true)
     private String email;
 
     public Long getId() {

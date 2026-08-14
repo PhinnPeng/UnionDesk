@@ -1,24 +1,52 @@
 package com.uniondesk.domain.entity;
 
+import com.mybatisflex.annotation.Column;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 import java.time.LocalDateTime;
 
+@Table("domain_customer")
 public class DomainCustomerPo {
 
+    @Id(keyType = KeyType.Auto)
     private Long id;
     private Long businessDomainId;
     private Long customerAccountId;
+
+    // 以下字段来自 customer_account JOIN，不参与 insert/update/select 映射
+    @Column(ignore = true)
     private Long subjectId;
+
+    @Column(ignore = true)
     private String username;
+
+    @Column(ignore = true)
     private String nickname;
+
+    @Column(ignore = true)
     private String phone;
+
+    @Column(ignore = true)
     private String email;
+
+    @Column(ignore = true)
     private String realName;
+
+    @Column(ignore = true)
     private String idCardNo;
+
+    @Column(onInsertValue = "'active'")
     private String status;
+
     private String source;
     private LocalDateTime activatedAt;
     private LocalDateTime disabledAt;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)", onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public Long getId() {
