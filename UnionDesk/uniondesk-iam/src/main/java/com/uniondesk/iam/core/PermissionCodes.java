@@ -177,6 +177,10 @@ public final class PermissionCodes {
     public static final String DOMAIN_SLA_READ = "domain.sla.read";
     public static final String DOMAIN_SLA_CREATE = "domain.sla.create";
     public static final String DOMAIN_SLA_UPDATE = "domain.sla.update";
+    public static final String DOMAIN_TICKET_CLAIM_RULE_READ = "domain.ticket_claim_rule.read";
+    public static final String DOMAIN_TICKET_CLAIM_RULE_CREATE = "domain.ticket_claim_rule.create";
+    public static final String DOMAIN_TICKET_CLAIM_RULE_UPDATE = "domain.ticket_claim_rule.update";
+    public static final String DOMAIN_TICKET_CLAIM_RULE_DELETE = "domain.ticket_claim_rule.delete";
     public static final String DOMAIN_NOTIFICATION_TEMPLATE_READ = "domain.notification_template.read";
     public static final String DOMAIN_NOTIFICATION_TEMPLATE_UPDATE = "domain.notification_template.update";
     public static final String DOMAIN_TICKET_TYPE_READ = "domain.ticket_type.read";

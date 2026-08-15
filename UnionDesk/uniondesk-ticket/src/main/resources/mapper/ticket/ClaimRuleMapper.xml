@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uniondesk.ticket.mapper.ClaimRuleMapper">
+
+    <resultMap id="ClaimRulePo" type="com.uniondesk.ticket.entity.ClaimRulePo">
+        <id property="id" column="id"/>
+        <result property="businessDomainId" column="business_domain_id"/>
+        <result property="name" column="name"/>
+        <result property="enabled" column="enabled"/>
+        <result property="matchTicketTypeId" column="match_ticket_type_id"/>
+        <result property="matchPriorityLevelId" column="match_priority_level_id"/>
+        <result property="strategy" column="strategy"/>
+        <result property="assigneeStaffAccountId" column="assignee_staff_account_id"/>
+        <result property="graceMinutes" column="grace_minutes"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="ClaimRulePolicyPo" type="com.uniondesk.ticket.entity.ClaimRulePolicyPo">
+        <id property="id" column="id"/>
+        <result property="strategy" column="strategy"/>
+        <result property="assigneeStaffAccountId" column="assignee_staff_account_id"/>
+    </resultMap>
+
+    <sql id="selectColumns">
+        SELECT
+            id,
+            business_domain_id,
+            name,
+            enabled,
+            match_ticket_type_id,
+            match_priority_level_id,
+            strategy,
+            assignee_staff_account_id,
+            grace_minutes,
+            created_at,
+            updated_at
+        FROM ticket_claim_rule
+    </sql>
+
+    <select id="selectByDomainId" resultMap="ClaimRulePo">
+        <include refid="selectColumns"/>
+        WHERE business_domain_id = #{domainId}
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByDomainId" resultType="long">
+        SELECT COUNT(*)
+        FROM ticket_claim_rule
+        WHERE business_domain_id = #{domainId}
+    </select>
+
+    <select id="selectByIdAndDomainId" resultMap="ClaimRulePo">
+        <include refid="selectColumns"/>
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.uniondesk.ticket.entity.ClaimRulePo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ticket_claim_rule (
+            business_domain_id, name, enabled, match_ticket_type_id, match_priority_level_id,
+            strategy, assignee_staff_account_id, grace_minutes
+        )
+        VALUES (
+            #{businessDomainId}, #{name}, #{enabled}, #{matchTicketTypeId}, #{matchPriorityLevelId},
+            #{strategy}, #{assigneeStaffAccountId}, #{graceMinutes}
+        )
+    </insert>
+
+    <update id="updateByIdAndDomainId" parameterType="com.uniondesk.ticket.entity.ClaimRulePo">
+        UPDATE ticket_claim_rule
+        SET name = #{name},
+            enabled = #{enabled},
+            match_ticket_type_id = #{matchTicketTypeId},
+            match_priority_level_id = #{matchPriorityLevelId},
+            strategy = #{strategy},
+            assignee_staff_account_id = #{assigneeStaffAccountId},
+            grace_minutes = #{graceMinutes},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id} AND business_domain_id = #{businessDomainId}
+    </update>
+
+    <delete id="deleteByIdAndDomainId">
+        DELETE FROM ticket_claim_rule
+        WHERE id = #{id} AND business_domain_id = #{domainId}
+    </delete>
+
+    <select id="selectPolicy" resultMap="ClaimRulePolicyPo">
+        SELECT
+            cr.id,
+            cr.strategy,
+            cr.assignee_staff_account_id
+        FROM ticket_claim_rule cr
+        LEFT JOIN ticket_priority_level tpl ON tpl.id = cr.match_priority_level_id
+        WHERE cr.business_domain_id = #{domainId}
+          AND cr.enabled = 1
+          AND (cr.match_ticket_type_id = #{ticketTypeId} OR cr.match_ticket_type_id IS NULL)
+          AND (cr.match_priority_level_id IS NULL OR tpl.code = #{priorityCode})
+        ORDER BY cr.match_ticket_type_id IS NOT NULL DESC,
+                 cr.match_priority_level_id IS NOT NULL DESC,
+                 cr.id DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectLeastLoadedAssignee" resultType="java.lang.Long">
+        SELECT sa.id
+        FROM domain_member dm
+        JOIN staff_account sa ON sa.id = dm.staff_account_id
+        LEFT JOIN ticket t ON t.assignee_staff_account_id = sa.id
+            AND t.business_domain_id = #{domainId}
+            AND t.status IN ('open', 'new', 'processing')
+        WHERE dm.business_domain_id = #{domainId}
+          AND dm.status = 'active'
+          AND dm.deleted_at IS NULL
+          AND sa.status = 'active'
+          AND sa.employment_status = 'active'
+          AND EXISTS (
+              SELECT 1
+              FROM domain_member_role dmr
+              JOIN domain_role dr ON dr.id = dmr.domain_role_id
+              WHERE dmr.domain_member_id = dm.id
+                AND dr.business_domain_id = #{domainId}
+                AND dr.code IN ('agent', 'domain_admin')
+          )
+        GROUP BY sa.id
+        ORDER BY COUNT(t.id) ASC, MAX(t.updated_at) ASC, sa.id ASC
+        LIMIT 1
+    </select>
+
+    <select id="countCandidateByStaffId" resultType="long">
+        SELECT COUNT(*)
+        FROM domain_member dm
+        JOIN staff_account sa ON sa.id = dm.staff_account_id
+        WHERE dm.business_domain_id = #{domainId}
+          AND dm.staff_account_id = #{staffAccountId}
+          AND dm.status = 'active'
+          AND dm.deleted_at IS NULL
+          AND sa.status = 'active'
+          AND sa.employment_status = 'active'
+          AND EXISTS (
+              SELECT 1
+              FROM domain_member_role dmr
+              JOIN domain_role dr ON dr.id = dmr.domain_role_id
+              WHERE dmr.domain_member_id = dm.id
+                AND dr.business_domain_id = #{domainId}
+                AND dr.code IN ('agent', 'domain_admin')
+          )
+    </select>
+
+</mapper>

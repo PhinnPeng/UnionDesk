@@ -41,6 +41,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -50,6 +52,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class TicketService {
+
+    private static final Logger log = LoggerFactory.getLogger(TicketService.class);
 
     private static final DateTimeFormatter TICKET_NO_DATE_FORMAT = DateTimeFormatter.BASIC_ISO_DATE;
 
@@ -76,6 +80,7 @@ public class TicketService {
     private final AttachmentService attachmentService;
     private final UnionDeskEventPublisher eventPublisher;
     private final TicketWatcherService ticketWatcherService;
+    private final ClaimRuleService claimRuleService;
 
     public TicketService(
             TicketRepository ticketRepository,
@@ -97,7 +102,8 @@ public class TicketService {
             SlaService slaService,
             AttachmentService attachmentService,
             UnionDeskEventPublisher eventPublisher,
-            TicketWatcherService ticketWatcherService) {
+            TicketWatcherService ticketWatcherService,
+            ClaimRuleService claimRuleService) {
         this.ticketRepository = ticketRepository;
         this.ticketReplyRepository = ticketReplyRepository;
         this.ticketHistoryRepository = ticketHistoryRepository;
@@ -118,6 +124,7 @@ public class TicketService {
         this.attachmentService = attachmentService;
         this.eventPublisher = eventPublisher;
         this.ticketWatcherService = ticketWatcherService;
+        this.claimRuleService = claimRuleService;
     }
 
     @Transactional
@@ -176,6 +183,8 @@ public class TicketService {
                 "priority", content.priority(),
                 "source", source));
 
+        tryAutoClaimOnCreate(businessDomainId, ticketId, content.ticketTypeId(), content.priority());
+
         if (!content.attachmentIds().isEmpty()) {
             attachmentService.linkAttachmentsToTicket(ticketId, content.attachmentIds(), "public");
         }
@@ -233,7 +242,7 @@ public class TicketService {
         LocalDateTime now = LocalDateTime.now(clock);
         int updated = ticketRepository.updateClaim(ticketId, businessDomainId, context.userId(), command.version(), now);
         if (updated == 0) {
-            throw new IllegalArgumentException("工单已被他人修改，请刷新");
+            throw new IllegalArgumentException("工单已被领取或状态不允许领取");
         }
         recordHistory(ticketId, businessDomainId, "claim", current.assignedTo() == null ? null : String.valueOf(current.assignedTo()),
                 String.valueOf(context.userId()), context, Map.of("version", command.version()));
@@ -655,6 +664,17 @@ public class TicketService {
                     throw new IllegalStateException("工单编号生成冲突，请重试", ex);
                 }
             }
+        }
+    }
+
+    /**
+     * 提单后同步触发自动领取：try-catch 包裹，失败仅日志，绝不回滚提单（同事务内执行）。
+     */
+    private void tryAutoClaimOnCreate(long businessDomainId, long ticketId, long ticketTypeId, String priority) {
+        try {
+            claimRuleService.tryAutoClaim(businessDomainId, ticketId, ticketTypeId, priority);
+        } catch (Exception ex) {
+            log.warn("自动领取失败（不影响提单）：domainId={}, ticketId={}", businessDomainId, ticketId, ex);
         }
     }
 

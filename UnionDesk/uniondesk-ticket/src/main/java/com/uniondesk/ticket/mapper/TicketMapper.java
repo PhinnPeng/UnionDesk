@@ -36,6 +36,8 @@ public interface TicketMapper extends BaseMapper<TicketPo> {
 
     Long findIdByTicketNoAndDomain(@Param("ticketNo") String ticketNo, @Param("domainId") long domainId);
 
+    Long selectVersionByIdAndDomainId(@Param("ticketId") long ticketId, @Param("domainId") long domainId);
+
     int updateStatus(@Param("ticketId") long ticketId,
                      @Param("newStatus") String newStatus,
                      @Param("version") long version,

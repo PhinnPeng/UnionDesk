@@ -1,0 +1,31 @@
+{
+  "id": "08-15-ticket-claim-rule",
+  "name": "08-15-ticket-claim-rule",
+  "title": "工单领取规则（自动领取机制）",
+  "description": "事项配置新增第四段「领取规则」：域级规则（类型/优先级匹配+least_loaded/fixed 策略），客户提单同步触发自动领取（try-catch 不阻断提单），复用 claim 链路（乐观锁+SLA 首响+历史 auto:true）。新增 domain.ticket_claim_rule.read/create/update/delete 4 码（domain_admin 全量+agent 只读）。同步修复 claim 覆盖缺口（仅 open/new 且未指派可领取）。来源：prd-generator 生成 PRD（用户确认），研究 research/auto-claim-mechanism。",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "phinnpeng",
+  "assignee": "phinnpeng",
+  "createdAt": "2026-08-15",
+  "completedAt": null,
+  "branch": "master",
+  "base_branch": "master",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketService.java",
+    "UnionDesk/uniondesk-ticket/src/main/resources/mapper/ticket/TicketMapper.xml",
+    "UnionDeskWeb/apps/UnionDeskAdminWeb/src/pages/domain/ticket-config/index.tsx",
+    "UnionDeskWeb/apps/UnionDeskAdminWeb/src/pages/domain/ticket-config/claim-rule-panel.tsx"
+  ],
+  "notes": "PRD: .trellis/tasks/08-15-ticket-claim-rule/prd.md；研究: research/auto-claim-mechanism.md",
+  "meta": {}
+}

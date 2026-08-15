@@ -60,6 +60,10 @@ public class TicketRepository {
         return id;
     }
 
+    public Long selectVersionByIdAndDomainId(long ticketId, long domainId) {
+        return mapper.selectVersionByIdAndDomainId(ticketId, domainId);
+    }
+
     public int updateStatus(long ticketId, String newStatus, long version, LocalDateTime now) {
         return mapper.updateStatus(ticketId, newStatus, version, now);
     }

@@ -240,6 +240,13 @@
         LIMIT 1
     </select>
 
+    <select id="selectVersionByIdAndDomainId" resultType="java.lang.Long">
+        SELECT version
+        FROM ticket
+        WHERE id = #{ticketId} AND business_domain_id = #{domainId}
+        LIMIT 1
+    </select>
+
     <update id="updateStatus">
         UPDATE ticket
         SET status = #{newStatus},
@@ -274,6 +281,8 @@
             updated_at = #{now},
             sla_first_responded_at = COALESCE(sla_first_responded_at, #{now})
         WHERE id = #{ticketId} AND business_domain_id = #{domainId} AND version = #{version}
+          AND assigned_to IS NULL
+          AND status IN ('open', 'new')
     </update>
 
     <update id="updateAssign">
