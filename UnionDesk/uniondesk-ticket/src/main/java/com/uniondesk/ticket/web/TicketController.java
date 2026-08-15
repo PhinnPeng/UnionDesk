@@ -91,6 +91,7 @@ public class TicketController {
             @RequestParam(required = false) String priority,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "false") boolean assigned_to_me,
+            @RequestParam(name = "sla_status", required = false) String sla_status,
             @RequestParam(defaultValue = "100") int limit) {
         // 兼容旧调用：未传 page_size 时回退到 limit（保持原有一次拉取行为）
         int effectivePageSize = pageSize != null ? pageSize : limit;
@@ -103,7 +104,8 @@ public class TicketController {
                 assignee,
                 priority,
                 keyword,
-                assigned_to_me);
+                assigned_to_me,
+                sla_status);
     }
 
     @GetMapping("/admin/domains/{domain_id}/tickets/{ticket_id}")

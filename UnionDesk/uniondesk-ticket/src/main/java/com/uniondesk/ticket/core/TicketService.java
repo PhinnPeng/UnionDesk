@@ -451,7 +451,8 @@ public class TicketService {
             Long assigneeStaffAccountId,
             String priority,
             String keyword,
-            boolean assignedToMe) {
+            boolean assignedToMe,
+            String slaStatus) {
         Long effectiveAssignee;
         if (assignedToMe) {
             effectiveAssignee = context.userId();
@@ -461,10 +462,11 @@ public class TicketService {
         String normalizedStatus = StringUtils.hasText(status) ? status.trim() : null;
         String normalizedPriority = StringUtils.hasText(priority) ? priority.trim() : null;
         String normalizedKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null;
+        String normalizedSlaStatus = StringUtils.hasText(slaStatus) ? slaStatus.trim() : null;
         int normalizedPage = Math.max(page, 1);
         int normalizedPageSize = Math.min(Math.max(pageSize, 1), 200);
         long total = ticketRepository.countTickets(
-                businessDomainId, null, normalizedStatus, effectiveAssignee, normalizedPriority, normalizedKeyword);
+                businessDomainId, null, normalizedStatus, effectiveAssignee, normalizedPriority, normalizedKeyword, normalizedSlaStatus);
         long offset = (long) (normalizedPage - 1) * normalizedPageSize;
         List<TicketRow> items = ticketRepository.listTicketsPage(
                         businessDomainId,
@@ -473,6 +475,7 @@ public class TicketService {
                         effectiveAssignee,
                         normalizedPriority,
                         normalizedKeyword,
+                        normalizedSlaStatus,
                         normalizedPageSize,
                         offset)
                 .stream()

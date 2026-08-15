@@ -23,7 +23,8 @@ public interface TicketMapper extends BaseMapper<TicketPo> {
                       @Param("status") String status,
                       @Param("assignee") Long assignee,
                       @Param("priority") String priority,
-                      @Param("keyword") String keyword);
+                      @Param("keyword") String keyword,
+                      @Param("slaStatus") String slaStatus);
 
     List<TicketDetailPo> listTicketsPage(@Param("domainId") long domainId,
                                          @Param("customerId") Long customerId,
@@ -31,6 +32,7 @@ public interface TicketMapper extends BaseMapper<TicketPo> {
                                          @Param("assignee") Long assignee,
                                          @Param("priority") String priority,
                                          @Param("keyword") String keyword,
+                                         @Param("slaStatus") String slaStatus,
                                          @Param("limit") int limit,
                                          @Param("offset") long offset);
 

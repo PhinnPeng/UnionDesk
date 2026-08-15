@@ -36,8 +36,8 @@ public class TicketRepository {
         return mapper.listTickets(domainId, customerId, status, limit);
     }
 
-    public long countTickets(long domainId, Long customerId, String status, Long assignee, String priority, String keyword) {
-        return mapper.countTickets(domainId, customerId, status, assignee, priority, keyword);
+    public long countTickets(long domainId, Long customerId, String status, Long assignee, String priority, String keyword, String slaStatus) {
+        return mapper.countTickets(domainId, customerId, status, assignee, priority, keyword, slaStatus);
     }
 
     public List<TicketDetailPo> listTicketsPage(
@@ -47,9 +47,10 @@ public class TicketRepository {
             Long assignee,
             String priority,
             String keyword,
+            String slaStatus,
             int limit,
             long offset) {
-        return mapper.listTicketsPage(domainId, customerId, status, assignee, priority, keyword, limit, offset);
+        return mapper.listTicketsPage(domainId, customerId, status, assignee, priority, keyword, slaStatus, limit, offset);
     }
 
     public long findIdByTicketNoAndDomain(String ticketNo, long domainId) {
