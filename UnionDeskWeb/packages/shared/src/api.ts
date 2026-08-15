@@ -2560,6 +2560,9 @@ export type ConsultationMessageRow = {
   content: string;
   payloadJson?: string | null;
   createdAt: string;
+  /** 撤回标记：后端返回 retractedAt/retracted 其一（字段名以联调契约为准） */
+  retractedAt?: string | null;
+  retracted?: boolean | null;
 };
 
 export type ConsultationConvertResult = {
@@ -2616,12 +2619,19 @@ export async function replyCustomerConsultation(domainId: string, sessionNo: str
 /** 客服会话列表：`GET /api/v1/admin/domains/{domain_id}/consultations` */
 export async function listAdminConsultations(
   domainId: string,
-  options?: { page?: number; pageSize?: number; status?: string },
+  options?: { page?: number; pageSize?: number; status?: string; assignedToMe?: boolean },
 ): Promise<P0PageResult<ConsultationSessionRow>> {
   try {
     const response = await api.get<P0PageResult<ConsultationSessionRow>>(
       `/admin/domains/${domainId}/consultations`,
-      { params: { page: options?.page ?? 1, page_size: options?.pageSize ?? 20, status: options?.status } },
+      {
+        params: {
+          page: options?.page ?? 1,
+          page_size: options?.pageSize ?? 20,
+          status: options?.status,
+          assigned_to_me: options?.assignedToMe || undefined,
+        },
+      },
     );
     return unwrapApiResponse(response.data);
   } catch (error) {
@@ -2664,6 +2674,77 @@ export async function convertConsultationToTicket(
     const response = await api.post<ConsultationConvertResult>(
       `/admin/domains/${domainId}/consultations/${encodeURIComponent(sessionNo)}/ticket`,
       payload ?? {},
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客服接入模式（自动/手动） */
+export type AgentPresenceMode = "auto" | "manual";
+
+/** 客服在线/接入模式状态：presence 响应体 */
+export type AgentPresenceResult = {
+  mode: AgentPresenceMode;
+  online: boolean;
+};
+
+/**
+ * 客服上报在线心跳与接入模式：`POST /api/v1/admin/domains/{domain_id}/consultations/agent/presence`
+ * 心跳与模式一体：请求携带期望 mode，响应返回服务端生效的 mode 与在线状态。
+ * （联调注意：若后端支持 GET 查询当前模式，进入页面时可视契约改为只读请求）
+ */
+export async function reportAgentPresence(domainId: string, mode: AgentPresenceMode): Promise<AgentPresenceResult> {
+  try {
+    const response = await api.post<AgentPresenceResult>(
+      `/admin/domains/${domainId}/consultations/agent/presence`,
+      { mode },
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客服接入（领取）会话：`POST /api/v1/admin/domains/{domain_id}/consultations/{session_no}/claim` */
+export async function claimAdminConsultation(domainId: string, sessionNo: string): Promise<ConsultationSessionRow> {
+  try {
+    const response = await api.post<ConsultationSessionRow>(
+      `/admin/domains/${domainId}/consultations/${encodeURIComponent(sessionNo)}/claim`,
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客服结束会话：`POST /api/v1/admin/domains/{domain_id}/consultations/{session_no}/end` */
+export async function endAdminConsultation(
+  domainId: string,
+  sessionNo: string,
+  reason?: string,
+): Promise<ConsultationSessionRow> {
+  try {
+    const response = await api.post<ConsultationSessionRow>(
+      `/admin/domains/${domainId}/consultations/${encodeURIComponent(sessionNo)}/end`,
+      { reason },
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客服撤回本人消息：`POST /api/v1/admin/domains/{domain_id}/consultations/{session_no}/messages/{message_id}/retract` */
+export async function retractAdminConsultationMessage(
+  domainId: string,
+  sessionNo: string,
+  messageId: string,
+): Promise<ConsultationMessageRow> {
+  try {
+    const response = await api.post<ConsultationMessageRow>(
+      `/admin/domains/${domainId}/consultations/${encodeURIComponent(sessionNo)}/messages/${encodeURIComponent(messageId)}/retract`,
     );
     return unwrapApiResponse(response.data);
   } catch (error) {

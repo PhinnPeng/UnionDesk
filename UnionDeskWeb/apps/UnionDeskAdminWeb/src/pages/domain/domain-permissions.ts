@@ -63,3 +63,6 @@ export const DOMAIN_ROLE_UPDATE = "domain.role.update";
 export const DOMAIN_ROLE_DELETE = "domain.role.delete";
 export const DOMAIN_ROLE_PERMISSION_READ = "domain.role.permission.read";
 export const DOMAIN_ROLE_PERMISSION_UPDATE = "domain.role.permission.update";
+
+export const DOMAIN_CONSULTATION_CLAIM = "consultation.claim";
+export const DOMAIN_CONSULTATION_CLOSE = "consultation.close";

@@ -1,33 +1,49 @@
 import {
+	claimAdminConsultation,
 	convertConsultationToTicket,
+	endAdminConsultation,
 	fetchDomainPriorityLevels,
 	fetchDomainTicketTypes,
 	getAdminConsultationMessages,
 	listAdminConsultations,
 	replyAdminConsultation,
+	reportAgentPresence,
+	retractAdminConsultationMessage,
 	toErrorMessage,
+	type AgentPresenceMode,
+	type AgentPresenceResult,
 	type ConsultationMessageRow,
 	type ConsultationSessionRow,
 	type DomainPriorityLevelView,
 	type DomainTicketType,
 } from "@uniondesk/shared";
 import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
-import { App, Button, Card, Drawer, Empty, Form, Input, Modal, Select, Space, Table, Tag, Typography } from "antd";
+import { App, Button, Card, Drawer, Empty, Form, Input, Modal, Radio, Select, Space, Switch, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import dayjs from "dayjs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { AuthGuarded } from "#src/components/auth-guarded";
 import { BasicContent } from "#src/components/basic-content";
+import { ConfirmPopover } from "#src/components/confirm-popover";
 import { TableSearchForm } from "#src/components/table-search-form";
 import { useAuthStore } from "#src/store/auth";
 
+import { DOMAIN_CONSULTATION_CLAIM, DOMAIN_CONSULTATION_CLOSE } from "../domain-permissions";
+
 interface ConsultationSearchValues {
 	status?: string;
+	assigned_to_me?: boolean;
 }
 
 const EMPTY_CONSULTATION_SEARCH: ConsultationSearchValues = {};
+
+/** 在线心跳间隔（毫秒），与后端 presence 在线 TTL 对齐 */
+const PRESENCE_HEARTBEAT_INTERVAL_MS = 30_000;
+
+/** 消息可撤回时限（分钟），仅限客服本人 2 分钟内的消息 */
+const RETRACT_WINDOW_MINUTES = 2;
 
 const STATUS_OPTIONS = [
 	{ value: "open", label: "进行中" },
@@ -50,7 +66,32 @@ function formatTime(value?: string | null): string {
 }
 
 function statusLabel(status: string): string {
-	return status === "closed" ? "已关闭" : "进行中";
+	if (status === "closed") {
+		return "已关闭";
+	}
+	if (status === "queued") {
+		return "排队中";
+	}
+	return "进行中";
+}
+
+/** 排队等待时长（分钟）：now - createdAt */
+function formatWaitingMinutes(createdAt: string): string {
+	const minutes = Math.max(0, dayjs().diff(dayjs(createdAt), "minute"));
+	return `已等待 ${minutes} 分钟`;
+}
+
+/** 消息是否已撤回（后端返回 retractedAt/retracted 其一） */
+function isRetracted(item: ConsultationMessageRow): boolean {
+	return Boolean(item.retractedAt || item.retracted);
+}
+
+/** 消息是否可撤回：客服本人发送且 2 分钟内、未撤回 */
+function isRetractable(item: ConsultationMessageRow): boolean {
+	if (item.senderRole !== "agent" || isRetracted(item)) {
+		return false;
+	}
+	return dayjs().diff(dayjs(item.createdAt), "minute") < RETRACT_WINDOW_MINUTES;
 }
 
 function buildSessionSummary(sessionNo: string, messages: ConsultationMessageRow[]): string {
@@ -92,6 +133,14 @@ export default function DomainConsultationsPage() {
 	const [ticketTypes, setTicketTypes] = useState<DomainTicketType[]>([]);
 	const [priorityLevels, setPriorityLevels] = useState<DomainPriorityLevelView[]>([]);
 
+	// 在线/接入模式状态（基于 presence 心跳）
+	const [presence, setPresence] = useState<AgentPresenceResult | null>(null);
+	const [presenceLoading, setPresenceLoading] = useState(false);
+	const [ending, setEnding] = useState(false);
+	const [retracting, setRetracting] = useState(false);
+	// 当前接入模式（供心跳读取最新值，避免重建定时器）
+	const presenceModeRef = useRef<AgentPresenceMode>("manual");
+
 	const loadSessions = useCallback(async (nextPage: number, nextPageSize: number, values: ConsultationSearchValues) => {
 		if (!domainId) {
 			return;
@@ -102,6 +151,7 @@ export default function DomainConsultationsPage() {
 				page: nextPage,
 				pageSize: nextPageSize,
 				status: values.status,
+				assignedToMe: values.assigned_to_me,
 			});
 			setRows(result.list);
 			setTotal(result.total);
@@ -114,9 +164,51 @@ export default function DomainConsultationsPage() {
 		}
 	}, [domainId, message]);
 
+	/** 上报 presence（心跳+模式一体）：silent 时失败静默，仅用于定时心跳 */
+	const loadPresence = useCallback(async (mode: AgentPresenceMode, silent = false) => {
+		if (!domainId) {
+			return null;
+		}
+		try {
+			const result = await reportAgentPresence(domainId, mode);
+			setPresence(result);
+			return result;
+		}
+		catch (error) {
+			if (!silent) {
+				message.error(toErrorMessage(error));
+			}
+			return null;
+		}
+	}, [domainId, message]);
+
 	useEffect(() => {
 		void loadSessions(1, pageSize, EMPTY_CONSULTATION_SEARCH);
 	}, [loadSessions, pageSize]);
+
+	useEffect(() => {
+		presenceModeRef.current = presence?.mode ?? "manual";
+	}, [presence?.mode]);
+
+	useEffect(() => {
+		if (!domainId) {
+			return;
+		}
+		// 进入页面先上报一次 presence 获取当前模式与在线状态（携带默认手动模式，
+		// 以响应返回的 mode/online 为准；若后端支持 GET 查询，联调时改为只读请求）
+		void loadPresence("manual", true);
+	}, [domainId, loadPresence]);
+
+	useEffect(() => {
+		if (!domainId) {
+			return;
+		}
+		// 页面活跃期间每 30s 心跳一次，携带当前接入模式；失败静默，成功时同步在线状态
+		const timer = window.setInterval(() => {
+			void loadPresence(presenceModeRef.current, true);
+		}, PRESENCE_HEARTBEAT_INTERVAL_MS);
+		return () => window.clearInterval(timer);
+	}, [domainId, loadPresence]);
 
 	const openDetail = useCallback(async (session: ConsultationSessionRow) => {
 		setDetailSession(session);
@@ -227,6 +319,83 @@ export default function DomainConsultationsPage() {
 		}
 	}, [convertForm, detailSession, domainId, loadSessions, message, page, pageSize, searchValues]);
 
+	const handlePresenceModeChange = useCallback(async (mode: AgentPresenceMode) => {
+		if (!domainId) {
+			return;
+		}
+		setPresenceLoading(true);
+		try {
+			const result = await reportAgentPresence(domainId, mode);
+			setPresence(result);
+			if (!result.online) {
+				message.warning("需在线才能开启自动接入");
+				return;
+			}
+			if (mode === "auto") {
+				message.success("已开启自动接入，正在拉取排队会话");
+				// 开启自动接入成功后刷新列表（后端已拉取排队会话）
+				setPage(1);
+				await loadSessions(1, pageSize, searchValues);
+			}
+		}
+		catch (error) {
+			message.error(toErrorMessage(error));
+		}
+		finally {
+			setPresenceLoading(false);
+		}
+	}, [domainId, loadSessions, message, pageSize, searchValues]);
+
+	const handleClaim = useCallback(async (session: ConsultationSessionRow) => {
+		if (!domainId) {
+			return;
+		}
+		try {
+			await claimAdminConsultation(domainId, session.sessionNo);
+			message.success("已接入会话");
+			await loadSessions(page, pageSize, searchValues);
+		}
+		catch (error) {
+			message.error(toErrorMessage(error));
+		}
+	}, [domainId, loadSessions, message, page, pageSize, searchValues]);
+
+	const handleEndSession = useCallback(async () => {
+		if (!detailSession || !domainId) {
+			return;
+		}
+		setEnding(true);
+		try {
+			await endAdminConsultation(domainId, detailSession.sessionNo);
+			message.success("咨询已结束");
+			setDetailOpen(false);
+			await loadSessions(page, pageSize, searchValues);
+		}
+		catch (error) {
+			message.error(toErrorMessage(error));
+		}
+		finally {
+			setEnding(false);
+		}
+	}, [detailSession, domainId, loadSessions, message, page, pageSize, searchValues]);
+
+	const handleRetract = useCallback(async (item: ConsultationMessageRow) => {
+		if (!detailSession || !domainId) {
+			return;
+		}
+		setRetracting(true);
+		try {
+			const updated = await retractAdminConsultationMessage(domainId, detailSession.sessionNo, item.id);
+			setMessages(prev => prev.map(row => (row.id === item.id ? { ...row, ...updated } : row)));
+		}
+		catch (error) {
+			message.error(toErrorMessage(error));
+		}
+		finally {
+			setRetracting(false);
+		}
+	}, [detailSession, domainId, message]);
+
 	const columns: TableColumnsType<ConsultationSessionRow> = useMemo(() => [
 		{
 			title: "会话编号",
@@ -245,8 +414,17 @@ export default function DomainConsultationsPage() {
 		{
 			title: "状态",
 			dataIndex: "sessionStatus",
-			width: 100,
-			render: value => <Tag color={value === "closed" ? "default" : "blue"}>{statusLabel(value)}</Tag>,
+			width: 150,
+			render: (value: string, row) => (
+				value === "queued"
+					? (
+						<Space size={4}>
+							<Tag color="orange">排队中</Tag>
+							<span className="text-xs text-slate-400">{formatWaitingMinutes(row.createdAt)}</span>
+						</Space>
+					)
+					: <Tag color={value === "closed" ? "default" : "blue"}>{statusLabel(value)}</Tag>
+			),
 		},
 		{
 			title: "消息数",
@@ -275,14 +453,23 @@ export default function DomainConsultationsPage() {
 		{
 			title: "操作",
 			key: "actions",
-			width: 120,
+			width: 140,
 			render: (_, row) => (
-				<Button type="link" size="small" onClick={() => void openDetail(row)}>
-					查看
-				</Button>
+				<Space size="small">
+					<Button type="link" size="small" onClick={() => void openDetail(row)}>
+						查看
+					</Button>
+					{!row.assignedTo && (row.sessionStatus === "open" || row.sessionStatus === "queued") ? (
+						<AuthGuarded auth={DOMAIN_CONSULTATION_CLAIM} fallback={null}>
+							<Button type="link" size="small" onClick={() => void handleClaim(row)}>
+								接入
+							</Button>
+						</AuthGuarded>
+					) : null}
+				</Space>
 			),
 		},
-	], [openDetail]);
+	], [handleClaim, openDetail]);
 
 	return (
 		<BasicContent>
@@ -318,15 +505,42 @@ export default function DomainConsultationsPage() {
 								<Form.Item name="status" label="状态">
 									<Select allowClear placeholder="全部状态" disabled={loading} options={STATUS_OPTIONS} />
 								</Form.Item>
+								<Form.Item name="assigned_to_me" label="仅看我的" valuePropName="checked">
+									<Switch disabled={loading} />
+								</Form.Item>
 							</TableSearchForm>
 						</Card>
 						<Card
 							bordered={false}
 							title="咨询会话列表"
 							extra={(
-								<Button icon={<ReloadOutlined />} onClick={() => void loadSessions(page, pageSize, searchValues)}>
-									刷新
-								</Button>
+								<Space size={12}>
+									<Space size={4}>
+										<Tag color={presence?.online ? "success" : "default"}>
+											{presence ? (presence.online ? "在线" : "离线") : "检测中"}
+										</Tag>
+										<Radio.Group
+											size="small"
+											optionType="button"
+											buttonStyle="solid"
+											value={presence?.mode ?? "manual"}
+											disabled={presenceLoading || (presence ? !presence.online : false)}
+											options={[
+												{ value: "auto", label: "自动接入" },
+												{ value: "manual", label: "手动接入" },
+											]}
+											onChange={event => void handlePresenceModeChange(event.target.value as AgentPresenceMode)}
+										/>
+									</Space>
+									{presence && !presence.online ? (
+										<Typography.Text type="secondary" className="text-xs">
+											需在线才能开启自动接入
+										</Typography.Text>
+									) : null}
+									<Button icon={<ReloadOutlined />} onClick={() => void loadSessions(page, pageSize, searchValues)}>
+										刷新
+									</Button>
+								</Space>
 							)}
 						>
 							<Table<ConsultationSessionRow>
@@ -359,11 +573,23 @@ export default function DomainConsultationsPage() {
 				open={detailOpen}
 				onClose={() => setDetailOpen(false)}
 				width={520}
+				extra={detailSession && detailSession.sessionStatus !== "closed" ? (
+					<AuthGuarded auth={DOMAIN_CONSULTATION_CLOSE} fallback={null}>
+						<ConfirmPopover
+							title={`确认结束会话「${detailSession.sessionNo}」？`}
+							onConfirm={() => void handleEndSession()}
+						>
+							<Button danger loading={ending}>
+								结束咨询
+							</Button>
+						</ConfirmPopover>
+					</AuthGuarded>
+				) : undefined}
 			>
 				{detailSession ? (
 					<div className="flex flex-col gap-4">
 						<Space wrap>
-							<Tag color={detailSession.sessionStatus === "closed" ? "default" : "blue"}>
+							<Tag color={detailSession.sessionStatus === "queued" ? "orange" : detailSession.sessionStatus === "closed" ? "default" : "blue"}>
 								{statusLabel(detailSession.sessionStatus)}
 							</Tag>
 							{detailSession.linkedTicketNo
@@ -396,10 +622,25 @@ export default function DomainConsultationsPage() {
 													{item.senderRole === "agent" ? "客服" : "客户"}
 												</Tag>
 												<span className="text-xs text-slate-400">{formatTime(item.createdAt)}</span>
+												{isRetractable(item) ? (
+													<Button
+														type="link"
+														size="small"
+														className="!p-0 !h-auto text-xs"
+														disabled={retracting}
+														onClick={() => void handleRetract(item)}
+													>
+														撤回
+													</Button>
+												) : null}
 											</Space>
-											<Typography.Paragraph className="!mb-0" style={{ whiteSpace: "pre-wrap" }}>
-												{item.content}
-											</Typography.Paragraph>
+											{isRetracted(item) ? (
+												<Typography.Text type="secondary" className="text-xs">已撤回</Typography.Text>
+											) : (
+												<Typography.Paragraph className="!mb-0" style={{ whiteSpace: "pre-wrap" }}>
+													{item.content}
+												</Typography.Paragraph>
+											)}
 										</div>
 									))}
 						</div>
