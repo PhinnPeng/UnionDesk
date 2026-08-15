@@ -207,9 +207,7 @@ export function isAdminMenuCatalog(menu: PermissionSnapshotMenu): boolean {
 /** 为目录节点生成稳定且唯一的路由 path，避免多个 catalog 被合并到同一空 path */
 export function resolveCatalogRoutePath(menu: PermissionSnapshotMenu): string {
 	const scopePrefix = menu.scope === "platform" ? "/platform" : "/business";
-	const stableKey = typeof menu.id === "number"
-		? String(menu.id)
-		: menu.code?.trim() || "unknown";
+	const stableKey = menu.id?.trim() || menu.code?.trim() || "unknown";
 	return `${scopePrefix}/catalog/${stableKey}`;
 }
 
@@ -275,9 +273,9 @@ export function buildRoutesFromAdminMenuSnapshot(
 		children: [] as AdminMenuRouteNode[],
 	}));
 
-	const nodesById = new Map<number, AdminMenuRouteNode>();
+	const nodesById = new Map<string, AdminMenuRouteNode>();
 	for (const node of nodes) {
-		if (typeof node.menu.id === "number") {
+		if (node.menu.id) {
 			nodesById.set(node.menu.id, node);
 		}
 	}
@@ -285,7 +283,7 @@ export function buildRoutesFromAdminMenuSnapshot(
 	const roots: AdminMenuRouteNode[] = [];
 	for (const node of nodes) {
 		const parentId = node.menu.parentId;
-		if (typeof parentId === "number" && nodesById.has(parentId)) {
+		if (parentId && nodesById.has(parentId)) {
 			nodesById.get(parentId)!.children.push(node);
 		}
 		else {
@@ -436,8 +434,6 @@ function toLeafAppRouteRecordRaw(
 }
 
 function getBackendRouteId(node: AdminMenuRouteNode) {
-	const stableKey = typeof node.menu.id === "number"
-		? String(node.menu.id)
-		: node.menu.code || node.path;
+	const stableKey = node.menu.id?.trim() || node.menu.code || node.path;
 	return `backend:${node.scope ?? "unknown"}:${stableKey}`;
 }
