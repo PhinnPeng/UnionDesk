@@ -33,6 +33,12 @@ public class ConsultationRuntimeController {
     public record SendMessageRequest(@NotBlank(message = "消息内容不能为空") String content) {
     }
 
+    public record AgentPresenceRequest(@NotBlank(message = "接入模式不能为空") String mode) {
+    }
+
+    public record EndSessionRequest(String reason) {
+    }
+
     private final ConsultationService consultationService;
 
     public ConsultationRuntimeController(ConsultationService consultationService) {
@@ -81,15 +87,16 @@ public class ConsultationRuntimeController {
 
     // --- 管理端点 ---
 
-    /** 客服会话列表（按业务域） */
+    /** 客服会话列表（按业务域；assigned_to_me=true 仅看我的） */
     @GetMapping("/admin/domains/{domain_id}/consultations")
     @RequirePermission(value = PermissionCodes.CONSULTATION_VIEW, domainIdParam = "domain_id")
     public PageResult<ConsultationService.ConsultationSessionRow> listAdmin(
             @PathVariable("domain_id") long domainId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
-            @RequestParam(required = false) String status) {
-        return consultationService.listAdminSessions(requireCurrent(), domainId, page, pageSize, status);
+            @RequestParam(required = false) String status,
+            @RequestParam(name = "assigned_to_me", defaultValue = "false") boolean assignedToMe) {
+        return consultationService.listAdminSessions(requireCurrent(), domainId, page, pageSize, status, assignedToMe);
     }
 
     /** 客服查看会话消息 */
@@ -124,6 +131,45 @@ public class ConsultationRuntimeController {
                 ? new ConsultationService.ConvertTicketRequest(null, null, null, null)
                 : request;
         return consultationService.convertToTicket(requireCurrent(), domainId, sessionNo, effective);
+    }
+
+    /** 客服接入（领取）排队/未分配会话 */
+    @PostMapping("/admin/domains/{domain_id}/consultations/{session_no}/claim")
+    @RequirePermission(value = PermissionCodes.CONSULTATION_CLAIM, domainIdParam = "domain_id")
+    public ConsultationService.ConsultationSessionRow claim(
+            @PathVariable("domain_id") long domainId,
+            @PathVariable("session_no") String sessionNo) {
+        return consultationService.claimSession(requireCurrent(), domainId, sessionNo);
+    }
+
+    /** 客服结束会话（open/queued 均可；排队中结束即清队） */
+    @PostMapping("/admin/domains/{domain_id}/consultations/{session_no}/end")
+    @RequirePermission(value = PermissionCodes.CONSULTATION_CLOSE, domainIdParam = "domain_id")
+    public ConsultationService.ConsultationSessionRow end(
+            @PathVariable("domain_id") long domainId,
+            @PathVariable("session_no") String sessionNo,
+            @Valid @RequestBody(required = false) EndSessionRequest request) {
+        String reason = request == null ? null : request.reason();
+        return consultationService.endSession(requireCurrent(), domainId, sessionNo, reason);
+    }
+
+    /** 客服撤回本人消息（2 分钟内、agent 角色、当前会话内） */
+    @PostMapping("/admin/domains/{domain_id}/consultations/{session_no}/messages/{message_id}/retract")
+    @RequirePermission(value = PermissionCodes.CONSULTATION_REPLY, domainIdParam = "domain_id")
+    public ConsultationService.ConsultationMessageRow retractMessage(
+            @PathVariable("domain_id") long domainId,
+            @PathVariable("session_no") String sessionNo,
+            @PathVariable("message_id") long messageId) {
+        return consultationService.retractMessage(requireCurrent(), domainId, sessionNo, messageId);
+    }
+
+    /** 客服在线心跳 + 接入模式一体（心跳注册/刷新在线；切 auto 触发取队分配） */
+    @PostMapping("/admin/domains/{domain_id}/consultations/agent/presence")
+    @RequirePermission(value = PermissionCodes.CONSULTATION_VIEW, domainIdParam = "domain_id")
+    public ConsultationService.AgentPresenceResult presence(
+            @PathVariable("domain_id") long domainId,
+            @Valid @RequestBody AgentPresenceRequest request) {
+        return consultationService.agentPresence(requireCurrent(), domainId, request.mode());
     }
 
     private UserContext requireCurrent() {

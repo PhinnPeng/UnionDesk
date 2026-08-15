@@ -31,6 +31,8 @@
         <result property="content" column="content"/>
         <result property="payloadJson" column="payload_json"/>
         <result property="createdAt" column="created_at"/>
+        <result property="retractedAt" column="retracted_at"/>
+        <result property="retractedBy" column="retracted_by"/>
     </resultMap>
 
     <sql id="sessionSelectColumns">
@@ -75,6 +77,9 @@
         <if test="status != null and status != ''">
             AND s.session_status = #{status}
         </if>
+        <if test="assignedToMe != null">
+            AND s.assigned_to = #{assignedToMe}
+        </if>
         ORDER BY s.updated_at DESC, s.id DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
@@ -85,6 +90,9 @@
         WHERE business_domain_id = #{domainId}
         <if test="status != null and status != ''">
             AND session_status = #{status}
+        </if>
+        <if test="assignedToMe != null">
+            AND assigned_to = #{assignedToMe}
         </if>
     </select>
 
@@ -113,11 +121,35 @@
             m.message_type,
             m.content,
             CAST(m.payload AS CHAR) AS payload_json,
-            m.created_at
+            m.created_at,
+            m.retracted_at,
+            m.retracted_by
         FROM consultation_message m
         JOIN consultation_session s ON s.id = m.consultation_session_id
         WHERE m.consultation_session_id = #{sessionId}
         ORDER BY m.seq_no
+    </select>
+
+    <select id="selectMessageByIdAndSession" resultMap="ConsultationMessagePo">
+        SELECT
+            m.id,
+            m.consultation_session_id,
+            m.business_domain_id,
+            s.session_no,
+            m.seq_no,
+            m.sender_user_id,
+            m.sender_role,
+            m.message_type,
+            m.content,
+            CAST(m.payload AS CHAR) AS payload_json,
+            m.created_at,
+            m.retracted_at,
+            m.retracted_by
+        FROM consultation_message m
+        JOIN consultation_session s ON s.id = m.consultation_session_id
+        WHERE m.id = #{messageId}
+          AND m.consultation_session_id = #{sessionId}
+        LIMIT 1
     </select>
 
     <select id="nextSeqNo" resultType="int">
@@ -132,11 +164,49 @@
         WHERE id = #{sessionId}
     </update>
 
-    <update id="updateAssignedToIfNull">
+    <update id="assignSessionIfUnassigned">
         UPDATE consultation_session
-        SET assigned_to = #{assignedTo}
+        SET assigned_to = #{assignedTo},
+            session_status = 'open'
         WHERE id = #{sessionId}
           AND assigned_to IS NULL
+          AND session_status &lt;&gt; 'closed'
+    </update>
+
+    <update id="assignSessionByNoIfUnassigned">
+        UPDATE consultation_session
+        SET assigned_to = #{assignedTo},
+            session_status = 'open'
+        WHERE session_no = #{sessionNo}
+          AND business_domain_id = #{domainId}
+          AND assigned_to IS NULL
+          AND session_status &lt;&gt; 'closed'
+    </update>
+
+    <select id="selectLeastLoadedOnlineAssignee" resultType="java.lang.Long">
+        SELECT sa.id
+        FROM staff_account sa
+        LEFT JOIN consultation_session cs
+               ON cs.assigned_to = sa.id
+              AND cs.business_domain_id = #{domainId}
+              AND cs.session_status IN ('open', 'queued')
+        WHERE sa.id IN
+        <foreach collection="staffIds" item="staffId" open="(" separator="," close=")">
+            #{staffId}
+        </foreach>
+          AND sa.status = 'active'
+          AND sa.employment_status = 'active'
+        GROUP BY sa.id
+        ORDER BY COUNT(cs.id) ASC, MAX(cs.updated_at) ASC, sa.id ASC
+        LIMIT 1
+    </select>
+
+    <update id="updateMessageRetracted">
+        UPDATE consultation_message
+        SET retracted_at = #{retractedAt},
+            retracted_by = #{retractedBy}
+        WHERE id = #{messageId}
+          AND retracted_at IS NULL
     </update>
 
     <update id="closeSession">

@@ -12,6 +12,13 @@ spring:
     url: jdbc:mysql://127.0.0.1:30306/uniondesk?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: uniondesk_app
     password: gq0fd2sqOCncrNp3eBeGuLty
+  data:
+    redis:
+      # 在线咨询排队/在线状态热路径；密码必须经环境变量注入，禁止写源码字面量
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:30379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:3s}
     hikari:
       # 连接池配置 - 修复连接失效问题
       maximum-pool-size: 20

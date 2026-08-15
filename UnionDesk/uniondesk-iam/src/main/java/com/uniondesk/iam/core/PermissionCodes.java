@@ -220,6 +220,8 @@ public final class PermissionCodes {
 
     public static final String CONSULTATION_VIEW = "consultation.view";
     public static final String CONSULTATION_REPLY = "consultation.reply";
+    public static final String CONSULTATION_CLAIM = "consultation.claim";
+    public static final String CONSULTATION_CLOSE = "consultation.close";
     public static final String CONSULTATION_CONVERT = "consultation.convert";
     public static final String CONSULTATION_CUSTOMER = "consultation.customer";
 

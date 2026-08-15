@@ -16,10 +16,14 @@ public interface ConsultationMapper extends BaseMapper<ConsultationSessionPo> {
     List<ConsultationSessionPo> selectPageByDomain(
             @Param("domainId") long domainId,
             @Param("status") String status,
+            @Param("assignedToMe") Long assignedToMe,
             @Param("limit") int limit,
             @Param("offset") long offset);
 
-    long countByDomain(@Param("domainId") long domainId, @Param("status") String status);
+    long countByDomain(
+            @Param("domainId") long domainId,
+            @Param("status") String status,
+            @Param("assignedToMe") Long assignedToMe);
 
     List<ConsultationSessionPo> selectByCustomerId(@Param("domainId") long domainId, @Param("customerId") long customerId);
 
@@ -31,11 +35,34 @@ public interface ConsultationMapper extends BaseMapper<ConsultationSessionPo> {
 
     List<ConsultationMessagePo> selectMessagesBySession(@Param("sessionId") long sessionId);
 
+    ConsultationMessagePo selectMessageByIdAndSession(@Param("messageId") long messageId, @Param("sessionId") long sessionId);
+
     int nextSeqNo(@Param("sessionId") long sessionId);
 
     int updateLastMessageAt(@Param("sessionId") long sessionId, @Param("lastMessageAt") LocalDateTime lastMessageAt);
 
-    int updateAssignedToIfNull(@Param("sessionId") long sessionId, @Param("assignedTo") long assignedTo);
+    /**
+     * 乐观接入：未分配会话（含排队态）写入 assigned_to 并置为 open；0 行表示已被他人接入或已结束。
+     */
+    int assignSessionIfUnassigned(@Param("sessionId") long sessionId, @Param("assignedTo") long assignedTo);
+
+    /**
+     * 按会话编号乐观接入（自动取队分配路径）：未分配且未结束才会成功，0 行表示已结束/已被接入，跳过。
+     */
+    int assignSessionByNoIfUnassigned(
+            @Param("sessionNo") String sessionNo,
+            @Param("domainId") long domainId,
+            @Param("assignedTo") long assignedTo);
+
+    /**
+     * 候选客服（在线 auto 列表）中未完结咨询会话最少者；并列取最近会话久者（MAX(updated_at) 最小），再并列取 id 小。
+     */
+    Long selectLeastLoadedOnlineAssignee(@Param("domainId") long domainId, @Param("staffIds") List<Long> staffIds);
+
+    int updateMessageRetracted(
+            @Param("messageId") long messageId,
+            @Param("retractedBy") long retractedBy,
+            @Param("retractedAt") LocalDateTime retractedAt);
 
     int closeSession(@Param("sessionId") long sessionId, @Param("closedAt") LocalDateTime closedAt);
 

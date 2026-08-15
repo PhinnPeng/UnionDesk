@@ -29,6 +29,9 @@ public class ConsultationMessagePo {
     @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
 
+    private LocalDateTime retractedAt;
+    private Long retractedBy;
+
     public Long getId() {
         return id;
     }
@@ -115,5 +118,21 @@ public class ConsultationMessagePo {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getRetractedAt() {
+        return retractedAt;
+    }
+
+    public void setRetractedAt(LocalDateTime retractedAt) {
+        this.retractedAt = retractedAt;
+    }
+
+    public Long getRetractedBy() {
+        return retractedBy;
+    }
+
+    public void setRetractedBy(Long retractedBy) {
+        this.retractedBy = retractedBy;
     }
 }
