@@ -5,6 +5,7 @@ import {
 	DOMAIN_TICKET_ATTRIBUTE_DELETE,
 	DOMAIN_TICKET_ATTRIBUTE_READ,
 	DOMAIN_TICKET_ATTRIBUTE_UPDATE,
+	DOMAIN_TICKET_CLAIM_RULE_READ,
 	DOMAIN_TICKET_STATUS_CREATE,
 	DOMAIN_TICKET_STATUS_DELETE,
 	DOMAIN_TICKET_STATUS_READ,
@@ -15,16 +16,17 @@ import { TicketAttributesPanel } from "#src/pages/platform/ticket-config/attribu
 import { TicketStatusesPanel } from "#src/pages/platform/ticket-config/statuses/ticket-statuses-panel";
 import { useAuthStore } from "#src/store/auth";
 
-import { AppstoreOutlined, FlagOutlined, ProfileOutlined } from "@ant-design/icons";
+import { AppstoreOutlined, FlagOutlined, ProfileOutlined, RocketOutlined } from "@ant-design/icons";
 import { Empty } from "antd";
 import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router";
 
+import { ClaimRulePanel } from "./claim-rule-panel";
 import { DomainTicketTypesPanel } from "./types-panel";
 
 import styles from "./index.module.less";
 
-type TicketConfigSection = "attributes" | "types" | "statuses";
+type TicketConfigSection = "attributes" | "types" | "statuses" | "claim-rule";
 
 const SECTION_ITEMS: {
 	key: TicketConfigSection
@@ -35,6 +37,7 @@ const SECTION_ITEMS: {
 	{ key: "types", label: "事项类型", icon: <AppstoreOutlined />, perm: DOMAIN_TICKET_TYPE_READ },
 	{ key: "attributes", label: "事项属性", icon: <ProfileOutlined />, perm: DOMAIN_TICKET_ATTRIBUTE_READ },
 	{ key: "statuses", label: "事项状态", icon: <FlagOutlined />, perm: DOMAIN_TICKET_STATUS_READ },
+	{ key: "claim-rule", label: "领取规则", icon: <RocketOutlined />, perm: DOMAIN_TICKET_CLAIM_RULE_READ },
 ];
 
 const ATTRIBUTE_PERMISSIONS = {
@@ -52,7 +55,7 @@ const STATUS_PERMISSIONS = {
 };
 
 function parseSection(value: string | null): TicketConfigSection {
-	if (value === "attributes" || value === "types" || value === "statuses") {
+	if (value === "attributes" || value === "types" || value === "statuses" || value === "claim-rule") {
 		return value;
 	}
 	return "types";
@@ -92,6 +95,7 @@ export default function DomainTicketConfigPage() {
 		DOMAIN_TICKET_TYPE_READ,
 		DOMAIN_TICKET_ATTRIBUTE_READ,
 		DOMAIN_TICKET_STATUS_READ,
+		DOMAIN_TICKET_CLAIM_RULE_READ,
 	];
 
 	const renderContent = () => {
@@ -116,6 +120,9 @@ export default function DomainTicketConfigPage() {
 					permissions={STATUS_PERMISSIONS}
 				/>
 			);
+		}
+		if (section === "claim-rule") {
+			return <ClaimRulePanel domainId={domainId} />;
 		}
 		return <DomainTicketTypesPanel domainId={domainId} />;
 	};

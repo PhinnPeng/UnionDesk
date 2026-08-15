@@ -42,6 +42,11 @@ export const DOMAIN_TICKET_STATUS_CREATE = "domain.ticket_status.create";
 export const DOMAIN_TICKET_STATUS_UPDATE = "domain.ticket_status.update";
 export const DOMAIN_TICKET_STATUS_DELETE = "domain.ticket_status.delete";
 
+export const DOMAIN_TICKET_CLAIM_RULE_READ = "domain.ticket_claim_rule.read";
+export const DOMAIN_TICKET_CLAIM_RULE_CREATE = "domain.ticket_claim_rule.create";
+export const DOMAIN_TICKET_CLAIM_RULE_UPDATE = "domain.ticket_claim_rule.update";
+export const DOMAIN_TICKET_CLAIM_RULE_DELETE = "domain.ticket_claim_rule.delete";
+
 export const DOMAIN_AUDIT_LOG_READ = "domain.audit_log.read";
 export const DOMAIN_LOGIN_LOG_READ = "domain.login_log.read";
 
