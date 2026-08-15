@@ -1,0 +1,31 @@
+{
+  "id": "08-15-workbench-ticket-config",
+  "name": "08-15-workbench-ticket-config",
+  "title": "员工端「工作台」聚合（工单队列+在线咨询）+ 事项配置挂入系统设置",
+  "description": "新增一级菜单「工作台」（/domain/workbench）聚合工单队列与在线咨询（Tabs 壳页，原子页面保留，权限码独立）；工单队列/在线咨询菜单改隐藏（路由保留）。事项配置菜单挂入系统设置→功能配置（保留路径 /domain/ticket-config，12 权限码不变），角色绑定按 SLA 迁移先例传播。来源：@trellis-research 2026-08-15 研究，用户拍板「A 工作台 / 可行挂入执行调整」。",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "phinnpeng",
+  "assignee": "phinnpeng",
+  "createdAt": "2026-08-15",
+  "completedAt": null,
+  "branch": "master",
+  "base_branch": "master",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "UnionDeskWeb/apps/UnionDeskAdminWeb/src/pages/domain/ticket-queue/index.tsx",
+    "UnionDeskWeb/apps/UnionDeskAdminWeb/src/pages/domain/consultations/index.tsx",
+    "UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/routes/modules/domain.ts",
+    "UnionDesk/uniondesk-app/src/main/resources/db/migration/current/"
+  ],
+  "notes": "",
+  "meta": {}
+}
