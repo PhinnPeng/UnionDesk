@@ -5,6 +5,7 @@ import { domain } from "#src/router/extra-info";
 import { lazy } from "react";
 
 const DomainOverview = lazy(() => import("#src/pages/domain/overview"));
+const DomainWorkbench = lazy(() => import("#src/pages/domain/workbench"));
 const DomainTicketQueue = lazy(() => import("#src/pages/domain/ticket-queue"));
 const DomainTicketQueueDetail = lazy(() => import("#src/pages/domain/ticket-queue/detail"));
 const DomainBasic = lazy(() => import("#src/pages/domain/basic"));
@@ -58,6 +59,16 @@ const routes: AppRouteRecordRaw[] = [
 						title: "运营概览",
 						scope: "business",
 						auth: "domain.overview.read",
+					},
+				},
+				{
+					path: "/domain/workbench",
+					Component: DomainWorkbench,
+					handle: {
+						icon: "HomeOutlined",
+						title: "工作台",
+						scope: "business",
+						auth: "ticket.view.domain_all",
 					},
 				},
 				{

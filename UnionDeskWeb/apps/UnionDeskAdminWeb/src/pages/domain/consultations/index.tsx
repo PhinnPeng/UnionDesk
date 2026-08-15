@@ -16,6 +16,7 @@ import { App, Button, Card, Drawer, Empty, Form, Input, Modal, Select, Space, Ta
 import type { TableColumnsType } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 
 import { AuthGuarded } from "#src/components/auth-guarded";
 import { BasicContent } from "#src/components/basic-content";
@@ -62,6 +63,7 @@ function buildSessionSummary(sessionNo: string, messages: ConsultationMessageRow
 
 export default function DomainConsultationsPage() {
 	const { message } = App.useApp();
+	const navigate = useNavigate();
 	const defaultBusinessDomainId = useAuthStore(state => state.defaultBusinessDomainId);
 	const accessibleDomains = useAuthStore(state => state.accessibleDomains);
 
@@ -196,7 +198,23 @@ export default function DomainConsultationsPage() {
 				title: values.title,
 				description: values.description,
 			});
-			message.success(`已转为工单 ${result.ticketNo}`);
+			message.success({
+				content: (
+					<span>
+						已转为工单 {result.ticketNo}
+						<Typography.Link
+							className="ml-2"
+							onClick={() => {
+								message.destroy();
+								navigate("/domain/workbench?tab=ticket");
+							}}
+						>
+							前往工单
+						</Typography.Link>
+					</span>
+				),
+				duration: 5,
+			});
 			setConvertOpen(false);
 			setDetailOpen(false);
 			await loadSessions(page, pageSize, searchValues);
