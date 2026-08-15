@@ -12,6 +12,8 @@ export type AdminTicketListQuery = {
 	keyword?: string
 	/** 只看分配给我的待办 */
 	assigned_to_me?: boolean
+	/** 按 SLA 状态筛选（如 breached=已超时） */
+	sla_status?: string
 }
 
 export interface TicketRow {
