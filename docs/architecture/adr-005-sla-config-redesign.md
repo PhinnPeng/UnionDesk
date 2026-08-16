@@ -2,6 +2,8 @@
 
 > 状态：**已采纳**（2026-08-16 拍板：D1 域内自配置平台不管理 / D2 紧急后置 / D3 升级固定+两动作动态 / D4 日历三要素 / D5 单份通配 / D6 内嵌单日历 / D7 平台隐藏 / D8 新表承载 / D9 升级开关+目标档 / D10 FieldTimeOutlined / D11 更名 SLA 配置） · 关联：[ADR-002 双层配置](adr-sla-two-tier-config.md)（**D1-D3 被本 ADR 取代**）、[ADR-003 实时消息](adr-realtime-websocket.md) · 设计说明：[sla-config-redesign.md](../product/sla-config-redesign.md)
 
+> **1.1 修订（2026-08-16，工作日历 V2）**：D4 由「工作日+节假日+周末」升级为 **周 × 时间网格**（周一~周日 × 00:00-23:59，30 分钟/格，点击+拖动涂选；默认周一至周五 09:00-12:00 + 13:30-17:30；`calendar_json` 结构改为 `{time_slots:[{weekday,start,end}], holidays:[]}`，兼容旧 working_days/weekend_work）并接入**免费节假日 API（timor.tech，无需 key）**：新表 `holiday_date`（全局，仅落节日 type=2/调休 type=3）+ `HolidaySyncJob`（每天 03:00 + 启动时，拉当年+次年，幂等 upsert）+ 前端「同步」按钮；判定优先级：域 holidays（整天不计）→ 法定节日（不计）→ 调休上班日（计入，按该周几时段）→ 网格时段。`weekend_work` 字段废弃。接口新增 GET/POST `/admin/holidays[/sync]`。
+
 ## 1. 背景
 
 SLA 管理现状被判定「非常模糊」：双层规则列表（全局+域代管）对普通域管理员过度复杂；工作日历（sla_calendar）与紧急配置（is_urgent_config）是零消费死能力；菜单无图标、平台菜单图标未注册；域页与平台页双入口职责重叠。需求：SLA 降级为**业务域内自配置**的固定面板（平台不管理），重新设计为清晰可用的配置页。

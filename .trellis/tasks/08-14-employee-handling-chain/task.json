@@ -1,0 +1,33 @@
+{
+  "id": "employee-handling-chain",
+  "name": "employee-handling-chain",
+  "title": "员工端处理链路打通（本次迭代）",
+  "description": "员工端处理链路增强：S-00端到端冒烟 + E-EMP1咨询接待闭环(claim/end/撤回/权限目录) + E-EMP2工单处理增强(批量/内部备注时间线) + E-EMP3状态机与SLA(可配置工作流接入/SLA高亮)。父任务承载迭代整体，子任务逐个实现。勘察见 docs/product/employee-handling-chain-plan.md。",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P0",
+  "creator": "phinnpeng",
+  "assignee": "phinnpeng",
+  "createdAt": "2026-08-14",
+  "completedAt": null,
+  "branch": "task/08-14-employee-handling-chain",
+  "base_branch": "master",
+  "worktree_path": "F:/WorkSpace/UnionDesk-worktrees/08-14-employee-handling-chain",
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "08-14-s00-e2e-smoke",
+    "08-14-e-emp1-consultation-closed-loop",
+    "08-14-e-emp2-ticket-handling",
+    "08-14-e-emp3-status-sla"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "worktree_path": "F:/WorkSpace/UnionDesk-worktrees/08-14-employee-handling-chain"
+  }
+}

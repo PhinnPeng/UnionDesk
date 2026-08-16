@@ -1,0 +1,789 @@
+{
+  "tasks": [
+    {
+      "pagePath": "全局与规范/技术栈.md",
+      "title": "技术栈",
+      "description": "UnionDesk 前后端技术栈总览：后端 Spring Boot 多模块 Maven（app/common/domain/iam/support/ticket）、MyBatis、Flyway、MySQL、JWT；前端 React 18 + Ant Design v6 + Vite + TypeScript 双端应用（AdminWeb/CustomerWeb）与 shared 包",
+      "relatedFiles": [
+        "UnionDesk/pom.xml",
+        "UnionDesk/uniondesk-app/pom.xml",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/package.json",
+        "UnionDeskWeb/packages/shared/src/index.ts",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/UnionDeskApplication.java"
+      ],
+      "id": "全局与规范/技术栈.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "全局与规范/项目目录结构详解.md",
+      "title": "项目目录结构详解",
+      "description": "UnionDesk 仓库根目录布局：UnionDesk 后端多模块、UnionDeskWeb 前端 monorepo（apps/packages）、data/sql、docs 目录的组织方式与模块边界",
+      "relatedFiles": [
+        "UnionDesk/pom.xml",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/routes/config.ts",
+        "UnionDesk/uniondesk-app/src/main/resources/db/migration/current/V202605200002__rebaseline_current_schema.sql",
+        "UnionDeskWeb/packages/shared/src/api.ts"
+      ],
+      "id": "全局与规范/项目目录结构详解.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "全局与规范/系统概述.md",
+      "title": "系统概述",
+      "description": "UnionDesk 客服工作台系统整体概述：平台管理端、业务域控制台、客户门户三端；工单、业务域、IAM 权限、SLA、通知、审计、附件、咨询八大领域",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/UnionDeskApplication.java",
+        "UnionDesk/uniondesk-common/src/main/java/com/uniondesk/common/web/ApiResponse.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketService.java",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/routes/config.ts"
+      ],
+      "id": "全局与规范/系统概述.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "全局与规范/开发者指南.md",
+      "title": "开发者指南",
+      "description": "UnionDesk 开发者指南：AGENTS.md 编码规范、Flyway 迁移纪律、多模块依赖方向、前端编码规范（AntD v6、Less、组件拆分）、验收测试",
+      "relatedFiles": [
+        "AGENTS.md",
+        "UnionDesk/uniondesk-app/src/main/resources/db/migration/current/V202605200002__rebaseline_current_schema.sql",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/utils/generate-routes-from-backend.ts"
+      ],
+      "id": "全局与规范/开发者指南.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "数据库设计/数据库设计总览.md",
+      "title": "数据库设计总览",
+      "description": "UnionDesk 数据库整体设计：MySQL 8 + Flyway 迁移管理（archive/current 双目录）、六大领域表族（auth/iam/domain/ticket/support）、无外键约束的业务逻辑约束原则",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-app/src/main/resources/db/migration/current/V202605200002__rebaseline_current_schema.sql",
+        "UnionDesk/uniondesk-app/src/main/resources/db/migration/current/V202605200003__add_audit_fields_to_business_domain.sql",
+        "UnionDesk/uniondesk-app/src/main/resources/db/init-mysql-config.sql"
+      ],
+      "id": "数据库设计/数据库设计总览.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "数据库设计/实体关系与ER图.md",
+      "title": "实体关系与ER图",
+      "description": "UnionDesk 核心实体关系：登录账号-身份主体-用户/员工/客户、业务域-域成员-域角色-域客户、工单-回复-历史-状态-类型-属性、通知-附件-SLA-审计关联",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/entity/TicketPo.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/entity/IdentitySubjectPo.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/entity/BusinessDomainPo.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/entity/OrganizationPo.java"
+      ],
+      "id": "数据库设计/实体关系与ER图.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "数据库设计/表结构详解/表结构详解总览.md",
+      "title": "表结构详解总览",
+      "description": "全部核心表族的字段结构索引：auth 认证会话表族、iam 账号权限表族、domain 业务域表族、ticket 工单表族、support 支撑表族",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-app/src/main/resources/db/migration/current/V202605200002__rebaseline_current_schema.sql",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/entity/RolePo.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/entity/TicketPo.java"
+      ],
+      "id": "数据库设计/表结构详解/表结构详解总览.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "数据库设计/表结构详解/认证与账号表.md",
+      "title": "认证与账号表",
+      "description": "auth/iam 表族详解：login_account、auth_login_session、auth_client、user_account、staff_account、customer_account、identity_subject、login_log 等表字段、索引与用途",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/entity/LoginAccountPo.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/entity/AuthLoginSessionPo.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/entity/IdentitySubjectPo.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/entity/UserAccountPo.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/entity/StaffAccountPo.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/entity/CustomerAccountPo.java"
+      ],
+      "id": "数据库设计/表结构详解/认证与账号表.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "数据库设计/表结构详解/权限与菜单表.md",
+      "title": "权限与菜单表",
+      "description": "iam 权限表族详解：iam_resource、iam_permission、admin_menu、platform_role、role、role_permission、role_template 等表字段与权限码模型",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/entity/IamResourcePo.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/entity/IamPermissionPo.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/entity/AdminMenuPo.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/entity/RolePo.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/entity/RolePermissionRowPo.java"
+      ],
+      "id": "数据库设计/表结构详解/权限与菜单表.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "数据库设计/表结构详解/业务域表.md",
+      "title": "业务域表",
+      "description": "domain 表族详解：business_domain、domain_config、domain_member、domain_member_role、domain_role、domain_customer、invitation_code、role_template 等表",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/entity/BusinessDomainPo.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/entity/DomainMemberPo.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/entity/DomainRolePo.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/entity/DomainCustomerPo.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/entity/InvitationCodePo.java"
+      ],
+      "id": "数据库设计/表结构详解/业务域表.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "数据库设计/表结构详解/工单核心表.md",
+      "title": "工单核心表",
+      "description": "ticket 表族详解：ticket、ticket_reply、ticket_history、ticket_status、ticket_type、ticket_attribute、ticket_form_schema、ticket_relation、ticket_watcher、ticket_satisfaction 等表",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/entity/TicketPo.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/entity/TicketReplyPo.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/entity/TicketStatusPo.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/entity/TicketTypePo.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/entity/TicketAttributePo.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/entity/TicketFormSchemaPo.java"
+      ],
+      "id": "数据库设计/表结构详解/工单核心表.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "数据库设计/表结构详解/支撑服务表.md",
+      "title": "支撑服务表",
+      "description": "support 表族详解：file_attachment、attachment_ref、attachment_policy、notification_template、inbox_message、notification_log、sla_rule、sla_calendar、audit_log、blocked_word、system_config 等表",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/attachment/entity/FileAttachmentPo.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/notification/entity/NotificationTemplatePo.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/sla/entity/SlaRulePo.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/audit/entity/AuditLogWritePo.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/blockedword/entity/BlockedWordPo.java"
+      ],
+      "id": "数据库设计/表结构详解/支撑服务表.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "数据库设计/典型查询模式/典型查询模式总览.md",
+      "title": "典型查询模式总览",
+      "description": "MyBatis XML 查询模式归纳：分页查询（PageResult）、联表投影、动态条件、批量插入、乐观更新等典型 SQL 模式",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/resources/mapper/ticket/TicketMapper.xml",
+        "UnionDesk/uniondesk-iam/src/main/resources/mapper/iam/IamPermissionMapper.xml",
+        "UnionDesk/uniondesk-domain/src/main/resources/mapper/domain/BusinessDomainMapper.xml",
+        "UnionDesk/uniondesk-common/src/main/java/com/uniondesk/common/web/PageResult.java"
+      ],
+      "id": "数据库设计/典型查询模式/典型查询模式总览.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "数据库设计/典型查询模式/工单查询模式.md",
+      "title": "工单查询模式",
+      "description": "工单列表分页查询、详情聚合查询、历史记录查询、SLA 截止时间计算等高频 SQL 分析",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/resources/mapper/ticket/TicketMapper.xml",
+        "UnionDesk/uniondesk-ticket/src/main/resources/mapper/ticket/TicketHistoryMapper.xml",
+        "UnionDesk/uniondesk-ticket/src/main/resources/mapper/ticket/TicketReplyMapper.xml",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketService.java"
+      ],
+      "id": "数据库设计/典型查询模式/工单查询模式.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "数据库设计/典型查询模式/权限与菜单查询.md",
+      "title": "权限与菜单查询",
+      "description": "菜单树查询、权限码校验查询、角色-权限联查、域成员身份解析等权限相关 SQL 模式",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-iam/src/main/resources/mapper/iam/AdminMenuMapper.xml",
+        "UnionDesk/uniondesk-iam/src/main/resources/mapper/iam/IamPermissionMapper.xml",
+        "UnionDesk/uniondesk-iam/src/main/resources/mapper/iam/RoleMapper.xml",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/core/IamService.java"
+      ],
+      "id": "数据库设计/典型查询模式/权限与菜单查询.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "后端架构/MVC架构设计/MVC架构总览.md",
+      "title": "MVC架构总览",
+      "description": "后端 MVC 分层总览：Controller(web) → Service(core) → Repository → Mapper 四层职责划分、各模块（iam/domain/ticket/support/app）内一致的分层包结构",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/web/TicketController.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketService.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/repository/TicketRepository.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/mapper/TicketMapper.java"
+      ],
+      "id": "后端架构/MVC架构设计/MVC架构总览.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "后端架构/MVC架构设计/Controller层设计.md",
+      "title": "Controller层设计",
+      "description": "Controller 层设计规范：@RestController 风格、@RequirePermission 注解权限校验、请求 DTO 校验、统一返回 ApiResponse、错误处理",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/web/TicketController.java",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/common/web/ApiResponseWrapper.java",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/common/web/ApiExceptionHandler.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/core/RequirePermission.java"
+      ],
+      "id": "后端架构/MVC架构设计/Controller层设计.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "后端架构/MVC架构设计/Service层设计.md",
+      "title": "Service层设计",
+      "description": "Service 层设计规范：业务事务边界、@Transactional 使用、领域服务职责、事件发布（UnionDeskEventPublisher）、依赖注入",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketService.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/core/DomainService.java",
+        "UnionDesk/uniondesk-common/src/main/java/com/uniondesk/common/event/UnionDeskEventPublisher.java",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/config/AsyncConfiguration.java"
+      ],
+      "id": "后端架构/MVC架构设计/Service层设计.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "后端架构/MVC架构设计/Mapper层设计.md",
+      "title": "Mapper层设计",
+      "description": "Mapper 层设计：MyBatis Mapper 接口 + XML 映射、动态 SQL、结果映射到实体、分页 limit 参数传递模式",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/mapper/TicketMapper.java",
+        "UnionDesk/uniondesk-ticket/src/main/resources/mapper/ticket/TicketMapper.xml",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/mapper/IamPermissionMapper.java",
+        "UnionDesk/uniondesk-iam/src/main/resources/mapper/iam/IamPermissionMapper.xml"
+      ],
+      "id": "后端架构/MVC架构设计/Mapper层设计.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "后端架构/分层设计规范/分层设计规范总览.md",
+      "title": "分层设计规范总览",
+      "description": "后端分层设计规范总览：实体(Po)/DTO/统一响应/PageResult 的分类原则、包命名约定、模块依赖方向（common→domain/iam/support/ticket→app）",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-common/src/main/java/com/uniondesk/common/web/ApiResponse.java",
+        "UnionDesk/uniondesk-common/src/main/java/com/uniondesk/common/web/PageResult.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/entity/TicketPo.java",
+        "UnionDesk/pom.xml"
+      ],
+      "id": "后端架构/分层设计规范/分层设计规范总览.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "后端架构/分层设计规范/实体模型.md",
+      "title": "实体模型",
+      "description": "实体模型规范：各模块 Po 实体（*Po 后缀）、与数据库表字段映射、时间字段/审计字段约定、枚举表示方式",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/entity/TicketPo.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/entity/BusinessDomainPo.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/entity/UserAccountPo.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/audit/entity/AuditLogWritePo.java"
+      ],
+      "id": "后端架构/分层设计规范/实体模型.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "后端架构/分层设计规范/统一响应格式.md",
+      "title": "统一响应格式",
+      "description": "统一响应格式：ApiResponse 包装（code/message/data）、PageResult 分页结构（total/items）、错误码体系 ErrorCodes、异常处理链",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-common/src/main/java/com/uniondesk/common/web/ApiResponse.java",
+        "UnionDesk/uniondesk-common/src/main/java/com/uniondesk/common/web/PageResult.java",
+        "UnionDesk/uniondesk-common/src/main/java/com/uniondesk/common/web/ErrorCodes.java",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/common/web/ApiResponseWrapper.java",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/common/web/ApiExceptionHandler.java"
+      ],
+      "id": "后端架构/分层设计规范/统一响应格式.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "后端架构/分层设计规范/数据传输对象.md",
+      "title": "数据传输对象",
+      "description": "DTO 设计规范：*Dtos 文件内请求/响应 DTO 定义、字段校验注解、与实体间的转换、Controller 与 Service 间传参约定",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/web/TicketConfigDtos.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/web/DomainDtos.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/web/IamDtos.java",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/auth/web/AuthDtos.java"
+      ],
+      "id": "后端架构/分层设计规范/数据传输对象.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "后端架构/组件依赖与调用关系/组件依赖总览.md",
+      "title": "组件依赖总览",
+      "description": "后端组件依赖总览：Maven 多模块依赖图（uniondesk-common/domain/iam/support/ticket/app）、跨模块 Repository 引用与 Mapper 复用模式",
+      "relatedFiles": [
+        "UnionDesk/pom.xml",
+        "UnionDesk/uniondesk-app/pom.xml",
+        "UnionDesk/uniondesk-iam/pom.xml",
+        "UnionDesk/uniondesk-domain/pom.xml",
+        "UnionDesk/uniondesk-ticket/pom.xml",
+        "UnionDesk/uniondesk-support/pom.xml"
+      ],
+      "id": "后端架构/组件依赖与调用关系/组件依赖总览.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "后端架构/组件依赖与调用关系/应用启动机制.md",
+      "title": "应用启动机制",
+      "description": "应用启动机制：UnionDeskApplication 启动类、Flyway 迁移执行（FlywayRepair）、域引导服务 DomainBootstrapService、异步配置 AsyncConfiguration",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/UnionDeskApplication.java",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/config/FlywayRepair.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/core/DomainBootstrapService.java",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/config/AsyncConfiguration.java"
+      ],
+      "id": "后端架构/组件依赖与调用关系/应用启动机制.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "后端架构/组件依赖与调用关系/依赖注入机制.md",
+      "title": "依赖注入机制",
+      "description": "Spring 依赖注入机制：构造器注入、@Service/@Repository 组件扫描、跨模块 Bean 装配、@Async 异步执行、事件监听",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/web/IamWebMvcConfig.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/notification/event/NotificationEventListener.java",
+        "UnionDesk/uniondesk-common/src/main/java/com/uniondesk/common/event/UnionDeskEventPublisher.java",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/config/AsyncConfiguration.java"
+      ],
+      "id": "后端架构/组件依赖与调用关系/依赖注入机制.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "后端架构/组件依赖与调用关系/组件调用链路.md",
+      "title": "组件调用链路",
+      "description": "典型组件调用链路：登录认证链路（Controller→AuthService→LoginSessionService→Repository）、创建工单链路（TicketController→TicketService→多个Repository→事件发布）",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/auth/core/AuthService.java",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/auth/web/AuthController.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/LoginSessionService.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketService.java"
+      ],
+      "id": "后端架构/组件依赖与调用关系/组件调用链路.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "核心功能设计/核心功能总览.md",
+      "title": "核心功能总览",
+      "description": "UnionDesk 核心功能总览：认证登录、业务域、工单全生命周期、工单配置（类型/属性/状态/流转）、IAM 权限、SLA、通知、审计、附件、在线咨询十大领域及其交互关系",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/auth/core/AuthService.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketService.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/core/DomainService.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/core/IamService.java"
+      ],
+      "id": "核心功能设计/核心功能总览.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "核心功能设计/认证与登录机制.md",
+      "title": "认证与登录机制",
+      "description": "认证与登录机制：多账号类型登录（平台用户/域员工/客户）、密码登录、验证码登录、JWT 签发、登录会话、登录日志审计、可信 IP",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/auth/core/AuthService.java",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/auth/web/AuthController.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/LoginSessionService.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/LoginAccountService.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/JwtTokenService.java"
+      ],
+      "id": "核心功能设计/认证与登录机制.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "核心功能设计/业务域管理.md",
+      "title": "业务域管理",
+      "description": "业务域管理：域创建/引导（DomainBootstrapService）、域配置、域成员与角色分配、域客户管理、邀请码、角色模板应用（DomainTeamTemplateApplier）",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/core/DomainService.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/core/DomainBootstrapService.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/core/DomainMemberService.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/core/DomainRoleService.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/core/InvitationCodeService.java"
+      ],
+      "id": "核心功能设计/业务域管理.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "核心功能设计/工单生命周期与状态机.md",
+      "title": "工单生命周期与状态机",
+      "description": "工单生命周期：创建、受理、回复、状态流转（TicketStatusService）、流转规则校验（TicketTransitionRuleService）、完结、满意度评价；事件驱动（TicketStatusChangedEvent）",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketService.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketStatusService.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketTransitionRuleService.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketSatisfactionService.java"
+      ],
+      "id": "核心功能设计/工单生命周期与状态机.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "核心功能设计/工单类型与流程配置.md",
+      "title": "工单类型与流程配置",
+      "description": "工单类型与流程配置：平台级工单类型（TicketTypeService）、域级类型继承、状态流（TicketTypeFlowService 状态/迁移）、团队模板（TeamTemplateApplyService）、平台复制（PlatformTicketTypeCopyService）",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketTypeService.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketTypeFlowService.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TeamTemplateApplyService.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/PlatformTicketTypeCopyService.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/StatusFlowValidator.java"
+      ],
+      "id": "核心功能设计/工单类型与流程配置.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "核心功能设计/工单表单架构.md",
+      "title": "工单表单架构",
+      "description": "工单表单架构：工单属性（TicketAttributeService 属性类型/选项）、表单架构 schema（TicketFormSchemaService JSON Schema）、表单快照（FormSnapshotBuilder）、校验器（FormSchemaValidator）",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketAttributeService.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketFormSchemaService.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/FormSnapshotBuilder.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/FormSchemaValidator.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/core/TicketTypeAttributeSlotService.java"
+      ],
+      "id": "核心功能设计/工单表单架构.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "核心功能设计/IAM权限体系.md",
+      "title": "IAM权限体系",
+      "description": "IAM 权限体系：权限码模型（PermissionCodes）、权限作用域（PermissionScopePolicy）、RequirePermission 注解拦截、角色-权限绑定、菜单权限、身份主体解析（IdentitySubjectService）",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/core/IamService.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/core/PermissionCodes.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/core/RequirePermission.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/web/RequirePermissionInterceptor.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/core/IdentitySubjectService.java"
+      ],
+      "id": "核心功能设计/IAM权限体系.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "核心功能设计/SLA服务.md",
+      "title": "SLA服务",
+      "description": "SLA 服务：SLA 规则（SlaRule）、工作日历（SlaCalendar）、工单 SLA 计算（SlaTicket）、响应/解决时限计算逻辑、节假日处理",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/sla/core/SlaService.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/sla/entity/SlaRulePo.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/sla/entity/SlaCalendarPo.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/sla/entity/SlaTicketPo.java"
+      ],
+      "id": "核心功能设计/SLA服务.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "核心功能设计/通知中心.md",
+      "title": "通知中心",
+      "description": "通知中心：通知模板（NotificationTemplateService）、消息发送与站内信（NotificationCenterService + InboxMessage）、事件监听驱动（NotificationEventListener）、通知日志",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/notification/core/NotificationCenterService.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/notification/core/NotificationTemplateService.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/notification/event/NotificationEventListener.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/notification/entity/InboxMessagePo.java"
+      ],
+      "id": "核心功能设计/通知中心.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "核心功能设计/审计日志.md",
+      "title": "审计日志",
+      "description": "审计日志：审计动作目录（AuditActionCatalog）、审计写入（AuditLogWriter）、语义监听（AuditLogSemanticsListener）、菜单路径解析、登录日志统一",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/audit/core/AuditLogService.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/audit/semantics/AuditLogWriter.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/audit/semantics/AuditLogSemanticsListener.java",
+        "UnionDesk/uniondesk-common/src/main/java/com/uniondesk/common/audit/AuditActionCatalog.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/audit/web/AuditLogController.java"
+      ],
+      "id": "核心功能设计/审计日志.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "核心功能设计/附件与屏蔽词.md",
+      "title": "附件与屏蔽词",
+      "description": "附件存储（AttachmentService 上传/下载/策略/引用）+ 屏蔽词（BlockedWordService 命中检测），MinIO/S3 对象存储集成",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/attachment/core/AttachmentService.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/attachment/storage/S3MinioAttachmentStorage.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/attachment/web/AttachmentController.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/blockedword/core/BlockedWordService.java"
+      ],
+      "id": "核心功能设计/附件与屏蔽词.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "核心功能设计/在线咨询会话.md",
+      "title": "在线咨询会话",
+      "description": "在线咨询会话：咨询会话（ConsultationSession）、消息（ConsultationMessage）、会话状态机、运行接口（ConsultationRuntimeController）",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/consultation/core/ConsultationService.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/consultation/entity/ConsultationSessionPo.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/consultation/entity/ConsultationMessagePo.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/consultation/web/ConsultationRuntimeController.java"
+      ],
+      "id": "核心功能设计/在线咨询会话.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "API接口文档/API接口总览.md",
+      "title": "API接口总览",
+      "description": "全部接口端点总览：按 Controller 模块分组（auth/iam/domain/ticket/support），统一前缀、认证头、响应包装、错误码",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/auth/web/AuthController.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/web/IamController.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/web/DomainController.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/web/TicketController.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/sla/web/SlaController.java"
+      ],
+      "id": "API接口文档/API接口总览.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "API接口文档/认证与登录接口.md",
+      "title": "认证与登录接口",
+      "description": "认证接口文档：密码登录、验证码、刷新令牌、登出、当前用户、密码找回等端点的请求/响应 JSON 与权限",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/auth/web/AuthController.java",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/auth/web/AuthDtos.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/AuthCaptchaService.java"
+      ],
+      "id": "API接口文档/认证与登录接口.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "API接口文档/工单与配置接口.md",
+      "title": "工单与配置接口",
+      "description": "工单接口文档：工单 CRUD/受理/回复/流转/满意度；工单类型/属性/状态/流转/团队模板配置端点",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/web/TicketController.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/web/TicketConfigController.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/web/PlatformTicketConfigController.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/web/PlatformTicketStatusController.java",
+        "UnionDesk/uniondesk-ticket/src/main/java/com/uniondesk/ticket/web/TicketConfigDtos.java"
+      ],
+      "id": "API接口文档/工单与配置接口.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "API接口文档/业务域接口.md",
+      "title": "业务域接口",
+      "description": "业务域接口文档：域 CRUD、域成员、域角色、域客户、域配置、邀请码、角色模板端点",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/web/DomainController.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/web/DomainMemberController.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/web/DomainRoleController.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/web/DomainCustomerController.java",
+        "UnionDesk/uniondesk-domain/src/main/java/com/uniondesk/domain/web/RoleTemplateController.java"
+      ],
+      "id": "API接口文档/业务域接口.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "API接口文档/IAM与组织接口.md",
+      "title": "IAM与组织接口",
+      "description": "IAM 接口文档：用户/员工/客户账号管理、角色管理、组织管理、菜单管理、导入导出端点",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/web/IamController.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/web/StaffController.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/web/OrganizationController.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/web/ImportExportController.java"
+      ],
+      "id": "API接口文档/IAM与组织接口.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "API接口文档/平台支撑接口.md",
+      "title": "平台支撑接口",
+      "description": "支撑接口文档：SLA、通知/站内信、审计日志、登录日志、附件、屏蔽词、系统配置、仪表盘端点",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/sla/web/SlaController.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/notification/web/InboxController.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/audit/web/AuditLogController.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/attachment/web/AttachmentController.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/config/web/SystemConfigController.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/dashboard/web/OverviewController.java"
+      ],
+      "id": "API接口文档/平台支撑接口.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "前端架构/前端架构总览.md",
+      "title": "前端架构总览",
+      "description": "前端架构总览：UnionDeskAdminWeb（平台管理端）+ UnionDeskCustomerWeb（客户门户）双应用 + shared 共享包；React 18 + AntD v6 + Vite + TS；页面分组（platform/domain/system/personal-center）",
+      "relatedFiles": [
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/package.json",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/vite.config.ts",
+        "UnionDeskWeb/packages/shared/src/index.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/routes/config.ts",
+        "UnionDeskWeb/apps/UnionDeskCustomerWeb/src/routes/index.ts"
+      ],
+      "id": "前端架构/前端架构总览.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "前端架构/前端路由机制.md",
+      "title": "前端路由机制",
+      "description": "前端路由机制：静态路由（core/modules/external）+ 后端菜单动态路由（generate-routes-from-backend）、路由守卫（guard）、app-scope 域上下文、路由扁平化与菜单生成",
+      "relatedFiles": [
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/routes/config.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/utils/generate-routes-from-backend.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/guard/index.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/extra-info/app-scope.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/utils/generate-user-menus.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/router/utils/generate-menu-items-from-routes.ts"
+      ],
+      "id": "前端架构/前端路由机制.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "前端架构/全局状态管理与网络层.md",
+      "title": "全局状态管理与网络层",
+      "description": "全局状态管理与网络层：Pinia store（auth/user/access/tabs/global/preferences）、请求封装（utils/request 拦截器/刷新令牌/错误处理）、API 层解包 {total, items} 信封",
+      "relatedFiles": [
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/store/auth.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/store/access.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/utils/request/index.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/utils/request/refresh.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/api/backend.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/store/tabs.ts"
+      ],
+      "id": "前端架构/全局状态管理与网络层.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "前端架构/组件树与页面结构.md",
+      "title": "组件树与页面结构",
+      "description": "组件树与页面结构：布局（layout/layout-menu/layout-tabbar）、公共组件（BasicTable/BasicForm/TableSearchForm/ConfirmPopover/AuthGuarded）、页面级组件组织；列表页「筛选条件+数据区」骨架",
+      "relatedFiles": [
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/layout/layout-menu/index.tsx",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/components/basic-table/index.tsx",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/components/table-search-form/index.tsx",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/components/access-control/index.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/pages/platform/domains/index.tsx",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/pages/platform/domains/detail/components/detail-members.tsx"
+      ],
+      "id": "前端架构/组件树与页面结构.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "前端架构/API调用集成.md",
+      "title": "API调用集成",
+      "description": "前端 API 调用集成：api 目录按业务域拆分（auth/user/platform/system/notifications）、类型定义、平台/域双作用域切换（app-scope）、错误提示与国际化",
+      "relatedFiles": [
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/api/platform/domain.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/api/platform/iam.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/api/platform/ticket.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/api/auth/index.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/api/backend.ts",
+        "UnionDeskWeb/apps/UnionDeskAdminWeb/src/hooks/use-app-scope/index.ts"
+      ],
+      "id": "前端架构/API调用集成.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "安全设计/安全设计总览.md",
+      "title": "安全设计总览",
+      "description": "UnionDesk 安全设计总览：认证（JWT+会话）、授权（权限码+数据范围）、传输安全（CORS/CORS SecurityConfig）、审计与登录日志、密码存储与验证码",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/common/web/CorsSecurityConfig.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/JwtAuthenticationFilter.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/core/RequirePermission.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/audit/core/AuditLogService.java"
+      ],
+      "id": "安全设计/安全设计总览.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "安全设计/JWT认证机制.md",
+      "title": "JWT认证机制",
+      "description": "JWT 认证机制：令牌签发（JwtTokenService）、校验过滤（JwtAuthenticationFilter）、过期刷新、会话管理（AuthLoginSession）、客户端识别（AuthClientHeaders）",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/JwtTokenService.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/JwtAuthenticationFilter.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/LoginSessionService.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/AuthClientHeaders.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/UserContextHolder.java"
+      ],
+      "id": "安全设计/JWT认证机制.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "安全设计/基于角色的权限控制.md",
+      "title": "基于角色的权限控制",
+      "description": "基于角色的权限控制：权限码模型、RequirePermission 注解 + 拦截器、PermissionScopePolicy 数据范围、角色绑定（域角色/平台角色）、菜单与按钮级权限",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/web/RequirePermissionInterceptor.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/core/PermissionScopePolicy.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/core/PermissionCodes.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/core/PlatformRoleService.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/iam/admin/AdminPermissionCatalog.java"
+      ],
+      "id": "安全设计/基于角色的权限控制.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "安全设计/敏感数据保护.md",
+      "title": "敏感数据保护",
+      "description": "敏感数据保护：密码散列存储（BCrypt）、登录验证码（滑块验证码）、可信 IP、登录日志脱敏、CORS 策略、附件访问控制",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/LoginAccountService.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/AuthCaptchaService.java",
+        "UnionDesk/uniondesk-iam/src/main/java/com/uniondesk/auth/core/TrustedLoginIpService.java",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/common/web/CorsSecurityConfig.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/attachment/core/AttachmentService.java"
+      ],
+      "id": "安全设计/敏感数据保护.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "部署与配置/部署与配置总览.md",
+      "title": "部署与配置总览",
+      "description": "UnionDesk 部署与配置总览：后端 Spring Boot 可执行 jar、前端构建产物（build/）、数据库 Flyway 迁移、环境配置文件与启动流程",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-app/src/main/resources/application.yml",
+        "UnionDesk/uniondesk-app/src/main/resources/logback-spring.xml",
+        "UnionDesk/uniondesk-app/src/main/resources/db/init-mysql-config.sql",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/UnionDeskApplication.java"
+      ],
+      "id": "部署与配置/部署与配置总览.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "部署与配置/环境配置.md",
+      "title": "环境配置",
+      "description": "环境配置：application.yml 多环境配置（dev/prod）、数据源、Redis/缓存、异步线程池、日志级别、jrebel 本地配置",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-app/src/main/resources/application.yml",
+        "UnionDesk/uniondesk-app/src/main/resources/logback-spring.xml",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/config/AsyncConfiguration.java",
+        "UnionDesk/config/jrebel.local.properties"
+      ],
+      "id": "部署与配置/环境配置.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "部署与配置/数据库配置.md",
+      "title": "数据库配置",
+      "description": "数据库配置：MySQL 连接配置、Flyway 迁移配置（archive/current 目录策略）、init-mysql-config 初始化脚本、备份脚本（DbBackup）",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-app/src/main/resources/db/init-mysql-config.sql",
+        "UnionDesk/uniondesk-app/src/main/resources/db/migration/current/V202605200002__rebaseline_current_schema.sql",
+        "UnionDesk/uniondesk-app/src/main/java/com/uniondesk/config/FlywayRepair.java",
+        "UnionDesk/scripts/DbBackup.java",
+        "UnionDesk/scripts/DbFlywayCheck.java"
+      ],
+      "id": "部署与配置/数据库配置.md",
+      "status": "done"
+    },
+    {
+      "pagePath": "部署与配置/文件存储配置.md",
+      "title": "文件存储配置",
+      "description": "文件存储配置：MinIO/S3 对象存储（StorageProperties/StorageConfiguration/S3MinioAttachmentStorage）、附件策略与本地备份",
+      "relatedFiles": [
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/attachment/storage/StorageProperties.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/attachment/storage/StorageConfiguration.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/attachment/storage/S3MinioAttachmentStorage.java",
+        "UnionDesk/uniondesk-support/src/main/java/com/uniondesk/attachment/core/AttachmentService.java"
+      ],
+      "id": "部署与配置/文件存储配置.md",
+      "status": "done"
+    }
+  ]
+}

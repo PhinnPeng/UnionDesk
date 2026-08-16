@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>UnionDesk Wiki</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.$docsify = {
+      name: "UnionDesk Wiki",
+      repo: "",
+      loadSidebar: true,
+      subMaxLevel: 3,
+      maxLevel: 4,
+      search: "auto",
+      mergeNavbar: true,
+      formatUpdated: "YYYY-MM-DD HH:mm",
+      markdown: {
+        renderer: {
+          // 关键：把 ```mermaid 代码块输出为 <div class="mermaid"> 容器
+          code: function (code, lang) {
+            if (lang && lang.toLowerCase() === "mermaid") {
+              return '<div class="mermaid">' + escapeHtml(code) + "</div>";
+            }
+            return this.origin.code.apply(this, arguments);
+          }
+        }
+      },
+      plugins: [
+        function (hook) {
+          // 页面 DOM 就绪后让 mermaid 解析所有 .mermaid 容器
+          hook.doneEach(function () {
+            if (window.mermaid) {
+              setTimeout(function () {
+                mermaid.run({ querySelector: ".mermaid" }).catch(function (e) {
+                  console.warn("mermaid render failed:", e);
+                });
+              }, 50);
+            }
+          });
+        }
+      ]
+    };
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+  </script>
+  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "loose" });
+    window.mermaid = mermaid;
+  </script>
+  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+</body>
+</html>
