@@ -36,7 +36,6 @@ export const PERMISSION_CODE_LABELS: Record<string, string> = {
 	"platform.system_config.update": "编辑系统配置",
 	"domain.read": "查看域信息",
 	"domain.home.read": "查看概览",
-	"domain.overview.read": "查看运营概览",
 	"domain.general.read": "查看通用设置",
 	"domain.general.update": "更新基础信息",
 	"domain.general.update_status": "启停业务域",

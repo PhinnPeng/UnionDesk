@@ -17,7 +17,6 @@ export const platformComRegistry: PlatformComRegistryItem[] = [
 	{ label: "系统管理/菜单管理", value: "system/menu" },
 	{ label: "平台管理/菜单管理", value: "platform/system/menu" },
 
-	{ label: "运营概览", value: "domain/overview" },
 	{ label: "事项配置", value: "domain/ticket-config" },
 	{ label: "客户列表", value: "domain/customers" },
 	{ label: "通用设置", value: "domain/basic" },

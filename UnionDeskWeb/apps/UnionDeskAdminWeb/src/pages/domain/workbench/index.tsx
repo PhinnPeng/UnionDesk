@@ -135,12 +135,12 @@ export default function DomainWorkbenchPage() {
 						{
 							key: "ticket",
 							label: ticketTabLabel,
-							children: <DomainTicketQueuePage />,
+							children: <DomainTicketQueuePage embedded />,
 						},
 						{
 							key: "consultation",
 							label: consultationTabLabel,
-							children: <DomainConsultationsPage />,
+							children: <DomainConsultationsPage embedded />,
 						},
 					]}
 				/>

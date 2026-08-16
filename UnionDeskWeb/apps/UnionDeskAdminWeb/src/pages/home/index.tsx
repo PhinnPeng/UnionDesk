@@ -6,7 +6,6 @@ import { useAuthStore } from "#src/store/auth";
 import {
 	AuditOutlined,
 	CustomerServiceOutlined,
-	FileTextOutlined,
 	SettingOutlined,
 	TeamOutlined,
 	UserOutlined,
@@ -28,13 +27,6 @@ type QuickEntry = {
 };
 
 const QUICK_ENTRIES: QuickEntry[] = [
-	{
-		title: "运营概览",
-		description: "查看本域运营指标与趋势",
-		path: "/domain/overview",
-		auth: "domain.overview.read",
-		icon: <FileTextOutlined />,
-	},
 	{
 		title: "事项配置",
 		description: "事项类型、属性与状态",
@@ -157,7 +149,7 @@ export default function Home() {
 
 				<Card title="说明" className="business-home__note">
 					<Paragraph className="!mb-0">
-						本页为业务域端默认概览。更细的运营指标请进入「运营概览」；人员、客户与配置能力可通过上方快捷入口进入。
+						本页为业务域端默认概览。人员、客户与配置能力可通过上方快捷入口进入。
 					</Paragraph>
 				</Card>
 			</AuthGuarded>

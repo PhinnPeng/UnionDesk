@@ -102,7 +102,7 @@ function buildSessionSummary(sessionNo: string, messages: ConsultationMessageRow
 	return [`【咨询转工单】会话 ${sessionNo}`, "会话消息：", ...lines].join("\n");
 }
 
-export default function DomainConsultationsPage() {
+export default function DomainConsultationsPage({ embedded = false }: { embedded?: boolean }) {
 	const { message } = App.useApp();
 	const navigate = useNavigate();
 	const defaultBusinessDomainId = useAuthStore(state => state.defaultBusinessDomainId);
@@ -471,8 +471,8 @@ export default function DomainConsultationsPage() {
 		},
 	], [handleClaim, openDetail]);
 
-	return (
-		<BasicContent>
+	const content = (
+		<>
 			<AuthGuarded
 				auth="consultation.view"
 				fallback={<Empty description="无权限查看咨询会话" className="py-16" />}
@@ -707,6 +707,8 @@ export default function DomainConsultationsPage() {
 					</Form.Item>
 				</Form>
 			</Modal>
-		</BasicContent>
+		</>
 	);
+	// 嵌入工作台时不再套 BasicContent（避免双层 p-4 内边距导致左右未对齐）
+	return embedded ? content : <BasicContent>{content}</BasicContent>;
 }

@@ -72,7 +72,7 @@ function formatTime(value?: string | null) {
 	return value ? dayjs(value).format("YYYY-MM-DD HH:mm") : "-";
 }
 
-export default function DomainTicketQueuePage() {
+export default function DomainTicketQueuePage({ embedded = false }: { embedded?: boolean }) {
 	const { message } = App.useApp();
 	const defaultBusinessDomainId = useAuthStore(state => state.defaultBusinessDomainId);
 	const accessibleDomains = useAuthStore(state => state.accessibleDomains);
@@ -346,8 +346,8 @@ export default function DomainTicketQueuePage() {
 		},
 	], [handleClaim, handleClose, openAssign, renderPriority, renderSla, renderStatus]);
 
-	return (
-		<BasicContent>
+	const content = (
+		<>
 			<AuthGuarded
 				auth="ticket.view.domain_all"
 				fallback={<Empty description="无权限查看工单队列" className="py-16" />}
@@ -437,6 +437,8 @@ export default function DomainTicketQueuePage() {
 					</Form>
 				) : null}
 			</Modal>
-		</BasicContent>
+		</>
 	);
+	// 嵌入工作台时不再套 BasicContent（避免双层 p-4 内边距导致左右未对齐）
+	return embedded ? content : <BasicContent>{content}</BasicContent>;
 }
