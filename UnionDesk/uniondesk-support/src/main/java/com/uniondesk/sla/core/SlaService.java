@@ -5,17 +5,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.common.web.PageResult;
 import com.uniondesk.sla.entity.SlaCalendarPo;
+import com.uniondesk.sla.entity.SlaConfigPo;
 import com.uniondesk.sla.entity.SlaRulePo;
 import com.uniondesk.sla.entity.SlaTicketPo;
 import com.uniondesk.sla.entity.TicketSlaPolicyPo;
 import com.uniondesk.sla.repository.SlaRepository;
 import java.time.Clock;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -38,10 +44,40 @@ public class SlaService {
     @Transactional
     public void applyOnCreate(long businessDomainId, long ticketId, long ticketTypeId) {
         TicketSlaPolicy policy = loadPolicy(businessDomainId, ticketId, ticketTypeId);
-        slaRepository.updateSlaDeadlines(
-                ticketId,
-                policy.firstResponseMinutes(),
-                policy.resolutionMinutes());
+        LocalDateTime createdAt = slaRepository.findCreatedAtById(ticketId, businessDomainId);
+        Map<String, Object> calendar = policy.calendarJson() == null
+                ? Map.of()
+                : parseMap(policy.calendarJson());
+        LocalDateTime firstResponseDeadline = policy.firstResponseMinutes() == null
+                ? null
+                : plusWorkingMinutes(createdAt, policy.firstResponseMinutes(), calendar);
+        LocalDateTime resolutionDeadline = policy.resolutionMinutes() == null
+                ? null
+                : plusWorkingMinutes(createdAt, policy.resolutionMinutes(), calendar);
+        slaRepository.updateSlaDeadlines(ticketId, firstResponseDeadline, resolutionDeadline);
+    }
+
+    // --- 域 SLA 配置（每域一行，ADR-005） ---
+
+    @Transactional(readOnly = true)
+    public SlaConfigView getSlaConfig(long businessDomainId) {
+        SlaConfigPo po = slaRepository.findSlaConfigByDomainId(businessDomainId);
+        return po == null ? null : toSlaConfigView(po);
+    }
+
+    @Transactional
+    public SlaConfigView saveSlaConfig(long businessDomainId, SlaConfigCommand command) {
+        SlaConfigPo po = new SlaConfigPo();
+        po.setBusinessDomainId(businessDomainId);
+        po.setFirstResponseMinutes(command.firstResponseMinutes());
+        po.setResolutionMinutes(command.resolutionMinutes());
+        po.setBreachActionJson(serializeMap(normalizeBreachAction(command.breachAction())));
+        po.setCalendarJson(serializeMap(command.calendar()));
+        int updated = slaRepository.updateSlaConfigByDomainId(po);
+        if (updated == 0) {
+            slaRepository.saveSlaConfig(po);
+        }
+        return toSlaConfigView(slaRepository.findSlaConfigByDomainId(businessDomainId));
     }
 
     @Transactional(readOnly = true)
@@ -251,8 +287,15 @@ public class SlaService {
             Object raiseTo = breachAction.get("raise_priority_to");
             if (raiseTo != null && StringUtils.hasText(String.valueOf(raiseTo))) {
                 nextPriority = String.valueOf(raiseTo);
-            } else if (Boolean.TRUE.equals(breachAction.get("escalate_priority"))) {
-                nextPriority = escalatePriority(businessDomainId, snapshot.getPriority());
+            } else {
+                // escalate_priority：兼容旧 bool（true=按序升下一档）与对象形态 {enabled, to_priority_level_id, to_priority_code}
+                Object escalate = breachAction.get("escalate_priority");
+                if (Boolean.TRUE.equals(escalate)) {
+                    nextPriority = escalatePriority(businessDomainId, snapshot.getPriority());
+                } else if (escalate instanceof Map<?, ?> escalateMap
+                        && Boolean.TRUE.equals(escalateMap.get("enabled"))) {
+                    nextPriority = resolveEscalateTarget(businessDomainId, snapshot.getPriority(), escalateMap);
+                }
             }
             pendingActions = buildPendingActions(breachAction);
             slaRepository.updatePriorityAndSlaStatus(nextPriority, nextStatus, ticketId);
@@ -276,6 +319,17 @@ public class SlaService {
             return currentCode;
         }
         return codes.get(index - 1);
+    }
+
+    /**
+     * 解析升级目标档：保存时已把 to_priority_level_id 对应 code 持久化为 to_priority_code，执行时优先直接用；缺省按序升下一档。
+     */
+    private String resolveEscalateTarget(long businessDomainId, String currentCode, Map<?, ?> escalateMap) {
+        Object codeValue = escalateMap.get("to_priority_code");
+        if (codeValue != null && StringUtils.hasText(String.valueOf(codeValue))) {
+            return String.valueOf(codeValue);
+        }
+        return escalatePriority(businessDomainId, currentCode);
     }
 
     private List<BreachAction> buildPendingActions(Map<String, Object> breachAction) {
@@ -324,24 +378,35 @@ public class SlaService {
     }
 
     private TicketSlaPolicy loadPolicy(long businessDomainId, long ticketId, long ticketTypeId) {
+        // ① 优先读域内单份 sla_config（ADR-005）：存在且至少一项时限非空则直接使用，不再走旧规则链
+        SlaConfigPo configPo = slaRepository.findSlaConfigByDomainId(businessDomainId);
+        if (configPo != null
+                && (configPo.getFirstResponseMinutes() != null || configPo.getResolutionMinutes() != null)) {
+            return new TicketSlaPolicy(
+                    configPo.getFirstResponseMinutes(),
+                    configPo.getResolutionMinutes(),
+                    configPo.getBreachActionJson(),
+                    configPo.getCalendarJson());
+        }
+        // ② 旧规则链兜底（兼容回滚）：域内规则（事项 SLA 优先）> 全局默认规则
         String priorityCode = slaRepository.findTicketPriority(ticketId);
         if (priorityCode == null) {
             priorityCode = "";
         }
-        // ① 域内规则（事项 SLA 优先）：类型+优先级精确 > 仅类型 > 仅优先级 > 域默认
         TicketSlaPolicyPo policyPo = slaRepository.findPolicy(businessDomainId, ticketTypeId, priorityCode);
         if (policyPo == null) {
-            // ② 全局默认规则兜底
+            // ③ 全局默认规则兜底
             policyPo = slaRepository.findGlobalPolicy();
         }
         if (policyPo == null) {
-            // ③ 未配置 → 不设 SLA
-            return new TicketSlaPolicy(null, null, null);
+            // ④ 未配置 → 不设 SLA
+            return new TicketSlaPolicy(null, null, null, null);
         }
         return new TicketSlaPolicy(
                 policyPo.getFirstResponseMinutes(),
                 policyPo.getResolutionMinutes(),
-                policyPo.getBreachActionJson());
+                policyPo.getBreachActionJson(),
+                null);
     }
 
     private SlaRuleView toSlaRuleView(SlaRulePo po) {
@@ -370,6 +435,42 @@ public class SlaService {
                 po.getUpdatedAt());
     }
 
+    private SlaConfigView toSlaConfigView(SlaConfigPo po) {
+        return new SlaConfigView(
+                po.getBusinessDomainId(),
+                po.getFirstResponseMinutes(),
+                po.getResolutionMinutes(),
+                po.getBreachActionJson() == null ? Map.of() : parseMap(po.getBreachActionJson()),
+                po.getCalendarJson() == null ? Map.of() : parseMap(po.getCalendarJson()),
+                po.getUpdatedAt());
+    }
+
+    /**
+     * 超时动作规范化：escalate_priority 对象形态下，校验 to_priority_level_id 属于该域优先级，
+     * 并把对应 code 持久化为 to_priority_code（执行时优先读 code，免二次查询）。
+     */
+    private Map<String, Object> normalizeBreachAction(Map<String, Object> breachAction) {
+        if (breachAction == null) {
+            return null;
+        }
+        Map<String, Object> normalized = new LinkedHashMap<>(breachAction);
+        Object escalate = normalized.get("escalate_priority");
+        if (escalate instanceof Map<?, ?> escalateMap) {
+            Map<String, Object> normalizedEscalate = new LinkedHashMap<>();
+            escalateMap.forEach((key, value) -> normalizedEscalate.put(String.valueOf(key), value));
+            Long priorityLevelId = parseLong(normalizedEscalate.get("to_priority_level_id"));
+            if (priorityLevelId != null) {
+                String code = slaRepository.findPriorityCodeById(priorityLevelId);
+                if (code == null) {
+                    throw new IllegalArgumentException("目标优先级不存在");
+                }
+                normalizedEscalate.put("to_priority_code", code);
+            }
+            normalized.put("escalate_priority", normalizedEscalate);
+        }
+        return normalized;
+    }
+
     private String normalizeText(String value, String defaultValue) {
         return StringUtils.hasText(value) ? value.trim() : defaultValue;
     }
@@ -393,6 +494,83 @@ public class SlaService {
         } catch (Exception ex) {
             return Map.of();
         }
+    }
+
+    /**
+     * 工作分钟折算：把 minutes 从 from 起按 calendar 折算为工作分钟后的时间点。
+     * calendar 为空（或分钟为空）时按自然分钟累加，等价旧 SQL TIMESTAMPADD(MINUTE, minutes, created_at)。
+     */
+    private LocalDateTime plusWorkingMinutes(LocalDateTime from, Integer minutes, Map<String, Object> calendar) {
+        if (minutes == null) {
+            return from;
+        }
+        if (calendar == null || calendar.isEmpty()) {
+            return from.plusMinutes(minutes);
+        }
+        List<Integer> workingDays = parseWorkingDays(calendar.get("working_days"));
+        boolean weekendWork = parseWeekendWork(calendar.get("weekend_work"));
+        Set<LocalDate> holidays = parseHolidays(calendar.get("holidays"));
+        LocalDateTime cursor = from;
+        int remaining = minutes;
+        while (remaining > 0) {
+            if (isWorkingDay(cursor.toLocalDate(), workingDays, weekendWork, holidays)) {
+                remaining--;
+                cursor = cursor.plusMinutes(1);
+            } else {
+                // 非工作日整天不计时，直接跳到次日零点
+                cursor = cursor.toLocalDate().plusDays(1).atStartOfDay();
+            }
+        }
+        return cursor;
+    }
+
+    private boolean isWorkingDay(LocalDate date, List<Integer> workingDays, boolean weekendWork, Set<LocalDate> holidays) {
+        if (!workingDays.contains(date.getDayOfWeek().getValue())) {
+            return false;
+        }
+        if (holidays.contains(date)) {
+            return false;
+        }
+        DayOfWeek dayOfWeek = date.getDayOfWeek();
+        boolean weekend = dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY;
+        return !weekend || weekendWork;
+    }
+
+    private List<Integer> parseWorkingDays(Object value) {
+        List<Integer> days = new ArrayList<>(List.of(1, 2, 3, 4, 5));
+        if (value instanceof List<?> list) {
+            List<Integer> parsed = new ArrayList<>();
+            for (Object item : list) {
+                if (item instanceof Number number) {
+                    int day = number.intValue();
+                    if (day >= 1 && day <= 7) {
+                        parsed.add(day);
+                    }
+                }
+            }
+            if (!parsed.isEmpty()) {
+                return parsed;
+            }
+        }
+        return days;
+    }
+
+    private boolean parseWeekendWork(Object value) {
+        return Boolean.TRUE.equals(value);
+    }
+
+    private Set<LocalDate> parseHolidays(Object value) {
+        Set<LocalDate> holidays = new HashSet<>();
+        if (value instanceof List<?> list) {
+            for (Object item : list) {
+                try {
+                    holidays.add(LocalDate.parse(String.valueOf(item)));
+                } catch (DateTimeParseException ex) {
+                    // 无法解析的日期项忽略
+                }
+            }
+        }
+        return holidays;
     }
 
     public record SlaBreachDecision(
@@ -468,6 +646,26 @@ public class SlaService {
             LocalDateTime updatedAt) {
     }
 
-    private record TicketSlaPolicy(Integer firstResponseMinutes, Integer resolutionMinutes, String breachActionJson) {
+    public record SlaConfigView(
+            long businessDomainId,
+            Integer firstResponseMinutes,
+            Integer resolutionMinutes,
+            Map<String, Object> breachAction,
+            Map<String, Object> calendar,
+            LocalDateTime updatedAt) {
+    }
+
+    public record SlaConfigCommand(
+            Integer firstResponseMinutes,
+            Integer resolutionMinutes,
+            Map<String, Object> breachAction,
+            Map<String, Object> calendar) {
+    }
+
+    private record TicketSlaPolicy(
+            Integer firstResponseMinutes,
+            Integer resolutionMinutes,
+            String breachActionJson,
+            String calendarJson) {
     }
 }

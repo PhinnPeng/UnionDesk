@@ -48,10 +48,14 @@ class SlaServiceTests {
         policyPo.setResolutionMinutes(90);
         when(slaRepository.findTicketPriority(101L)).thenReturn("normal");
         when(slaRepository.findPolicy(1L, 77L, "normal")).thenReturn(policyPo);
+        when(slaRepository.findCreatedAtById(101L, 1L)).thenReturn(LocalDateTime.parse("2026-05-03T08:00:00"));
 
         slaService.applyOnCreate(1L, 101L, 77L);
 
-        verify(slaRepository).updateSlaDeadlines(101L, 30, 90);
+        verify(slaRepository).updateSlaDeadlines(
+                101L,
+                LocalDateTime.parse("2026-05-03T08:30:00"),
+                LocalDateTime.parse("2026-05-03T09:30:00"));
         verify(slaRepository, never()).findGlobalPolicy();
     }
 
@@ -63,10 +67,14 @@ class SlaServiceTests {
         when(slaRepository.findTicketPriority(101L)).thenReturn("normal");
         when(slaRepository.findPolicy(1L, 77L, "normal")).thenReturn(null);
         when(slaRepository.findGlobalPolicy()).thenReturn(globalPolicy);
+        when(slaRepository.findCreatedAtById(101L, 1L)).thenReturn(LocalDateTime.parse("2026-05-03T08:00:00"));
 
         slaService.applyOnCreate(1L, 101L, 77L);
 
-        verify(slaRepository).updateSlaDeadlines(101L, 10, 20);
+        verify(slaRepository).updateSlaDeadlines(
+                101L,
+                LocalDateTime.parse("2026-05-03T08:10:00"),
+                LocalDateTime.parse("2026-05-03T08:20:00"));
     }
 
     @Test
@@ -74,6 +82,7 @@ class SlaServiceTests {
         when(slaRepository.findTicketPriority(101L)).thenReturn("normal");
         when(slaRepository.findPolicy(1L, 77L, "normal")).thenReturn(null);
         when(slaRepository.findGlobalPolicy()).thenReturn(null);
+        when(slaRepository.findCreatedAtById(101L, 1L)).thenReturn(LocalDateTime.parse("2026-05-03T08:00:00"));
 
         slaService.applyOnCreate(1L, 101L, 77L);
 

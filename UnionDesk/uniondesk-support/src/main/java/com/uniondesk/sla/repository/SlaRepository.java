@@ -2,10 +2,12 @@ package com.uniondesk.sla.repository;
 
 import com.mybatisflex.core.paginate.Page;
 import com.uniondesk.sla.entity.SlaCalendarPo;
+import com.uniondesk.sla.entity.SlaConfigPo;
 import com.uniondesk.sla.entity.SlaRulePo;
 import com.uniondesk.sla.entity.SlaTicketPo;
 import com.uniondesk.sla.entity.TicketSlaPolicyPo;
 import com.uniondesk.sla.mapper.SlaCalendarMapper;
+import com.uniondesk.sla.mapper.SlaConfigMapper;
 import com.uniondesk.sla.mapper.SlaRuleMapper;
 import com.uniondesk.sla.mapper.SlaTicketMapper;
 import java.time.LocalDateTime;
@@ -20,13 +22,16 @@ public class SlaRepository {
     private final SlaRuleMapper slaRuleMapper;
     private final SlaCalendarMapper slaCalendarMapper;
     private final SlaTicketMapper slaTicketMapper;
+    private final SlaConfigMapper slaConfigMapper;
 
     public SlaRepository(SlaRuleMapper slaRuleMapper,
                          SlaCalendarMapper slaCalendarMapper,
-                         SlaTicketMapper slaTicketMapper) {
+                         SlaTicketMapper slaTicketMapper,
+                         SlaConfigMapper slaConfigMapper) {
         this.slaRuleMapper = slaRuleMapper;
         this.slaCalendarMapper = slaCalendarMapper;
         this.slaTicketMapper = slaTicketMapper;
+        this.slaConfigMapper = slaConfigMapper;
     }
 
     // --- SLA Rule ---
@@ -95,6 +100,24 @@ public class SlaRepository {
         return slaRuleMapper.selectTicketPriority(ticketId);
     }
 
+    public String findPriorityCodeById(long priorityLevelId) {
+        return slaRuleMapper.selectPriorityCodeById(priorityLevelId);
+    }
+
+    // --- SLA Config（每域一行，ADR-005） ---
+
+    public SlaConfigPo findSlaConfigByDomainId(long domainId) {
+        return slaConfigMapper.selectByDomainId(domainId);
+    }
+
+    public void saveSlaConfig(SlaConfigPo po) {
+        slaConfigMapper.insert(po);
+    }
+
+    public int updateSlaConfigByDomainId(SlaConfigPo po) {
+        return slaConfigMapper.updateByDomainId(po);
+    }
+
     // --- SLA Calendar ---
 
     public Page<SlaCalendarPo> findPageByCalendars(Page<SlaCalendarPo> page, long domainId) {
@@ -123,8 +146,12 @@ public class SlaRepository {
         return slaTicketMapper.selectSlaSnapshot(ticketId, domainId);
     }
 
-    public void updateSlaDeadlines(long ticketId, Integer firstResponseMinutes, Integer resolutionMinutes) {
-        slaTicketMapper.updateSlaDeadlines(ticketId, firstResponseMinutes, resolutionMinutes);
+    public void updateSlaDeadlines(long ticketId, LocalDateTime firstResponseDeadline, LocalDateTime resolutionDeadline) {
+        slaTicketMapper.updateSlaDeadlines(ticketId, firstResponseDeadline, resolutionDeadline);
+    }
+
+    public LocalDateTime findCreatedAtById(long ticketId, long domainId) {
+        return slaTicketMapper.selectCreatedAtById(ticketId, domainId);
     }
 
     public void updateFirstResponse(LocalDateTime now, long ticketId, long domainId) {

@@ -43,6 +43,22 @@ export interface SlaCalendarCommand {
 	config?: Record<string, unknown> | null
 }
 
+export interface SlaConfigView {
+	businessDomainId: string
+	firstResponseMinutes?: number | null
+	resolutionMinutes?: number | null
+	breachAction: Record<string, unknown>
+	calendar: Record<string, unknown>
+	updatedAt?: string
+}
+
+export interface SlaConfigCommand {
+	firstResponseMinutes?: number | null
+	resolutionMinutes?: number | null
+	breachAction: Record<string, unknown>
+	calendar: Record<string, unknown>
+}
+
 export function fetchSlaRules(domainId: string, params: { page?: number, page_size?: number } = {}): Promise<PageResult<SlaRuleView>> {
 	const query = new URLSearchParams();
 	query.set("page", String(params.page ?? 1));
@@ -91,4 +107,18 @@ export function updateSlaCalendar(domainId: string, calendarId: string, payload:
 
 export function deleteSlaCalendar(domainId: string, calendarId: string): Promise<void> {
 	return request.delete(`v1/admin/domains/${domainId}/sla-calendars/${calendarId}`).then(() => undefined);
+}
+
+/** 域内单份 SLA 配置；后端无配置时返回空响应（204），此处归一为 null */
+export function fetchSlaConfig(domainId: string): Promise<SlaConfigView | null> {
+	return requestBackendJson<SlaConfigView | null>(`v1/admin/domains/${domainId}/sla-config`)
+		.then(payload => payload ?? null);
+}
+
+/** 保存（upsert）域内单份 SLA 配置 */
+export function updateSlaConfig(domainId: string, payload: SlaConfigCommand): Promise<SlaConfigView> {
+	return requestBackendJson<SlaConfigView>(`v1/admin/domains/${domainId}/sla-config`, {
+		method: "PUT",
+		json: payload,
+	});
 }

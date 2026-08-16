@@ -27,6 +27,20 @@ public class SlaController {
         this.slaService = slaService;
     }
 
+    @GetMapping("/sla-config")
+    @RequirePermission(value = PermissionCodes.DOMAIN_SLA_READ, domainIdParam = "domainId")
+    public SlaService.SlaConfigView getSlaConfig(@PathVariable long domainId) {
+        return slaService.getSlaConfig(domainId);
+    }
+
+    @PutMapping("/sla-config")
+    @RequirePermission(value = PermissionCodes.DOMAIN_SLA_UPDATE, domainIdParam = "domainId")
+    public SlaService.SlaConfigView saveSlaConfig(
+            @PathVariable long domainId,
+            @Valid @RequestBody SlaService.SlaConfigCommand request) {
+        return slaService.saveSlaConfig(domainId, request);
+    }
+
     @GetMapping("/sla-rules")
     @RequirePermission(value = PermissionCodes.DOMAIN_SLA_READ, domainIdParam = "domainId")
     public PageResult<SlaService.SlaRuleView> listSlaRules(

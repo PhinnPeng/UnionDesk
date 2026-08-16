@@ -123,6 +123,14 @@
         ORDER BY sort_order ASC, id ASC
     </select>
 
+    <!-- 按优先级档 id 查 code（sla_config 保存时校验存在性并持久化 to_priority_code） -->
+    <select id="selectPriorityCodeById" resultType="java.lang.String">
+        SELECT code
+        FROM ticket_priority_level
+        WHERE id = #{priorityLevelId}
+        LIMIT 1
+    </select>
+
     <select id="selectGlobalRules" resultMap="SlaRulePo">
         <include refid="selectColumns"/>
         WHERE business_domain_id IS NULL

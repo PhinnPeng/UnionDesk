@@ -7,6 +7,8 @@
 | 1.2 | 2026-08-16 | 已确认（D5 SLA 状态默认状态机；D6 动作一次性标志） |
 | 1.3 | 2026-08-16 | 已确认（D7 唯一最终态取消 resolved；D8 取消关闭功能） |
 
+> **已被 [ADR-005](adr-005-sla-config-redesign.md) 部分取代**（2026-08-16）：D1 双层规则 / D2 匹配链 / D3 规则粒度 改由「域内单份 SLA 配置」取代；D5/D6/D7/D8/D9/D10 仍有效（三态状态机、动作一次性、唯一终态、取消关闭、定时扫描、工作日历排除→现由 ADR-005 纳入）。
+
 > 配套任务：[`.trellis/tasks/08-16-sla-config-optimization/`](../.trellis/tasks/08-16-sla-config-optimization/prd.md)（prd.md / design.md）。
 > 术语定义见 design.md「附录：术语表」。
 

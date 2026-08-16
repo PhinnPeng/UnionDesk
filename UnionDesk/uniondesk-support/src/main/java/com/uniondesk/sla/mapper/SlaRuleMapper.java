@@ -37,6 +37,8 @@ public interface SlaRuleMapper {
 
     List<String> selectActivePriorityCodes(@Param("domainId") long domainId);
 
+    String selectPriorityCodeById(@Param("priorityLevelId") long priorityLevelId);
+
     List<SlaRulePo> selectGlobalRules(
             @Param("limit") int limit,
             @Param("offset") long offset);

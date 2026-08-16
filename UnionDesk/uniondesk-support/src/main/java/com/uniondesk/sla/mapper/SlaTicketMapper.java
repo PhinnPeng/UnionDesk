@@ -12,10 +12,14 @@ public interface SlaTicketMapper {
             @Param("ticketId") long ticketId,
             @Param("domainId") long domainId);
 
+    LocalDateTime selectCreatedAtById(
+            @Param("ticketId") long ticketId,
+            @Param("domainId") long domainId);
+
     void updateSlaDeadlines(
             @Param("ticketId") long ticketId,
-            @Param("firstResponseMinutes") Integer firstResponseMinutes,
-            @Param("resolutionMinutes") Integer resolutionMinutes);
+            @Param("firstResponseDeadline") LocalDateTime firstResponseDeadline,
+            @Param("resolutionDeadline") LocalDateTime resolutionDeadline);
 
     void updateFirstResponse(
             @Param("now") LocalDateTime now,
