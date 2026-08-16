@@ -103,6 +103,64 @@
         LIMIT 1
     </select>
 
+    <!-- 全局默认规则（business_domain_id IS NULL），按 id 倒序取最新一条 -->
+    <select id="selectGlobalPolicy" resultMap="TicketSlaPolicyPo">
+        SELECT
+            sr.first_response_minutes,
+            sr.resolution_minutes,
+            sr.breach_action_json
+        FROM sla_rule sr
+        WHERE sr.business_domain_id IS NULL
+        ORDER BY sr.id DESC
+        LIMIT 1
+    </select>
+
+    <!-- 本域启用的优先级 code，sort_order 升序（小=更紧急），用于按序升级 -->
+    <select id="selectActivePriorityCodes" resultType="java.lang.String">
+        SELECT code
+        FROM ticket_priority_level
+        WHERE business_domain_id = #{domainId} AND status = 'active'
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="selectGlobalRules" resultMap="SlaRulePo">
+        <include refid="selectColumns"/>
+        WHERE business_domain_id IS NULL
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countGlobalRules" resultType="long">
+        SELECT COUNT(*)
+        FROM sla_rule
+        WHERE business_domain_id IS NULL
+    </select>
+
+    <select id="selectGlobalRuleById" resultMap="SlaRulePo">
+        <include refid="selectColumns"/>
+        WHERE id = #{id} AND business_domain_id IS NULL
+        LIMIT 1
+    </select>
+
+    <update id="updateGlobalRuleById" parameterType="com.uniondesk.sla.entity.SlaRulePo">
+        UPDATE sla_rule
+        SET name = #{name},
+            ticket_type_id = #{ticketTypeId},
+            priority_level_id = #{priorityLevelId},
+            calendar_id = #{calendarId},
+            first_response_minutes = #{firstResponseMinutes},
+            resolution_minutes = #{resolutionMinutes},
+            is_urgent_config = #{isUrgentConfig},
+            breach_action_json = #{breachActionJson},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id} AND business_domain_id IS NULL
+    </update>
+
+    <delete id="deleteGlobalRuleById">
+        DELETE FROM sla_rule
+        WHERE id = #{id} AND business_domain_id IS NULL
+    </delete>
+
     <select id="selectTicketPriority" resultType="java.lang.String">
         SELECT priority
         FROM ticket

@@ -1167,6 +1167,31 @@ export type P0AttachmentLocalUploadResponse = {
   storage_type: "object_storage";
 };
 
+/** 全局 SLA 规则视图（`business_domain_id` 为空 = 平台级跨域兜底规则） */
+export type PlatformSlaRuleView = {
+  id: string;
+  /** 全局规则时为 null */
+  businessDomainId: string | null;
+  name: string;
+  ticketTypeId?: string | null;
+  priorityLevelId?: string | null;
+  calendarId?: string | null;
+  firstResponseMinutes?: number | null;
+  resolutionMinutes?: number | null;
+  isUrgentConfig: boolean;
+  breachAction?: Record<string, unknown> | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+/** 创建/更新全局 SLA 规则（仅允许名称/首响/解决/动作；类型/优先级/日历由后端校验必须为空） */
+export type PlatformSlaRuleCommand = {
+  name: string;
+  firstResponseMinutes?: number | null;
+  resolutionMinutes?: number | null;
+  breachAction?: Record<string, unknown> | null;
+};
+
 export const DEMO_DOMAINS: DemoDomain[] = [
   {
     id: "1",

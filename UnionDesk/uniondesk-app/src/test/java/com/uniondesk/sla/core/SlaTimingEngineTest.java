@@ -145,7 +145,8 @@ class SlaTimingEngineTest extends IntegrationTestSupport {
         TicketSnapshot ticket = loadTicket(ticketId);
         assertThat(ticket.status()).isEqualTo("closed");
         assertThat(ticket.resolvedAt()).isNotNull();
-        assertThat(ticket.slaStatus()).isEqualTo("resolved");
+        // 终态统一：取消 resolved，唯一最终态 stopped
+        assertThat(ticket.slaStatus()).isEqualTo("stopped");
         assertThat(notificationCenterService.unreadCount(1L)).isEqualTo(2L);
     }
 
@@ -194,6 +195,205 @@ class SlaTimingEngineTest extends IntegrationTestSupport {
         TicketSnapshot ticket = loadTicket(result.id());
         assertThat(ticket.priority()).isEqualTo("urgent");
         assertThat(ticket.slaStatus()).isEqualTo("escalated");
+    }
+
+    @Test
+    void globalRuleAppliesDeadlinesWhenNoDomainRuleMatches() {
+        long domainId = defaultDomainId(jdbcTemplate);
+        long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
+        slaService.createGlobalSlaRule(new SlaService.SlaRuleCommand(
+                "全局默认规则", null, null, null, 10, 25, false, Map.of()));
+
+        TicketService.TicketSubmissionResult result = ticketService.createCustomerTicket(
+                customerContext(domainId),
+                domainId,
+                new TicketService.CreateTicketCommand(ticketTypeId,
+                        "全局兜底",
+                        "验证无域规则时全局规则兜底设置 deadline",
+                        Map.of(),
+                        List.of(),
+                        null,
+                        "normal",
+                        "web", null, List.of()));
+
+        TicketSnapshot ticket = loadTicket(result.id());
+        assertThat(ticket.slaStatus()).isEqualTo("tracking");
+        assertThat(ticket.firstResponseDeadline()).isEqualTo(ticket.createdAt().plusMinutes(10));
+        assertThat(ticket.resolutionDeadline()).isEqualTo(ticket.createdAt().plusMinutes(25));
+    }
+
+    @Test
+    void domainRuleTakesPrecedenceOverGlobalRule() {
+        long domainId = defaultDomainId(jdbcTemplate);
+        long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
+        slaService.createGlobalSlaRule(new SlaService.SlaRuleCommand(
+                "全局默认规则", null, null, null, 10, 25, false, Map.of()));
+        createRule(domainId, ticketTypeId, 30, 90, Map.of());
+
+        TicketService.TicketSubmissionResult result = ticketService.createCustomerTicket(
+                customerContext(domainId),
+                domainId,
+                new TicketService.CreateTicketCommand(ticketTypeId,
+                        "事项优先",
+                        "验证域规则命中时全局规则不生效",
+                        Map.of(),
+                        List.of(),
+                        null,
+                        "normal",
+                        "web", null, List.of()));
+
+        TicketSnapshot ticket = loadTicket(result.id());
+        assertThat(ticket.firstResponseDeadline()).isEqualTo(ticket.createdAt().plusMinutes(30));
+        assertThat(ticket.resolutionDeadline()).isEqualTo(ticket.createdAt().plusMinutes(90));
+    }
+
+    @Test
+    void breachEscalatesPriorityBySortOrderAndIsIdempotent() {
+        long domainId = defaultDomainId(jdbcTemplate);
+        long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
+        createRule(domainId, ticketTypeId, 1, 2, Map.of("escalate_priority", true));
+
+        TicketService.TicketSubmissionResult result = ticketService.createCustomerTicket(
+                customerContext(domainId),
+                domainId,
+                new TicketService.CreateTicketCommand(ticketTypeId,
+                        "按序升级",
+                        "验证违约时 normal → high（sort_order 更紧急下一级）",
+                        Map.of(),
+                        List.of(),
+                        null,
+                        "normal",
+                        "web", null, List.of()));
+        backdateDeadlines(result.id());
+
+        ticketService.processSlaBreach(domainId, result.id());
+
+        TicketSnapshot ticket = loadTicket(result.id());
+        assertThat(ticket.slaStatus()).isEqualTo("breached");
+        assertThat(ticket.priority()).isEqualTo("high");
+
+        // 幂等：动作每工单仅执行一次，再次评估不重复升级
+        ticketService.processSlaBreach(domainId, result.id());
+        assertThat(loadTicket(result.id()).priority()).isEqualTo("high");
+    }
+
+    @Test
+    void breachExecutesAssignAndWatcherActionsOnce() {
+        long domainId = defaultDomainId(jdbcTemplate);
+        long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
+        createRule(domainId, ticketTypeId, 1, 2, Map.of(
+                "assign_to_staff_account_id", 2,
+                "add_watcher_staff_account_ids", List.of(2, 9)));
+
+        TicketService.TicketSubmissionResult result = ticketService.createCustomerTicket(
+                customerContext(domainId),
+                domainId,
+                new TicketService.CreateTicketCommand(ticketTypeId,
+                        "违约动作",
+                        "验证超时强制换处理人并追加关注人",
+                        Map.of(),
+                        List.of(),
+                        null,
+                        "normal",
+                        "web", null, List.of()));
+        backdateDeadlines(result.id());
+
+        ticketService.processSlaBreach(domainId, result.id());
+
+        TicketSnapshot ticket = loadTicket(result.id());
+        assertThat(ticket.assignedTo()).isEqualTo(2L);
+        assertThat(watcherIds(result.id())).containsExactlyInAnyOrder(2L, 9L);
+
+        // 幂等：二次评估不重复追加
+        ticketService.processSlaBreach(domainId, result.id());
+        assertThat(watcherIds(result.id())).containsExactlyInAnyOrder(2L, 9L);
+    }
+
+    @Test
+    void resolutionBreachPersistsAfterFirstResponse() {
+        long domainId = defaultDomainId(jdbcTemplate);
+        long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
+        createRule(domainId, ticketTypeId, 1, 1, Map.of("escalate_priority", true));
+
+        TicketService.TicketSubmissionResult result = ticketService.createCustomerTicket(
+                customerContext(domainId),
+                domainId,
+                new TicketService.CreateTicketCommand(ticketTypeId,
+                        "回复不解超时",
+                        "验证首响后解决时限仍超时保持 breached",
+                        Map.of(),
+                        List.of(),
+                        null,
+                        "normal",
+                        "web", null, List.of()));
+        backdateDeadlines(result.id());
+        jdbcTemplate.update(
+                "UPDATE ticket SET sla_first_responded_at = ? WHERE id = ?",
+                LocalDateTime.now(clock),
+                result.id());
+
+        SlaService.SlaBreachDecision decision = slaService.evaluateTicket(domainId, result.id());
+
+        assertThat(decision.breached()).isTrue();
+        assertThat(decision.firstResponseBreached()).isFalse();
+        assertThat(decision.nextStatus()).isEqualTo("breached");
+    }
+
+    @Test
+    void terminalStoppedStatusIsNotOverwrittenByEvaluation() {
+        long domainId = defaultDomainId(jdbcTemplate);
+        long ticketTypeId = defaultTicketTypeId(jdbcTemplate, domainId);
+        createRule(domainId, ticketTypeId, 1, 2, Map.of("raise_priority_to", "urgent"));
+
+        TicketService.TicketSubmissionResult result = ticketService.createCustomerTicket(
+                customerContext(domainId),
+                domainId,
+                new TicketService.CreateTicketCommand(ticketTypeId,
+                        "终态保护",
+                        "验证流转到终态后 SLA 状态 stopped 不被评估覆盖",
+                        Map.of(),
+                        List.of(),
+                        null,
+                        "normal",
+                        "web", null, List.of()));
+
+        long ticketId = result.id();
+        long claimVersion = loadTicket(ticketId).version();
+        ticketService.claimTicket(agentContext(domainId), domainId, ticketId, new TicketService.ClaimTicketCommand(claimVersion));
+        long closeVersion = loadTicket(ticketId).version();
+        ticketService.changeTicketStatus(
+                agentContext(domainId),
+                domainId,
+                ticketId,
+                new TicketService.ChangeTicketStatusCommand("resolved", closeVersion, null, null));
+        assertThat(loadTicket(ticketId).slaStatus()).isEqualTo("stopped");
+
+        backdateDeadlines(ticketId);
+        SlaService.SlaBreachDecision decision = slaService.evaluateTicket(domainId, ticketId);
+
+        assertThat(decision.breached()).isFalse();
+        assertThat(loadTicket(ticketId).slaStatus()).isEqualTo("stopped");
+        assertThat(loadTicket(ticketId).priority()).isEqualTo("normal");
+    }
+
+    private void backdateDeadlines(long ticketId) {
+        LocalDateTime now = LocalDateTime.now(clock);
+        jdbcTemplate.update("""
+                        UPDATE ticket
+                        SET sla_first_response_deadline = ?,
+                            sla_resolution_deadline = ?
+                        WHERE id = ?
+                        """,
+                now.minusHours(8).minusMinutes(2),
+                now.minusHours(8).minusMinutes(1),
+                ticketId);
+    }
+
+    private List<Long> watcherIds(long ticketId) {
+        return jdbcTemplate.queryForList(
+                "SELECT staff_account_id FROM ticket_watcher WHERE ticket_id = ? ORDER BY staff_account_id",
+                Long.class,
+                ticketId);
     }
 
     private long createRule(long domainId, long ticketTypeId, Integer firstResponseMinutes, Integer resolutionMinutes, Map<String, Object> breachAction) {

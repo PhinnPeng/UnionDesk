@@ -8,8 +8,7 @@ export function slaStatusMeta(status?: string | null): { text: string, color: st
 	const map: Record<string, { text: string, color: string }> = {
 		tracking: { text: "正常", color: "green" },
 		breached: { text: "已超时", color: "red" },
-		stopped: { text: "已停止", color: "default" },
-		resolved: { text: "已解决", color: "green" },
+		stopped: { text: "已结束", color: "default" },
 	};
 	return map[status] ?? { text: status, color: "default" };
 }
@@ -67,6 +66,17 @@ export function parseBreachActionHints(breachActionJson?: string | null): string
 		const raiseTo = parsed["raise_priority_to"];
 		if (raiseTo !== undefined && raiseTo !== null && String(raiseTo) !== "") {
 			hints.push(`升级优先级至 ${String(raiseTo)}`);
+		}
+		if (parsed["escalate_priority"] === true) {
+			hints.push("按序升级优先级");
+		}
+		const assignTo = parsed["assign_to_staff_account_id"];
+		if (assignTo !== undefined && assignTo !== null && Number(assignTo) > 0) {
+			hints.push("更换处理人");
+		}
+		const watchers = parsed["add_watcher_staff_account_ids"];
+		if (Array.isArray(watchers) && watchers.length > 0) {
+			hints.push("添加关注人");
 		}
 		const nextStatus = parsed["sla_status"];
 		if (nextStatus !== undefined && nextStatus !== null && String(nextStatus) !== "") {

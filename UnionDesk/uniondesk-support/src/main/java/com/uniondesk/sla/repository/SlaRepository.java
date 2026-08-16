@@ -61,6 +61,36 @@ public class SlaRepository {
         return slaRuleMapper.selectPolicy(domainId, ticketTypeId, priorityCode);
     }
 
+    public TicketSlaPolicyPo findGlobalPolicy() {
+        return slaRuleMapper.selectGlobalPolicy();
+    }
+
+    public List<String> findActivePriorityCodes(long domainId) {
+        return slaRuleMapper.selectActivePriorityCodes(domainId);
+    }
+
+    public List<SlaRulePo> findGlobalRules(int page, int pageSize) {
+        int normalizedPageSize = normalizePageSize(pageSize);
+        long offset = (long) (Math.max(page, 1) - 1) * normalizedPageSize;
+        return slaRuleMapper.selectGlobalRules(normalizedPageSize, offset);
+    }
+
+    public long countGlobalRules() {
+        return slaRuleMapper.countGlobalRules();
+    }
+
+    public SlaRulePo findGlobalRuleById(long ruleId) {
+        return slaRuleMapper.selectGlobalRuleById(ruleId);
+    }
+
+    public int updateGlobalRule(SlaRulePo po) {
+        return slaRuleMapper.updateGlobalRuleById(po);
+    }
+
+    public int deleteGlobalRuleById(long ruleId) {
+        return slaRuleMapper.deleteGlobalRuleById(ruleId);
+    }
+
     public String findTicketPriority(long ticketId) {
         return slaRuleMapper.selectTicketPriority(ticketId);
     }
@@ -107,6 +137,14 @@ public class SlaRepository {
 
     public void updatePriorityAndSlaStatus(String priority, String slaStatus, long ticketId) {
         slaTicketMapper.updatePriorityAndSlaStatus(priority, slaStatus, ticketId);
+    }
+
+    public int claimBreachAction(long ticketId) {
+        return slaTicketMapper.claimBreachAction(ticketId);
+    }
+
+    public void updateSlaStatus(long ticketId, long domainId, String status) {
+        slaTicketMapper.updateSlaStatus(ticketId, domainId, status);
     }
 
     private int normalizePageSize(int pageSize) {

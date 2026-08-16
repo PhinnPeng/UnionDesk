@@ -11,6 +11,7 @@ public class SlaTicketPo {
     private LocalDateTime slaFirstRespondedAt;
     private LocalDateTime slaResolvedAt;
     private String breachActionJson;
+    private Boolean slaBreachActioned;
 
     public String getPriority() {
         return priority;
@@ -66,5 +67,13 @@ public class SlaTicketPo {
 
     public void setBreachActionJson(String breachActionJson) {
         this.breachActionJson = breachActionJson;
+    }
+
+    public Boolean getSlaBreachActioned() {
+        return slaBreachActioned;
+    }
+
+    public void setSlaBreachActioned(Boolean slaBreachActioned) {
+        this.slaBreachActioned = slaBreachActioned;
     }
 }

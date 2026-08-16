@@ -61,8 +61,7 @@ interface TicketDetailDrawerProps {
 	onClose: () => void
 	onClaim?: (row: TicketRow) => void
 	onAssign?: (row: TicketRow) => void
-	onCloseTicket?: (row: TicketRow) => void
-	/** 领取/指派/关闭等操作成功后触发（父级刷新列表） */
+	/** 领取/指派等操作成功后触发（父级刷新列表） */
 	onChanged?: () => void
 }
 
@@ -78,7 +77,6 @@ export function TicketDetailDrawer({
 	onClose,
 	onClaim,
 	onAssign,
-	onCloseTicket,
 	onChanged,
 }: TicketDetailDrawerProps) {
 	const [loading, setLoading] = useState(false);
@@ -148,9 +146,6 @@ export function TicketDetailDrawer({
 										</AuthGuarded>
 										<AuthGuarded auth="ticket.assign" fallback={null}>
 											<Button size="small" onClick={() => { onAssign?.(ticket); }}>指派</Button>
-										</AuthGuarded>
-										<AuthGuarded auth="ticket.close" fallback={null}>
-											<Button size="small" danger onClick={() => { onCloseTicket?.(ticket); handleActionDone(); }}>关闭</Button>
 										</AuthGuarded>
 									</Space>
 								</div>

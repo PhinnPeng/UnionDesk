@@ -11,6 +11,7 @@
         <result property="slaFirstRespondedAt" column="sla_first_responded_at"/>
         <result property="slaResolvedAt" column="sla_resolved_at"/>
         <result property="breachActionJson" column="breach_action_json"/>
+        <result property="slaBreachActioned" column="sla_breach_actioned"/>
     </resultMap>
 
     <select id="selectSlaSnapshot" resultMap="SlaTicketPo">
@@ -21,6 +22,7 @@
             t.sla_resolution_deadline,
             t.sla_first_responded_at,
             t.sla_resolved_at,
+            t.sla_breach_actioned,
             sr.breach_action_json
         FROM ticket t
         LEFT JOIN sla_rule sr
@@ -62,7 +64,7 @@
     <update id="updateResolution">
         UPDATE ticket
         SET sla_resolved_at = COALESCE(sla_resolved_at, #{now}),
-            sla_status = 'resolved'
+            sla_status = 'stopped'
         WHERE id = #{ticketId} AND business_domain_id = #{domainId}
     </update>
 
@@ -72,6 +74,22 @@
             sla_status = #{slaStatus},
             updated_at = CURRENT_TIMESTAMP(3)
         WHERE id = #{ticketId}
+    </update>
+
+    <!-- 违约动作原子认领：受影响行数 = 1 才是动作执行者 -->
+    <update id="claimBreachAction">
+        UPDATE ticket
+        SET sla_breach_actioned = 1,
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{ticketId} AND sla_breach_actioned = 0
+    </update>
+
+    <!-- 仅翻转 SLA 状态（自愈 / 非认领者只翻状态） -->
+    <update id="updateSlaStatus">
+        UPDATE ticket
+        SET sla_status = #{status},
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{ticketId} AND business_domain_id = #{domainId}
     </update>
 
 </mapper>

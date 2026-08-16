@@ -270,8 +270,7 @@
                 ELSE sla_resolved_at
             END,
             sla_status = CASE
-                WHEN #{newStatus} IN ('closed', 'resolved') THEN 'resolved'
-                WHEN #{newStatus} = 'withdrawn' OR #{newStatus} = 'merged' THEN 'stopped'
+                WHEN #{newStatus} IN ('closed', 'resolved', 'withdrawn', 'merged') THEN 'stopped'
                 WHEN #{newStatus} = 'processing' THEN COALESCE(sla_status, 'tracking')
                 ELSE sla_status
             END
@@ -342,6 +341,30 @@
             updated_at = CURRENT_TIMESTAMP(3)
         WHERE id = #{ticketId} AND business_domain_id = #{domainId} AND version = #{version}
     </update>
+
+    <!-- SLA 违约强制指派：绕开版本乐观锁与领取状态校验（超时动作），版本自增 -->
+    <update id="forceAssign">
+        UPDATE ticket
+        SET assigned_to = #{assignee},
+            assignee_staff_account_id = #{assignee},
+            status = CASE
+                WHEN status IN ('open', 'new') THEN 'processing'
+                ELSE status
+            END,
+            version = version + 1,
+            updated_at = #{now}
+        WHERE id = #{ticketId} AND business_domain_id = #{domainId}
+    </update>
+
+    <!-- SLA 定时扫描候选：tracking 且任一时限已过未完成（LIMIT 分批） -->
+    <select id="selectSlaScanCandidates" resultType="com.uniondesk.ticket.entity.SlaScanCandidatePo">
+        SELECT id, business_domain_id
+        FROM ticket
+        WHERE sla_status = 'tracking'
+          AND ((sla_first_response_deadline IS NOT NULL AND sla_first_response_deadline &lt; NOW() AND sla_first_responded_at IS NULL)
+            OR (sla_resolution_deadline IS NOT NULL AND sla_resolution_deadline &lt; NOW() AND sla_resolved_at IS NULL))
+        LIMIT #{limit}
+    </select>
 
     <select id="findNextTicketSequence" resultType="java.lang.Long">
         SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(ticket_no, '-', -1) AS UNSIGNED)), 0) + 1

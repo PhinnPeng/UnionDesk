@@ -31,4 +31,11 @@ public interface SlaTicketMapper {
             @Param("priority") String priority,
             @Param("slaStatus") String slaStatus,
             @Param("ticketId") long ticketId);
+
+    int claimBreachAction(@Param("ticketId") long ticketId);
+
+    void updateSlaStatus(
+            @Param("ticketId") long ticketId,
+            @Param("domainId") long domainId,
+            @Param("status") String status);
 }

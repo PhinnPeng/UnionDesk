@@ -33,5 +33,21 @@ public interface SlaRuleMapper {
             @Param("ticketTypeId") long ticketTypeId,
             @Param("priorityCode") String priorityCode);
 
+    TicketSlaPolicyPo selectGlobalPolicy();
+
+    List<String> selectActivePriorityCodes(@Param("domainId") long domainId);
+
+    List<SlaRulePo> selectGlobalRules(
+            @Param("limit") int limit,
+            @Param("offset") long offset);
+
+    long countGlobalRules();
+
+    SlaRulePo selectGlobalRuleById(@Param("id") long id);
+
+    int updateGlobalRuleById(SlaRulePo po);
+
+    int deleteGlobalRuleById(@Param("id") long id);
+
     String selectTicketPriority(@Param("ticketId") long ticketId);
 }

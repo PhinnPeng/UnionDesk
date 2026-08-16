@@ -101,7 +101,9 @@ import type {
   P0AttachmentPresignRequest,
   P0AttachmentPresignResponse,
   P0AttachmentLocalUploadResponse,
-  P0VisibilityPolicyCode
+  P0VisibilityPolicyCode,
+  PlatformSlaRuleView,
+  PlatformSlaRuleCommand
 } from "./types";
 import {
   normalizeAdminDomain,
@@ -2922,6 +2924,63 @@ export async function listCustomerDomainTicketTypes(
     );
     const data = unwrapApiResponse(response.data);
     return data.items ?? [];
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 全局 SLA 规则列表：`GET /api/v1/admin/platform/sla-rules`（对齐 `{total, list}` 分页，兼容 `{total, items}` 解包） */
+export async function fetchGlobalSlaRules(params?: {
+  page?: number;
+  page_size?: number;
+}): Promise<P0PageResult<PlatformSlaRuleView>> {
+  try {
+    const response = await api.get<Record<string, unknown>>("/admin/platform/sla-rules", { params });
+    const data = unwrapApiResponse(response.data) as Record<string, unknown>;
+    const rawList = Array.isArray(data.list)
+      ? data.list
+      : Array.isArray(data.items)
+        ? data.items
+        : [];
+    return {
+      total: typeof data.total === "number" ? data.total : rawList.length,
+      list: rawList as PlatformSlaRuleView[],
+    };
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** `POST /api/v1/admin/platform/sla-rules` — 创建全局 SLA 规则（后端校验类型/优先级/日历必须为空） */
+export async function createGlobalSlaRule(body: PlatformSlaRuleCommand): Promise<PlatformSlaRuleView> {
+  try {
+    const response = await api.post<PlatformSlaRuleView>("/admin/platform/sla-rules", body);
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** `PUT /api/v1/admin/platform/sla-rules/{ruleId}` — 更新全局 SLA 规则 */
+export async function updateGlobalSlaRule(
+  ruleId: string,
+  body: PlatformSlaRuleCommand,
+): Promise<PlatformSlaRuleView> {
+  try {
+    const response = await api.put<PlatformSlaRuleView>(
+      `/admin/platform/sla-rules/${encodeURIComponent(ruleId)}`,
+      body,
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** `DELETE /api/v1/admin/platform/sla-rules/{ruleId}` — 删除全局 SLA 规则 */
+export async function deleteGlobalSlaRule(ruleId: string): Promise<void> {
+  try {
+    await api.delete(`/admin/platform/sla-rules/${encodeURIComponent(ruleId)}`);
   } catch (error) {
     throw toError(error);
   }

@@ -38,6 +38,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -508,8 +509,61 @@ public class TicketService {
         return slaService.evaluateTicket(businessDomainId, ticketId);
     }
 
+    /**
+     * SLA 违约处置入口（事件触点 refreshTicketSla 与定时扫描 SlaScanJob 共用）：
+     * evaluateTicket 内完成违约判定、原子认领动作标志、按序升级与置状态（并入同一事务），
+     * 认领者（pendingActions 非空）在此执行换处理人 / 添加关注人动作。
+     */
+    @Transactional
+    public void processSlaBreach(long businessDomainId, long ticketId) {
+        SlaService.SlaBreachDecision decision = slaService.evaluateTicket(businessDomainId, ticketId);
+        if (decision.pendingActions().isEmpty()) {
+            return;
+        }
+        for (SlaService.BreachAction action : decision.pendingActions()) {
+            if (action instanceof SlaService.AssignAction assignAction) {
+                forceAssign(businessDomainId, ticketId, assignAction.staffAccountId());
+            } else if (action instanceof SlaService.AddWatchersAction watchersAction) {
+                appendWatchers(ticketId, watchersAction.staffAccountIds());
+            }
+        }
+    }
+
+    /**
+     * 超时强制指派：绕开领取状态与版本乐观锁，直接更新处理人并自增版本；记录历史与审计（通知可省）。
+     */
+    private void forceAssign(long businessDomainId, long ticketId, long staffAccountId) {
+        TicketRow current = loadTicketRow(businessDomainId, ticketId);
+        LocalDateTime now = LocalDateTime.now(clock);
+        ticketRepository.forceAssign(ticketId, businessDomainId, staffAccountId, now);
+        recordHistory(ticketId, businessDomainId, "assign",
+                current.assignedTo() == null ? null : String.valueOf(current.assignedTo()),
+                String.valueOf(staffAccountId),
+                null,
+                Map.of("source", "sla_breach"));
+        recordAudit(businessDomainId, null, "ticket:" + current.ticketNo(), "ticket.assign",
+                Map.of("ticket_id", ticketId, "assignee_staff_account_id", staffAccountId, "source", "sla_breach"),
+                "success");
+    }
+
+    /**
+     * 追加关注人：先查已有关注人合并去重后再 replace（追加语义，不覆盖已有关注人）。
+     */
+    private void appendWatchers(long ticketId, List<Long> staffAccountIds) {
+        LinkedHashSet<Long> merged = new LinkedHashSet<>(ticketWatcherService.listStaffIds(ticketId));
+        boolean added = false;
+        for (Long staffId : staffAccountIds) {
+            if (staffId != null && merged.add(staffId)) {
+                added = true;
+            }
+        }
+        if (added) {
+            ticketWatcherService.replaceWatchers(ticketId, new ArrayList<>(merged));
+        }
+    }
+
     private void refreshTicketSla(long businessDomainId, long ticketId) {
-        slaService.evaluateTicket(businessDomainId, ticketId);
+        processSlaBreach(businessDomainId, ticketId);
     }
 
     private List<TicketRow> listTicketsInternal(long businessDomainId, Long customerUserId, String status, int limit) {

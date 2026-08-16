@@ -28,10 +28,8 @@ import {
 	Empty,
 	Form,
 	Input,
-	InputNumber,
 	Modal,
 	Space,
-	Switch,
 	Table,
 	Tabs,
 	Tooltip,
@@ -40,6 +38,7 @@ import {
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { SlaRuleForm } from "./sla-rule-form";
 import styles from "./index.module.less";
 
 type EditorKind = "rule" | "calendar" | null;
@@ -139,9 +138,9 @@ export default function DomainSlaPage() {
 		setEditingRule(row ?? null);
 		form.setFieldsValue({
 			name: row?.name ?? "",
-			ticketTypeId: row?.ticketTypeId ?? undefined,
-			priorityLevelId: row?.priorityLevelId ?? undefined,
-			calendarId: row?.calendarId ?? undefined,
+			ticketTypeId: row?.ticketTypeId != null ? String(row.ticketTypeId) : undefined,
+			priorityLevelId: row?.priorityLevelId != null ? String(row.priorityLevelId) : undefined,
+			calendarId: row?.calendarId != null ? String(row.calendarId) : undefined,
 			firstResponseMinutes: row?.firstResponseMinutes ?? undefined,
 			resolutionMinutes: row?.resolutionMinutes ?? undefined,
 			isUrgentConfig: row?.isUrgentConfig ?? false,
@@ -381,34 +380,7 @@ export default function DomainSlaPage() {
 			>
 				<Form form={form} layout="vertical">
 					{editorKind === "rule" ? (
-						<>
-							<Form.Item name="name" label="规则名称" rules={[{ required: true, message: "请输入规则名称" }]}>
-								<Input placeholder="如 默认首响规则" />
-							</Form.Item>
-							<div className="grid gap-4 lg:grid-cols-2">
-								<Form.Item name="ticketTypeId" label="工单类型 ID">
-									<InputNumber className="w-full" min={1} />
-								</Form.Item>
-								<Form.Item name="priorityLevelId" label="优先级 ID">
-									<InputNumber className="w-full" min={1} />
-								</Form.Item>
-								<Form.Item name="calendarId" label="日历 ID">
-									<InputNumber className="w-full" min={1} />
-								</Form.Item>
-								<Form.Item name="isUrgentConfig" label="紧急配置" valuePropName="checked">
-									<Switch />
-								</Form.Item>
-								<Form.Item name="firstResponseMinutes" label="首响分钟">
-									<InputNumber className="w-full" min={0} />
-								</Form.Item>
-								<Form.Item name="resolutionMinutes" label="解决分钟">
-									<InputNumber className="w-full" min={0} />
-								</Form.Item>
-							</div>
-							<Form.Item name="breachActionText" label="超时动作 JSON">
-								<Input.TextArea rows={5} className={styles.jsonEditor} placeholder='例如 {"raise_priority_to":"urgent"}' />
-							</Form.Item>
-						</>
+						<SlaRuleForm form={form} domainId={domainId} />
 					) : (
 						<>
 							<Form.Item name="name" label="日历名称" rules={[{ required: true, message: "请输入日历名称" }]}>

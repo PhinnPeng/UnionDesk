@@ -4,7 +4,6 @@ import {
 	assignAdminTicket,
 	claimAdminTicket,
 	fetchAdminDomainTicketsPage,
-	updateAdminTicketStatus,
 	type AdminTicketListQuery,
 	type TicketRow,
 } from "#src/api/platform/ticket";
@@ -228,17 +227,6 @@ export default function DomainTicketQueuePage({
 		}
 	}, [assignForm, assignTarget, domainId, loadTickets, message, page, pageSize, searchValues]);
 
-	const handleClose = useCallback(async (row: TicketRow) => {
-		try {
-			await updateAdminTicketStatus(domainId, row.id, { status: "closed", version: row.version });
-			message.success("工单已关闭");
-			await loadTickets(page, pageSize, searchValues);
-		}
-		catch (error) {
-			message.error(toErrorMessage(error));
-		}
-	}, [domainId, loadTickets, message, page, pageSize, searchValues]);
-
 	const openDetail = useCallback((row: TicketRow) => {
 		setDetailTicketId(row.id);
 		setDrawerOpen(true);
@@ -381,7 +369,6 @@ export default function DomainTicketQueuePage({
 				onClose={() => setDrawerOpen(false)}
 				onClaim={handleClaim}
 				onAssign={openAssign}
-				onCloseTicket={handleClose}
 				onChanged={loadTickets}
 			/>
 		</>

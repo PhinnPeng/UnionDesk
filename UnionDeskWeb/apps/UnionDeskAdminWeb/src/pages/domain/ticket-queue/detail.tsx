@@ -85,12 +85,12 @@ export default function DomainTicketQueueDetailPage() {
 	const [priorityLevels, setPriorityLevels] = useState<DomainPriorityLevelView[]>([]);
 	const [assignOpen, setAssignOpen] = useState(false);
 	const [watchersOpen, setWatchersOpen] = useState(false);
-	const [closeOpen, setCloseOpen] = useState(false);
+	const [statusOpen, setStatusOpen] = useState(false);
 	const [mergeOpen, setMergeOpen] = useState(false);
 	const [replyForm] = Form.useForm();
 	const [assignForm] = Form.useForm();
 	const [watchersForm] = Form.useForm();
-	const [closeForm] = Form.useForm();
+	const [statusForm] = Form.useForm();
 	const [mergeForm] = Form.useForm();
 
 	const statusMap = useMemo(() => {
@@ -246,11 +246,11 @@ export default function DomainTicketQueueDetailPage() {
 		}
 	};
 
-	const onCloseTicket = async () => {
+	const onChangeStatus = async () => {
 		if (!detail || !domainId || !ticketId) {
 			return;
 		}
-		const values = await closeForm.validateFields().catch(() => null);
+		const values = await statusForm.validateFields().catch(() => null);
 		if (!values) {
 			return;
 		}
@@ -261,7 +261,7 @@ export default function DomainTicketQueueDetailPage() {
 				content: values.content,
 			});
 			message.success("工单状态已更新");
-			setCloseOpen(false);
+			setStatusOpen(false);
 			await loadDetail();
 		}
 		catch (error) {
@@ -355,7 +355,7 @@ export default function DomainTicketQueueDetailPage() {
 									</Button>
 								</AuthGuarded>
 								<AuthGuarded auth="ticket.close" fallback={null}>
-									<Button onClick={() => setCloseOpen(true)} disabled={!detail || loading}>关闭</Button>
+									<Button onClick={() => setStatusOpen(true)} disabled={!detail || loading}>变更状态</Button>
 								</AuthGuarded>
 								<AuthGuarded auth="ticket.merge" fallback={null}>
 									<Button onClick={() => setMergeOpen(true)} disabled={!detail || loading}>合并</Button>
@@ -564,13 +564,13 @@ export default function DomainTicketQueueDetailPage() {
 				</Form>
 			</Modal>
 
-			<Modal title="更新工单状态" open={closeOpen} onCancel={() => setCloseOpen(false)} onOk={() => void onCloseTicket()} destroyOnClose>
-				<Form form={closeForm} layout="vertical">
+			<Modal title="更新工单状态" open={statusOpen} onCancel={() => setStatusOpen(false)} onOk={() => void onChangeStatus()} destroyOnClose>
+				<Form form={statusForm} layout="vertical">
 					<Form.Item name="status" label="目标状态" rules={[{ required: true, message: "请选择状态" }]}>
 						<Select options={statusOptions} placeholder="请选择目标状态" />
 					</Form.Item>
 					<Form.Item name="content" label="说明">
-						<Input.TextArea rows={4} placeholder="可填写关闭说明" />
+						<Input.TextArea rows={4} placeholder="可填写状态变更说明" />
 					</Form.Item>
 				</Form>
 			</Modal>

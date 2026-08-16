@@ -1,6 +1,7 @@
 package com.uniondesk.ticket.mapper;
 
 import com.mybatisflex.core.BaseMapper;
+import com.uniondesk.ticket.entity.SlaScanCandidatePo;
 import com.uniondesk.ticket.entity.TicketDetailPo;
 import com.uniondesk.ticket.entity.TicketPo;
 import java.time.LocalDateTime;
@@ -71,6 +72,19 @@ public interface TicketMapper extends BaseMapper<TicketPo> {
     int updateMerge(@Param("ticketId") long ticketId,
                     @Param("domainId") long domainId,
                     @Param("version") long version);
+
+    /**
+     * SLA 违约强制指派：绕开版本乐观锁与领取状态校验，版本自增。
+     */
+    int forceAssign(@Param("ticketId") long ticketId,
+                    @Param("domainId") long domainId,
+                    @Param("assignee") long assignee,
+                    @Param("now") LocalDateTime now);
+
+    /**
+     * SLA 定时扫描候选：tracking 且任一时限已过未完成。
+     */
+    List<SlaScanCandidatePo> selectSlaScanCandidates(@Param("limit") int limit);
 
     Long findNextTicketSequence(@Param("domainId") long domainId, @Param("prefix") String prefix);
 

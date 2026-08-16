@@ -1,4 +1,10 @@
-import type { BusinessDomainView } from "@uniondesk/shared";
+import type { BusinessDomainView, PlatformSlaRuleView } from "@uniondesk/shared";
+import {
+	createGlobalSlaRule,
+	deleteGlobalSlaRule,
+	fetchGlobalSlaRules,
+	updateGlobalSlaRule,
+} from "@uniondesk/shared";
 
 import { fetchBusinessDomains } from "#src/api/platform/domain";
 import {
@@ -13,12 +19,14 @@ import {
 	type SlaRuleView,
 } from "#src/api/platform/sla";
 import { BasicContent } from "#src/components/basic-content";
+import { SlaRuleForm } from "#src/pages/domain/sla/sla-rule-form";
 
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
-import { App, Button, Card, Form, Input, InputNumber, Modal, Select, Space, Switch, Table, Tabs, Tooltip, Typography } from "antd";
+import { App, Button, Card, Form, Input, Modal, Segmented, Select, Space, Table, Tabs, Tooltip, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { useEffect, useMemo, useState } from "react";
 
+type Section = "global" | "domain";
 type EditorKind = "rule" | "calendar" | null;
 
 function safeJson(value: string | null | undefined) {
@@ -39,6 +47,7 @@ function prettyJson(value: Record<string, unknown> | undefined) {
 
 export default function PlatformSlaManagement() {
 	const { message } = App.useApp();
+	const [section, setSection] = useState<Section>("global");
 	const [domains, setDomains] = useState<BusinessDomainView[]>([]);
 	const [domainId, setDomainId] = useState<string>();
 	const [activeTab, setActiveTab] = useState<"rules" | "calendars">("rules");
@@ -49,6 +58,13 @@ export default function PlatformSlaManagement() {
 	const [editingRule, setEditingRule] = useState<SlaRuleView | null>(null);
 	const [editingCalendar, setEditingCalendar] = useState<SlaCalendarView | null>(null);
 	const [form] = Form.useForm();
+
+	// 全局默认规则（平台级跨域兜底）
+	const [globalRuleRows, setGlobalRuleRows] = useState<PlatformSlaRuleView[]>([]);
+	const [globalLoading, setGlobalLoading] = useState(false);
+	const [globalEditorOpen, setGlobalEditorOpen] = useState(false);
+	const [editingGlobalRule, setEditingGlobalRule] = useState<PlatformSlaRuleView | null>(null);
+	const [globalForm] = Form.useForm();
 
 	useEffect(() => {
 		let ignore = false;
@@ -74,6 +90,27 @@ export default function PlatformSlaManagement() {
 		label: `${domain.name} / ${domain.code}`,
 		value: domain.id,
 	})), [domains]);
+
+	const loadGlobalRules = async () => {
+		setGlobalLoading(true);
+		try {
+			const page = await fetchGlobalSlaRules({ page: 1, page_size: 100 });
+			setGlobalRuleRows(page.list);
+		}
+		catch (error) {
+			message.error(error instanceof Error ? error.message : "加载全局 SLA 规则失败");
+		}
+		finally {
+			setGlobalLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		if (section === "global") {
+			void loadGlobalRules();
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [section]);
 
 	const loadData = async () => {
 		if (!domainId) {
@@ -103,14 +140,65 @@ export default function PlatformSlaManagement() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [domainId, activeTab]);
 
+	const openGlobalEditor = (row?: PlatformSlaRuleView) => {
+		setEditingGlobalRule(row ?? null);
+		globalForm.setFieldsValue({
+			name: row?.name ?? "",
+			firstResponseMinutes: row?.firstResponseMinutes ?? undefined,
+			resolutionMinutes: row?.resolutionMinutes ?? undefined,
+			breachActionText: prettyJson(row?.breachAction as Record<string, unknown> | undefined),
+		});
+		setGlobalEditorOpen(true);
+	};
+
+	const submitGlobalEditor = async () => {
+		const values = await globalForm.validateFields().catch(() => null);
+		if (!values) {
+			return;
+		}
+		try {
+			const payload = {
+				name: values.name,
+				firstResponseMinutes: values.firstResponseMinutes ?? null,
+				resolutionMinutes: values.resolutionMinutes ?? null,
+				breachAction: safeJson(values.breachActionText),
+			};
+			if (editingGlobalRule) {
+				await updateGlobalSlaRule(editingGlobalRule.id, payload);
+				message.success("全局默认规则已更新");
+			}
+			else {
+				await createGlobalSlaRule(payload);
+				message.success("全局默认规则已创建");
+			}
+			setGlobalEditorOpen(false);
+			setEditingGlobalRule(null);
+			await loadGlobalRules();
+		}
+		catch (error) {
+			message.error(error instanceof Error ? error.message : "保存失败");
+		}
+	};
+
+	const handleDeleteGlobalRule = async (ruleId: string) => {
+		try {
+			await deleteGlobalSlaRule(ruleId);
+			message.success("全局默认规则已删除");
+			await loadGlobalRules();
+		}
+		catch (error) {
+			message.error(error instanceof Error ? error.message : "删除失败");
+		}
+	};
+
 	const openRuleEditor = (row?: SlaRuleView) => {
 		setEditorKind("rule");
 		setEditingRule(row ?? null);
 		form.setFieldsValue({
 			name: row?.name ?? "",
-			ticketTypeId: row?.ticketTypeId ?? undefined,
-			priorityLevelId: row?.priorityLevelId ?? undefined,
-			calendarId: row?.calendarId ?? undefined,
+			ticketTypeId: row?.ticketTypeId != null ? String(row.ticketTypeId) : undefined,
+			priorityLevelId: row?.priorityLevelId != null ? String(row.priorityLevelId) : undefined,
+			calendarId: row?.calendarId != null ? String(row.calendarId) : undefined,
 			firstResponseMinutes: row?.firstResponseMinutes ?? undefined,
 			resolutionMinutes: row?.resolutionMinutes ?? undefined,
 			isUrgentConfig: row?.isUrgentConfig ?? false,
@@ -180,6 +268,28 @@ export default function PlatformSlaManagement() {
 		}
 	};
 
+	const globalColumns: TableColumnsType<PlatformSlaRuleView> = [
+		{ title: "名称", dataIndex: "name", width: 200 },
+		{ title: "首响分钟", dataIndex: "firstResponseMinutes", width: 120, render: value => value ?? "-" },
+		{ title: "解决分钟", dataIndex: "resolutionMinutes", width: 120, render: value => value ?? "-" },
+		{ title: "触发动作", dataIndex: "breachAction", ellipsis: true, render: value => JSON.stringify(value ?? {}) },
+		{
+			title: "操作",
+			key: "actions",
+			width: 100,
+			render: (_, row) => (
+				<Space>
+					<Tooltip title="编辑">
+						<Button type="link" size="small" icon={<EditOutlined />} onClick={() => openGlobalEditor(row)} />
+					</Tooltip>
+					<Tooltip title="删除">
+						<Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => void handleDeleteGlobalRule(row.id)} />
+					</Tooltip>
+				</Space>
+			),
+		},
+	];
+
 	const ruleColumns: TableColumnsType<SlaRuleView> = [
 		{ title: "名称", dataIndex: "name", width: 180 },
 		{ title: "工单类型", dataIndex: "ticketTypeId", width: 110, render: value => value ?? "-" },
@@ -241,48 +351,96 @@ export default function PlatformSlaManagement() {
 				extra={<Typography.Text type="secondary">规则、日历与优先级关联统一维护</Typography.Text>}
 			>
 				<Space direction="vertical" size={16} className="w-full">
-					<div className="flex flex-wrap items-center gap-3">
-						<Typography.Text className="text-slate-600">业务域</Typography.Text>
-						<Select className="min-w-72" value={domainId} options={domainOptions} onChange={setDomainId} />
-					</div>
-
-					<Tabs
-						activeKey={activeTab}
-						onChange={key => setActiveTab(key as "rules" | "calendars")}
-						items={[
-							{ key: "rules", label: "SLA 规则" },
-							{ key: "calendars", label: "SLA 日历" },
+					<Segmented
+						options={[
+							{ label: "全局默认规则", value: "global" },
+							{ label: "业务域规则（代管）", value: "domain" },
 						]}
-						tabBarExtraContent={(
-							<Space>
-								<Button type="primary" onClick={() => activeTab === "rules" ? openRuleEditor() : openCalendarEditor()}>
-									新增{activeTab === "rules" ? "规则" : "日历"}
-								</Button>
-							</Space>
-						)}
+						value={section}
+						onChange={value => setSection(value as Section)}
 					/>
 
-					{activeTab === "rules" ? (
-						<Table<SlaRuleView>
-							rowKey="id"
-							loading={loading}
-							columns={ruleColumns}
-							dataSource={ruleRows}
-							pagination={false}
-							scroll={{ x: 1200 }}
-						/>
+					{section === "global" ? (
+						<Space direction="vertical" size={16} className="w-full">
+							<div className="flex flex-wrap items-center gap-3">
+								<Typography.Text className="text-slate-600">成员业务域</Typography.Text>
+								<Select className="min-w-72" value={domainId} options={domainOptions} onChange={setDomainId} />
+								<Typography.Text type="secondary">超时动作中处理人/关注人的成员数据源</Typography.Text>
+							</div>
+							<div className="flex justify-end">
+								<Button type="primary" onClick={() => openGlobalEditor()}>新增全局规则</Button>
+							</div>
+							<Table<PlatformSlaRuleView>
+								rowKey="id"
+								loading={globalLoading}
+								columns={globalColumns}
+								dataSource={globalRuleRows}
+								pagination={false}
+								scroll={{ x: 900 }}
+							/>
+						</Space>
 					) : (
-						<Table<SlaCalendarView>
-							rowKey="id"
-							loading={loading}
-							columns={calendarColumns}
-							dataSource={calendarRows}
-							pagination={false}
-							scroll={{ x: 1000 }}
-						/>
+						<Space direction="vertical" size={16} className="w-full">
+							<div className="flex flex-wrap items-center gap-3">
+								<Typography.Text className="text-slate-600">业务域</Typography.Text>
+								<Select className="min-w-72" value={domainId} options={domainOptions} onChange={setDomainId} />
+							</div>
+
+							<Tabs
+								activeKey={activeTab}
+								onChange={key => setActiveTab(key as "rules" | "calendars")}
+								items={[
+									{ key: "rules", label: "SLA 规则" },
+									{ key: "calendars", label: "SLA 日历" },
+								]}
+								tabBarExtraContent={(
+									<Space>
+										<Button type="primary" onClick={() => activeTab === "rules" ? openRuleEditor() : openCalendarEditor()}>
+											新增{activeTab === "rules" ? "规则" : "日历"}
+										</Button>
+									</Space>
+								)}
+							/>
+
+							{activeTab === "rules" ? (
+								<Table<SlaRuleView>
+									rowKey="id"
+									loading={loading}
+									columns={ruleColumns}
+									dataSource={ruleRows}
+									pagination={false}
+									scroll={{ x: 1200 }}
+								/>
+							) : (
+								<Table<SlaCalendarView>
+									rowKey="id"
+									loading={loading}
+									columns={calendarColumns}
+									dataSource={calendarRows}
+									pagination={false}
+									scroll={{ x: 1000 }}
+								/>
+							)}
+						</Space>
 					)}
 				</Space>
 			</Card>
+
+			<Modal
+				title={editingGlobalRule ? "编辑全局默认规则" : "新增全局默认规则"}
+				open={globalEditorOpen}
+				onCancel={() => {
+					setGlobalEditorOpen(false);
+					setEditingGlobalRule(null);
+				}}
+				onOk={() => void submitGlobalEditor()}
+				destroyOnClose
+				width={720}
+			>
+				<Form form={globalForm} layout="vertical">
+					<SlaRuleForm form={globalForm} domainId={domainId} global />
+				</Form>
+			</Modal>
 
 			<Modal
 				title={editorKind === "rule" ? (editingRule ? "编辑 SLA 规则" : "新增 SLA 规则") : editingCalendar ? "编辑 SLA 日历" : "新增 SLA 日历"}
@@ -298,34 +456,7 @@ export default function PlatformSlaManagement() {
 			>
 				<Form form={form} layout="vertical">
 					{editorKind === "rule" ? (
-						<>
-							<Form.Item name="name" label="规则名称" rules={[{ required: true, message: "请输入规则名称" }]}>
-								<Input placeholder="如 默认首响规则" />
-							</Form.Item>
-							<div className="grid gap-4 lg:grid-cols-2">
-								<Form.Item name="ticketTypeId" label="工单类型 ID">
-									<InputNumber className="w-full" min={1} />
-								</Form.Item>
-								<Form.Item name="priorityLevelId" label="优先级 ID">
-									<InputNumber className="w-full" min={1} />
-								</Form.Item>
-								<Form.Item name="calendarId" label="日历 ID">
-									<InputNumber className="w-full" min={1} />
-								</Form.Item>
-								<Form.Item name="isUrgentConfig" label="紧急配置" valuePropName="checked">
-									<Switch />
-								</Form.Item>
-								<Form.Item name="firstResponseMinutes" label="首响分钟">
-									<InputNumber className="w-full" min={0} />
-								</Form.Item>
-								<Form.Item name="resolutionMinutes" label="解决分钟">
-									<InputNumber className="w-full" min={0} />
-								</Form.Item>
-							</div>
-							<Form.Item name="breachActionText" label="超时动作 JSON">
-								<Input.TextArea rows={5} placeholder='例如 {"raise_priority_to":"urgent"}' />
-							</Form.Item>
-						</>
+						<SlaRuleForm form={form} domainId={domainId} />
 					) : (
 						<>
 							<Form.Item name="name" label="日历名称" rules={[{ required: true, message: "请输入日历名称" }]}>
