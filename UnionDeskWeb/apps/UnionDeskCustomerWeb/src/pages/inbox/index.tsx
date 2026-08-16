@@ -1,6 +1,9 @@
 import {
 	fetchCustomerInboxLive,
+	loadAuthSession,
 	markCustomerInboxReadLive,
+	realtimeClient,
+	REALTIME_EVENT,
 	type CustomerPortalInboxMessage,
 	toErrorMessage,
 } from "@uniondesk/shared";
@@ -46,6 +49,24 @@ export default function InboxPage() {
 
 	useEffect(() => {
 		void load();
+	}, [load]);
+
+	// 实时刷新：新站内信即时出现（inbox.new，payload 带 unreadCount）
+	useEffect(() => {
+		const token = loadAuthSession()?.accessToken;
+		if (token) {
+			realtimeClient.connect(token);
+		}
+		const onInboxNew = (payload: Record<string, unknown>) => {
+			if (typeof payload.unreadCount === "number") {
+				setUnreadCount(payload.unreadCount);
+			}
+			void load();
+		};
+		realtimeClient.on(REALTIME_EVENT.INBOX_NEW, onInboxNew);
+		return () => {
+			realtimeClient.off(REALTIME_EVENT.INBOX_NEW, onInboxNew);
+		};
 	}, [load]);
 
 	const handleMarkRead = async (item: CustomerPortalInboxMessage) => {

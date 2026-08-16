@@ -14,6 +14,8 @@ export type AdminTicketListQuery = {
 	assigned_to_me?: boolean
 	/** 按 SLA 状态筛选（如 breached=已超时） */
 	sla_status?: string
+	/** 按事项类型筛选 */
+	ticket_type_id?: string
 }
 
 export interface TicketRow {
@@ -87,6 +89,8 @@ export interface ReplyTicketCommand {
 	content: string
 	quickReplyTemplateId?: string | null
 	attachmentIds?: number[]
+	/** 内部备注（仅员工端可见，不向客户展示/推送） */
+	internal?: boolean
 }
 
 export interface ClaimTicketCommand {
@@ -95,7 +99,8 @@ export interface ClaimTicketCommand {
 
 export interface AssignTicketCommand {
 	version: number
-	assigneeStaffAccountId: string
+	/** 为空表示清除处理人 */
+	assigneeStaffAccountId: string | null
 }
 
 export interface ReplaceWatchersCommand {
@@ -136,6 +141,22 @@ export function fetchAdminDomainTicketsPage(
 ): Promise<PageResult<TicketRow>> {
 	const query = buildQuery(params as Record<string, unknown>);
 	return requestBackendJson<PageResult<TicketRow>>(`v1/admin/domains/${domainId}/tickets${query ? `?${query}` : ""}`);
+}
+
+export interface TicketTypeInitialCountRow {
+	ticketTypeId: string
+	count: number
+}
+
+/** 事项类型「未处理」计数（类型起始状态工单数；assignedToMe=true 为我的待办视角） */
+export function fetchAdminTicketTypeCounts(
+	domainId: string,
+	options?: { assignedToMe?: boolean },
+): Promise<TicketTypeInitialCountRow[]> {
+	const query = buildQuery({ assigned_to_me: options?.assignedToMe || undefined });
+	return requestBackendJson<TicketTypeInitialCountRow[]>(
+		`v1/admin/domains/${domainId}/tickets/type-counts${query ? `?${query}` : ""}`,
+	);
 }
 
 export function fetchTicketDetail(domainId: string, ticketId: string): Promise<TicketDetailResult> {

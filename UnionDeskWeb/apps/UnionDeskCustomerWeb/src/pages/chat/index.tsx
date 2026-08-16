@@ -1,7 +1,11 @@
 import {
 	createCustomerConsultation,
+	fetchConsultationAvailability,
 	getMyConsultationMessages,
 	listCustomerMyConsultations,
+	loadAuthSession,
+	realtimeClient,
+	REALTIME_EVENT,
 	replyCustomerConsultation,
 	toErrorMessage,
 	useCustomerPortal,
@@ -12,8 +16,6 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 
 import { useToast } from "../../components/Toast";
 import { formatDateTime } from "../../utils/date";
-
-const POLL_INTERVAL_MS = 3000;
 
 function statusLabel(status: string): string {
 	if (status === "closed") {
@@ -42,6 +44,8 @@ export default function ChatPage() {
 	const [createOpen, setCreateOpen] = useState(false);
 	const [createDraft, setCreateDraft] = useState("");
 	const [creating, setCreating] = useState(false);
+	/** 当前无在线坐席提示（发起咨询时查询；排队中展示） */
+	const [noAgentOnline, setNoAgentOnline] = useState(false);
 	const messageEndRef = useRef<HTMLDivElement | null>(null);
 
 	const activeSession = sessions.find(item => item.sessionNo === activeSessionNo) ?? null;
@@ -78,9 +82,72 @@ export default function ChatPage() {
 		}
 	}, [domainId, toast]);
 
+	/** 查询坐席可用性：无在线坐席时提示排队等待 */
+	const loadAvailability = useCallback(async () => {
+		if (!domainId) {
+			return;
+		}
+		try {
+			const result = await fetchConsultationAvailability(String(domainId));
+			setNoAgentOnline(!result.hasOnlineAgent);
+		}
+		catch {
+			setNoAgentOnline(false);
+		}
+	}, [domainId]);
+
 	useEffect(() => {
 		void loadSessions();
-	}, [loadSessions]);
+		void loadAvailability();
+	}, [loadSessions, loadAvailability]);
+
+	// 实时通道：连接 + 订阅（替代 3s 轮询）
+	useEffect(() => {
+		const token = loadAuthSession()?.accessToken;
+		if (!token) {
+			return;
+		}
+		realtimeClient.connect(token);
+		realtimeClient.onReady(() => {
+			// 重连后拉全量（WS 丢帧兜底）
+			void loadSessions();
+			if (activeSessionNo) {
+				void loadMessages(activeSessionNo);
+			}
+		});
+		const onChatMessage = (payload: Record<string, unknown>) => {
+			const sessionNo = String(payload.sessionNo ?? "");
+			const messageId = String(payload.messageId ?? "");
+			if (!sessionNo) {
+				return;
+			}
+			if (sessionNo === activeSessionNo) {
+				setMessages(prev => prev.some(item => String(item.id) === messageId)
+					? prev
+					: [...prev, {
+						id: messageId,
+						sessionNo,
+						seqNo: 0,
+						businessDomainId: String(domainId),
+						senderRole: String(payload.senderRole ?? "agent"),
+						messageType: "text",
+						content: String(payload.content ?? ""),
+						createdAt: String(payload.createdAt ?? new Date().toISOString()),
+					}]);
+			}
+			void loadSessions();
+		};
+		const onChatSession = () => {
+			void loadSessions();
+		};
+		realtimeClient.on(REALTIME_EVENT.CHAT_MESSAGE, onChatMessage);
+		realtimeClient.on(REALTIME_EVENT.CHAT_SESSION, onChatSession);
+		return () => {
+			realtimeClient.off(REALTIME_EVENT.CHAT_MESSAGE, onChatMessage);
+			realtimeClient.off(REALTIME_EVENT.CHAT_SESSION, onChatSession);
+		};
+	// eslint-disable-next-line react-hooks/exhaustive-deps -- activeSessionNo 由回调内读取最新值
+	}, [loadMessages, loadSessions, domainId]);
 
 	useEffect(() => {
 		if (!activeSessionNo) {
@@ -88,10 +155,6 @@ export default function ChatPage() {
 			return;
 		}
 		void loadMessages(activeSessionNo);
-		const timer = window.setInterval(() => {
-			void loadMessages(activeSessionNo);
-		}, POLL_INTERVAL_MS);
-		return () => window.clearInterval(timer);
 	}, [activeSessionNo, loadMessages]);
 
 	useEffect(() => {
@@ -132,6 +195,7 @@ export default function ChatPage() {
 			setCreateDraft("");
 			setActiveSessionNo(session.sessionNo);
 			await loadSessions();
+			await loadAvailability();
 			toast.success("咨询已发起");
 		}
 		catch (error) {
@@ -155,11 +219,29 @@ export default function ChatPage() {
 				<button
 					type="button"
 					className="ud-btn ud-btn--primary"
-					onClick={() => setCreateOpen(true)}
+					onClick={() => {
+						void loadAvailability();
+						setCreateOpen(true);
+					}}
 				>
 					发起咨询
 				</button>
 			</header>
+
+			{noAgentOnline ? (
+				<div
+					role="alert"
+					style={{
+						padding: "10px 14px",
+						borderRadius: 8,
+						backgroundColor: "#eef4ff",
+						color: "#1d4ed8",
+						fontSize: 13,
+					}}
+				>
+					当前暂无坐席在线，您的咨询将进入排队，客服上线后会第一时间接入。
+				</div>
+			) : null}
 
 			<div className="ud-chat-layout">
 				<aside className="ud-glass ud-chat-sessions" aria-label="咨询会话列表">
@@ -197,6 +279,21 @@ export default function ChatPage() {
 											: null}
 									</div>
 								</header>
+								{activeSession.sessionStatus === "queued" && noAgentOnline ? (
+									<div
+										role="alert"
+										style={{
+											margin: 12,
+											padding: "10px 14px",
+											borderRadius: 8,
+											backgroundColor: "#eef4ff",
+											color: "#1d4ed8",
+											fontSize: 13,
+										}}
+									>
+										当前暂无坐席在线，正在排队等待接入…
+									</div>
+								) : null}
 								<div className="ud-chat-messages">
 									{messages.length === 0
 										? <div className="ud-chat-panel__empty">暂无消息，发送第一条消息开始咨询</div>
@@ -243,6 +340,11 @@ export default function ChatPage() {
 							<p className="ud-muted" style={{ margin: "4px 0 12px" }}>
 								当前业务域：{portal.activeDomain?.name ?? "未选择"}
 							</p>
+							{noAgentOnline ? (
+								<p className="ud-muted" style={{ margin: "0 0 12px", color: "#b54708" }}>
+									当前暂无坐席在线，提交后将进入排队，客服上线后第一时间接入。
+								</p>
+							) : null}
 							<textarea
 								className="ud-textarea"
 								rows={4}

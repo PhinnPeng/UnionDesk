@@ -1,0 +1,25 @@
+/**
+ * 类型筛选栏（事项类型）选项样式：
+ * 基于 antd Button type="text"，覆盖高度/对齐，激活态沿用 Figma V2 浅蓝底 + 主色文字。
+ * hover/active 态由 antd 提供，激活项 hover 加深蓝底（需 !important 压过 antd 的 hover 背景）。
+ */
+.item {
+	justify-content: flex-start !important;
+	gap: 8px !important;
+	height: 40px !important;
+	border-radius: 8px !important;
+	padding: 0 8px !important;
+	font-size: 13px !important;
+	transition: background-color 0.2s, color 0.2s;
+
+	&.active {
+		background-color: rgba(23, 120, 255, 0.08) !important;
+		color: #1778ff !important;
+		font-weight: 500;
+
+		&:hover,
+		&:active {
+			background-color: rgba(23, 120, 255, 0.12) !important;
+		}
+	}
+}

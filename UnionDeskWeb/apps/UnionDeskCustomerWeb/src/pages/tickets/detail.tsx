@@ -1,6 +1,9 @@
 import {
 	fetchSatisfactionLive,
 	getCustomerTicketLive,
+	loadAuthSession,
+	realtimeClient,
+	REALTIME_EVENT,
 	replyCustomerTicketLive,
 	submitSatisfactionLive,
 	trackEvent,
@@ -107,6 +110,29 @@ export default function TicketDetailPage() {
 	useEffect(() => {
 		void reload();
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- reload on ticket id only
+	}, [ticketId]);
+
+	// 实时刷新：客服回复/状态变更即时可见（ticket.replied / ticket.updated）
+	useEffect(() => {
+		if (!ticketId) {
+			return;
+		}
+		const token = loadAuthSession()?.accessToken;
+		if (token) {
+			realtimeClient.connect(token);
+		}
+		const onTicketEvent = (payload: Record<string, unknown>) => {
+			if (String(payload.ticketId ?? "") === ticketId) {
+				void reload();
+			}
+		};
+		realtimeClient.on(REALTIME_EVENT.TICKET_REPLIED, onTicketEvent);
+		realtimeClient.on(REALTIME_EVENT.TICKET_UPDATED, onTicketEvent);
+		return () => {
+			realtimeClient.off(REALTIME_EVENT.TICKET_REPLIED, onTicketEvent);
+			realtimeClient.off(REALTIME_EVENT.TICKET_UPDATED, onTicketEvent);
+		};
+	// eslint-disable-next-line react-hooks/exhaustive-deps -- reload 内部依赖 ticketId
 	}, [ticketId]);
 
 	if (loading) {

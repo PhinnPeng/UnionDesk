@@ -2550,6 +2550,8 @@ export type ConsultationSessionRow = {
   createdAt: string;
   updatedAt: string;
   messageCount: number;
+  /** 归档时间（null=未归档；已归档会话从默认列表隐藏） */
+  archivedAt?: string | null;
 };
 
 export type ConsultationMessageRow = {
@@ -2577,6 +2579,20 @@ export type ConsultationConvertResult = {
 export async function createCustomerConsultation(domainId: string, content: string): Promise<ConsultationSessionRow> {
   try {
     const response = await api.post<ConsultationSessionRow>(`/domains/${domainId}/consultations`, { content });
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客户查询坐席可用性（「当前无坐席」提示）：`GET /api/v1/domains/{domain_id}/consultations/availability` */
+export async function fetchConsultationAvailability(
+  domainId: string,
+): Promise<{ hasOnlineAgent: boolean; queueSize: number }> {
+  try {
+    const response = await api.get<{ hasOnlineAgent: boolean; queueSize: number }>(
+      `/domains/${domainId}/consultations/availability`,
+    );
     return unwrapApiResponse(response.data);
   } catch (error) {
     throw toError(error);
@@ -2618,10 +2634,10 @@ export async function replyCustomerConsultation(domainId: string, sessionNo: str
   }
 }
 
-/** 客服会话列表：`GET /api/v1/admin/domains/{domain_id}/consultations` */
+/** 客服会话列表：`GET /api/v1/admin/domains/{domain_id}/consultations`；archived=true 仅看已归档，默认排除已归档 */
 export async function listAdminConsultations(
   domainId: string,
-  options?: { page?: number; pageSize?: number; status?: string; assignedToMe?: boolean },
+  options?: { page?: number; pageSize?: number; status?: string; assignedToMe?: boolean; archived?: boolean },
 ): Promise<P0PageResult<ConsultationSessionRow>> {
   try {
     const response = await api.get<P0PageResult<ConsultationSessionRow>>(
@@ -2632,8 +2648,33 @@ export async function listAdminConsultations(
           page_size: options?.pageSize ?? 20,
           status: options?.status,
           assigned_to_me: options?.assignedToMe || undefined,
+          archived: options?.archived,
         },
       },
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客服归档会话（仅已关闭）：`POST /api/v1/admin/domains/{domain_id}/consultations/{session_no}/archive` */
+export async function archiveAdminConsultation(domainId: string, sessionNo: string): Promise<ConsultationSessionRow> {
+  try {
+    const response = await api.post<ConsultationSessionRow>(
+      `/admin/domains/${domainId}/consultations/${encodeURIComponent(sessionNo)}/archive`,
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/** 客服取消归档：`POST /api/v1/admin/domains/{domain_id}/consultations/{session_no}/unarchive` */
+export async function unarchiveAdminConsultation(domainId: string, sessionNo: string): Promise<ConsultationSessionRow> {
+  try {
+    const response = await api.post<ConsultationSessionRow>(
+      `/admin/domains/${domainId}/consultations/${encodeURIComponent(sessionNo)}/unarchive`,
     );
     return unwrapApiResponse(response.data);
   } catch (error) {
@@ -2686,22 +2727,43 @@ export async function convertConsultationToTicket(
 /** 客服接入模式（自动/手动） */
 export type AgentPresenceMode = "auto" | "manual";
 
-/** 客服在线/接入模式状态：presence 响应体 */
+/** 客服状态（上线/隐身；status 为 null 表示无在线记录/离线） */
+export type AgentPresenceStatus = "online" | "invisible";
+
+/** 客服状态 + 接入模式：presence 响应体 */
 export type AgentPresenceResult = {
-  mode: AgentPresenceMode;
-  online: boolean;
+  status: AgentPresenceStatus | null;
+  mode: AgentPresenceMode | null;
 };
 
 /**
- * 客服上报在线心跳与接入模式：`POST /api/v1/admin/domains/{domain_id}/consultations/agent/presence`
- * 心跳与模式一体：请求携带期望 mode，响应返回服务端生效的 mode 与在线状态。
- * （联调注意：若后端支持 GET 查询当前模式，进入页面时可视契约改为只读请求）
+ * 查询当前客服状态（只读）：`GET /api/v1/admin/domains/{domain_id}/consultations/agent/presence`
+ * 无在线记录时 status/mode 为 null（前端据此决定默认上报）。
  */
-export async function reportAgentPresence(domainId: string, mode: AgentPresenceMode): Promise<AgentPresenceResult> {
+export async function fetchAgentPresence(domainId: string): Promise<AgentPresenceResult> {
+  try {
+    const response = await api.get<AgentPresenceResult>(
+      `/admin/domains/${domainId}/consultations/agent/presence`,
+    );
+    return unwrapApiResponse(response.data);
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/**
+ * 客服状态 + 接入模式一体心跳：`POST /api/v1/admin/domains/{domain_id}/consultations/agent/presence`
+ * 请求携带期望 status 与 mode，响应返回服务端生效值。
+ */
+export async function reportAgentPresence(
+  domainId: string,
+  status: AgentPresenceStatus,
+  mode: AgentPresenceMode,
+): Promise<AgentPresenceResult> {
   try {
     const response = await api.post<AgentPresenceResult>(
       `/admin/domains/${domainId}/consultations/agent/presence`,
-      { mode },
+      { status, mode },
     );
     return unwrapApiResponse(response.data);
   } catch (error) {

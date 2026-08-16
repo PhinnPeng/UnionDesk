@@ -1,0 +1,18 @@
+/**
+ * 工作台 Tabs 满高链：antd 默认 .ant-tabs-content 不自带高度，
+ * 需补 100% 让 tabpane 内的页面（工单队列/咨询会话）h-full 生效。
+ */
+.tabs {
+	:global(.ant-tabs-content-holder) {
+		min-height: 0;
+	}
+
+	:global(.ant-tabs-content) {
+		height: 100%;
+	}
+
+	// antd v6 .ant-tabs-content 为 block 布局，tabpane 不会自动拉伸，需显式撑满
+	:global(.ant-tabs-tabpane) {
+		height: 100%;
+	}
+}

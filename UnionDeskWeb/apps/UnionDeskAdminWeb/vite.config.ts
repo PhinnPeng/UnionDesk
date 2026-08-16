@@ -154,6 +154,8 @@ export default defineConfig({
 			"/api/v1": {
 				target: "http://localhost:8080",
 				changeOrigin: true,
+				// 实时通道 WebSocket（/api/v1/ws 握手 Upgrade 转发）
+				ws: true,
 			},
 		},
 	},
