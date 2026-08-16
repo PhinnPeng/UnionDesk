@@ -96,6 +96,9 @@ class TicketServiceTests {
     @Mock
     private TicketWatcherService ticketWatcherService;
 
+    @Mock
+    private ClaimRuleService claimRuleService;
+
     private TicketService ticketService;
 
     @BeforeEach
@@ -120,7 +123,8 @@ class TicketServiceTests {
                 slaService,
                 attachmentService,
                 eventPublisher,
-                ticketWatcherService);
+                ticketWatcherService,
+                claimRuleService);
     }
 
     @Test

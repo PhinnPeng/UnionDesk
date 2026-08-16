@@ -96,6 +96,9 @@ class TicketWorkflowTests {
     @Mock
     private TicketWatcherService ticketWatcherService;
 
+    @Mock
+    private ClaimRuleService claimRuleService;
+
     private TicketService ticketService;
 
     @BeforeEach
@@ -120,7 +123,8 @@ class TicketWorkflowTests {
                 slaService,
                 attachmentService,
                 eventPublisher,
-                ticketWatcherService);
+                ticketWatcherService,
+                claimRuleService);
     }
 
     @Test
@@ -332,6 +336,7 @@ class TicketWorkflowTests {
                 "Default Domain",
                 11L,
                 "General Ticket",
+                null,
                 customerId,
                 assignedTo,
                 "无法登录",
@@ -353,6 +358,8 @@ class TicketWorkflowTests {
                 LocalDateTime.parse("2026-05-03T07:00:00"),
                 LocalDateTime.parse("2026-05-03T07:00:00"),
                 null,
-                0);
+                0,
+                null,
+                null);
     }
 }
