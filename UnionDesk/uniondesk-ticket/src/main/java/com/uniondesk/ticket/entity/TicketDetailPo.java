@@ -11,6 +11,7 @@ public class TicketDetailPo {
     private String businessDomainName;
     private long ticketTypeId;
     private String ticketTypeName;
+    private String ticketTypeIcon;
     private long customerId;
     private Long assignedTo;
     private String title;
@@ -90,6 +91,14 @@ public class TicketDetailPo {
 
     public void setTicketTypeName(String ticketTypeName) {
         this.ticketTypeName = ticketTypeName;
+    }
+
+    public String getTicketTypeIcon() {
+        return ticketTypeIcon;
+    }
+
+    public void setTicketTypeIcon(String ticketTypeIcon) {
+        this.ticketTypeIcon = ticketTypeIcon;
     }
 
     public long getCustomerId() {

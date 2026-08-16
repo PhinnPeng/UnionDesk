@@ -24,6 +24,8 @@ export interface TicketRow {
 	businessDomainName: string
 	ticketTypeId: string
 	ticketTypeName: string
+	/** 事项类型图标（图标名，如 mdi:comment-alert-outline） */
+	ticketTypeIcon?: string | null
 	customerId: string
 	customerName?: string | null
 	assignedTo?: number | null

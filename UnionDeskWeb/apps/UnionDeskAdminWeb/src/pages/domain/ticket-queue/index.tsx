@@ -12,8 +12,8 @@ import { AuthGuarded } from "#src/components/auth-guarded";
 import { BasicContent } from "#src/components/basic-content";
 import { ConfirmPopover } from "#src/components/confirm-popover";
 import { TableSearchForm } from "#src/components/table-search-form";
+import { resolveMenuIcon } from "#src/icons/resolve-menu-icon";
 import { MemberPicker } from "#src/pages/platform/components/member-picker";
-import { PriorityBadge } from "#src/pages/platform/components/priority-badge";
 import { useAuthStore } from "#src/store/auth";
 
 import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
@@ -21,9 +21,8 @@ import { App, Button, Card, Empty, Form, Input, Modal, Select, Space, Switch, Ta
 import type { TableColumnsType } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router";
 
-import { describeSlaDeadline, slaDeadlineToneClass, slaStatusMeta } from "./sla-display";
+import { TicketDetailDrawer } from "./ticket-detail-drawer";
 
 interface QueueSearchValues {
 	keyword?: string;
@@ -94,6 +93,8 @@ export default function DomainTicketQueuePage({ embedded = false }: { embedded?:
 	const [assignOpen, setAssignOpen] = useState(false);
 	const [assignSubmitting, setAssignSubmitting] = useState(false);
 	const [assignForm] = Form.useForm<{ assigneeStaffAccountId: number }>();
+	const [detailTicketId, setDetailTicketId] = useState<string | null>(null);
+	const [drawerOpen, setDrawerOpen] = useState(false);
 
 	const statusMap = useMemo(() => statusOptionMap(statuses), [statuses]);
 	const priorityMap = useMemo(() => priorityOptionMap(priorityLevels), [priorityLevels]);
@@ -233,30 +234,9 @@ export default function DomainTicketQueuePage({ embedded = false }: { embedded?:
 		}
 	}, [domainId, loadTickets, message, page, pageSize, searchValues]);
 
-	const renderStatus = useCallback((status: string) => {
-		const meta = statusMap[status];
-		return <Tag color={meta ? "blue" : "default"}>{meta?.name ?? status}</Tag>;
-	}, [statusMap]);
-
-	const renderPriority = useCallback((priority: string) => {
-		const meta = priorityMap[priority];
-		return <PriorityBadge code={priority} name={meta?.display_label ?? meta?.name} color={meta?.color} icon={meta?.icon} />;
-	}, [priorityMap]);
-
-	const renderSla = useCallback((row: TicketRow) => {
-		const statusMeta = slaStatusMeta(row.slaStatus);
-		if (!row.slaStatus && !row.slaFirstResponseDeadline && !row.slaResolutionDeadline) {
-			return <span className="text-slate-400">—</span>;
-		}
-		const firstResponse = describeSlaDeadline(row.slaFirstResponseDeadline, row.slaFirstRespondedAt, "已响应");
-		const resolution = describeSlaDeadline(row.slaResolutionDeadline, row.slaResolvedAt, "已解决");
-		return (
-			<Space direction="vertical" size={2} className="text-xs">
-				<Tag color={statusMeta.color}>{statusMeta.text}</Tag>
-				<span className={slaDeadlineToneClass[firstResponse.tone]}>首响 {firstResponse.text}</span>
-				<span className={slaDeadlineToneClass[resolution.tone]}>解决 {resolution.text}</span>
-			</Space>
-		);
+	const openDetail = useCallback((row: TicketRow) => {
+		setDetailTicketId(row.id);
+		setDrawerOpen(true);
 	}, []);
 
 	const columns: TableColumnsType<TicketRow> = useMemo(() => [
@@ -264,87 +244,39 @@ export default function DomainTicketQueuePage({ embedded = false }: { embedded?:
 			title: "编号",
 			dataIndex: "ticketNo",
 			width: 170,
-			render: (value: string, row) => <Link to={`/domain/ticket-queue/${row.id}`}>{value}</Link>,
+			render: (value: string, row) => <a className="cursor-pointer text-[#1677ff]" onClick={() => openDetail(row)}>{value}</a>,
 		},
 		{
 			title: "标题",
 			dataIndex: "title",
 			ellipsis: true,
-			render: (value: string, row) => <Link to={`/domain/ticket-queue/${row.id}`}>{value}</Link>,
+			render: (value: string, row) => <a className="cursor-pointer" onClick={() => openDetail(row)}>{value}</a>,
 		},
 		{
 			title: "类型",
 			dataIndex: "ticketTypeName",
-			width: 130,
-			render: value => value ?? "-",
+			width: 160,
+			render: (_, row) => (
+				<Space size={4}>
+					{row.ticketTypeIcon?.trim() ? resolveMenuIcon(row.ticketTypeIcon, { fontSize: 14 }) : null}
+					<span>{row.ticketTypeName || "-"}</span>
+				</Space>
+			),
 		},
 		{
 			title: "客户",
 			dataIndex: "customerName",
-			width: 130,
+			width: 160,
 			ellipsis: true,
 			render: (_, row) => row.customerName || (row.customerId ? `客户 #${row.customerId}` : "-"),
 		},
 		{
-			title: "状态",
-			dataIndex: "status",
-			width: 110,
-			render: value => renderStatus(value),
-		},
-		{
-			title: "优先级",
-			dataIndex: "priority",
-			width: 110,
-			render: value => renderPriority(value),
-		},
-		{
-			title: "SLA",
-			key: "sla",
-			width: 180,
-			render: (_, row) => renderSla(row),
-		},
-		{
-			title: "受理人",
-			dataIndex: "assignedTo",
-			width: 110,
-			ellipsis: true,
-			render: (_, row) => row.assigneeName || (row.assignedTo ? `员工 #${row.assignedTo}` : "-"),
-		},
-		{
-			title: "更新时间",
-			dataIndex: "updatedAt",
+			title: "创建时间",
+			dataIndex: "createdAt",
 			width: 160,
 			render: value => formatTime(value),
 		},
-		{
-			title: "操作",
-			key: "actions",
-			width: 200,
-			fixed: "right",
-			render: (_, row) => (
-				<Space size="small">
-					<AuthGuarded auth="ticket.claim" fallback={null}>
-						<Button type="link" size="small" onClick={() => void handleClaim(row)}>
-							领取
-						</Button>
-					</AuthGuarded>
-					<AuthGuarded auth="ticket.assign" fallback={null}>
-						<Button type="link" size="small" onClick={() => openAssign(row)}>
-							指派
-						</Button>
-					</AuthGuarded>
-					<AuthGuarded auth="ticket.close" fallback={null}>
-						<ConfirmPopover
-							title={`确认关闭工单「${row.ticketNo}」？`}
-							onConfirm={() => void handleClose(row)}
-						>
-							<Button type="link" size="small" danger>关闭</Button>
-						</ConfirmPopover>
-					</AuthGuarded>
-				</Space>
-			),
-		},
-	], [handleClaim, handleClose, openAssign, renderPriority, renderSla, renderStatus]);
+	], [openDetail]);
 
 	const content = (
 		<>
@@ -437,6 +369,16 @@ export default function DomainTicketQueuePage({ embedded = false }: { embedded?:
 					</Form>
 				) : null}
 			</Modal>
+			<TicketDetailDrawer
+				domainId={domainId}
+				ticketId={detailTicketId}
+				open={drawerOpen}
+				onClose={() => setDrawerOpen(false)}
+				onClaim={handleClaim}
+				onAssign={openAssign}
+				onCloseTicket={handleClose}
+				onChanged={loadTickets}
+			/>
 		</>
 	);
 	// 嵌入工作台时不再套 BasicContent（避免双层 p-4 内边距导致左右未对齐）

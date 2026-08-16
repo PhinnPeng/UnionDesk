@@ -11,6 +11,7 @@
         <result property="businessDomainName" column="business_domain_name"/>
         <result property="ticketTypeId" column="ticket_type_id"/>
         <result property="ticketTypeName" column="ticket_type_name"/>
+        <result property="ticketTypeIcon" column="ticket_type_icon"/>
         <result property="customerId" column="customer_id"/>
         <result property="assignedTo" column="assigned_to"/>
         <result property="title" column="title"/>
@@ -46,6 +47,7 @@
             d.name AS business_domain_name,
             t.ticket_type_id,
             tt.name AS ticket_type_name,
+            tt.icon AS ticket_type_icon,
             t.customer_id,
             t.assigned_to,
             t.title,
@@ -180,6 +182,7 @@
             d.name AS business_domain_name,
             t.ticket_type_id,
             tt.name AS ticket_type_name,
+            tt.icon AS ticket_type_icon,
             t.customer_id,
             t.assigned_to,
             t.title,
@@ -235,7 +238,7 @@
         <if test="slaStatus != null and slaStatus != ''">
             AND t.sla_status = #{slaStatus}
         </if>
-        ORDER BY t.updated_at DESC, t.id DESC
+        ORDER BY t.created_at DESC, t.id DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
