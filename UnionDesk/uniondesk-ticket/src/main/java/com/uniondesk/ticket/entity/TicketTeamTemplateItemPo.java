@@ -19,7 +19,7 @@ public class TicketTeamTemplateItemPo {
     private boolean includeDescriptionTemplate;
     @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
-    @Column(onUpdateValue = "CURRENT_TIMESTAMP(3)")
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)", onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     /** 联表展示用，非持久化必填 */

@@ -1,5 +1,6 @@
 package com.uniondesk.ticket.entity;
 
+import com.mybatisflex.annotation.Column;
 import java.time.LocalDateTime;
 
 public class ClaimRulePo {
@@ -13,7 +14,9 @@ public class ClaimRulePo {
     private String strategy;
     private Long assigneeStaffAccountId;
     private Integer graceMinutes;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)", onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public Long getId() {
