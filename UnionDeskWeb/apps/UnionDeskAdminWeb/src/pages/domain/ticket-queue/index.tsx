@@ -71,7 +71,10 @@ function formatTime(value?: string | null) {
 	return value ? dayjs(value).format("YYYY-MM-DD HH:mm") : "-";
 }
 
-export default function DomainTicketQueuePage({ embedded = false }: { embedded?: boolean }) {
+export default function DomainTicketQueuePage({
+	embedded = false,
+	defaultAssignedToMe = false,
+}: { embedded?: boolean; defaultAssignedToMe?: boolean }) {
 	const { message } = App.useApp();
 	const defaultBusinessDomainId = useAuthStore(state => state.defaultBusinessDomainId);
 	const accessibleDomains = useAuthStore(state => state.accessibleDomains);
@@ -86,7 +89,9 @@ export default function DomainTicketQueuePage({ embedded = false }: { embedded?:
 	const [total, setTotal] = useState(0);
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState(20);
-	const [searchValues, setSearchValues] = useState<QueueSearchValues>(EMPTY_QUEUE_SEARCH);
+	const [searchValues, setSearchValues] = useState<QueueSearchValues>(
+		() => (defaultAssignedToMe ? { ...EMPTY_QUEUE_SEARCH, assigned_to_me: true } : EMPTY_QUEUE_SEARCH),
+	);
 	const [statuses, setStatuses] = useState<TicketStatusDefinition[]>([]);
 	const [priorityLevels, setPriorityLevels] = useState<DomainPriorityLevelView[]>([]);
 	const [assignTarget, setAssignTarget] = useState<TicketRow | null>(null);
@@ -167,7 +172,7 @@ export default function DomainTicketQueuePage({ embedded = false }: { embedded?:
 	}, [domainId, message, page, pageSize, searchValues]);
 
 	useEffect(() => {
-		void loadTickets(1, 20, EMPTY_QUEUE_SEARCH);
+		void loadTickets(1, 20, defaultAssignedToMe ? { ...EMPTY_QUEUE_SEARCH, assigned_to_me: true } : EMPTY_QUEUE_SEARCH);
 		void loadMeta();
 	// eslint-disable-next-line react-hooks/exhaustive-deps -- domainId 变化时初始化
 	}, [domainId]);

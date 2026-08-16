@@ -11,12 +11,12 @@ import { useSearchParams } from "react-router";
 
 const { Title, Text } = Typography;
 
-type WorkbenchTabKey = "ticket" | "consultation";
+type WorkbenchTabKey = "ticket" | "consultation" | "my-todo";
 
 /** 解析 URL ?tab= 参数，非法值回退到「工单队列」 */
 function parseWorkbenchTab(raw: string | null): WorkbenchTabKey {
-	if (raw === "consultation") {
-		return "consultation";
+	if (raw === "consultation" || raw === "my-todo") {
+		return raw;
 	}
 	return "ticket";
 }
@@ -29,10 +29,11 @@ function resolveBusinessDomainId(defaultId?: string | null, accessibleDomains?: 
 	return accessibleDomains?.[0]?.id ?? "";
 }
 
-/** 工作台统计：我的待办 / 进行中咨询 / SLA 告警（均为列表 total，page_size=1 取计数） */
+/** 工作台统计：我的待办 / 进行中咨询（含排队）/ SLA 告警（均为列表 total，page_size=1 取计数） */
 interface WorkbenchStats {
 	myTickets: number
 	openConsultations: number
+	queuedConsultations: number
 	slaBreached: number
 	loading: boolean
 }
@@ -45,7 +46,13 @@ interface WorkbenchStats {
 export default function DomainWorkbenchPage() {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [activeTab, setActiveTab] = useState<WorkbenchTabKey>(() => parseWorkbenchTab(searchParams.get("tab")));
-	const [stats, setStats] = useState<WorkbenchStats>({ myTickets: 0, openConsultations: 0, slaBreached: 0, loading: true });
+	const [stats, setStats] = useState<WorkbenchStats>({
+		myTickets: 0,
+		openConsultations: 0,
+		queuedConsultations: 0,
+		slaBreached: 0,
+		loading: true,
+	});
 
 	const defaultBusinessDomainId = useAuthStore(state => state.defaultBusinessDomainId);
 	const accessibleDomains = useAuthStore(state => state.accessibleDomains);
@@ -58,14 +65,16 @@ export default function DomainWorkbenchPage() {
 		}
 		setStats(prev => ({ ...prev, loading: true }));
 		try {
-			const [tickets, consultations, breached] = await Promise.all([
+			const [tickets, consultations, queued, breached] = await Promise.all([
 				fetchAdminDomainTicketsPage(domainId, { page: 1, page_size: 1, assigned_to_me: true }),
 				listAdminConsultations(domainId, { page: 1, pageSize: 1, status: "open" }),
+				listAdminConsultations(domainId, { page: 1, pageSize: 1, status: "queued" }),
 				fetchAdminDomainTicketsPage(domainId, { page: 1, page_size: 1, assigned_to_me: true, sla_status: "breached" }),
 			]);
 			setStats({
 				myTickets: tickets.total,
 				openConsultations: consultations.total,
+				queuedConsultations: queued.total,
 				slaBreached: breached.total,
 				loading: false,
 			});
@@ -98,7 +107,10 @@ export default function DomainWorkbenchPage() {
 		<Badge count={stats.myTickets || undefined} size="small" offset={[6, 0]}>工单队列</Badge>
 	);
 	const consultationTabLabel = (
-		<Badge count={stats.openConsultations || undefined} size="small" offset={[6, 0]}>在线咨询</Badge>
+		<Badge count={stats.openConsultations || undefined} size="small" offset={[6, 0]}>咨询会话</Badge>
+	);
+	const myTodoTabLabel = (
+		<Badge count={stats.myTickets || undefined} size="small" offset={[6, 0]}>我的待办</Badge>
 	);
 
 	return (
@@ -106,18 +118,19 @@ export default function DomainWorkbenchPage() {
 			<div className="flex flex-col gap-4">
 				<div>
 					<Title level={5} className="!mb-1">工作台</Title>
-					<Text type="secondary">聚合「工单队列」与「在线咨询」，集中处理业务事项</Text>
+					<Text type="secondary">聚合「工单队列」「咨询会话」与「我的待办」，集中处理业务事项</Text>
 				</div>
 
 				<Row gutter={[16, 16]}>
 					<Col xs={24} md={8}>
 						<Card bordered={false} loading={stats.loading}>
-							<Statistic title="我的待办工单" value={stats.myTickets} />
+							<Statistic title="我的待办" value={stats.myTickets} />
 						</Card>
 					</Col>
 					<Col xs={24} md={8}>
 						<Card bordered={false} loading={stats.loading}>
 							<Statistic title="进行中咨询" value={stats.openConsultations} />
+							<Text type="secondary" style={{ fontSize: 12 }}>排队 {stats.queuedConsultations} 位客户</Text>
 						</Card>
 					</Col>
 					<Col xs={24} md={8}>
@@ -127,23 +140,29 @@ export default function DomainWorkbenchPage() {
 					</Col>
 				</Row>
 
-				<Tabs
-					type="card"
-					activeKey={activeTab}
-					onChange={handleTabChange}
-					items={[
-						{
-							key: "ticket",
-							label: ticketTabLabel,
-							children: <DomainTicketQueuePage embedded />,
-						},
-						{
-							key: "consultation",
-							label: consultationTabLabel,
-							children: <DomainConsultationsPage embedded />,
-						},
-					]}
-				/>
+				<Card bordered={false}>
+					<Tabs
+						activeKey={activeTab}
+						onChange={handleTabChange}
+						items={[
+							{
+								key: "ticket",
+								label: ticketTabLabel,
+								children: <DomainTicketQueuePage embedded />,
+							},
+							{
+								key: "consultation",
+								label: consultationTabLabel,
+								children: <DomainConsultationsPage embedded />,
+							},
+							{
+								key: "my-todo",
+								label: myTodoTabLabel,
+								children: <DomainTicketQueuePage embedded defaultAssignedToMe />,
+							},
+						]}
+					/>
+				</Card>
 			</div>
 		</BasicContent>
 	);
