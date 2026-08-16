@@ -32,7 +32,7 @@ public class TicketTypePo {
     private Long sourceGlobalTypeId;
     @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
-    @Column(onUpdateValue = "CURRENT_TIMESTAMP(3)")
+    @Column(onInsertValue = "CURRENT_TIMESTAMP(3)", onUpdateValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime updatedAt;
 
     public long getId() {
