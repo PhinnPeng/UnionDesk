@@ -33,7 +33,9 @@ public class ConsultationRuntimeController {
     public record SendMessageRequest(@NotBlank(message = "消息内容不能为空") String content) {
     }
 
-    public record AgentPresenceRequest(@NotBlank(message = "接入模式不能为空") String mode) {
+    public record AgentPresenceRequest(
+            @NotBlank(message = "客服状态不能为空") String status,
+            @NotBlank(message = "接入模式不能为空") String mode) {
     }
 
     public record EndSessionRequest(String reason) {
@@ -55,6 +57,14 @@ public class ConsultationRuntimeController {
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody CreateConsultationRequest request) {
         return consultationService.createSession(requireCurrent(), domainId, request.content());
+    }
+
+    /** 客户查询坐席可用性（「当前无坐席」提示）：域内是否有在线客服 + 排队数 */
+    @GetMapping("/domains/{domain_id}/consultations/availability")
+    @RequirePermission(value = PermissionCodes.CONSULTATION_CUSTOMER, domainIdParam = "domain_id")
+    public ConsultationService.AvailabilityResult availability(
+            @PathVariable("domain_id") long domainId) {
+        return consultationService.availability(domainId);
     }
 
     /** 客户我的咨询会话列表 */
@@ -87,7 +97,7 @@ public class ConsultationRuntimeController {
 
     // --- 管理端点 ---
 
-    /** 客服会话列表（按业务域；assigned_to_me=true 仅看我的） */
+    /** 客服会话列表（按业务域；assigned_to_me=true 仅看我的；archived=true 仅看已归档，默认排除已归档） */
     @GetMapping("/admin/domains/{domain_id}/consultations")
     @RequirePermission(value = PermissionCodes.CONSULTATION_VIEW, domainIdParam = "domain_id")
     public PageResult<ConsultationService.ConsultationSessionRow> listAdmin(
@@ -95,8 +105,9 @@ public class ConsultationRuntimeController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
             @RequestParam(required = false) String status,
-            @RequestParam(name = "assigned_to_me", defaultValue = "false") boolean assignedToMe) {
-        return consultationService.listAdminSessions(requireCurrent(), domainId, page, pageSize, status, assignedToMe);
+            @RequestParam(name = "assigned_to_me", defaultValue = "false") boolean assignedToMe,
+            @RequestParam(name = "archived", defaultValue = "false") boolean archived) {
+        return consultationService.listAdminSessions(requireCurrent(), domainId, page, pageSize, status, assignedToMe, archived);
     }
 
     /** 客服查看会话消息 */
@@ -153,6 +164,24 @@ public class ConsultationRuntimeController {
         return consultationService.endSession(requireCurrent(), domainId, sessionNo, reason);
     }
 
+    /** 客服归档会话（仅已关闭；归档后从默认列表隐藏） */
+    @PostMapping("/admin/domains/{domain_id}/consultations/{session_no}/archive")
+    @RequirePermission(value = PermissionCodes.CONSULTATION_CLOSE, domainIdParam = "domain_id")
+    public ConsultationService.ConsultationSessionRow archive(
+            @PathVariable("domain_id") long domainId,
+            @PathVariable("session_no") String sessionNo) {
+        return consultationService.archiveSession(requireCurrent(), domainId, sessionNo);
+    }
+
+    /** 客服取消归档（恢复至默认列表，仍为已关闭） */
+    @PostMapping("/admin/domains/{domain_id}/consultations/{session_no}/unarchive")
+    @RequirePermission(value = PermissionCodes.CONSULTATION_CLOSE, domainIdParam = "domain_id")
+    public ConsultationService.ConsultationSessionRow unarchive(
+            @PathVariable("domain_id") long domainId,
+            @PathVariable("session_no") String sessionNo) {
+        return consultationService.unarchiveSession(requireCurrent(), domainId, sessionNo);
+    }
+
     /** 客服撤回本人消息（2 分钟内、agent 角色、当前会话内） */
     @PostMapping("/admin/domains/{domain_id}/consultations/{session_no}/messages/{message_id}/retract")
     @RequirePermission(value = PermissionCodes.CONSULTATION_REPLY, domainIdParam = "domain_id")
@@ -163,13 +192,21 @@ public class ConsultationRuntimeController {
         return consultationService.retractMessage(requireCurrent(), domainId, sessionNo, messageId);
     }
 
-    /** 客服在线心跳 + 接入模式一体（心跳注册/刷新在线；切 auto 触发取队分配） */
+    /** 查询当前客服状态（只读，前端进页面恢复上次状态用） */
+    @GetMapping("/admin/domains/{domain_id}/consultations/agent/presence")
+    @RequirePermission(value = PermissionCodes.CONSULTATION_VIEW, domainIdParam = "domain_id")
+    public ConsultationService.AgentPresenceResult getPresence(
+            @PathVariable("domain_id") long domainId) {
+        return consultationService.getAgentPresence(requireCurrent(), domainId);
+    }
+
+    /** 客服状态 + 接入模式一体心跳（注册/刷新在线；切 auto 触发取队分配） */
     @PostMapping("/admin/domains/{domain_id}/consultations/agent/presence")
     @RequirePermission(value = PermissionCodes.CONSULTATION_VIEW, domainIdParam = "domain_id")
     public ConsultationService.AgentPresenceResult presence(
             @PathVariable("domain_id") long domainId,
             @Valid @RequestBody AgentPresenceRequest request) {
-        return consultationService.agentPresence(requireCurrent(), domainId, request.mode());
+        return consultationService.agentPresence(requireCurrent(), domainId, request.status(), request.mode());
     }
 
     private UserContext requireCurrent() {

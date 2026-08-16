@@ -53,6 +53,7 @@ public class CorsSecurityConfig {
                                 "/api/v1/auth/refresh",
                                 "/api/v1/health",
                                 "/api/v1/readiness",
+                                "/api/v1/ws",
                                 "/actuator/health",
                                 "/error")
                         .permitAll()

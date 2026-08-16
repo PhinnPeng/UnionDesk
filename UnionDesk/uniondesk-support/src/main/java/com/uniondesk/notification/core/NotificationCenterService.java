@@ -4,11 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uniondesk.audit.entity.AuditLogWritePo;
 import com.uniondesk.audit.repository.AuditLogWriteRepository;
+import com.uniondesk.common.event.InboxCreatedEvent;
+import com.uniondesk.common.event.UnionDeskEventPublisher;
 import com.uniondesk.common.repository.IdentityResolutionRepository;
 import com.uniondesk.notification.entity.InboxMessagePo;
 import com.uniondesk.notification.entity.NotificationLogPo;
 import com.uniondesk.notification.repository.InboxMessageRepository;
 import com.uniondesk.notification.repository.NotificationLogRepository;
+import com.uniondesk.realtime.RealtimeConstants;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,6 +27,7 @@ public class NotificationCenterService {
     private final InboxMessageRepository inboxMessageRepository;
     private final AuditLogWriteRepository auditLogWriteRepository;
     private final IdentityResolutionRepository identityResolutionRepository;
+    private final UnionDeskEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
     private final Clock clock;
     private final boolean smtpEnabled;
@@ -33,6 +37,7 @@ public class NotificationCenterService {
             InboxMessageRepository inboxMessageRepository,
             AuditLogWriteRepository auditLogWriteRepository,
             IdentityResolutionRepository identityResolutionRepository,
+            UnionDeskEventPublisher eventPublisher,
             ObjectMapper objectMapper,
             Clock clock,
             @Value("${uniondesk.notification.smtp-enabled:false}") boolean smtpEnabled) {
@@ -40,6 +45,7 @@ public class NotificationCenterService {
         this.inboxMessageRepository = inboxMessageRepository;
         this.auditLogWriteRepository = auditLogWriteRepository;
         this.identityResolutionRepository = identityResolutionRepository;
+        this.eventPublisher = eventPublisher;
         this.objectMapper = objectMapper;
         this.clock = clock;
         this.smtpEnabled = smtpEnabled;
@@ -246,6 +252,8 @@ public class NotificationCenterService {
                 ? inboxMessageRepository.findLatestId(recipientSubjectId, notificationLogId)
                 : inboxPo.getId();
 
+        publishInboxCreated(recipientUserId, inboxMessageId, templateCode);
+
         recordAudit(
                 businessDomainId,
                 operatorSubjectId,
@@ -255,6 +263,16 @@ public class NotificationCenterService {
                 Map.of("template_code", templateCode, "recipient_user_id", recipientUserId, "status", status),
                 status);
         return new NotificationDispatchResult(notificationLogId, inboxMessageId, status);
+    }
+
+    /** 站内信落库后发布实时事件（AFTER_COMMIT 推送 inbox.new，收件人即时角标） */
+    private void publishInboxCreated(long recipientUserId, long inboxMessageId, String templateCode) {
+        eventPublisher.publish(new InboxCreatedEvent(
+                recipientUserId,
+                RealtimeConstants.ACTOR_CUSTOMER,
+                inboxMessageId,
+                templateCode,
+                unreadCount(recipientUserId)));
     }
 
     private NotificationDispatchResult sendSecurityInboxNotification(

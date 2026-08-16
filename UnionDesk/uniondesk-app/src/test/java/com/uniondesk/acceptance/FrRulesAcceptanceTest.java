@@ -109,7 +109,7 @@ class FrRulesAcceptanceTest extends IntegrationTestSupport {
                         .header("X-UD-Client-Code", IntegrationAuthSupport.ADMIN_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.ReplyTicketCommand(
-                                ticketVersion(ticketId), "已收到，正在处理中。", null, List.of()))))
+                                ticketVersion(ticketId), "已收到，正在处理中。", null, List.of(), false))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").exists());
 
@@ -127,7 +127,7 @@ class FrRulesAcceptanceTest extends IntegrationTestSupport {
                         .header("X-UD-Client-Code", IntegrationAuthSupport.CUSTOMER_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.ReplyTicketCommand(
-                                ticketVersion(ticketId), "好的，麻烦尽快。", null, List.of()))))
+                                ticketVersion(ticketId), "好的，麻烦尽快。", null, List.of(), false))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").exists());
 

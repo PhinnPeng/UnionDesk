@@ -171,6 +171,9 @@
         <if test="slaStatus != null and slaStatus != ''">
             AND t.sla_status = #{slaStatus}
         </if>
+        <if test="ticketTypeId != null">
+            AND t.ticket_type_id = #{ticketTypeId}
+        </if>
     </select>
 
     <select id="listTicketsPage" resultMap="TicketDetailPo">
@@ -238,8 +241,26 @@
         <if test="slaStatus != null and slaStatus != ''">
             AND t.sla_status = #{slaStatus}
         </if>
+        <if test="ticketTypeId != null">
+            AND t.ticket_type_id = #{ticketTypeId}
+        </if>
         ORDER BY t.created_at DESC, t.id DESC
         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countInitialTicketsByType" resultType="com.uniondesk.ticket.entity.TicketTypeInitialCountPo">
+        SELECT t.ticket_type_id AS ticket_type_id, COUNT(*) AS count
+        FROM ticket t
+        JOIN ticket_type_flow_status fs
+            ON fs.domain_id = t.business_domain_id
+            AND fs.ticket_type_id = t.ticket_type_id
+            AND fs.is_initial = 1
+            AND fs.state_code = t.status
+        WHERE t.business_domain_id = #{domainId}
+        <if test="assignee != null">
+            AND t.assignee_staff_account_id = #{assignee}
+        </if>
+        GROUP BY t.ticket_type_id
     </select>
 
     <select id="findIdByTicketNoAndDomain" resultType="java.lang.Long">

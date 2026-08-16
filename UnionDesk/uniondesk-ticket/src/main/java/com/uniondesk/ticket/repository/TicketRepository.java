@@ -1,7 +1,9 @@
 package com.uniondesk.ticket.repository;
 
+import com.uniondesk.ticket.entity.SlaScanCandidatePo;
 import com.uniondesk.ticket.entity.TicketDetailPo;
 import com.uniondesk.ticket.entity.TicketPo;
+import com.uniondesk.ticket.entity.TicketTypeInitialCountPo;
 import com.uniondesk.ticket.mapper.TicketMapper;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,8 +38,8 @@ public class TicketRepository {
         return mapper.listTickets(domainId, customerId, status, limit);
     }
 
-    public long countTickets(long domainId, Long customerId, String status, Long assignee, String priority, String keyword, String slaStatus) {
-        return mapper.countTickets(domainId, customerId, status, assignee, priority, keyword, slaStatus);
+    public long countTickets(long domainId, Long customerId, String status, Long assignee, String priority, String keyword, String slaStatus, Long ticketTypeId) {
+        return mapper.countTickets(domainId, customerId, status, assignee, priority, keyword, slaStatus, ticketTypeId);
     }
 
     public List<TicketDetailPo> listTicketsPage(
@@ -48,9 +50,14 @@ public class TicketRepository {
             String priority,
             String keyword,
             String slaStatus,
+            Long ticketTypeId,
             int limit,
             long offset) {
-        return mapper.listTicketsPage(domainId, customerId, status, assignee, priority, keyword, slaStatus, limit, offset);
+        return mapper.listTicketsPage(domainId, customerId, status, assignee, priority, keyword, slaStatus, ticketTypeId, limit, offset);
+    }
+
+    public List<TicketTypeInitialCountPo> countInitialTicketsByType(long domainId, Long assignee) {
+        return mapper.countInitialTicketsByType(domainId, assignee);
     }
 
     public long findIdByTicketNoAndDomain(String ticketNo, long domainId) {
@@ -73,7 +80,7 @@ public class TicketRepository {
         return mapper.updateClaim(ticketId, domainId, assignee, version, now);
     }
 
-    public int updateAssign(long ticketId, long domainId, long assignee, long version, LocalDateTime now) {
+    public int updateAssign(long ticketId, long domainId, Long assignee, long version, LocalDateTime now) {
         return mapper.updateAssign(ticketId, domainId, assignee, version, now);
     }
 
@@ -87,6 +94,14 @@ public class TicketRepository {
 
     public int updateMerge(long ticketId, long domainId, long version) {
         return mapper.updateMerge(ticketId, domainId, version);
+    }
+
+    public int forceAssign(long ticketId, long domainId, long assignee, LocalDateTime now) {
+        return mapper.forceAssign(ticketId, domainId, assignee, now);
+    }
+
+    public List<SlaScanCandidatePo> findSlaScanCandidates(int limit) {
+        return mapper.selectSlaScanCandidates(limit);
     }
 
     public long findNextTicketSequence(long domainId, String prefix) {

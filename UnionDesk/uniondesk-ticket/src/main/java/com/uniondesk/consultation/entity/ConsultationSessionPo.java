@@ -22,6 +22,7 @@ public class ConsultationSessionPo {
     private Long assignedTo;
     private LocalDateTime lastMessageAt;
     private LocalDateTime closedAt;
+    private LocalDateTime archivedAt;
 
     @Column(onInsertValue = "CURRENT_TIMESTAMP(3)")
     private LocalDateTime createdAt;
@@ -105,6 +106,14 @@ public class ConsultationSessionPo {
 
     public void setClosedAt(LocalDateTime closedAt) {
         this.closedAt = closedAt;
+    }
+
+    public LocalDateTime getArchivedAt() {
+        return archivedAt;
+    }
+
+    public void setArchivedAt(LocalDateTime archivedAt) {
+        this.archivedAt = archivedAt;
     }
 
     public LocalDateTime getCreatedAt() {

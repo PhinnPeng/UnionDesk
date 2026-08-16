@@ -8,6 +8,8 @@ import com.uniondesk.common.web.ErrorCodes;
 import com.uniondesk.domain.repository.DomainCustomerRepository;
 import com.uniondesk.notification.core.NotificationCenterService;
 import com.uniondesk.sla.core.SlaService;
+import com.uniondesk.common.event.TicketCreatedEvent;
+import com.uniondesk.common.event.TicketRepliedEvent;
 import com.uniondesk.common.event.TicketStatusChangedEvent;
 import com.uniondesk.common.event.UnionDeskEventPublisher;
 import com.uniondesk.common.web.PageResult;
@@ -195,6 +197,7 @@ public class TicketService {
 
         slaService.applyOnCreate(businessDomainId, ticketId, content.ticketTypeId());
         notificationCenterService.notifyTicketCreated(businessDomainId, ticketId, customerUserId, context.userId());
+        eventPublisher.publish(new TicketCreatedEvent(businessDomainId, ticketId, ticketNo, customerUserId, content.ticketTypeId()));
 
         return new TicketSubmissionResult(ticketId, ticketNo);
     }
@@ -268,9 +271,11 @@ public class TicketService {
             throw new IllegalArgumentException("工单已被他人修改，请刷新");
         }
         recordHistory(ticketId, businessDomainId, "assign", current.assignedTo() == null ? null : String.valueOf(current.assignedTo()),
-                String.valueOf(command.assigneeStaffAccountId()), context, Map.of("version", command.version()));
-        recordAudit(businessDomainId, context, "ticket:" + current.ticketNo(), "ticket.assign",
-                Map.of("ticket_id", ticketId, "assignee_staff_account_id", command.assigneeStaffAccountId()), "success");
+                command.assigneeStaffAccountId() == null ? null : String.valueOf(command.assigneeStaffAccountId()), context, Map.of("version", command.version()));
+        Map<String, Object> auditDetail = new LinkedHashMap<>();
+        auditDetail.put("ticket_id", ticketId);
+        auditDetail.put("assignee_staff_account_id", command.assigneeStaffAccountId());
+        recordAudit(businessDomainId, context, "ticket:" + current.ticketNo(), "ticket.assign", auditDetail, "success");
         notificationCenterService.notifyTicketStatusChanged(businessDomainId, ticketId, current.customerId(), context.userId(), "processing");
         refreshTicketSla(businessDomainId, ticketId);
         return new TicketActionResult(ticketId);
@@ -289,6 +294,11 @@ public class TicketService {
         String senderType = resolveSenderType(context);
         Long staffAccountId = isStaffRole(context) ? context.userId() : null;
         Long customerAccountId = isCustomerRole(context) ? context.userId() : null;
+        // 内部备注：仅客服可写（客户路径强制公开），不向客户展示、不触发 SLA 首响与客户通知
+        boolean internalNote = Boolean.TRUE.equals(command.internal()) && isStaffRole(context);
+        String replyType = internalNote
+                ? "internal_note"
+                : (command.quickReplyTemplateId() == null ? "text" : "quick");
         String attachmentUrlsJson = command.attachmentIds().isEmpty() ? null : serializeJson(command.attachmentIds());
         LocalDateTime now = LocalDateTime.now(clock);
         TicketReplyPo replyPo = new TicketReplyPo();
@@ -299,7 +309,7 @@ public class TicketService {
         replyPo.setSenderType(senderType);
         replyPo.setStaffAccountId(staffAccountId);
         replyPo.setCustomerAccountId(customerAccountId);
-        replyPo.setReplyType(command.quickReplyTemplateId() == null ? "text" : "quick");
+        replyPo.setReplyType(replyType);
         replyPo.setContent(replyContent);
         replyPo.setAttachmentUrls(attachmentUrlsJson);
         replyPo.setCreatedAt(now);
@@ -315,17 +325,24 @@ public class TicketService {
         recordHistory(ticketId, businessDomainId, "reply", current.status(), current.status(), context, Map.of(
                 "version", command.version(),
                 "reply_id", replyId,
-                "reply_type", command.quickReplyTemplateId() == null ? "text" : "quick",
+                "reply_type", replyType,
                 "sender_type", senderType));
         recordAudit(businessDomainId, context, "ticket:" + current.ticketNo(), "ticket.reply",
-                Map.of("ticket_id", ticketId, "reply_id", replyId, "reply_type", command.quickReplyTemplateId() == null ? "text" : "quick"), "success");
+                Map.of("ticket_id", ticketId, "reply_id", replyId, "reply_type", replyType), "success");
         if (isStaffRole(context)) {
-            slaService.recordFirstResponse(businessDomainId, ticketId);
-            notificationCenterService.notifyTicketReply(businessDomainId, ticketId, current.customerId(), context.userId(), "staff");
+            if (!internalNote) {
+                slaService.recordFirstResponse(businessDomainId, ticketId);
+                notificationCenterService.notifyTicketReply(businessDomainId, ticketId, current.customerId(), context.userId(), "staff");
+            }
         } else if (current.assignedTo() != null) {
             notificationCenterService.notifyTicketReply(businessDomainId, ticketId, current.assignedTo(), context.userId(), "customer");
         }
         refreshTicketSla(businessDomainId, ticketId);
+        // 实时推送：客服回复客户可见（ticket.replied）；内部备注不推客户
+        if (isStaffRole(context) && !internalNote && current.customerId() != 0) {
+            eventPublisher.publish(new TicketRepliedEvent(
+                    businessDomainId, ticketId, current.customerId(), senderType, replyContent, now));
+        }
         return new TicketActionResult(replyId);
     }
 
@@ -408,7 +425,12 @@ public class TicketService {
     public TicketDetailResult getCustomerTicketDetail(UserContext context, long businessDomainId, long ticketId) {
         requireCustomer(context);
         requireTicketOwner(loadTicketRow(businessDomainId, ticketId), context.userId());
-        return getTicketDetail(businessDomainId, ticketId);
+        // 客户视角收口：仅公开回复（过滤内部备注），history/watchers 不下发
+        TicketDetailResult full = getTicketDetail(businessDomainId, ticketId);
+        List<TicketReplyRow> publicReplies = full.replies().stream()
+                .filter(reply -> !"internal_note".equals(reply.replyType()))
+                .toList();
+        return new TicketDetailResult(full.ticket(), publicReplies, List.of(), List.of());
     }
 
     @Transactional
@@ -453,7 +475,8 @@ public class TicketService {
             String priority,
             String keyword,
             boolean assignedToMe,
-            String slaStatus) {
+            String slaStatus,
+            Long ticketTypeId) {
         Long effectiveAssignee;
         if (assignedToMe) {
             effectiveAssignee = context.userId();
@@ -467,7 +490,7 @@ public class TicketService {
         int normalizedPage = Math.max(page, 1);
         int normalizedPageSize = Math.min(Math.max(pageSize, 1), 200);
         long total = ticketRepository.countTickets(
-                businessDomainId, null, normalizedStatus, effectiveAssignee, normalizedPriority, normalizedKeyword, normalizedSlaStatus);
+                businessDomainId, null, normalizedStatus, effectiveAssignee, normalizedPriority, normalizedKeyword, normalizedSlaStatus, ticketTypeId);
         long offset = (long) (normalizedPage - 1) * normalizedPageSize;
         List<TicketRow> items = ticketRepository.listTicketsPage(
                         businessDomainId,
@@ -477,12 +500,28 @@ public class TicketService {
                         normalizedPriority,
                         normalizedKeyword,
                         normalizedSlaStatus,
+                        ticketTypeId,
                         normalizedPageSize,
                         offset)
                 .stream()
                 .map(this::toTicketRow)
                 .toList();
         return new PageResult<>(total, items);
+    }
+
+    /**
+     * 事项类型「未处理」计数（工作台类型筛选徽标）：类型起始状态（is_initial）下的工单数。
+     */
+    @Transactional(readOnly = true)
+    public List<TicketTypeInitialCountRow> listTicketTypeInitialCounts(UserContext context, long businessDomainId, boolean assignedToMe) {
+        requireStaff(context);
+        Long assignee = assignedToMe ? context.userId() : null;
+        return ticketRepository.countInitialTicketsByType(businessDomainId, assignee).stream()
+                .map(row -> new TicketTypeInitialCountRow(row.getTicketTypeId(), row.getCount()))
+                .toList();
+    }
+
+    public record TicketTypeInitialCountRow(long ticketTypeId, long count) {
     }
 
     @Transactional(readOnly = true)
@@ -1077,7 +1116,7 @@ public class TicketService {
     public record ClaimTicketCommand(long version) {
     }
 
-    public record AssignTicketCommand(long version, long assigneeStaffAccountId) {
+    public record AssignTicketCommand(long version, Long assigneeStaffAccountId) {
     }
 
     public record ReplaceWatchersCommand(List<Long> watcherStaffAccountIds) {
@@ -1089,7 +1128,12 @@ public class TicketService {
         }
     }
 
-    public record ReplyTicketCommand(long version, String content, Long quickReplyTemplateId, List<Long> attachmentIds) {
+    public record ReplyTicketCommand(
+            long version,
+            String content,
+            Long quickReplyTemplateId,
+            List<Long> attachmentIds,
+            Boolean internal) {
 
         public ReplyTicketCommand {
             attachmentIds = attachmentIds == null ? List.of() : List.copyOf(attachmentIds);

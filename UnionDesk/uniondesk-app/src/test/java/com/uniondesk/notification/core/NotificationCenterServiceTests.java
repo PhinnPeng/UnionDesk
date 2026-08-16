@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uniondesk.audit.repository.AuditLogWriteRepository;
+import com.uniondesk.common.event.UnionDeskEventPublisher;
 import com.uniondesk.common.repository.IdentityResolutionRepository;
 import com.uniondesk.notification.entity.InboxMessagePo;
 import com.uniondesk.notification.entity.NotificationLogPo;
@@ -41,6 +42,8 @@ class NotificationCenterServiceTests {
     private AuditLogWriteRepository auditLogWriteRepository;
     @Mock
     private IdentityResolutionRepository identityResolutionRepository;
+    @Mock
+    private UnionDeskEventPublisher eventPublisher;
 
     private final AtomicLong notificationLogSequence = new AtomicLong();
     private final AtomicLong inboxMessageSequence = new AtomicLong();
@@ -58,6 +61,7 @@ class NotificationCenterServiceTests {
                 inboxMessageRepository,
                 auditLogWriteRepository,
                 identityResolutionRepository,
+                eventPublisher,
                 new ObjectMapper(),
                 CLOCK,
                 false);

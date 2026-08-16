@@ -4,6 +4,7 @@ import com.mybatisflex.core.BaseMapper;
 import com.uniondesk.ticket.entity.SlaScanCandidatePo;
 import com.uniondesk.ticket.entity.TicketDetailPo;
 import com.uniondesk.ticket.entity.TicketPo;
+import com.uniondesk.ticket.entity.TicketTypeInitialCountPo;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
@@ -25,7 +26,8 @@ public interface TicketMapper extends BaseMapper<TicketPo> {
                       @Param("assignee") Long assignee,
                       @Param("priority") String priority,
                       @Param("keyword") String keyword,
-                      @Param("slaStatus") String slaStatus);
+                      @Param("slaStatus") String slaStatus,
+                      @Param("ticketTypeId") Long ticketTypeId);
 
     List<TicketDetailPo> listTicketsPage(@Param("domainId") long domainId,
                                          @Param("customerId") Long customerId,
@@ -34,8 +36,16 @@ public interface TicketMapper extends BaseMapper<TicketPo> {
                                          @Param("priority") String priority,
                                          @Param("keyword") String keyword,
                                          @Param("slaStatus") String slaStatus,
+                                         @Param("ticketTypeId") Long ticketTypeId,
                                          @Param("limit") int limit,
                                          @Param("offset") long offset);
+
+    /**
+     * 按事项类型统计「未处理」工单数：类型处于起始状态（ticket_type_flow_status.is_initial=1）
+     * 的工单；assignee 非空时限定受理人（我的待办视角）。
+     */
+    List<TicketTypeInitialCountPo> countInitialTicketsByType(@Param("domainId") long domainId,
+                                                             @Param("assignee") Long assignee);
 
     Long findIdByTicketNoAndDomain(@Param("ticketNo") String ticketNo, @Param("domainId") long domainId);
 
@@ -54,7 +64,7 @@ public interface TicketMapper extends BaseMapper<TicketPo> {
 
     int updateAssign(@Param("ticketId") long ticketId,
                      @Param("domainId") long domainId,
-                     @Param("assignee") long assignee,
+                     @Param("assignee") Long assignee,
                      @Param("version") long version,
                      @Param("now") LocalDateTime now);
 

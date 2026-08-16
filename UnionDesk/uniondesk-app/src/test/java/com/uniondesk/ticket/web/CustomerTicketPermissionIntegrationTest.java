@@ -91,7 +91,7 @@ class CustomerTicketPermissionIntegrationTest extends IntegrationTestSupport {
                         .header("X-UD-Client-Code", IntegrationAuthSupport.CUSTOMER_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.ReplyTicketCommand(
-                                ticketVersion(ticketId), "补充说明", null, List.of()))))
+                                ticketVersion(ticketId), "补充说明", null, List.of(), false))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").exists());
 
@@ -126,7 +126,7 @@ class CustomerTicketPermissionIntegrationTest extends IntegrationTestSupport {
                         .header("X-UD-Client-Code", IntegrationAuthSupport.CUSTOMER_CLIENT_CODE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new TicketService.ReplyTicketCommand(
-                                ticketVersion(ticketId), "越权回复", null, List.of()))))
+                                ticketVersion(ticketId), "越权回复", null, List.of(), false))))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("40301"))
                 .andExpect(jsonPath("$.message").value("无操作权限"));

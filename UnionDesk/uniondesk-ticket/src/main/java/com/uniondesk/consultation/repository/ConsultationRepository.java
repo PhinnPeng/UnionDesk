@@ -23,12 +23,12 @@ public class ConsultationRepository {
         return mapper.selectBySessionNoAndDomain(sessionNo, domainId);
     }
 
-    public List<ConsultationSessionPo> findPageByDomain(long domainId, String status, Long assignedToMe, int limit, long offset) {
-        return mapper.selectPageByDomain(domainId, status, assignedToMe, limit, offset);
+    public List<ConsultationSessionPo> findPageByDomain(long domainId, String status, Long assignedToMe, Boolean archived, int limit, long offset) {
+        return mapper.selectPageByDomain(domainId, status, assignedToMe, archived, limit, offset);
     }
 
-    public long countByDomain(long domainId, String status, Long assignedToMe) {
-        return mapper.countByDomain(domainId, status, assignedToMe);
+    public long countByDomain(long domainId, String status, Long assignedToMe, Boolean archived) {
+        return mapper.countByDomain(domainId, status, assignedToMe, archived);
     }
 
     public List<ConsultationSessionPo> findByCustomerId(long domainId, long customerId) {
@@ -81,6 +81,18 @@ public class ConsultationRepository {
 
     public int closeSession(long sessionId, LocalDateTime closedAt) {
         return mapper.closeSession(sessionId, closedAt);
+    }
+
+    public int updateArchived(long sessionId, LocalDateTime archivedAt) {
+        return mapper.updateArchived(sessionId, archivedAt);
+    }
+
+    public List<ConsultationSessionPo> findAutoArchiveCandidates(long domainId, LocalDateTime closedBefore, int limit) {
+        return mapper.selectAutoArchiveCandidates(domainId, closedBefore, limit);
+    }
+
+    public List<ConsultationMapper.AutoArchiveConfigRow> findAutoArchiveConfigs() {
+        return mapper.selectAutoArchiveConfigs();
     }
 
     public String findLinkedTicketNo(long sessionId) {

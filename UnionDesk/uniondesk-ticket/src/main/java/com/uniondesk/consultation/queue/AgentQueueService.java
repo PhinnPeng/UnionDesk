@@ -28,10 +28,19 @@ public class AgentQueueService {
     /** 客服在线有效期（秒）：心跳间隔内的在线时长，超时自动离线 */
     public static final long ONLINE_TTL_SECONDS = 90;
 
+    /** 客服状态：上线 */
+    public static final String STATUS_ONLINE = "online";
+    /** 客服状态：隐身（不参与接入，仅心跳保活） */
+    public static final String STATUS_INVISIBLE = "invisible";
+
     /** 接入模式：自动（排队会话自动分配） */
     public static final String MODE_AUTO = "auto";
     /** 接入模式：手动（客服主动接入） */
     public static final String MODE_MANUAL = "manual";
+
+    /** 在线状态快照（status + mode），供切换前判断 */
+    public record PresenceState(String status, String mode) {
+    }
 
     /** Redis key 前缀：客服在线状态（含接入模式）agent:online:{domainId}:{staffId} */
     public static final String KEY_PREFIX_ONLINE = "agent:online:";
@@ -48,10 +57,10 @@ public class AgentQueueService {
         this.redis = redis;
     }
 
-    /** 客服在线心跳：写入/刷新在线状态（含接入模式），并登记到域内在线哈希 */
-    public void heartbeat(long domainId, long staffId, String mode) {
+    /** 客服在线心跳：写入/刷新在线状态（状态+接入模式一体），并登记到域内在线哈希 */
+    public void heartbeat(long domainId, long staffId, String status, String mode) {
         String key = onlineKey(domainId, staffId);
-        redis.opsForValue().set(key, buildValue(mode), Duration.ofSeconds(ONLINE_TTL_SECONDS));
+        redis.opsForValue().set(key, buildValue(status, mode), Duration.ofSeconds(ONLINE_TTL_SECONDS));
         redis.opsForHash().put(domainOnlineKey(domainId), String.valueOf(staffId), String.valueOf(staffId));
     }
 
@@ -60,18 +69,32 @@ public class AgentQueueService {
         return Boolean.TRUE.equals(redis.hasKey(onlineKey(domainId, staffId)));
     }
 
-    /** 切换接入模式：先校验在线（离线拒绝），再写入新模式并刷新心跳 */
-    public String setMode(long domainId, long staffId, String mode) {
-        String key = onlineKey(domainId, staffId);
-        if (!isOnline(domainId, staffId)) {
-            throw new IllegalArgumentException("客服不在线，请先上线（心跳）再切换接入模式");
-        }
-        String previousMode = parseMode(redis.opsForValue().get(key));
-        heartbeat(domainId, staffId, mode);
-        return previousMode;
+    /** 隐身判定：key 存在且状态为隐身（离线视为非隐身） */
+    public boolean isInvisible(long domainId, long staffId) {
+        return STATUS_INVISIBLE.equals(parseStatus(redis.opsForValue().get(onlineKey(domainId, staffId))));
     }
 
-    /** 域内在线且自动模式的客服 staffId 列表（HGETALL + 逐 key 查模式，域内量小） */
+    /** 读取当前在线状态（含模式）；离线返回 null */
+    public PresenceState readPresence(long domainId, long staffId) {
+        String value = redis.opsForValue().get(onlineKey(domainId, staffId));
+        if (value == null) {
+            return null;
+        }
+        return new PresenceState(parseStatus(value), parseMode(value));
+    }
+
+    /** 切换状态/接入模式：先校验在线（离线拒绝），再写入新状态并刷新心跳；返回切换前快照 */
+    public PresenceState updatePresence(long domainId, long staffId, String status, String mode) {
+        String key = onlineKey(domainId, staffId);
+        if (!isOnline(domainId, staffId)) {
+            throw new IllegalArgumentException("客服不在线，请先上线（心跳）再切换状态/接入模式");
+        }
+        PresenceState previous = readPresence(domainId, staffId);
+        heartbeat(domainId, staffId, status, mode);
+        return previous;
+    }
+
+    /** 域内在线且自动模式的客服 staffId 列表（HGETALL + 逐 key 查状态模式，域内量小）；隐身不参与 */
     public List<Long> listOnlineAutoStaffIds(long domainId) {
         Map<Object, Object> entries = redis.opsForHash().entries(domainOnlineKey(domainId));
         List<Long> staffIds = new ArrayList<>(entries.size());
@@ -81,7 +104,9 @@ public class AgentQueueService {
                 continue;
             }
             String value = redis.opsForValue().get(onlineKey(domainId, staffId));
-            if (value != null && MODE_AUTO.equals(parseMode(value))) {
+            if (value != null
+                    && STATUS_ONLINE.equals(parseStatus(value))
+                    && MODE_AUTO.equals(parseMode(value))) {
                 staffIds.add(staffId);
             }
         }
@@ -103,6 +128,28 @@ public class AgentQueueService {
         redis.opsForList().remove(queueKey(domainId), 0, sessionNo);
     }
 
+    /** 域内是否有在线客服（仅统计「上线」状态；供客户侧「当前无坐席」提示，隐身客服不算坐席） */
+    public boolean hasOnlineAgent(long domainId) {
+        Map<Object, Object> entries = redis.opsForHash().entries(domainOnlineKey(domainId));
+        for (Object field : entries.keySet()) {
+            Long staffId = parseStaffId(field);
+            if (staffId == null) {
+                continue;
+            }
+            String value = redis.opsForValue().get(onlineKey(domainId, staffId));
+            if (value != null && STATUS_ONLINE.equals(parseStatus(value))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 当前排队会话数（LLEN） */
+    public long queueSize(long domainId) {
+        Long size = redis.opsForList().size(queueKey(domainId));
+        return size == null ? 0 : size;
+    }
+
     private String onlineKey(long domainId, long staffId) {
         return KEY_PREFIX_ONLINE + domainId + ":" + staffId;
     }
@@ -115,8 +162,22 @@ public class AgentQueueService {
         return KEY_PREFIX_QUEUE + domainId;
     }
 
-    private static String buildValue(String mode) {
-        return "{\"status\":\"online\",\"mode\":\"" + mode + "\"}";
+    private static String buildValue(String status, String mode) {
+        return "{\"status\":\"" + status + "\",\"mode\":\"" + mode + "\"}";
+    }
+
+    private static String parseStatus(String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            JsonNode node = OBJECT_MAPPER.readTree(value);
+            return node.path("status").asText(null);
+        }
+        catch (Exception ex) {
+            log.warn("解析客服在线状态失败，视为离线：value={}", value);
+            return null;
+        }
     }
 
     private static String parseMode(String value) {

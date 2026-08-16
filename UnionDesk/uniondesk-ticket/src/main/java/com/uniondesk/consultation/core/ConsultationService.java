@@ -1,6 +1,10 @@
 package com.uniondesk.consultation.core;
 
 import com.uniondesk.auth.core.UserContext;
+import com.uniondesk.common.event.ConsultationMessageSentEvent;
+import com.uniondesk.common.event.ConsultationQueuedEvent;
+import com.uniondesk.common.event.ConsultationSessionChangedEvent;
+import com.uniondesk.common.event.UnionDeskEventPublisher;
 import com.uniondesk.common.web.ErrorCodes;
 import com.uniondesk.common.web.PageResult;
 import com.uniondesk.consultation.entity.ConsultationMessagePo;
@@ -58,7 +62,8 @@ public class ConsultationService {
             LocalDateTime lastMessageAt,
             LocalDateTime createdAt,
             LocalDateTime updatedAt,
-            long messageCount) {
+            long messageCount,
+            LocalDateTime archivedAt) {
     }
 
     public record ConsultationMessageRow(
@@ -80,8 +85,8 @@ public class ConsultationService {
             String ticketNo) {
     }
 
-    /** 客服在线心跳 + 接入模式一体结果 */
-    public record AgentPresenceResult(String mode, boolean online) {
+    /** 客服状态 + 接入模式一体结果（status 为 null 表示无在线记录/离线） */
+    public record AgentPresenceResult(String status, String mode) {
     }
 
     private final ConsultationRepository consultationRepository;
@@ -90,6 +95,7 @@ public class ConsultationService {
     private final TicketRepository ticketRepository;
     private final DomainCustomerRepository domainCustomerRepository;
     private final AgentQueueService agentQueueService;
+    private final UnionDeskEventPublisher eventPublisher;
     private final Clock clock;
 
     public ConsultationService(
@@ -99,6 +105,7 @@ public class ConsultationService {
             TicketRepository ticketRepository,
             DomainCustomerRepository domainCustomerRepository,
             AgentQueueService agentQueueService,
+            UnionDeskEventPublisher eventPublisher,
             Clock clock) {
         this.consultationRepository = consultationRepository;
         this.ticketService = ticketService;
@@ -106,7 +113,16 @@ public class ConsultationService {
         this.ticketRepository = ticketRepository;
         this.domainCustomerRepository = domainCustomerRepository;
         this.agentQueueService = agentQueueService;
+        this.eventPublisher = eventPublisher;
         this.clock = clock;
+    }
+
+    /** 客户侧坐席可用性（「当前无坐席」提示）：域内是否有在线客服 + 当前排队数 */
+    public AvailabilityResult availability(long domainId) {
+        return new AvailabilityResult(agentQueueService.hasOnlineAgent(domainId), agentQueueService.queueSize(domainId));
+    }
+
+    public record AvailabilityResult(boolean hasOnlineAgent, long queueSize) {
     }
 
     @Transactional
@@ -135,6 +151,7 @@ public class ConsultationService {
         message.setContent(content);
         consultationRepository.saveMessage(message);
 
+        publishQueueChanged(domainId);
         return toSessionRow(consultationRepository.findBySessionNoAndDomain(session.getSessionNo(), domainId));
     }
 
@@ -147,15 +164,15 @@ public class ConsultationService {
     }
 
     public PageResult<ConsultationSessionRow> listAdminSessions(
-            UserContext context, long domainId, int page, int pageSize, String status, boolean assignedToMe) {
+            UserContext context, long domainId, int page, int pageSize, String status, boolean assignedToMe, Boolean archived) {
         requireStaff(context);
         Long assignedTo = assignedToMe ? context.userId() : null;
         long offset = (long) (page - 1) * pageSize;
-        List<ConsultationSessionRow> rows = consultationRepository.findPageByDomain(domainId, status, assignedTo, pageSize, offset)
+        List<ConsultationSessionRow> rows = consultationRepository.findPageByDomain(domainId, status, assignedTo, archived, pageSize, offset)
                 .stream()
                 .map(this::toSessionRow)
                 .toList();
-        return new PageResult<>(consultationRepository.countByDomain(domainId, status, assignedTo), rows);
+        return new PageResult<>(consultationRepository.countByDomain(domainId, status, assignedTo, archived), rows);
     }
 
     public List<ConsultationMessageRow> listMessagesOwned(UserContext context, long domainId, String sessionNo) {
@@ -197,6 +214,9 @@ public class ConsultationService {
     @Transactional
     public ConsultationSessionRow claimSession(UserContext context, long domainId, String sessionNo) {
         requireStaff(context);
+        if (agentQueueService.isInvisible(domainId, context.userId())) {
+            throw new IllegalArgumentException("隐身状态无法接入会话，请先上线");
+        }
         ConsultationSessionPo session = requireSession(domainId, sessionNo);
         if (SESSION_STATUS_CLOSED.equals(session.getSessionStatus())) {
             throw new IllegalArgumentException("会话已结束，无法接入");
@@ -213,7 +233,10 @@ public class ConsultationService {
         }
         // 手动接入后从排队队列移除，避免后续自动取队重复分配
         agentQueueService.removeFromQueue(domainId, sessionNo);
-        return toSessionRow(consultationRepository.findBySessionNoAndDomain(sessionNo, domainId));
+        ConsultationSessionPo latest = consultationRepository.findBySessionNoAndDomain(sessionNo, domainId);
+        publishSessionChanged(latest);
+        publishQueueChanged(domainId);
+        return toSessionRow(latest);
     }
 
     /**
@@ -231,6 +254,39 @@ public class ConsultationService {
         }
         consultationRepository.closeSession(session.getId(), LocalDateTime.now(clock));
         agentQueueService.removeFromQueue(domainId, sessionNo);
+        ConsultationSessionPo latest = consultationRepository.findBySessionNoAndDomain(sessionNo, domainId);
+        publishSessionChanged(latest);
+        publishQueueChanged(domainId);
+        return toSessionRow(latest);
+    }
+
+    /**
+     * 归档会话：仅已关闭会话可归档（终态标记，状态不变）；重复归档幂等返回。
+     */
+    @Transactional
+    public ConsultationSessionRow archiveSession(UserContext context, long domainId, String sessionNo) {
+        requireStaff(context);
+        ConsultationSessionPo session = requireSession(domainId, sessionNo);
+        if (!SESSION_STATUS_CLOSED.equals(session.getSessionStatus())) {
+            throw new IllegalArgumentException("仅已结束的会话可归档");
+        }
+        if (session.getArchivedAt() == null) {
+            consultationRepository.updateArchived(session.getId(), LocalDateTime.now(clock));
+        }
+        return toSessionRow(consultationRepository.findBySessionNoAndDomain(sessionNo, domainId));
+    }
+
+    /**
+     * 取消归档：仅已归档会话可恢复；恢复后回到默认列表（仍为已关闭）。
+     */
+    @Transactional
+    public ConsultationSessionRow unarchiveSession(UserContext context, long domainId, String sessionNo) {
+        requireStaff(context);
+        ConsultationSessionPo session = requireSession(domainId, sessionNo);
+        if (session.getArchivedAt() == null) {
+            throw new IllegalArgumentException("会话未归档，无需取消");
+        }
+        consultationRepository.updateArchived(session.getId(), null);
         return toSessionRow(consultationRepository.findBySessionNoAndDomain(sessionNo, domainId));
     }
 
@@ -263,21 +319,38 @@ public class ConsultationService {
     }
 
     /**
-     * 客服在线心跳 + 接入模式一体：心跳注册/刷新在线；模式由 manual 切到 auto（或首次以 auto 上线）时
-     * RPOP 原子取队并分配排队会话。
+     * 客服状态 + 接入模式一体：心跳注册/刷新在线；仅当「进入 上线+自动」且此前非该组合时
+     * RPOP 原子取队并分配排队会话（首次上线 auto、隐身切回上线 auto 均触发）。
      */
-    public AgentPresenceResult agentPresence(UserContext context, long domainId, String mode) {
+    public AgentPresenceResult agentPresence(UserContext context, long domainId, String status, String mode) {
         requireStaff(context);
+        if (!AgentQueueService.STATUS_ONLINE.equals(status)
+                && !AgentQueueService.STATUS_INVISIBLE.equals(status)) {
+            throw new IllegalArgumentException("客服状态参数错误（仅支持 online/invisible）");
+        }
         if (!AgentQueueService.MODE_AUTO.equals(mode) && !AgentQueueService.MODE_MANUAL.equals(mode)) {
             throw new IllegalArgumentException("接入模式参数错误（仅支持 auto/manual）");
         }
-        // setMode 内部先读旧模式再写新模式并刷新心跳；此处不得先 heartbeat 覆盖旧值，
+        // updatePresence 内部先读旧快照再写新状态并刷新心跳；此处不得先 heartbeat 覆盖旧值，
         // 否则 manual→auto 转换判断恒 false，自动拉取永不触发
-        String previousMode = agentQueueService.setMode(domainId, context.userId(), mode);
-        if (AgentQueueService.MODE_AUTO.equals(mode) && !AgentQueueService.MODE_AUTO.equals(previousMode)) {
+        AgentQueueService.PresenceState previous = agentQueueService.updatePresence(
+                domainId, context.userId(), status, mode);
+        boolean nowOnlineAuto = AgentQueueService.STATUS_ONLINE.equals(status)
+                && AgentQueueService.MODE_AUTO.equals(mode);
+        boolean beforeOnlineAuto = previous != null
+                && AgentQueueService.STATUS_ONLINE.equals(previous.status())
+                && AgentQueueService.MODE_AUTO.equals(previous.mode());
+        if (nowOnlineAuto && !beforeOnlineAuto) {
             assignFromQueue(domainId, context.userId());
         }
-        return new AgentPresenceResult(mode, true);
+        return new AgentPresenceResult(status, mode);
+    }
+
+    /** 查询当前客服状态（只读）：无在线记录返回 status/mode 均为 null（前端据此决定默认上报） */
+    public AgentPresenceResult getAgentPresence(UserContext context, long domainId) {
+        requireStaff(context);
+        AgentQueueService.PresenceState state = agentQueueService.readPresence(domainId, context.userId());
+        return state == null ? new AgentPresenceResult(null, null) : new AgentPresenceResult(state.status(), state.mode());
     }
 
     @Transactional
@@ -320,10 +393,28 @@ public class ConsultationService {
         consultationRepository.closeSession(session.getId(), LocalDateTime.now(clock));
 
         ConsultationSessionPo closed = consultationRepository.findBySessionNoAndDomain(sessionNo, domainId);
+        publishSessionChanged(closed);
+        publishQueueChanged(domainId);
         return new ConsultationConvertResult(toSessionRow(closed), result.id(), result.ticketNo());
     }
 
     public record ConvertTicketRequest(Long ticketTypeId, String title, String description, String priority) {
+    }
+
+    /** 发布会话状态变化事件（客户感知接入/结束/转单） */
+    private void publishSessionChanged(ConsultationSessionPo session) {
+        eventPublisher.publish(new ConsultationSessionChangedEvent(
+                session.getBusinessDomainId(),
+                session.getSessionNo(),
+                session.getCustomerId(),
+                session.getSessionStatus(),
+                session.getAssignedTo(),
+                consultationRepository.findLinkedTicketNo(session.getId())));
+    }
+
+    /** 发布排队数变化事件（域内在线客服感知） */
+    private void publishQueueChanged(long domainId) {
+        eventPublisher.publish(new ConsultationQueuedEvent(domainId, agentQueueService.queueSize(domainId)));
     }
 
     /**
@@ -383,6 +474,22 @@ public class ConsultationService {
         consultationRepository.saveMessage(message);
 
         consultationRepository.updateLastMessageAt(session.getId(), now);
+
+        // 实时推送（AFTER_COMMIT 后由 RealtimeEventListener 投递）：消息接收方 = 会话另一方
+        Long recipientUserId = SENDER_ROLE_CUSTOMER.equals(senderRole)
+                ? session.getAssignedTo()
+                : session.getCustomerId();
+        String recipientRole = SENDER_ROLE_CUSTOMER.equals(senderRole) ? SENDER_ROLE_AGENT : SENDER_ROLE_CUSTOMER;
+        eventPublisher.publish(new ConsultationMessageSentEvent(
+                session.getBusinessDomainId(),
+                session.getSessionNo(),
+                senderUserId,
+                senderRole,
+                recipientUserId,
+                recipientRole,
+                message.getId(),
+                content,
+                now));
 
         return new ConsultationMessageRow(
                 message.getId(),
@@ -503,7 +610,8 @@ public class ConsultationService {
                 po.getLastMessageAt(),
                 po.getCreatedAt(),
                 po.getUpdatedAt(),
-                po.getMessageCount() == null ? 0 : po.getMessageCount());
+                po.getMessageCount() == null ? 0 : po.getMessageCount(),
+                po.getArchivedAt());
     }
 
     private ConsultationMessageRow toMessageRow(ConsultationMessagePo po) {

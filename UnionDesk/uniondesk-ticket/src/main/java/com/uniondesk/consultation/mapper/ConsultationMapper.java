@@ -17,13 +17,31 @@ public interface ConsultationMapper extends BaseMapper<ConsultationSessionPo> {
             @Param("domainId") long domainId,
             @Param("status") String status,
             @Param("assignedToMe") Long assignedToMe,
+            @Param("archived") Boolean archived,
             @Param("limit") int limit,
             @Param("offset") long offset);
 
     long countByDomain(
             @Param("domainId") long domainId,
             @Param("status") String status,
-            @Param("assignedToMe") Long assignedToMe);
+            @Param("assignedToMe") Long assignedToMe,
+            @Param("archived") Boolean archived);
+
+    /**
+     * 自动归档候选：已关闭、未归档、且关闭时间早于阈值（按域配置天数）的会话。
+     */
+    List<ConsultationSessionPo> selectAutoArchiveCandidates(
+            @Param("domainId") long domainId,
+            @Param("closedBefore") LocalDateTime closedBefore,
+            @Param("limit") int limit);
+
+    /**
+     * 启用自动归档的域与天数（domain_config KV；未配置天数时默认 30）。
+     */
+    List<AutoArchiveConfigRow> selectAutoArchiveConfigs();
+
+    record AutoArchiveConfigRow(long domainId, int autoDays) {
+    }
 
     List<ConsultationSessionPo> selectByCustomerId(@Param("domainId") long domainId, @Param("customerId") long customerId);
 
@@ -65,6 +83,11 @@ public interface ConsultationMapper extends BaseMapper<ConsultationSessionPo> {
             @Param("retractedAt") LocalDateTime retractedAt);
 
     int closeSession(@Param("sessionId") long sessionId, @Param("closedAt") LocalDateTime closedAt);
+
+    /**
+     * 归档/取消归档：仅影响 archived_at，状态不变；0 行表示会话不存在。
+     */
+    int updateArchived(@Param("sessionId") long sessionId, @Param("archivedAt") LocalDateTime archivedAt);
 
     String selectLinkedTicketNo(@Param("sessionId") long sessionId);
 

@@ -92,6 +92,7 @@ public class TicketController {
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "false") boolean assigned_to_me,
             @RequestParam(name = "sla_status", required = false) String sla_status,
+            @RequestParam(name = "ticket_type_id", required = false) Long ticket_type_id,
             @RequestParam(defaultValue = "100") int limit) {
         // 兼容旧调用：未传 page_size 时回退到 limit（保持原有一次拉取行为）
         int effectivePageSize = pageSize != null ? pageSize : limit;
@@ -105,7 +106,17 @@ public class TicketController {
                 priority,
                 keyword,
                 assigned_to_me,
-                sla_status);
+                sla_status,
+                ticket_type_id);
+    }
+
+    /** 事项类型「未处理」计数（工作台类型筛选徽标；assigned_to_me=true 为我的待办视角） */
+    @GetMapping("/admin/domains/{domain_id}/tickets/type-counts")
+    @RequirePermission(value = PermissionCodes.TICKET_VIEW_DOMAIN_ALL, domainIdParam = "domain_id")
+    public List<TicketService.TicketTypeInitialCountRow> listTicketTypeInitialCounts(
+            @PathVariable("domain_id") long domainId,
+            @RequestParam(name = "assigned_to_me", defaultValue = "false") boolean assigned_to_me) {
+        return ticketService.listTicketTypeInitialCounts(requireCurrent(), domainId, assigned_to_me);
     }
 
     @GetMapping("/admin/domains/{domain_id}/tickets/{ticket_id}")

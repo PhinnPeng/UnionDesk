@@ -118,7 +118,7 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                                 ticketVersion(ticketId),
                                 "已经收到，我们在处理。",
                                 null,
-                                List.of()))))
+                                List.of(), false))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").exists());
 
@@ -190,7 +190,7 @@ class TicketLifecycleIntegrationTest extends IntegrationTestSupport {
                                 ticketVersion(sourceTicketId),
                                 "这个问题我继续跟进。",
                                 null,
-                                List.of()))))
+                                List.of(), false))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").exists());
 

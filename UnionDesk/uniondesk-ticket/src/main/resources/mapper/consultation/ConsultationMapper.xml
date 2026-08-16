@@ -13,6 +13,7 @@
         <result property="assignedTo" column="assigned_to"/>
         <result property="lastMessageAt" column="last_message_at"/>
         <result property="closedAt" column="closed_at"/>
+        <result property="archivedAt" column="archived_at"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
         <result property="messageCount" column="message_count"/>
@@ -46,6 +47,7 @@
             s.assigned_to,
             s.last_message_at,
             s.closed_at,
+            s.archived_at,
             s.created_at,
             s.updated_at,
             COALESCE((
@@ -80,6 +82,16 @@
         <if test="assignedToMe != null">
             AND s.assigned_to = #{assignedToMe}
         </if>
+        <if test="archived != null">
+            <choose>
+                <when test="archived">
+                    AND s.archived_at IS NOT NULL
+                </when>
+                <otherwise>
+                    AND s.archived_at IS NULL
+                </otherwise>
+            </choose>
+        </if>
         ORDER BY s.updated_at DESC, s.id DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
@@ -94,6 +106,39 @@
         <if test="assignedToMe != null">
             AND assigned_to = #{assignedToMe}
         </if>
+        <if test="archived != null">
+            <choose>
+                <when test="archived">
+                    AND archived_at IS NOT NULL
+                </when>
+                <otherwise>
+                    AND archived_at IS NULL
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+
+    <select id="selectAutoArchiveCandidates" resultMap="ConsultationSessionPo">
+        SELECT id, business_domain_id, session_no
+        FROM consultation_session
+        WHERE business_domain_id = #{domainId}
+          AND session_status = 'closed'
+          AND archived_at IS NULL
+          AND closed_at IS NOT NULL
+          AND closed_at &lt;= #{closedBefore}
+        ORDER BY closed_at ASC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectAutoArchiveConfigs" resultType="com.uniondesk.consultation.mapper.ConsultationMapper$AutoArchiveConfigRow">
+        SELECT dc.business_domain_id AS domain_id,
+               COALESCE(CAST(days.config_value AS UNSIGNED), 30) AS auto_days
+        FROM domain_config dc
+        LEFT JOIN domain_config days
+            ON days.business_domain_id = dc.business_domain_id
+            AND days.config_key = 'consultation_archive_auto_days'
+        WHERE dc.config_key = 'consultation_archive_auto_enabled'
+          AND dc.config_value = 'true'
     </select>
 
     <select id="selectByCustomerId" resultMap="ConsultationSessionPo">
@@ -215,6 +260,12 @@
             closed_at = #{closedAt}
         WHERE id = #{sessionId}
           AND session_status &lt;&gt; 'closed'
+    </update>
+
+    <update id="updateArchived">
+        UPDATE consultation_session
+        SET archived_at = #{archivedAt}
+        WHERE id = #{sessionId}
     </update>
 
     <select id="selectLinkedTicketNo" resultType="java.lang.String">

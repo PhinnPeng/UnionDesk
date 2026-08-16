@@ -224,7 +224,7 @@ class TicketWorkflowTests {
                 context,
                 1L,
                 101L,
-                new TicketService.ReplyTicketCommand(1L, "谢谢", 8L, List.of(7L, 8L)));
+                new TicketService.ReplyTicketCommand(1L, "谢谢", 8L, List.of(7L, 8L), false));
 
         assertThat(result.id()).isEqualTo(501L);
         verify(attachmentService).linkAttachments("ticket_reply", 501L, List.of(7L, 8L), "reply");

@@ -34,6 +34,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/v1/auth/password/reset",
             "/api/v1/auth/login-config",
             "/api/v1/auth/refresh",
+            // WS 握手：浏览器无法携带自定义头，token 走 query/子协议，由 RealtimeHandshakeInterceptor 校验
+            "/api/v1/ws",
             "/actuator/health",
             "/error");
 
