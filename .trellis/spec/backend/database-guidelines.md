@@ -18,14 +18,16 @@
 | 项 | 约定 |
 |----|------|
 | 活跃目录 | `uniondesk-app/src/main/resources/db/migration/current/` |
-| 归档目录 | `db/migration/archive/`（历史，不执行） |
+| 统一基线 | `V20260816150000__unified_final_baseline.sql` |
+| 历史版本 | 已合并并从仓库移除，可通过 Git 历史追溯 |
 | 配置 | `application.yml` → `spring.flyway.locations: classpath:db/migration/current` |
-| 文件命名 | `V{YYYYMMDDHHMM}__{snake_case_description}.sql` |
+| 文件命名 | 后续增量沿用 `V{YYYYMMDDHHMM}__{snake_case_description}.sql`；当前基线固定为统一最终版本 |
 
-**示例**：
+**当前基线**：
 
-- `V202607070001__ticket_status_table.sql`
-- `V202606220001__ticket_type_platform_scope.sql`
+- `V20260816150000__unified_final_baseline.sql`
+
+后续数据库变更从该基线继续追加新的版本脚本；历史版本通过 Git 历史追溯。
 
 测试环境：`TestFlywayConfiguration.java` 在 `@Profile({"test","demo"})` 下执行 `repair()` + `migrate()`。
 

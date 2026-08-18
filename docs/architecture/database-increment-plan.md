@@ -26,12 +26,12 @@
 
 | 原则 | 说明 |
 |:---|:---|
-| 阶段内 | 只追加 `db/migration/current/V20260526xxx__*.sql`；菜单/权限 SQL **幂等** |
-| 阶段边界 | 管理端骨架稳定后（**S1 末**建议）做一次 **rebaseline**，旧脚本移 `archive/` |
-| 非每 Story rebaseline | 按 Epic/Sprint 阶段，避免迁移链过长 |
+| 当前基线 | `V20260816150000__unified_final_baseline.sql` 是当前数据库版本的唯一执行脚本 |
+| 后续增量 | 继续追加新版本到 `db/migration/current/`；菜单/权限 SQL **幂等** |
+| 历史版本 | 已合并并从仓库移除；追溯使用 Git 历史，不再维护 `archive/` 副本 |
 | volatile 数据 | 域 bootstrap 等用 **Bootstrap 服务**；Flyway 只放稳定菜单基线 |
 
-**S0 不执行 squash rebaseline**（整链压缩进单文件并移 archive）。
+**2026-08-18 已完成统一最终基线清理**：current/ 仅保留最终基线，旧版本文件不再参与执行。
 
 ### 1.1 基线参考快照（US-S0-07，非 Flyway）
 
@@ -41,7 +41,7 @@
 | 产出路径 | `docs/architecture/reference-schema/uniondesk_baseline_YYYYMMDD.sql` |
 | 性质 | **只读参考**；Flyway **不**加载此路径 |
 | 内容 | 全库 **schema** + **稳定种子**（排除 volatile 表数据；排除列表见 US-S0-07 / `.codex-tmp/GenerateBaseline.java` 思路） |
-| 与 L7 关系 | `db/migration/current/` 版本链 **保留不动**；快照用于 drift 对照与新成员理解现库 |
+| 与 L7 关系 | 统一基线位于 `db/migration/current/`；快照仍仅用于 drift 对照与新成员理解现库 |
 
 ### 1.2 迁移前备份（US-S0-07）
 
@@ -77,7 +77,7 @@
 
 | 日期 | 来源 | Flyway 最大 version | 文件 | drift |
 |:---|:---|:---|:---|:---|
-| 2026-05-25 | 联调库 uniondesk @ 127.0.0.1:30306 | 202605250001 | [`reference-schema/uniondesk_baseline_20260525.sql`](./reference-schema/uniondesk_baseline_20260525.sql) | 无：`current/` 12 个版本与 `flyway_schema_history` 一致，无 missing/orphan |
+| 2026-08-18 | 统一最终基线 | 20260816150000 | `UnionDesk/uniondesk-app/src/main/resources/db/migration/current/V20260816150000__unified_final_baseline.sql` | current/ 仅保留统一基线；历史版本通过 Git 追溯 |
 
 ---
 

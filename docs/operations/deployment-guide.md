@@ -66,8 +66,9 @@ FLUSH PRIVILEGES;
 ### 2.3 迁移目录
 
 - 活跃迁移目录：`UnionDesk/src/main/resources/db/migration/current/`
-- 历史脚本归档：`UnionDesk/src/main/resources/db/migration/archive/`
-- 当前重基线文件：`V202605200002__rebaseline_current_schema.sql`
+- 当前统一最终基线：`V20260816150000__unified_final_baseline.sql`
+- 历史版本脚本已合并并从仓库移除；如需追溯请查看 Git 历史
+- 本次只清理仓库脚本，不自动改写已有库的 `flyway_schema_history`；部署已有数据库前先备份并执行 `flyway info/validate`，必要时由 DBA 做一次历史记录对齐
 
 ### 2.4 执行迁移
 
